@@ -3529,71 +3529,194 @@ function renderRekap(pg){
     el.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Belum ada data pegawai</div><div class="empty-sub">Coba pilih rentang tanggal lain</div></div>`;
     return;
   }
-  // Deteksi mode harian dari input tanggal
+
   const _dari   = $('rekapDari')?.value   || '';
   const _sampai = $('rekapSampai')?.value || '';
   const isHarian = _dari && _sampai && _dari === _sampai;
 
-  el.innerHTML=pg.map((p,idx)=>{
-    const nama         = p.nama       || '—';
-    const nip          = p.nip        || '—';
-    const jabatan      = p.jabatan    || '';
-    // Support both n8n (lambat/pulangCepat) and fallback (di_luar_masuk/di_luar_pulang)
-    const masuk        = p.masuk      || 0;
-    const pulang       = p.pulang     || 0;
-    const pulangLuar   = p.pulang_luar|| 0;
-    const luarMasuk    = p.lambat     ?? p.di_luar_masuk  ?? 0;
-    const luarPulang   = p.pulangCepat?? p.di_luar_pulang ?? 0;
-    const izin         = p.izin       || 0;
-    const sakit        = p.sakit      || 0;
-    const tugas        = p.tugas      || 0;
-    const total        = masuk+pulang+pulangLuar+luarMasuk+luarPulang+izin+sakit+tugas;
+  // Format tanggal harian untuk header
+  let tanggalLabel = '';
+  if (isHarian && _dari) {
+    const d = new Date(_dari + 'T00:00:00');
+    tanggalLabel = d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  }
 
-    // HH:MM badges
+  el.innerHTML = pg.map((p, idx) => {
+    const nama       = p.nama    || '—';
+    const nip        = p.nip     || '—';
+    const jabatan    = p.jabatan || '';
+    const masuk      = p.masuk   || 0;
+    const pulang     = p.pulang  || 0;
+    const pulangLuar = p.pulang_luar || 0;
+    const luarMasuk  = p.lambat     ?? p.di_luar_masuk  ?? 0;
+    const luarPulang = p.pulangCepat?? p.di_luar_pulang ?? 0;
+    const izin       = p.izin   || 0;
+    const sakit      = p.sakit  || 0;
+    const tugas      = p.tugas  || 0;
+
+    const jabatanStr = jabatan
+      ? `<div style="font-size:9px;color:var(--gold);margin-top:1px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${jabatan}</div>`
+      : '';
+
+    /* ─────────────────────────────────────────
+       TAMPILAN HARIAN — CARD JAM PER PEGAWAI
+       ───────────────────────────────────────── */
+    if (isHarian) {
+      // Ambil jam dari data
+      const rawMasuk  = ((p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
+      const rawPulang = ((p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
+
+      // Helper menit
+      const toMenitLocal = s => {
+        if(!s||s==='-')return null;
+        const parts = s.split(':').map(Number);
+        return isNaN(parts[0]) ? null : parts[0]*60+(parts[1]||0);
+      };
+      const pgwId  = String(p.id||'');
+      const jpgw   = jamPegawaiMap[pgwId];
+      const jmBatas = jpgw?.masuk  || menitToStr(JAM_MASUK_MENIT);
+      const jpBatas = jpgw?.pulang || menitToStr(JAM_PULANG_MENIT);
+      const mMasukBatas  = toMenitLocal(jmBatas);
+      const mPulangBatas = toMenitLocal(jpBatas);
+      const mMasuk  = toMenitLocal(rawMasuk);
+      const mPulang = toMenitLocal(rawPulang);
+
+      // Status masuk
+      const terlambatMnt = (mMasuk!==null && mMasukBatas!==null && mMasuk>mMasukBatas)
+        ? mMasuk - mMasukBatas : 0;
+      const cepatMnt = (mPulang!==null && mPulangBatas!==null && mPulang<mPulangBatas)
+        ? mPulangBatas - mPulang : 0;
+
+      // Label & warna jam masuk
+      let masukLabel='', masukColor='', masukBg='', masukIcon='';
+      if      (izin>0)                    { masukLabel='Izin';   masukColor='var(--warning)'; masukBg='rgba(245,158,11,.12)'; masukIcon='🙏'; }
+      else if (sakit>0)                   { masukLabel='Sakit';  masukColor='var(--danger)';  masukBg='rgba(239,68,68,.12)';  masukIcon='🤒'; }
+      else if (tugas>0)                   { masukLabel='Tugas';  masukColor='#8b5cf6';         masukBg='rgba(139,92,246,.12)'; masukIcon='💼'; }
+      else if (!rawMasuk)                 { masukLabel='Alpa';   masukColor='var(--muted)';    masukBg='rgba(255,255,255,.04)'; masukIcon='❌'; }
+      else if (terlambatMnt>0)            { masukLabel=`Terlambat ${terlambatMnt}m`; masukColor='var(--warning)'; masukBg='rgba(245,158,11,.08)'; masukIcon='⏰'; }
+      else                                { masukLabel='Tepat Waktu'; masukColor='var(--success)'; masukBg='rgba(34,197,94,.08)'; masukIcon='✅'; }
+
+      // Label & warna jam pulang
+      let pulangLabel='', pulangColor='', pulangIcon='';
+      if      (izin>0||sakit>0||tugas>0)  { pulangLabel='—';          pulangColor='var(--muted)'; pulangIcon='—'; }
+      else if (!rawPulang && !rawMasuk)   { pulangLabel='Belum';      pulangColor='var(--muted)'; pulangIcon='⏳'; }
+      else if (!rawPulang)                { pulangLabel='Belum Absen'; pulangColor='var(--warning)'; pulangIcon='⏳'; }
+      else if (cepatMnt>0)                { pulangLabel=`Cepat ${cepatMnt}m`; pulangColor='#f97316'; pulangIcon='🏃'; }
+      else if (pulangLuar>0)              { pulangLabel='Lapangan';   pulangColor='#f59e0b'; pulangIcon='🏃'; }
+      else                                { pulangLabel='Tepat';      pulangColor='var(--info)'; pulangIcon='🔵'; }
+
+      // Kehadiran overall status untuk warna border card
+      const isHadir = (masuk+luarMasuk)>0;
+      const isKet   = izin>0||sakit>0||tugas>0;
+      const isAlpa  = !isHadir && !isKet;
+      const cardBorderColor = isKet  ? 'rgba(139,92,246,.25)'
+                            : isAlpa ? 'rgba(239,68,68,.2)'
+                            : terlambatMnt>0||cepatMnt>0 ? 'rgba(245,158,11,.3)'
+                            : 'rgba(34,197,94,.2)';
+      const cardTopColor = isKet  ? '#8b5cf6'
+                         : isAlpa ? 'var(--danger)'
+                         : terlambatMnt>0||cepatMnt>0 ? 'var(--warning)'
+                         : 'var(--success)';
+
+      return `
+      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
+
+        <!-- Header pegawai -->
+        <div class="pegawai-top" style="margin-bottom:10px">
+          <div class="pegawai-avatar" style="background:linear-gradient(135deg,${cardTopColor},${isAlpa?'#7f1d1d':isKet?'#4c1d95':'#065f46'});font-size:11px">${idx+1}</div>
+          <div style="flex:1;min-width:0">
+            <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+            ${jabatanStr}
+            <div class="pegawai-jabatan" style="margin-top:2px">NIP: ${nip}</div>
+          </div>
+          <!-- Badge status utama -->
+          <div style="flex-shrink:0;text-align:right">
+            <div style="font-size:16px">${masukIcon}</div>
+            <div style="font-size:9px;font-weight:700;color:${masukColor};margin-top:2px;white-space:nowrap">${masukLabel}</div>
+          </div>
+        </div>
+
+        <!-- ── CARD JAM MASUK / PULANG ── -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+
+          <!-- JAM MASUK -->
+          <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px">
+            <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
+            ${izin>0||sakit>0||tugas>0
+              ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${masukIcon}</div>
+                 <div style="font-size:10px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
+              : rawMasuk
+                ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${rawMasuk.slice(0,5)}</div>
+                   <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
+                : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
+                   <div style="font-size:9px;color:var(--muted);font-weight:700;margin-top:3px">${masukLabel}</div>`
+            }
+            <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}</div>
+          </div>
+
+          <!-- JAM PULANG -->
+          <div style="background:${izin>0||sakit>0||tugas>0?masukBg:'rgba(96,165,250,.06)'};border:1px solid ${izin>0||sakit>0||tugas>0?masukColor+'33':'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px">
+            <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
+            ${izin>0||sakit>0||tugas>0
+              ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">—</div>
+                 <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
+              : rawPulang
+                ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${rawPulang.slice(0,5)}</div>
+                   <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
+                : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
+                   <div style="font-size:9px;color:var(--warning);font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
+            }
+            <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}</div>
+          </div>
+        </div>
+
+        <!-- ── BADGE STATUS BAWAH ── -->
+        <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          ${masuk>0      ? `<span class="pbar-item pb-masuk"     >✅ Masuk</span>` : ''}
+          ${luarMasuk>0  ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${luarMasuk}×</span>` : ''}
+          ${pulang>0     ? `<span class="pbar-item pb-pulang"    >🔵 Pulang</span>` : ''}
+          ${luarPulang>0 ? `<span class="pbar-item pb-luar-pulang">🏃 Pulang Cepat: ${luarPulang}×</span>` : ''}
+          ${pulangLuar>0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:#f59e0b">🏃 Lapangan</span>` : ''}
+          ${izin>0       ? `<span class="pbar-item pb-izin"      >🙏 Izin</span>` : ''}
+          ${sakit>0      ? `<span class="pbar-item pb-sakit"     >🤒 Sakit</span>` : ''}
+          ${tugas>0      ? `<span class="pbar-item pb-tugas"     >💼 Tugas/DL</span>` : ''}
+          ${isAlpa       ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ Tidak Hadir</span>` : ''}
+          ${terlambatMnt>0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
+        </div>
+      </div>`;
+    }
+
+    /* ─────────────────────────────────────────
+       TAMPILAN RANGE — CARD STATISTIK (tidak berubah)
+       ───────────────────────────────────────── */
+    const total = masuk+pulang+pulangLuar+luarMasuk+luarPulang+izin+sakit+tugas;
     const akkLambatHHMM = p.akkLambatHHMM || '00:00';
     const akkCepatHHMM  = p.akkCepatHHMM  || '00:00';
     const totalAkkHHMM  = p.totalAkkHHMM  || '00:00';
-
-    // All-time accumulation
     const allLambatHHMM = p.totalLambatAllHHMM || '00:00';
     const allCepatHHMM  = p.totalCepatAllHHMM  || '00:00';
     const allTotalHHMM  = p.totalAkkAllHHMM     || '00:00';
     const allTotalMenit = p.totalAkkAllMenit    || 0;
-
-    // Discipline
     const dPct   = p.disiplinPct   ?? null;
     const dLabel = p.disiplinLabel || '';
     const dLevel = p.disiplinLevel || 0;
     const dAllPct= p.disiplinAllPct?? null;
-
-    // Discipline color + CSS class
     const dCls  = dLevel===4?'pb-disiplin-4':dLevel===3?'pb-disiplin-3':dLevel===2?'pb-disiplin-2':'pb-disiplin-1';
     const dIcon = dLevel===4?'🌟':dLevel===3?'👍':dLevel===2?'⚠️':'🔴';
     const dColor= dLevel===4?'var(--success)':dLevel===3?'var(--info)':dLevel===2?'var(--warning)':'var(--danger)';
-    const barColor = dColor;
+    const pgwIdR = String(p.id||'');
+    const jpgwR  = jamPegawaiMap[pgwIdR];
+    const jamMasukBatas  = jpgwR?.masuk  || menitToStr(JAM_MASUK_MENIT);
+    const jamPulangBatas = jpgwR?.pulang || menitToStr(JAM_PULANG_MENIT);
+    const hasCustomJam   = !!jpgwR;
 
-    const jabatanStr = jabatan
-      ? `<div style="font-size:9px;color:var(--gold);margin-top:1px;font-weight:600">${jabatan}</div>`
-      : '';
-    // Jam per pegawai (dari jamPegawaiMap atau default global)
-    const jpgw = jamPegawaiMap[String(p.id||'')];
-    const jamMasukBatas  = jpgw?.masuk  || menitToStr(JAM_MASUK_MENIT);
-    const jamPulangBatas = jpgw?.pulang || menitToStr(JAM_PULANG_MENIT);
-    const hasCustomJam   = !!jpgw;
-    const jamBatasStr = `<div class="jam-pegawai-row">
-      <span class="jam-pgw-item" title="${hasCustomJam?'Jam khusus':'Jam global'}">🟢 Masuk ≤ ${jamMasukBatas}</span>
-      <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
-      ${hasCustomJam?'<span style="font-size:8px;color:var(--gold);font-weight:700">✨ Jam Khusus</span>':''}
-    </div>`;
-
-    // Discipline block (right side of header)
     const disiplinBlock = dPct !== null ? `
       <div class="pegawai-disiplin-wrap">
         <div class="disiplin-pct-txt" style="color:${dColor}">${dPct}%</div>
         <div class="disiplin-sub pbar-item ${dCls}" style="font-family:'Plus Jakarta Sans',sans-serif">${dIcon} ${dLabel}</div>
       </div>` : '';
 
-    // Discipline progress bar
     const disiplinBar = dPct !== null ? `
       <div class="disiplin-bar-wrap">
         <div class="disiplin-bar-row">
@@ -3601,19 +3724,17 @@ function renderRekap(pg){
           <span style="font-size:9px;color:${dColor};font-weight:700">${dPct}% — ${dLabel}</span>
         </div>
         <div class="disiplin-bar-bg">
-          <div class="disiplin-bar-fill" style="width:${dPct}%;background:${barColor}"></div>
+          <div class="disiplin-bar-fill" style="width:${dPct}%;background:${dColor}"></div>
         </div>
         ${dAllPct!==null?`<div style="font-size:9px;color:var(--muted);margin-top:4px">Keseluruhan: <span style="color:${dColor};font-weight:700">${dAllPct}%</span></div>`:''}
       </div>` : '';
 
-    // Period accumulation badges
     const periodeAkk = (luarMasuk > 0 || luarPulang > 0) ? `
       ${luarMasuk  > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>` : ''}
       ${luarPulang > 0 ? `<span class="pbar-item pb-luar-pulang">🏃 Cepat: ${luarPulang}× <b>${akkCepatHHMM}</b></span>` : ''}
       ${(luarMasuk+luarPulang)>0 ? `<span class="pbar-item pb-total-akk">Σ Periode: ${totalAkkHHMM}</span>` : ''}
     ` : '';
 
-    // All-time accumulation block
     const allTimeBlock = allTotalMenit > 0 ? `
       <div class="akk-all-row">
         <span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>
@@ -3622,48 +3743,11 @@ function renderRekap(pg){
         <span class="akk-badge akk-total">Σ Total: ${allTotalHHMM}</span>
       </div>` : '';
 
-    // ── Jam Aktual (mode harian) ──
-    let jamAktualBlock = '';
-    if (isHarian) {
-      const jamMasukAktual  = ((p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
-      const jamPulangAktual = ((p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
-
-      // Tentukan warna jam masuk
-      const toMenitLocal = s => { if(!s||s==='-')return null; const[h,m]=(s.split(':').map(Number)); return isNaN(h)?null:h*60+(m||0); };
-      const mMasukBatas  = toMenitLocal(jamMasukBatas);
-      const mPulangBatas = toMenitLocal(jamPulangBatas);
-      const mMasukAktual = toMenitLocal(jamMasukAktual);
-      const mPulangAktual= toMenitLocal(jamPulangAktual);
-      const masukLambat  = mMasukAktual  !== null && mMasukBatas  !== null && mMasukAktual  > mMasukBatas;
-      const pulangCepat_ = mPulangAktual !== null && mPulangBatas !== null && mPulangAktual < mPulangBatas;
-
-      const clsMasuk  = jamMasukAktual  ? (masukLambat  ? 'terlambat' : 'hadir') : 'alpa';
-      const clsPulang = jamPulangAktual ? (pulangCepat_ ? 'cepat'     : 'hadir') : 'alpa';
-
-      // Status kehadiran
-      const statusHarian = izin>0?'izin':sakit>0?'izin':tugas>0?'tugas':(masuk+luarMasuk)===0&&!jamMasukAktual?'alpa':'hadir';
-      const statusLabel  = izin>0?'Izin':sakit>0?'Sakit':tugas>0?'DL/Tugas':(masuk+luarMasuk)===0&&!jamMasukAktual?'Alpa':'Hadir';
-
-      // Catatan terlambat/cepat
-      const catatanParts = [];
-      if (masukLambat  && mMasukAktual  !== null) catatanParts.push(`⏰ Terlambat ${mMasukAktual - mMasukBatas}m`);
-      if (pulangCepat_ && mPulangAktual !== null) catatanParts.push(`🏃 Pulang cepat ${mPulangBatas - mPulangAktual}m`);
-      const catatanStr = catatanParts.join(' · ');
-
-      jamAktualBlock = `<div class="jam-aktual-row">
-        <div class="jam-aktual-item">
-          <span class="jam-aktual-label">🟢 Jam Masuk</span>
-          <span class="jam-aktual-val ${clsMasuk}">${jamMasukAktual || '—'}</span>
-        </div>
-        <div class="jam-aktual-divider"></div>
-        <div class="jam-aktual-item">
-          <span class="jam-aktual-label">🔵 Jam Pulang</span>
-          <span class="jam-aktual-val ${clsPulang}">${jamPulangAktual || '—'}</span>
-        </div>
-        ${catatanStr ? `<div class="jam-aktual-divider"></div><div style="flex:1;font-size:9px;color:var(--warning);font-weight:600">${catatanStr}</div>` : ''}
-        <span class="jam-aktual-status ${statusHarian}">${statusLabel}</span>
-      </div>`;
-    }
+    const jamBatasStr = `<div class="jam-pegawai-row">
+      <span class="jam-pgw-item" title="${hasCustomJam?'Jam khusus':'Jam global'}">🟢 Masuk ≤ ${jamMasukBatas}</span>
+      <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
+      ${hasCustomJam?'<span style="font-size:8px;color:var(--gold);font-weight:700">✨ Jam Khusus</span>':''}
+    </div>`;
 
     return`<div class="pegawai-card">
       <div class="pegawai-top">
@@ -3675,7 +3759,7 @@ function renderRekap(pg){
         </div>
         ${disiplinBlock}
       </div>
-      ${isHarian ? jamAktualBlock : `<div class="pegawai-bar">
+      <div class="pegawai-bar">
         ${masuk      >0?`<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>`:''}
         ${pulang     >0?`<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>`:''}
         ${pulangLuar >0?`<span class="pbar-item pb-pulang-luar">🏃 Pulang Lapangan: ${pulangLuar}</span>`:''}
@@ -3683,9 +3767,9 @@ function renderRekap(pg){
         ${izin   >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
         ${sakit  >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
         ${tugas  >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
-      </div>`}
-      ${isHarian ? '' : disiplinBar}
-      ${isHarian ? '' : allTimeBlock}
+      </div>
+      ${disiplinBar}
+      ${allTimeBlock}
       ${jamBatasStr}
     </div>`;
   }).join('');

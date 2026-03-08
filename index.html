@@ -1227,7 +1227,7 @@ const REKAP_CHAT_ID = ADMIN_IDS[0];
 */
 const WIFI_CHECK_ENABLED = true;           // set false untuk nonaktifkan cek jaringan
 const KANTOR_IPS = [
-  '103.XXX.XXX.XXX',                       // ← GANTI dengan IP publik WiFi kantor
+  //'103.XXX.XXX.XXX',                       // ← GANTI dengan IP publik WiFi kantor
   // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
 ];
 // 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
@@ -3287,6 +3287,7 @@ async function loadRekap(){
   // Fetch hari libur & jam pegawai secara paralel
   if(!liburLoaded) fetchLiburForRekap();
   fetchJamPegawai();
+  const isHarianLoad = dari === sampai;
   try{
     const orderPromise = fetchUserListOrder();
     let pegawai=[], ringkasan={};
@@ -3315,6 +3316,39 @@ async function loadRekap(){
       const computed = computeRekap(periodRowsRaw, allRowsRaw);
       pegawai   = computed.pegawai;
       ringkasan = computed.ringkasan;
+    }
+
+    // ── Jika harian & data dari n8n: ambil jam aktual dari log ──
+    // n8n hanya kirim agregat (count), bukan jam aktual per record.
+    // Solusi: fetch log hari ini → ekstrak jamMasuk & jamPulang per pegawai.
+    if (rekapOK && isHarianLoad && pegawai.length) {
+      try {
+        const resLog = await apiFetch(`${P.log}?tanggal=${dari}`, {method:'GET'});
+        if (resLog.ok) {
+          const logRows = parseRows(await resLog.json());
+          // Buat map: id → {jamMasuk, jamPulang}
+          const jamMap = {};
+          logRows.forEach(r => {
+            const id    = String(getField(r,'ID','id')||'').trim();
+            const tgl   = getField(r,'Tanggal','tanggal') || '';
+            if (!id || tgl !== dari) return;
+            const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+            const jam   = (getField(r,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim();
+            if (!jamMap[id]) jamMap[id] = { jamMasuk:'-', jamPulang:'-' };
+            if ((jenis==='MASUK'||jenis==='DI LUAR JAM MASUK') && jam)
+              jamMap[id].jamMasuk = jam;
+            if ((jenis==='PULANG'||jenis==='DI LUAR JAM PULANG'||jenis==='PULANG LUAR') && jam)
+              jamMap[id].jamPulang = jam;
+          });
+          // Merge ke pegawai
+          pegawai = pegawai.map(p => {
+            const key = String(p.id||p.tg_id||'');
+            const jm  = jamMap[key];
+            if (!jm) return p;
+            return { ...p, jamMasuk: jm.jamMasuk, jamPulang: jm.jamPulang };
+          });
+        }
+      } catch(_) {}
     }
 
     $('rsMasuk').textContent      = ringkasan.masuk       ?? 0;

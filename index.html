@@ -664,13 +664,13 @@
         <div class="clock-date" id="clockDate">Memuat...</div>
         <div class="clock-badge"><div class="dot"></div><span id="jenisAbsen">Menghitung...</span></div>
         <div class="clock-loc-badge unknown" id="clockLocBadge">📍 Mendeteksi lokasi...</div>
-        <div id="batasAbsenWrap" style="margin-top:5px;font-size:9px;color:var(--muted);font-weight:600">⏰ <span id="batasAbsen">—</span></div>
+        <div id="batasAbsenWrap" style="margin-top:8px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.35);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:6px"><span style="font-size:13px">⏰</span><span id="batasAbsen" style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:-.3px">—</span></div>
       </div>
       <!-- Kanan: cuaca mini -->
       <div class="clock-weather" id="clockWeatherWidget">
         <div class="clock-weather-icon" id="weatherIcon">🌤️</div>
         <div class="clock-weather-temp" id="weatherTemp">—°C</div>
-        <div class="clock-weather-cond" id="weatherCond">Memuat...</div>
+        <div class="clock-weather-cond" id="weatherCond">—</div>
         <div class="clock-weather-tags">
           <span class="clock-weather-tag" id="weatherHumid">💧 —%</span>
           <span class="clock-weather-tag" id="weatherWind">💨 — km/h</span>
@@ -4781,14 +4781,12 @@ async function loadLokasiPublik(){
 }
 loadLokasiPublik();
 // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
+let _locWatchId=null;
 function _updateLocBadgeGPS(){
-  if(!navigator.geolocation){
-    const clb=$('clockLocBadge');
-    if(clb){clb.textContent='📍 GPS tidak tersedia';clb.className='clock-loc-badge unknown';}
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(pos=>{
-    const {latitude:lat,longitude:lon}=pos.coords;
+  if(!navigator.geolocation)return;
+  // Hentikan watch sebelumnya jika masih berjalan
+  if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
+  function _applyPos(lat,lon){
     if(!window._lokasiCoords||!window._lokasiCoords.length)return;
     let best=null,bestDist=Infinity;
     window._lokasiCoords.forEach(l=>{
@@ -4797,19 +4795,28 @@ function _updateLocBadgeGPS(){
       const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
       if(dist<bestDist){bestDist=dist;best=l;}
     });
-    const clb=$('clockLocBadge');
-    if(!clb)return;
+    const clb=$('clockLocBadge'); if(!clb)return;
     if(best&&bestDist<=(best.radius||150)){
-      clb.textContent='📍 '+best.nama;
-      clb.className='clock-loc-badge';
+      clb.textContent='📍 '+best.nama; clb.className='clock-loc-badge';
     } else {
-      clb.textContent='📍 Di luar area kantor';
-      clb.className='clock-loc-badge unknown';
+      clb.textContent='📍 Di luar area kantor'; clb.className='clock-loc-badge unknown';
     }
-  },()=>{
-    const clb=$('clockLocBadge');
-    if(clb){clb.textContent='📍 GPS tidak aktif';clb.className='clock-loc-badge unknown';}
-  },{timeout:12000,maximumAge:60000,enableHighAccuracy:false});
+  }
+  // watchPosition: dapat posisi pertama → langsung apply & stop, lalu retry setiap 60 detik
+  _locWatchId=navigator.geolocation.watchPosition(
+    pos=>{
+      _applyPos(pos.coords.latitude,pos.coords.longitude);
+      // Setelah dapat fix, stop watch dan jadwalkan refresh 60 detik lagi
+      if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
+      setTimeout(_updateLocBadgeGPS,60000);
+    },
+    ()=>{
+      // Error → badge tetap "Mendeteksi", retry 20 detik kemudian
+      if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
+      setTimeout(_updateLocBadgeGPS,20000);
+    },
+    {enableHighAccuracy:false,timeout:15000,maximumAge:30000}
+  );
 }
 loadJamAbsen(); // load jam absen dari server/localStorage
 loadTodayHistory();

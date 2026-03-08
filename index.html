@@ -3190,140 +3190,16 @@ function getLC(j){
 }
 function renderLog(logs){
   const el=$('logList');
-  if(!logs?.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Belum ada data</div><div class="empty-sub">Data muncul setelah Anda absen</div></div>`;
-    return;
-  }
-
-  // ── Kelompokkan semua entri per tanggal ──
-  const byDate={};
-  logs.forEach(r=>{
-    const tgl=getField(r,'Tanggal','tanggal')||'?';
-    if(!byDate[tgl])byDate[tgl]=[];
-    byDate[tgl].push(r);
-  });
-
-  // Urutkan tanggal terbaru di atas
-  const sortedDates=Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
-
-  // ── Helper: menit dari string jam ──
-  const toMenitLog=s=>{
-    if(!s||s==='-')return null;
-    const p=s.replace(/\s*WITA\s*/i,'').trim().split(':').map(Number);
-    return isNaN(p[0])?null:p[0]*60+(p[1]||0);
-  };
-
-  el.innerHTML=sortedDates.map(tgl=>{
-    const rows=byDate[tgl];
-
-    // ── Cari entri masuk, pulang, keterangan ──
-    const masukRow  = rows.find(r=>{ const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim(); return j==='MASUK'||j==='DI LUAR JAM MASUK'; });
-    const pulangRow = rows.find(r=>{ const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim(); return j==='PULANG'||j==='DI LUAR JAM PULANG'||j==='PULANG LUAR'; });
-    const ketRows   = rows.filter(r=>{ const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim(); return j==='IZIN'||j==='SAKIT'||j==='TUGAS'||j.startsWith('IZIN')||j.startsWith('SAKIT')||j.startsWith('TUGAS'); });
-
-    // ── Jam aktual ──
-    const jamMasukRaw  = masukRow  ? (getField(masukRow, 'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
-    const jamPulangRaw = pulangRow ? (getField(pulangRow,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
-    const jamMasukDisp  = jamMasukRaw  ? jamMasukRaw.slice(0,5)  : null;
-    const jamPulangDisp = jamPulangRaw ? jamPulangRaw.slice(0,5) : null;
-
-    // ── Hitung terlambat / pulang cepat ──
-    const mMasuk      = toMenitLog(jamMasukRaw);
-    const mPulang     = toMenitLog(jamPulangRaw);
-    const terlambatMnt= (mMasuk!==null  && mMasuk >JAM_MASUK_MENIT)  ? mMasuk -JAM_MASUK_MENIT  : 0;
-    const jenisPulang = pulangRow ? (getField(pulangRow,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim() : '';
-    const isPulangLuar= jenisPulang==='PULANG LUAR';
-    const cepatMnt    = (!isPulangLuar && mPulang!==null && mPulang<JAM_PULANG_MENIT) ? JAM_PULANG_MENIT-mPulang : 0;
-
-    // ── Status keseluruhan hari ──
-    const hasKet  = ketRows.length>0;
-    const hasMasuk= !!masukRow;
-    const isAlpa  = !hasMasuk && !hasKet;
-
-    // Label tanggal
-    let tglLabel=tgl;
-    try{ const d=new Date(tgl+'T00:00:00'); if(!isNaN(d)) tglLabel=d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }catch(_){}
-
-    // ── Warna & status card ──
-    let borderColor,topColor,statusIcon,statusLabel;
-    if(hasKet){
-      const jk=(getField(ketRows[0],'Jenis Absen','jenis','Jenis')||'').toUpperCase();
-      if(jk.startsWith('IZIN'))       {borderColor='rgba(245,158,11,.3)'; topColor='var(--warning)'; statusIcon='🙏'; statusLabel='Izin';}
-      else if(jk.startsWith('SAKIT')) {borderColor='rgba(239,68,68,.25)';  topColor='var(--danger)';  statusIcon='🤒'; statusLabel='Sakit';}
-      else if(jk.startsWith('TUGAS')) {borderColor='rgba(139,92,246,.3)';  topColor='#8b5cf6';         statusIcon='💼'; statusLabel='Tugas/DL';}
-      else                            {borderColor='rgba(201,168,76,.25)'; topColor='var(--gold)';    statusIcon='📋'; statusLabel='Keterangan';}
-    } else if(isAlpa){
-      borderColor='rgba(239,68,68,.2)'; topColor='var(--danger)';  statusIcon='❌'; statusLabel='Tidak Hadir';
-    } else if(terlambatMnt>0){
-      borderColor='rgba(245,158,11,.3)'; topColor='var(--warning)'; statusIcon='⏰'; statusLabel='Terlambat '+terlambatMnt+'m';
-    } else {
-      borderColor='rgba(34,197,94,.2)';  topColor='var(--success)'; statusIcon='✅'; statusLabel='Hadir';
-    }
-
-    // ── Blok keterangan (jika ada) ──
-    const ketBlock = hasKet ? ketRows.map(r=>{
-      const jk=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
-      const kt=(getField(r,'Ket','ket')||'').replace(/\|.*$/,'').trim();
-      let ki='📋',kc='var(--muted)';
-      if(jk.startsWith('IZIN'))       {ki='🙏';kc='var(--warning)';}
-      else if(jk.startsWith('SAKIT')) {ki='🤒';kc='var(--danger)';}
-      else if(jk.startsWith('TUGAS')) {ki='💼';kc='#8b5cf6';}
-      const isPend=jk.includes('PENDING');
-      return `<div style="margin-top:7px;padding:7px 10px;background:${borderColor.replace(/[\d.]+\)$/,'0.07)')};border:1px solid ${borderColor};border-radius:9px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:5px">
-          <span style="font-size:10px;font-weight:800;color:${kc}">${ki} ${jk.replace(' PENDING','')}</span>
-          ${isPend?`<span style="font-size:8px;padding:1px 6px;border-radius:20px;background:rgba(245,158,11,.15);color:var(--warning);font-weight:700">⏳ Menunggu</span>`:''}
-        </div>
-        ${kt?`<div style="font-size:9px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${kt.slice(0,60)}</div>`:''}
-      </div>`;
-    }).join('') : '';
-
-    // ── Warna box masuk ──
-    const masukBoxBg  = !hasMasuk ? 'rgba(255,255,255,.03)' : terlambatMnt>0 ? 'rgba(245,158,11,.07)' : 'rgba(34,197,94,.07)';
-    const masukBoxBdr = !hasMasuk ? 'rgba(255,255,255,.08)' : terlambatMnt>0 ? 'rgba(245,158,11,.25)'  : 'rgba(34,197,94,.2)';
-    const masukJamClr = !hasMasuk ? 'var(--muted)'          : terlambatMnt>0 ? 'var(--warning)'         : 'var(--success)';
-
-    // ── Warna box pulang ──
-    const pulangBoxBg  = !pulangRow ? 'rgba(255,255,255,.03)' : isPulangLuar ? 'rgba(245,158,11,.07)' : cepatMnt>0 ? 'rgba(249,115,22,.07)' : 'rgba(96,165,250,.07)';
-    const pulangBoxBdr = !pulangRow ? 'rgba(255,255,255,.08)' : isPulangLuar ? 'rgba(245,158,11,.2)'  : cepatMnt>0 ? 'rgba(249,115,22,.2)'  : 'rgba(96,165,250,.2)';
-    const pulangJamClr = !pulangRow ? 'var(--muted)'           : isPulangLuar ? '#f59e0b'               : cepatMnt>0 ? '#f97316'               : 'var(--info)';
-
-    // Sub-label pulang
-    let pulangSub='';
-    if(!pulangRow && hasMasuk)  pulangSub=`<div style="font-size:8px;color:var(--warning);margin-top:3px;font-weight:600">⏳ Belum absen pulang</div>`;
-    else if(isPulangLuar)       pulangSub=`<div style="font-size:8px;color:#f59e0b;margin-top:3px;font-weight:600">🏃 Dari lapangan</div>`;
-    else if(cepatMnt>0)         pulangSub=`<div style="font-size:8px;color:#f97316;margin-top:3px;font-weight:600">-${cepatMnt}m lebih cepat</div>`;
-    else if(jamPulangDisp)      pulangSub=`<div style="font-size:8px;color:var(--info);margin-top:3px;font-weight:600">🔵 Tepat</div>`;
-
-    return `<div style="background:var(--card-bg);border:1px solid ${borderColor};border-radius:13px;padding:11px 13px;position:relative;overflow:hidden">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${topColor}"></div>
-
-      <!-- Header tanggal + badge status -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-        <div style="font-size:11px;font-weight:800;color:var(--white)">📅 ${tglLabel}</div>
-        <div style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;background:${borderColor.replace(/[\d.]+\)$/,'0.15)')};font-size:9px;font-weight:800;color:${topColor};border:1px solid ${borderColor}">${statusIcon} ${statusLabel}</div>
-      </div>
-
-      <!-- Grid jam masuk / pulang -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px${hasKet&&!hasMasuk?';opacity:.45':''}">
-        <!-- Masuk -->
-        <div style="background:${masukBoxBg};border:1px solid ${masukBoxBdr};border-radius:9px;padding:8px 10px">
-          <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">🟢 Masuk</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:${jamMasukDisp?'18px':'13px'};font-weight:800;color:${masukJamClr};line-height:1">${jamMasukDisp||'—:—'}</div>
-          ${terlambatMnt>0
-            ? `<div style="font-size:8px;color:var(--warning);margin-top:3px;font-weight:600">⏰ +${terlambatMnt}m terlambat</div>`
-            : jamMasukDisp ? `<div style="font-size:8px;color:var(--success);margin-top:3px;font-weight:600">✅ Tepat waktu</div>` : ''}
-        </div>
-        <!-- Pulang -->
-        <div style="background:${pulangBoxBg};border:1px solid ${pulangBoxBdr};border-radius:9px;padding:8px 10px">
-          <div style="font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">🔵 Pulang</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:${jamPulangDisp?'18px':'13px'};font-weight:800;color:${pulangJamClr};line-height:1">${jamPulangDisp||'—:—'}</div>
-          ${pulangSub}
-        </div>
-      </div>
-
-      ${ketBlock}
-    </div>`;
+  if(!logs?.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Belum ada data</div><div class="empty-sub">Data muncul setelah Anda absen</div></div>`;return;}
+  el.innerHTML=logs.map(r=>{
+    const jenis = getField(r,'Jenis Absen','jenis','Jenis');
+    const {cls,icon,lbl}=getLC(jenis);
+    const tgl   = getField(r,'Tanggal','tanggal') || '—';
+    const jam   = getField(r,'Jam','jam') || '—';
+    const lokasi= getField(r,'Lokasi','lokasi') || '—';
+    const ket   = getField(r,'Ket','ket') || '';
+    const ketDisplay = ket && ket!=='-' ? `<div class="log-ket">📝 ${ket.length>40?ket.slice(0,40)+'…':ket}</div>` : `<div class="log-ket">📍 ${lokasi}</div>`;
+    return`<div class="log-item ${cls}"><div class="log-icon-wrap">${icon}</div><div class="log-info"><div class="log-jenis">${lbl}</div><div class="log-tanggal">📅 ${tgl}</div>${ketDisplay}</div><div class="log-jam">${jam}</div></div>`;
   }).join('');
 }
 function updateLogStats(l){
@@ -3338,24 +3214,17 @@ function updateLogStats(l){
   $('stTugas').textContent     = c('TUGAS')  || '0';
 }
 function filterLog(f,el){
-  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  if(f==='SEMUA'){ renderLog(allLogs); return; }
-  // Kumpulkan tanggal yang ada entri cocok, lalu tampilkan seluruh baris hari itu
-  const matchDates=new Set();
-  allLogs.forEach(r=>{
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');
+  renderLog(f==='SEMUA'?allLogs:allLogs.filter(r=>{
     const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
-    let match=false;
-    if(f==='MASUK')            match=j==='MASUK'||j==='DI LUAR JAM MASUK';
-    else if(f==='PULANG')      match=j==='PULANG'||j==='DI LUAR JAM PULANG';
-    else if(f==='IZIN')        match=j==='IZIN'||j.startsWith('IZIN');
-    else if(f==='SAKIT')       match=j==='SAKIT'||j.startsWith('SAKIT');
-    else if(f==='TUGAS')       match=j==='TUGAS'||j.startsWith('TUGAS');
-    else if(f==='PULANG LUAR') match=j==='PULANG LUAR';
-    else                       match=j.includes(f);
-    if(match) matchDates.add(getField(r,'Tanggal','tanggal'));
-  });
-  renderLog(allLogs.filter(r=>matchDates.has(getField(r,'Tanggal','tanggal'))));
+    if(f==='MASUK')       return j==='MASUK' || j==='DI LUAR JAM MASUK';
+    if(f==='PULANG')      return j==='PULANG' || j==='DI LUAR JAM PULANG';
+    if(f==='IZIN')        return j==='IZIN';
+    if(f==='SAKIT')       return j==='SAKIT';
+    if(f==='TUGAS')       return j==='TUGAS';
+    if(f==='PULANG LUAR') return j==='PULANG LUAR';
+    return j.includes(f);
+  }));
 }
 
 /* ════ REKAP ════ */
@@ -4008,14 +3877,17 @@ async function downloadRekap() {
     const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
 
     const dataExcelRow = isHarian ? {
-      'No'        : i + 1,
-      'Nama'      : p.nama    || '—',
-      'NIP'       : p.nip     || '—',
-      'Jabatan'   : p.jabatan || '—',
-      'Jam Masuk' : jamMasuk  !== '-' ? jamMasuk  : '—',
-      'Jam Pulang': jamPulang !== '-' ? jamPulang : '—',
-      'Status'    : statusKehadiran,
-      'Catatan'   : catatanStr || '—'
+      'No'         : i + 1,
+      'Nama'       : p.nama    || '—',
+      'NIP'        : p.nip     || '—',
+      'Jabatan'    : p.jabatan || '—',
+      'Jam Masuk'  : jamMasuk  !== '-' ? jamMasuk.replace(/\s*WITA\s*/i,'').trim().slice(0,5)  : '—',
+      'Jam Pulang' : jamPulang !== '-' ? jamPulang.replace(/\s*WITA\s*/i,'').trim().slice(0,5) : '—',
+      'Keterangan' : izin>0    ? 'Izin'
+                   : sakit>0   ? 'Sakit'
+                   : tugas>0   ? 'Tugas/DL'
+                   : (masuk+luarMasuk)===0 ? 'Tidak Hadir'
+                   : ([terlambatStr, cepatStr].filter(Boolean).join(', ') || 'Hadir')
     } : {
       'No'              : i + 1,
       'Nama'            : p.nama    || '—',

@@ -55,6 +55,8 @@
     .clock-time span{color:var(--gold)}
     .clock-date{font-size:11px;color:var(--muted);margin-top:3px}
     .clock-badge{display:inline-flex;align-items:center;gap:5px;background:var(--gold-dim);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;color:var(--gold);margin-top:6px}
+    .clock-loc-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:2px 9px;font-size:9px;font-weight:600;color:#4ade80;margin-top:4px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .clock-loc-badge.unknown{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:var(--muted)}
     /* ── Mini weather inside clock-card ── */
     .clock-weather{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:0 0 38%;padding:14px 12px;background:transparent;border-left:none;transition:opacity .3s;align-self:stretch}
     .clock-weather-icon{font-size:36px;line-height:1;text-align:center}
@@ -647,6 +649,7 @@
         <div class="clock-time" id="clockTime">--<span>:</span>--<span>:</span>--</div>
         <div class="clock-date" id="clockDate">Memuat...</div>
         <div class="clock-badge"><div class="dot"></div><span id="jenisAbsen">Menghitung...</span></div>
+        <div class="clock-loc-badge unknown" id="clockLocBadge">📍 Mendeteksi lokasi...</div>
       </div>
       <!-- Kanan: cuaca mini -->
       <div class="clock-weather" id="clockWeatherWidget">
@@ -1698,6 +1701,16 @@ function showGPS(lat,lon,acc,lokasi){
   $('gpsLat').textContent=lat.toFixed(6);$('gpsLon').textContent=lon.toFixed(6);
   $('gpsAcc').textContent=`${Math.round(acc)} meter`;
   $('gpsLokasi').textContent=lokasi||'Mendeteksi...';
+  const clb=$('clockLocBadge');
+  if(clb){
+    if(lokasi){
+      clb.textContent='📍 '+lokasi;
+      clb.className='clock-loc-badge';
+    } else {
+      clb.textContent='📍 Mendeteksi lokasi...';
+      clb.className='clock-loc-badge unknown';
+    }
+  }
   $('gpsTanggal').textContent=n.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
   $('gpsJam').textContent=`${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
   const pct=Math.max(5,Math.min(100,100-(acc/5)));
@@ -2744,7 +2757,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const ket=d?.validasi?.keterangan||d?.message||'Data absen diterima';
         const lokNm=d?.validasi?.nama_lokasi||d?.lokasi||null;
         const ok=d?.validasi?.is_valid!==false;
-        if(lokNm)$('gpsLokasi').textContent=lokNm;
+        if(lokNm){$('gpsLokasi').textContent=lokNm;const clb=$('clockLocBadge');if(clb){clb.textContent='📍 '+lokNm;clb.className='clock-loc-badge';}}
 
         // Info foto di pesan sukses
         const fotoKet = camResult?.faceOk

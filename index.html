@@ -3310,23 +3310,13 @@ async function loadRekap(){
       // Fallback (selalu dipakai untuk harian, fallback untuk range jika n8n gagal)
       let allRowsRaw = [], periodRowsRaw = [];
       try {
-        // Kirim parameter dari/sampai agar n8n hanya return data yang dibutuhkan
-        // (lebih efisien dari fetch semua lalu filter di browser)
-        const resAll = await apiFetch(`${P.log}?dari=${dari}&sampai=${sampai}`, {method:'GET'});
-        if (resAll.ok) {
-          const j = await resAll.json();
-          periodRowsRaw = parseRows(j);
-        }
+        const resAll = await apiFetch(`${P.log}`, {method:'GET'});
+        if (resAll.ok) allRowsRaw = parseRows(await resAll.json());
       } catch(_) {}
-      // allRowsRaw untuk all-time stat: fetch tanpa filter (hanya jika dibutuhkan untuk range)
-      if (!isHarianLoad && periodRowsRaw.length > 0) {
-        try {
-          const resA = await apiFetch(`${P.log}`, {method:'GET'});
-          if (resA.ok) allRowsRaw = parseRows(await resA.json());
-        } catch(_) { allRowsRaw = periodRowsRaw; }
-      } else {
-        allRowsRaw = periodRowsRaw; // harian: allRows = periodRows (tidak perlu all-time extra)
-      }
+      periodRowsRaw = allRowsRaw.filter(r => {
+        const t = getField(r,'Tanggal','tanggal');
+        return t && t >= dari && t <= sampai;
+      });
       const _order = await orderPromise;
       const computed = computeRekap(periodRowsRaw, allRowsRaw, _order);
       pegawai   = computed.pegawai;
@@ -3443,16 +3433,15 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     if(curNama.length>map[id].nama.length) map[id].nama=curNama;
     if(nip&&map[id].nip==='—') map[id].nip=nip;
     const jam=toMenit(jamStr);
-    const jamBersih = jamStr.replace(/\s*WITA\s*/i,'').trim().replace(/^(\d{1,2}:\d{2}):\d{2}$/, '$1');
-    if     (jenis==='MASUK')             { map[id].masuk++; if(jamBersih) map[id].jamMasuk=jamBersih; }
-    else if(jenis==='DI LUAR JAM MASUK') { map[id].di_luar_masuk++; if(jamBersih) map[id].jamMasuk=jamBersih;
+    if     (jenis==='MASUK')             { map[id].masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
+    else if(jenis==='DI LUAR JAM MASUK') { map[id].di_luar_masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim();
       if(jam!==null&&jam>getMasukBatas(id)) map[id].menit_terlambat+=(jam-getMasukBatas(id));
     }
-    else if(jenis==='PULANG')            { map[id].pulang++; if(jamBersih) map[id].jamPulang=jamBersih; }
-    else if(jenis==='DI LUAR JAM PULANG'){ map[id].di_luar_pulang++; if(jamBersih) map[id].jamPulang=jamBersih;
+    else if(jenis==='PULANG')            { map[id].pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
+    else if(jenis==='DI LUAR JAM PULANG'){ map[id].di_luar_pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim();
       if(jam!==null&&jam<getPulangBatas(id)) map[id].menit_lebih_awal+=(getPulangBatas(id)-jam);
     }
-    else if(jenis==='PULANG LUAR')       { map[id].pulang_luar++; if(jamBersih) map[id].jamPulang=jamBersih; }
+    else if(jenis==='PULANG LUAR')       { map[id].pulang_luar++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis.includes('LUAR'))      { map[id].di_luar_masuk++; }
     else if(jenis==='IZIN')              { map[id].izin++; }
     else if(jenis==='SAKIT')             { map[id].sakit++; }
@@ -3636,8 +3625,8 @@ function renderRekap(pg){
     // ── Jam Aktual (mode harian) ──
     let jamAktualBlock = '';
     if (isHarian) {
-      const jamMasukAktual  = ((p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'').replace(/^(\d{1,2}:\d{2}):\d{2}$/, '$1') || null;
-      const jamPulangAktual = ((p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'').replace(/^(\d{1,2}:\d{2}):\d{2}$/, '$1') || null;
+      const jamMasukAktual  = ((p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
+      const jamPulangAktual = ((p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
 
       // Tentukan warna jam masuk
       const toMenitLocal = s => { if(!s||s==='-')return null; const[h,m]=(s.split(':').map(Number)); return isNaN(h)?null:h*60+(m||0); };

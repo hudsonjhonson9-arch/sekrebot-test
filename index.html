@@ -47,13 +47,21 @@
     .panel.active{display:block}
 
     /* Clock */
-    .clock-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+    .clock-card{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:10px;backdrop-filter:blur(12px);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:10px}
     .clock-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+    .clock-left{flex:1;min-width:0}
     .clock-label{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-bottom:3px}
     .clock-time{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;color:var(--white);letter-spacing:-1px;line-height:1}
     .clock-time span{color:var(--gold)}
     .clock-date{font-size:11px;color:var(--muted);margin-top:3px}
     .clock-badge{display:inline-flex;align-items:center;gap:5px;background:var(--gold-dim);border:1px solid var(--border);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:600;color:var(--gold);margin-top:6px}
+    /* ── Mini weather inside clock-card ── */
+    .clock-weather{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;transition:opacity .3s}
+    .clock-weather-icon{font-size:26px;line-height:1;text-align:right}
+    .clock-weather-temp{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:800;color:#93c5fd;text-align:right}
+    .clock-weather-cond{font-size:9px;color:rgba(255,255,255,.65);text-align:right;max-width:80px;line-height:1.3}
+    .clock-weather-tags{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin-top:1px}
+    .clock-weather-tag{font-size:8px;color:var(--muted);background:rgba(255,255,255,.05);border-radius:4px;padding:1px 5px;white-space:nowrap}
     .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 1.5s ease infinite}
     @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
 
@@ -438,11 +446,29 @@
 
     /* ── Libur Admin ── */
     .libur-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
-    .libur-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+    .libur-item{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.18);border-radius:10px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:background .15s}
+    .libur-item:hover{background:rgba(239,68,68,.09)}
+    .libur-item-left{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
     .libur-item-tgl{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--gold)}
-    .libur-item-nama{font-size:10px;color:var(--white);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:6px}
-    .libur-del-btn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);border-radius:6px;padding:2px 7px;font-size:10px;cursor:pointer}
+    .libur-item-day{font-size:9px;color:var(--muted);font-weight:600}
+    .libur-item-nama{font-size:10px;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .libur-del-btn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;flex-shrink:0;transition:background .15s}
+    .libur-del-btn:hover{background:rgba(239,68,68,.25)}
     .libur-badge{display:inline-block;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);border-radius:8px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:5px}
+    .libur-month-header{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:800;color:var(--muted);margin:10px 0 5px;padding:4px 8px;background:rgba(255,255,255,.04);border-radius:7px}
+    .libur-nasional-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;margin-bottom:8px;background:rgba(201,168,76,.07);border:1px dashed rgba(201,168,76,.35);border-radius:10px;color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
+    .libur-nasional-btn:hover{background:rgba(201,168,76,.13)}
+    .libur-range-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    /* ── Weather Card ── */
+    .weather-card{background:linear-gradient(135deg,rgba(15,40,90,.9),rgba(20,60,110,.7));border:1px solid rgba(96,165,250,.25);border-radius:14px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:opacity .3s}
+    .weather-icon{font-size:28px;flex-shrink:0;line-height:1}
+    .weather-body{flex:1;min-width:0}
+    .weather-main{display:flex;align-items:baseline;gap:6px}
+    .weather-temp{font-size:20px;font-weight:800;color:#93c5fd;font-family:'JetBrains Mono',monospace}
+    .weather-cond{font-size:11px;color:var(--white);font-weight:600}
+    .weather-meta{display:flex;gap:10px;margin-top:3px;flex-wrap:wrap}
+    .weather-tag{font-size:9px;color:var(--muted);background:rgba(255,255,255,.06);border-radius:5px;padding:1px 6px}
+    .weather-loc{font-size:9px;color:rgba(96,165,250,.7);margin-top:2px}
     /* ── Jam pegawai di rekap ── */
     .jam-pegawai-row{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
     .jam-pgw-item{font-size:9px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:2px 7px;font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:700}
@@ -616,11 +642,25 @@
 
   <!-- ══ TAB ABSEN ══ -->
   <div class="panel active" id="panel-absen">
-    <div class="clock-card">
-      <div class="clock-label">Waktu Indonesia Tengah (WITA)</div>
-      <div class="clock-time" id="clockTime">--<span>:</span>--<span>:</span>--</div>
-      <div class="clock-date" id="clockDate">Memuat...</div>
-      <div class="clock-badge"><div class="dot"></div><span id="jenisAbsen">Menghitung...</span></div>
+    <div class="clock-card" id="weatherCard" style="opacity:1">
+      <!-- Kiri: jam & status -->
+      <div class="clock-left">
+        <div class="clock-label">Waktu Indonesia Tengah (WITA)</div>
+        <div class="clock-time" id="clockTime">--<span>:</span>--<span>:</span>--</div>
+        <div class="clock-date" id="clockDate">Memuat...</div>
+        <div class="clock-badge"><div class="dot"></div><span id="jenisAbsen">Menghitung...</span></div>
+      </div>
+      <!-- Kanan: cuaca mini -->
+      <div class="clock-weather" id="clockWeatherWidget">
+        <div class="clock-weather-icon" id="weatherIcon">🌤️</div>
+        <div class="clock-weather-temp" id="weatherTemp">—°C</div>
+        <div class="clock-weather-cond" id="weatherCond">Memuat...</div>
+        <div class="clock-weather-tags">
+          <span class="clock-weather-tag" id="weatherHumid">💧 —%</span>
+          <span class="clock-weather-tag" id="weatherWind">💨 — km/h</span>
+          <span class="clock-weather-tag" id="weatherFeel">🌡️ Terasa —°C</span>
+        </div>
+      </div>
     </div>
     <div class="info-grid">
       <div class="info-card">
@@ -1149,22 +1189,38 @@
         <span>🏖️ Hari Libur Nasional / Cuti Bersama</span>
         <button class="btn-sm-admin" onclick="loadLiburAdmin()">🔄</button>
       </div>
-      <div class="radius-note">Tanggal libur tidak dihitung sebagai hari kerja dalam rekap. Rekap otomatis menyesuaikan.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="radius-note">Tanggal libur tidak dihitung sebagai hari kerja dalam rekap. Pilih rentang tanggal untuk libur multi-hari.</div>
+
+      <!-- Input rentang tanggal -->
+      <div class="libur-range-row">
         <div>
-          <label class="form-label">📅 Tanggal Libur</label>
-          <input type="date" class="form-input" id="inputTglLibur"/>
+          <label class="form-label">📅 Tanggal Mulai</label>
+          <input type="date" class="form-input" id="inputTglLiburMulai"/>
         </div>
         <div>
-          <label class="form-label">📝 Nama/Keterangan</label>
-          <input type="text" class="form-input" id="inputNamaLibur" placeholder="cth: Idul Fitri"/>
+          <label class="form-label">📅 Tanggal Selesai</label>
+          <input type="date" class="form-input" id="inputTglLiburSelesai"/>
         </div>
       </div>
-      <button class="btn-admin" id="btnTambahLibur" onclick="handleTambahLibur()" style="margin-bottom:10px">
+      <div style="margin-bottom:10px">
+        <label class="form-label">📝 Nama / Keterangan</label>
+        <input type="text" class="form-input" id="inputNamaLibur" placeholder="cth: Idul Fitri 1447H, Cuti Bersama..."/>
+      </div>
+      <div id="liburDurasiInfo" style="font-size:10px;color:var(--muted);margin-bottom:8px;display:none">
+        📆 <span id="liburDurasiTeks">—</span>
+      </div>
+      <button class="btn-admin" id="btnTambahLibur" onclick="handleTambahLibur()" style="margin-bottom:8px">
         <div class="btn-inner"><span>➕</span><span id="btnLiburText">Tambah Hari Libur</span></div>
       </button>
+
+      <!-- Tombol isi libur nasional -->
+      <button class="libur-nasional-btn" onclick="handleIsiLiburNasional()" id="btnIsiNasional">
+        🇮🇩 Isi Libur Nasional Indonesia 2026 (otomatis)
+      </button>
+
       <div class="card-title" style="margin-top:4px;margin-bottom:8px;font-size:11px">
         <span>Daftar Hari Libur Tersimpan</span>
+        <span id="liburTotalBadge" style="display:none" class="libur-badge">0</span>
       </div>
       <div id="liburAdminList">
         <div class="shimmer" style="height:38px;border-radius:10px"></div>
@@ -1255,8 +1311,6 @@ const P = {
   liburList  : isTest ? '/webhook-test/libur-list'      : '/webhook/libur-list',
   liburAdd   : isTest ? '/webhook-test/libur-add'       : '/webhook/libur-add',
   liburDel   : isTest ? '/webhook-test/libur-delete'    : '/webhook/libur-delete',
-  faceRegister: isTest ? '/webhook-test/face-register'  : '/webhook/face-register',
-  faceGet     : isTest ? '/webhook-test/face-get'        : '/webhook/face-get',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1403,8 +1457,6 @@ function applyProfile(){
   if(pb){pb.textContent=`${stEmoji} ${st}`;pb.className=`profil-badge ${stCls==='s-aktif'?'aktif-badge':stCls==='s-nonaktif'?'nonaktif-badge':'ket-status-badge'}`;}
   renderReminders(p);
   updateProfilFaceUI();
-  // Sinkronisasi wajah dari server jika localStorage kosong
-  loadFaceFromServer();
 }
 function setUserFallback(){
   const n=fullName(),i=(n[0]||'?').toUpperCase();
@@ -1883,7 +1935,7 @@ function buildLivenessStepsUI(challenges) {
   wrap.innerHTML = step0 + stepCh;
 }
 
-// ── Face Recognition helpers (localStorage + server sync) ──
+// ── Face Recognition helpers (localStorage-based) ──
 const FACE_STORE_KEY = 'face_ref_bapperida';
 
 function getFaceRef() {
@@ -1901,45 +1953,10 @@ function saveFaceRef(dataUrl) {
     const raw = localStorage.getItem(FACE_STORE_KEY);
     const data = raw ? JSON.parse(raw) : {};
     const hist = buildColorHistogram(dataUrl);
-    const entry = { dataUrl, histogram: hist, savedAt: new Date().toISOString() };
-    data[String(MY_ID||'')] = entry;
+    data[String(MY_ID||'')] = { dataUrl, histogram: hist, savedAt: new Date().toISOString() };
     localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
-    // Simpan histogram ke server (async, tidak blokir UI)
-    _syncFaceToServer(hist, entry.savedAt);
     return true;
   } catch(_) { return false; }
-}
-
-// Kirim histogram ke n8n → disimpan di kolom face_histogram user_list
-async function _syncFaceToServer(histogram, savedAt) {
-  if (!MY_ID || !histogram) return;
-  try {
-    await apiFetch(P.faceRegister, {
-      method: 'POST',
-      body: JSON.stringify({ user_id: MY_ID, histogram, saved_at: savedAt })
-    });
-  } catch(_) { /* silent — localStorage sudah tersimpan */ }
-}
-
-// Load histogram dari server jika localStorage kosong (misal: ganti HP)
-async function loadFaceFromServer() {
-  if (!MY_ID) return;
-  if (getFaceRef()) return; // sudah ada di localStorage, skip
-  try {
-    const res = await apiFetch(`${P.faceGet}?user_id=${MY_ID}`, { method: 'GET' });
-    if (!res.ok) return;
-    const d = await res.json();
-    const hist = d.histogram || d.face_histogram;
-    const savedAt = d.saved_at || d.savedAt || null;
-    if (!hist || !Array.isArray(hist) || !hist.length) return;
-    // Simpan ke localStorage tanpa dataUrl (thumbnail tidak tampil tapi matching jalan)
-    const raw = localStorage.getItem(FACE_STORE_KEY);
-    const data = raw ? JSON.parse(raw) : {};
-    data[String(MY_ID)] = { dataUrl: null, histogram: hist, savedAt, fromServer: true };
-    localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
-    updateFaceRegUI();
-    updateProfilFaceUI();
-  } catch(_) {}
 }
 
 function buildColorHistogram(dataUrl, bins=32) {
@@ -2010,18 +2027,12 @@ function compareFacePixel(dataUrl1, dataUrl2) {
 async function matchFace(capturedDataUrl) {
   const ref = getFaceRef();
   if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip' };
+  // Kombinasi histogram + pixel similarity
   const hist1 = ref.histogram || buildColorHistogram(ref.dataUrl);
   const hist2 = buildColorHistogram(capturedDataUrl);
   const histScore = compareFaceHistogram(hist1, hist2);
-  let score;
-  if (ref.dataUrl) {
-    // Ada foto lokal: kombinasi histogram (40%) + pixel (60%)
-    const pixScore = await compareFacePixel(ref.dataUrl, capturedDataUrl);
-    score = Math.round(histScore * 0.4 + pixScore * 0.6);
-  } else {
-    // Hanya histogram dari server: gunakan histogram saja
-    score = Math.round(histScore * 0.85);
-  }
+  const pixScore  = await compareFacePixel(ref.dataUrl, capturedDataUrl);
+  const score = Math.round(histScore * 0.4 + pixScore * 0.6);
   if (score >= 72) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok' };
   if (score >= 55) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn' };
   return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn' };
@@ -2034,13 +2045,14 @@ function updateFaceRegUI() {
   const status = $('faceRegStatus'), sub = $('faceRegSub');
   const btn = $('btnRegisterFace');
   if (ref) {
-    if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; if (thumbEmpty) thumbEmpty.style.display = 'none'; }
-    else { thumb.style.display = 'none'; if (thumbEmpty) thumbEmpty.style.display = 'flex'; }
+    thumb.src = ref.dataUrl;
+    thumb.style.display = 'block';
+    if (thumbEmpty) thumbEmpty.style.display = 'none';
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     status.textContent = '✅ Data Wajah Tersimpan';
     status.style.color = 'var(--success)';
-    sub.textContent = ref.fromServer ? `Dari server · ${tgl} · Perbarui untuk simpan foto` : `Didaftarkan: ${tgl}`;
+    sub.textContent = `Didaftarkan: ${tgl}`;
     btn.textContent = '🔄 Perbarui';
   } else {
     thumb.style.display = 'none';
@@ -2074,17 +2086,13 @@ function updateProfilFaceUI() {
   const btn    = $('btnProfilRegFace');
   if (!status) return;
   if (ref) {
-    if (thumb) {
-      if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
-      else { thumb.style.display = 'none'; }
-    }
-    if (empty) empty.style.display = ref.dataUrl ? 'none' : 'flex';
+    if (thumb) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
+    if (empty) empty.style.display = 'none';
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     status.textContent = '✅ Data Wajah Tersimpan';
     status.style.color = 'var(--success)';
-    const src = ref.fromServer ? ' · Dimuat dari server' : ' · Aktif untuk pengenalan absen';
-    if (sub) sub.textContent = `Didaftarkan: ${tgl}${src}`;
+    if (sub) sub.textContent = `Didaftarkan: ${tgl} · Aktif untuk pengenalan absen`;
     if (btn) btn.textContent = '🔄 Perbarui';
   } else {
     if (thumb) thumb.style.display = 'none';
@@ -4027,46 +4035,134 @@ async function fetchJamPegawai(){
   }catch(_){}
 }
 
-// Admin: tambah hari libur
+// Durasi preview saat range berubah
+function updateLiburDurasi(){
+  const mulai=$('inputTglLiburMulai').value, selesai=$('inputTglLiburSelesai').value;
+  const info=$('liburDurasiInfo'), teks=$('liburDurasiTeks');
+  if(!mulai){if(info)info.style.display='none';return;}
+  if(!selesai||selesai<mulai){
+    if($('inputTglLiburSelesai')) $('inputTglLiburSelesai').value=mulai;
+    if(info)info.style.display='none'; return;
+  }
+  const d1=new Date(mulai), d2=new Date(selesai);
+  const days=Math.round((d2-d1)/(864e5))+1;
+  if(info){info.style.display='block';}
+  if(teks){teks.textContent=days===1?`1 hari (${mulai})`:`${days} hari (${mulai} s.d. ${selesai})`;}
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const m=$('inputTglLiburMulai'),s=$('inputTglLiburSelesai');
+  if(m)m.addEventListener('change',updateLiburDurasi);
+  if(s)s.addEventListener('change',updateLiburDurasi);
+});
+
+// Admin: tambah hari libur (support range multi-hari)
 async function handleTambahLibur(){
-  const tgl=$('inputTglLibur').value, nama=$('inputNamaLibur').value.trim();
-  if(!tgl){showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','warning','⚠️','Pilih Tanggal','Tanggal libur wajib dipilih.');$('liburResult').style.display='flex';return;}
-  setBtnL('btnTambahLibur',true,'Menyimpan...');
-  try{
-    const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
-    let d={};try{d=await res.json()}catch(_){}
-    if(d.ok!==false){
-      showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','✅','Berhasil',`${tgl} — ${nama||'Hari Libur'} ditambahkan.`);
-      $('liburResult').style.display='flex';
-      $('inputTglLibur').value=''; $('inputNamaLibur').value='';
-      hariLiburSet.add(tgl); liburLoaded=true;
-      loadLiburAdmin();
-    } else {
-      showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','fail','❌','Gagal',d.message||'Terjadi kesalahan.');
-      $('liburResult').style.display='flex';
-    }
-  }catch{showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','fail','🔌','Offline','Server tidak merespons.');$('liburResult').style.display='flex';}
+  const mulai=$('inputTglLiburMulai').value;
+  let selesai=$('inputTglLiburSelesai').value||mulai;
+  const nama=$('inputNamaLibur').value.trim();
+  if(!mulai){showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','warning','⚠️','Pilih Tanggal','Tanggal mulai libur wajib dipilih.');$('liburResult').style.display='flex';return;}
+  if(selesai<mulai) selesai=mulai;
+  // Hitung semua tanggal dalam range
+  const dates=[];
+  const cur=new Date(mulai);
+  const end=new Date(selesai);
+  while(cur<=end){
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate()+1);
+  }
+  setBtnL('btnTambahLibur',true,`Menyimpan ${dates.length} hari...`);
+  $('liburResult').style.display='none';
+  let ok=0,fail=0;
+  for(const tgl of dates){
+    try{
+      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+      let d={};try{d=await res.json()}catch(_){}
+      if(d.ok!==false){ok++;hariLiburSet.add(tgl);}else fail++;
+    }catch{fail++;}
+  }
+  if(ok>0){
+    const msg=dates.length>1?`${ok} tanggal berhasil ditambahkan${fail?`, ${fail} gagal`:''}.`:`${mulai} — ${nama||'Hari Libur'} ditambahkan.`;
+    showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','✅','Berhasil',msg);
+    $('inputTglLiburMulai').value='';$('inputTglLiburSelesai').value='';$('inputNamaLibur').value='';
+    if($('liburDurasiInfo'))$('liburDurasiInfo').style.display='none';
+    liburLoaded=true;loadLiburAdmin();
+  } else {
+    showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','fail','❌','Gagal','Semua tanggal gagal disimpan. Coba lagi.');
+  }
+  $('liburResult').style.display='flex';
   setBtnL('btnTambahLibur',false,'➕ Tambah Hari Libur');
 }
 
-// Admin: load daftar libur
+// Data libur nasional Indonesia 2026
+const LIBUR_NASIONAL_2026=[
+  {tanggal:'2026-01-01',nama:'Tahun Baru Masehi'},
+  {tanggal:'2026-01-27',nama:'Isra Mikraj Nabi Muhammad SAW'},
+  {tanggal:'2026-02-17',nama:'Tahun Baru Imlek 2577'},
+  {tanggal:'2026-03-20',nama:'Cuti Bersama Idul Fitri 1447 H'},
+  {tanggal:'2026-03-21',nama:'Hari Raya Idul Fitri 1447 H (1 Syawal)'},
+  {tanggal:'2026-03-22',nama:'Hari Raya Idul Fitri 1447 H (2 Syawal)'},
+  {tanggal:'2026-03-23',nama:'Cuti Bersama Idul Fitri 1447 H'},
+  {tanggal:'2026-03-24',nama:'Cuti Bersama Idul Fitri 1447 H'},
+  {tanggal:'2026-03-29',nama:'Hari Raya Nyepi (Tahun Baru Saka 1948)'},
+  {tanggal:'2026-04-03',nama:'Wafat Isa Al Masih'},
+  {tanggal:'2026-05-01',nama:'Hari Buruh Internasional'},
+  {tanggal:'2026-05-14',nama:'Kenaikan Isa Al Masih'},
+  {tanggal:'2026-05-23',nama:'Hari Waisak 2570 BE'},
+  {tanggal:'2026-05-27',nama:'Hari Raya Idul Adha 1447 H'},
+  {tanggal:'2026-05-28',nama:'Cuti Bersama Idul Adha 1447 H'},
+  {tanggal:'2026-06-01',nama:'Hari Lahir Pancasila'},
+  {tanggal:'2026-06-17',nama:'Tahun Baru Islam 1448 H'},
+  {tanggal:'2026-08-17',nama:'Hari Kemerdekaan Republik Indonesia'},
+  {tanggal:'2026-08-26',nama:'Maulid Nabi Muhammad SAW'},
+  {tanggal:'2026-12-25',nama:'Hari Raya Natal'},
+  {tanggal:'2026-12-26',nama:'Cuti Bersama Natal'}
+];
+
+// Admin: isi libur nasional 2026 sekaligus
+async function handleIsiLiburNasional(){
+  const sudah=Array.from(hariLiburSet);
+  const baru=LIBUR_NASIONAL_2026.filter(l=>!sudah.includes(l.tanggal));
+  if(!baru.length){showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','✅','Sudah Lengkap','Semua libur nasional 2026 sudah terdaftar.');$('liburResult').style.display='flex';return;}
+  if(!confirm(`Akan menambahkan ${baru.length} hari libur nasional 2026. Lanjutkan?`)) return;
+  const btn=$('btnIsiNasional');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
+  let ok=0;
+  for(const item of baru){
+    try{
+      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:item.tanggal,nama:item.nama,ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+      let d={};try{d=await res.json()}catch(_){}
+      if(d.ok!==false){ok++;hariLiburSet.add(item.tanggal);}
+    }catch(_){}
+  }
+  showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','🇮🇩','Selesai',`${ok} dari ${baru.length} libur nasional 2026 berhasil ditambahkan.`);
+  $('liburResult').style.display='flex';
+  liburLoaded=true;
+  loadLiburAdmin();
+  if(btn){btn.disabled=false;btn.textContent='🇮🇩 Isi Libur Nasional Indonesia 2026 (otomatis)';}
+}
+
+// Admin: load daftar libur — tampilan lebih baik
 async function loadLiburAdmin(){
   const el=$('liburAdminList');
   if(!el) return;
-  el.innerHTML='<div class="shimmer" style="height:38px;border-radius:10px"></div>';
+  el.innerHTML='<div class="shimmer" style="height:38px;border-radius:10px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>';
   try{
     const res=await apiFetch(P.liburList,{method:'GET'});
     if(!res.ok) throw 0;
     const d=await res.json();
-    const rows=(d.data||d.rows||[]).sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
-    // Update global set
+    const rows=(d.data||d.rows||[])
+      .filter(r=>String(r.tanggal||r.Tanggal||'').trim())
+      .sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
     hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
     liburLoaded=true;
+    const badge=$('liburTotalBadge');
+    if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'inline-block':'none';}
     if(!rows.length){
-      el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:12px">Belum ada hari libur tersimpan.</div>';
+      el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Belum ada hari libur tersimpan.<br>Gunakan tombol 🇮🇩 di atas untuk mengisi otomatis.</div>';
       return;
     }
-    // Group by year-month
+    const BULAN=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
     const byMonth={};
     rows.forEach(r=>{
       const tgl=r.tanggal||r.Tanggal||'';
@@ -4076,23 +4172,27 @@ async function loadLiburAdmin(){
     });
     el.innerHTML=Object.entries(byMonth).map(([ym,items])=>{
       const [y,m]=ym.split('-');
-      const BULAN=['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
       const label=`${BULAN[parseInt(m)]} ${y}`;
       const itemsHtml=items.map(r=>{
         const tgl=r.tanggal||r.Tanggal||'';
         const nm=r.nama||r.Nama||'—';
         const rn=r.row_number||r.rowNumber||'';
-        const dayNames=['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
-        const dayName=tgl?dayNames[new Date(tgl).getDay()]:'';
+        const dt=new Date(tgl+'T00:00:00');
+        const hari=HARI[dt.getDay()];
+        const tgl_fmt=tgl.split('-').reverse().join('/');
+        const isWeekend=dt.getDay()===0||dt.getDay()===6;
         return`<div class="libur-item">
-          <span class="libur-item-tgl">${tgl} <span style="color:var(--muted);font-size:9px">(${dayName})</span></span>
-          <span class="libur-item-nama">${nm}</span>
-          <button class="libur-del-btn" onclick="hapusLibur('${tgl}',${rn})">✕</button>
+          <div class="libur-item-left">
+            <span class="libur-item-tgl">${tgl_fmt}</span>
+            <span class="libur-item-day" style="color:${isWeekend?'var(--danger)':'var(--muted)'}">${hari}</span>
+            <span class="libur-item-nama">${nm}</span>
+          </div>
+          <button class="libur-del-btn" onclick="hapusLibur('${tgl}',${rn})" title="Hapus">🗑️</button>
         </div>`;
       }).join('');
-      return`<div style="margin-bottom:10px">
-        <div style="font-size:10px;font-weight:800;color:var(--muted);margin-bottom:5px">${label} <span class="libur-badge">${items.length}</span></div>
-        ${itemsHtml}
+      return`<div style="margin-bottom:12px">
+        <div class="libur-month-header"><span>📅 ${label}</span><span class="libur-badge">${items.length} hari</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px">${itemsHtml}</div>
       </div>`;
     }).join('');
   }catch{
@@ -4549,6 +4649,74 @@ loadLokasiPublik();
 loadJamAbsen(); // load jam absen dari server/localStorage
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
+loadWeather();  // muat cuaca Waikabubak
+
+/* ════ CUACA ════ */
+async function loadWeather(){
+  const card=$('weatherCard');
+  try{
+    // Open-Meteo API — gratis, no key, koordinat Waikabubak Sumba Barat
+    const url='https://api.open-meteo.com/v1/forecast?latitude=-9.6333&longitude=119.3833' +
+              '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m' +
+              '&timezone=Asia%2FMakassar&wind_speed_unit=kmh';
+    const res=await fetch(url);
+    if(!res.ok) throw 0;
+    const d=await res.json();
+    const c=d.current;
+    const code=c.weather_code;
+    const icon=_wxIcon(code), cond=_wxCond(code);
+    const temp=Math.round(c.temperature_2m);
+    const feel=Math.round(c.apparent_temperature);
+    const humid=Math.round(c.relative_humidity_2m);
+    const wind=Math.round(c.wind_speed_10m);
+    const now=new Date();
+    const jam=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} WITA`;
+    if($('weatherIcon'))  $('weatherIcon').textContent=icon;
+    if($('weatherTemp'))  $('weatherTemp').textContent=`${temp}°C`;
+    if($('weatherCond'))  $('weatherCond').textContent=cond;
+    if($('weatherHumid')) $('weatherHumid').textContent=`💧 ${humid}%`;
+    if($('weatherWind'))  $('weatherWind').textContent=`💨 ${wind} km/h`;
+    if($('weatherFeel'))  $('weatherFeel').textContent=`🌡️ Terasa ${feel}°C`;
+    if(card) card.style.opacity='1';
+  }catch(_){
+    // Jangan sembunyikan — tampilkan fallback agar layout tetap utuh
+    if($('weatherCond')) $('weatherCond').textContent='—';
+    if($('weatherTemp')) $('weatherTemp').textContent='—°C';
+    if($('weatherIcon')) $('weatherIcon').textContent='🌤️';
+    if($('weatherHumid')) $('weatherHumid').textContent='💧 —%';
+    if($('weatherWind'))  $('weatherWind').textContent='💨 —';
+    if($('weatherFeel'))  $('weatherFeel').textContent='🌡️ —°C';
+    const card=$('weatherCard');
+    if(card) card.style.opacity='1';
+  }
+}
+function _wxIcon(c){
+  if(c===0)               return'☀️';
+  if(c<=2)                return'🌤️';
+  if(c===3)               return'☁️';
+  if(c<=48)               return'🌫️';
+  if(c<=57)               return'🌦️';
+  if(c<=67)               return'🌧️';
+  if(c<=77)               return'❄️';
+  if(c<=82)               return'🌧️';
+  if(c===95)              return'⛈️';
+  if(c>=96)               return'🌩️';
+  return'🌤️';
+}
+function _wxCond(c){
+  if(c===0)               return'Cerah';
+  if(c===1)               return'Sebagian Cerah';
+  if(c===2)               return'Berawan Sebagian';
+  if(c===3)               return'Mendung';
+  if(c<=48)               return'Berkabut';
+  if(c<=55)               return'Gerimis';
+  if(c<=67)               return'Hujan';
+  if(c<=77)               return'Salju';
+  if(c<=82)               return'Hujan Lebat';
+  if(c===95)              return'Badai Petir';
+  if(c>=96)               return'Petir + Es';
+  return'—';
+}
 </script>
 </body>
 </html>

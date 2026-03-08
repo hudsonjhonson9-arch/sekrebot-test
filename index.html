@@ -3310,13 +3310,23 @@ async function loadRekap(){
       // Fallback (selalu dipakai untuk harian, fallback untuk range jika n8n gagal)
       let allRowsRaw = [], periodRowsRaw = [];
       try {
-        const resAll = await apiFetch(`${P.log}`, {method:'GET'});
-        if (resAll.ok) allRowsRaw = parseRows(await resAll.json());
+        // Kirim parameter dari/sampai agar n8n hanya return data yang dibutuhkan
+        // (lebih efisien dari fetch semua lalu filter di browser)
+        const resAll = await apiFetch(`${P.log}?dari=${dari}&sampai=${sampai}`, {method:'GET'});
+        if (resAll.ok) {
+          const j = await resAll.json();
+          periodRowsRaw = parseRows(j);
+        }
       } catch(_) {}
-      periodRowsRaw = allRowsRaw.filter(r => {
-        const t = getField(r,'Tanggal','tanggal');
-        return t && t >= dari && t <= sampai;
-      });
+      // allRowsRaw untuk all-time stat: fetch tanpa filter (hanya jika dibutuhkan untuk range)
+      if (!isHarianLoad && periodRowsRaw.length > 0) {
+        try {
+          const resA = await apiFetch(`${P.log}`, {method:'GET'});
+          if (resA.ok) allRowsRaw = parseRows(await resA.json());
+        } catch(_) { allRowsRaw = periodRowsRaw; }
+      } else {
+        allRowsRaw = periodRowsRaw; // harian: allRows = periodRows (tidak perlu all-time extra)
+      }
       const _order = await orderPromise;
       const computed = computeRekap(periodRowsRaw, allRowsRaw, _order);
       pegawai   = computed.pegawai;

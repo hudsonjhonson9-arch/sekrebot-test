@@ -511,6 +511,26 @@
     .dokumen-meta{font-size:9px;color:var(--muted);margin-top:1px}
     .dokumen-arrow{color:var(--muted);font-size:13px;flex-shrink:0}
     .dokumen-empty{text-align:center;padding:20px;color:var(--muted);font-size:11px}
+    .dokumen-del{background:none;border:none;color:rgba(239,68,68,.5);font-size:14px;cursor:pointer;padding:4px 6px;border-radius:6px;flex-shrink:0;transition:color .15s}
+    .dokumen-del:active{color:#ef4444}
+    /* Modal tambah dokumen */
+    .dok-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s}
+    .dok-modal{background:#0f172a;border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 32px;width:100%;max-width:480px;animation:slideUp .25s ease}
+    .dok-modal-title{font-size:13px;font-weight:800;color:var(--white);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+    .dok-modal-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px}
+    .dok-field{margin-bottom:10px}
+    .dok-field label{display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+    .dok-input{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--white);font-size:12px;font-family:inherit;box-sizing:border-box;outline:none}
+    .dok-input:focus{border-color:var(--gold)}
+    .dok-select{appearance:none;-webkit-appearance:none}
+    .dok-file-label{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);border-radius:10px;padding:10px 12px;cursor:pointer;font-size:11px;color:var(--muted);transition:border-color .15s}
+    .dok-file-label:active{border-color:var(--gold)}
+    .dok-file-name{font-size:10px;color:#a0e080;margin-top:4px}
+    .dok-tabs{display:flex;gap:6px;margin-bottom:12px}
+    .dok-tab{flex:1;padding:7px;border-radius:9px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s}
+    .dok-tab.active{background:var(--gold-dim);border-color:rgba(201,168,76,.4);color:var(--gold)}
+    .dok-upload-progress{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:8px;overflow:hidden;display:none}
+    .dok-upload-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s}
 
 
     .pegawai-card{background:var(--card-bg);border:1px solid var(--border);border-radius:13px;padding:11px 13px;backdrop-filter:blur(10px);animation:slideUp .25s ease}
@@ -993,7 +1013,77 @@
     <!-- ══ DOKUMEN KEPEGAWAIAN ══ -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div class="profil-section-title" style="margin-bottom:0">📁 Dokumen Kepegawaian</div>
-      <button class="btn-sm-admin" onclick="loadDokumen()">🔄</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm-admin" onclick="openDokumenModal()" title="Tambah dokumen">➕</button>
+        <button class="btn-sm-admin" onclick="loadDokumen()">🔄</button>
+      </div>
+    </div>
+    <!-- Modal tambah dokumen -->
+    <div id="dokModalBackdrop" class="dok-modal-backdrop" style="display:none" onclick="if(event.target===this)closeDokumenModal()">
+      <div class="dok-modal">
+        <div class="dok-modal-title">
+          <span>📎 Tambah Dokumen</span>
+          <button class="dok-modal-close" onclick="closeDokumenModal()">✕</button>
+        </div>
+        <!-- Tab: Upload File vs Paste Link -->
+        <div class="dok-tabs">
+          <button class="dok-tab active" id="dokTabUpload" onclick="switchDokTab('upload')">📤 Upload File</button>
+          <button class="dok-tab" id="dokTabLink" onclick="switchDokTab('link')">🔗 Paste Link Drive</button>
+        </div>
+        <!-- Upload file -->
+        <div id="dokPanelUpload">
+          <div class="dok-field">
+            <label>Nama Dokumen</label>
+            <input class="dok-input" id="dokNama" type="text" placeholder="Contoh: SK Pengangkatan 2023">
+          </div>
+          <div class="dok-field">
+            <label>Jenis</label>
+            <select class="dok-input dok-select" id="dokJenis">
+              <option value="DOKUMEN">📄 Dokumen Umum</option>
+              <option value="SK">📜 SK / Surat Keputusan</option>
+              <option value="IJAZAH">🎓 Ijazah</option>
+              <option value="SERTIFIKAT">🏅 Sertifikat</option>
+              <option value="SKP">📊 SKP</option>
+              <option value="KTP">🪪 KTP</option>
+              <option value="FOTO">🖼️ Foto</option>
+            </select>
+          </div>
+          <div class="dok-field">
+            <label>File (PDF / Gambar, maks 5MB)</label>
+            <label class="dok-file-label" for="dokFileInput">
+              <span>📂</span><span id="dokFileHint">Pilih file...</span>
+            </label>
+            <input type="file" id="dokFileInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="onDokFileChange(event)">
+            <div class="dok-file-name" id="dokFileName" style="display:none"></div>
+          </div>
+          <div class="dok-upload-progress" id="dokProgress"><div class="dok-upload-fill" id="dokProgressFill" style="width:0%"></div></div>
+        </div>
+        <!-- Paste link -->
+        <div id="dokPanelLink" style="display:none">
+          <div class="dok-field">
+            <label>Nama Dokumen</label>
+            <input class="dok-input" id="dokNama2" type="text" placeholder="Contoh: Ijazah S1">
+          </div>
+          <div class="dok-field">
+            <label>Jenis</label>
+            <select class="dok-input dok-select" id="dokJenis2">
+              <option value="DOKUMEN">📄 Dokumen Umum</option>
+              <option value="SK">📜 SK / Surat Keputusan</option>
+              <option value="IJAZAH">🎓 Ijazah</option>
+              <option value="SERTIFIKAT">🏅 Sertifikat</option>
+              <option value="SKP">📊 SKP</option>
+              <option value="KTP">🪪 KTP</option>
+              <option value="FOTO">🖼️ Foto</option>
+            </select>
+          </div>
+          <div class="dok-field">
+            <label>Link Google Drive (bisa dilihat siapa saja)</label>
+            <input class="dok-input" id="dokLink" type="url" placeholder="https://drive.google.com/file/d/...">
+          </div>
+        </div>
+        <button class="btn-admin" id="btnSimpanDok" onclick="submitDokumen()" style="margin-top:10px;padding:11px;font-size:12px">💾 Simpan Dokumen</button>
+        <div id="dokModalMsg" style="font-size:10px;text-align:center;margin-top:8px;display:none"></div>
+      </div>
     </div>
     <div id="dokumenList" class="dokumen-list">
       <div class="shimmer" style="height:44px;border-radius:10px"></div>
@@ -1308,6 +1398,8 @@ const P = {
   liburList  : isTest ? '/webhook-test/libur-list'      : '/webhook/libur-list',
   liburAdd   : isTest ? '/webhook-test/libur-add'       : '/webhook/libur-add',
   liburDel   : isTest ? '/webhook-test/libur-delete'    : '/webhook/libur-delete',
+  dokumenAdd : isTest ? '/webhook-test/dokumen-add'      : '/webhook/dokumen-add',
+  dokumenDel : isTest ? '/webhook-test/dokumen-delete'   : '/webhook/dokumen-delete',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1555,19 +1647,111 @@ async function loadDokumen(){
       const jenis  = (d.jenis||d.kategori||'DEFAULT').toUpperCase();
       const icon   = JENIS_ICON[jenis]||JENIS_ICON['DEFAULT'];
       const tanggal= d.tanggal||d.uploadedAt||'';
-      return`<a class="dokumen-item" href="${link}" target="_blank" rel="noopener">
-        <div class="dokumen-icon">${icon}</div>
-        <div class="dokumen-info">
-          <div class="dokumen-nama">${nama}</div>
-          <div class="dokumen-meta">${jenis}${tanggal?' · '+tanggal:''}</div>
-        </div>
-        <div class="dokumen-arrow">↗</div>
-      </a>`;
+      const id     = d.id||'';
+      const namaEsc= nama.replace(/'/g,"\'");
+      return`<div class="dokumen-item" style="cursor:default">
+        <a href="${link}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;flex:1;text-decoration:none;min-width:0">
+          <div class="dokumen-icon">${icon}</div>
+          <div class="dokumen-info">
+            <div class="dokumen-nama">${nama}</div>
+            <div class="dokumen-meta">${jenis}${tanggal?' · '+tanggal:''}</div>
+          </div>
+          <div class="dokumen-arrow">↗</div>
+        </a>
+        <button class="dokumen-del" onclick="hapusDokumen('${id}','${namaEsc}')" title="Hapus">🗑️</button>
+      </div>`;
     }).join('');
   }catch{
     el.innerHTML=`<div class="dokumen-empty">🔌 Gagal memuat dokumen.<br><span style="font-size:9px">Pastikan webhook dokumen aktif di n8n.</span></div>`;
   }
 }
+/* ════ DOKUMEN — TAMBAH & HAPUS ════ */
+let _dokTab='upload', _dokFile=null;
+
+function openDokumenModal(){
+  $('dokModalBackdrop').style.display='flex';
+  $('dokModalMsg').style.display='none';
+  $('dokNama').value=''; $('dokNama2').value=''; $('dokLink').value='';
+  $('dokFileName').style.display='none'; _dokFile=null;
+  switchDokTab('upload');
+}
+function closeDokumenModal(){$('dokModalBackdrop').style.display='none';}
+function switchDokTab(t){
+  _dokTab=t;
+  $('dokTabUpload').className='dok-tab'+(t==='upload'?' active':'');
+  $('dokTabLink').className='dok-tab'+(t==='link'?' active':'');
+  $('dokPanelUpload').style.display=t==='upload'?'':'none';
+  $('dokPanelLink').style.display=t==='link'?'':'none';
+}
+function onDokFileChange(e){
+  const f=e.target.files[0]; if(!f)return;
+  if(f.size>5*1024*1024){alert('File terlalu besar (maks 5MB)');e.target.value='';return;}
+  _dokFile=f;
+  $('dokFileName').textContent='📎 '+f.name;
+  $('dokFileName').style.display='block';
+  if(!$('dokNama').value) $('dokNama').value=f.name.replace(/\.[^.]+$/,'');
+}
+async function submitDokumen(){
+  const btn=$('btnSimpanDok');
+  const msg=$('dokModalMsg');
+  const showMsg=(t,c)=>{msg.style.display='block';msg.style.color=c||'var(--muted)';msg.textContent=t;};
+  btn.disabled=true; btn.textContent='⏳ Menyimpan...';
+  try{
+    let payload;
+    if(_dokTab==='upload'){
+      const nama=$('dokNama').value.trim();
+      if(!nama){showMsg('⚠️ Nama dokumen wajib diisi','#f59e0b');btn.disabled=false;btn.textContent='💾 Simpan Dokumen';return;}
+      if(!_dokFile){showMsg('⚠️ Pilih file terlebih dahulu','#f59e0b');btn.disabled=false;btn.textContent='💾 Simpan Dokumen';return;}
+      // Show progress bar
+      const prog=$('dokProgress'); prog.style.display='block';
+      $('dokProgressFill').style.width='30%';
+      const b64=await new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(r.result.split(',')[1]);
+        r.onerror=()=>rej();
+        r.readAsDataURL(_dokFile);
+      });
+      $('dokProgressFill').style.width='60%';
+      payload={
+        user_id:MY_ID, nama_dokumen:nama,
+        jenis:$('dokJenis').value,
+        file_base64:b64, file_name:_dokFile.name,
+        mime_type:_dokFile.type,
+        mode:'upload'
+      };
+      $('dokProgressFill').style.width='80%';
+    } else {
+      const nama=$('dokNama2').value.trim();
+      const link=$('dokLink').value.trim();
+      if(!nama||!link){showMsg('⚠️ Nama & link wajib diisi','#f59e0b');btn.disabled=false;btn.textContent='💾 Simpan Dokumen';return;}
+      payload={user_id:MY_ID, nama_dokumen:nama, jenis:$('dokJenis2').value, link, mode:'link'};
+    }
+    const res=await apiFetch(P.dokumenAdd,{method:'POST',body:JSON.stringify(payload)});
+    const d=await res.json();
+    if(d.ok){
+      $('dokProgressFill').style.width='100%';
+      showMsg('✅ Dokumen berhasil disimpan!','#4ade80');
+      dokumenLoaded=false;
+      setTimeout(()=>{closeDokumenModal();loadDokumen();},1200);
+    } else {
+      showMsg('❌ '+(d.message||'Gagal menyimpan'),'#ef4444');
+    }
+  }catch(e){
+    showMsg('❌ Koneksi gagal. Coba lagi.','#ef4444');
+  }
+  btn.disabled=false; btn.textContent='💾 Simpan Dokumen';
+}
+async function hapusDokumen(id,nama){
+  if(!confirm(`Hapus dokumen "${nama}"?
+File di Google Drive juga akan dihapus.`))return;
+  try{
+    const res=await apiFetch(P.dokumenDel,{method:'POST',body:JSON.stringify({user_id:MY_ID,id})});
+    const d=await res.json();
+    if(d.ok){dokumenLoaded=false;loadDokumen();}
+    else alert('❌ '+(d.message||'Gagal menghapus'));
+  }catch{alert('❌ Koneksi gagal');}
+}
+
 function setT(id,v){const e=$(id);if(e)e.textContent=v;}
 loadUserProfile();
 
@@ -4601,10 +4785,44 @@ async function loadLokasiPublik(){
     });
     Object.keys(LOK_DEF).forEach(k=>delete LOK_DEF[k]);
     Object.assign(LOK_DEF,newLOK);
+    // Simpan koordinat untuk passive GPS badge
+    window._lokasiCoords=list.filter(l=>l.latitude&&l.longitude).map(l=>({
+      nama:l.nama_lokasi||l.nama||'Kantor',
+      lat:parseFloat(l.latitude),lon:parseFloat(l.longitude),
+      radius:parseFloat(l.radius)||150
+    }));
     updateClock(); // refresh lokasiList di tab Absen
   }catch(_){}
 }
 loadLokasiPublik();
+// Passive GPS untuk badge lokasi di jam
+(function _passiveLokBadge(){
+  if(!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude:lat,longitude:lon}=pos.coords;
+    // Cari lokasi terdekat dari list yang dimuat
+    if(!window._lokasiCoords||!window._lokasiCoords.length)return;
+    let best=null,bestDist=Infinity;
+    window._lokasiCoords.forEach(l=>{
+      const R=6371000,dLat=(l.lat-lat)*Math.PI/180,dLon=(l.lon-lon)*Math.PI/180;
+      const a=Math.sin(dLat/2)**2+Math.cos(lat*Math.PI/180)*Math.cos(l.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+      const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+      if(dist<bestDist){bestDist=dist;best=l;}
+    });
+    const clb=$('clockLocBadge');
+    if(!clb)return;
+    if(best&&bestDist<=(best.radius||150)){
+      clb.textContent='📍 '+best.nama;
+      clb.className='clock-loc-badge';
+    } else {
+      clb.textContent='📍 Di luar area kantor';
+      clb.className='clock-loc-badge unknown';
+    }
+  },()=>{
+    const clb=$('clockLocBadge');
+    if(clb){clb.textContent='📍 GPS tidak aktif';clb.className='clock-loc-badge unknown';}
+  },{timeout:10000,maximumAge:30000});
+})();
 loadJamAbsen(); // load jam absen dari server/localStorage
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat

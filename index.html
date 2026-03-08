@@ -3625,8 +3625,8 @@ function renderRekap(pg){
     // ── Jam Aktual (mode harian) ──
     let jamAktualBlock = '';
     if (isHarian) {
-      const jamMasukAktual  = (p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim() || null;
-      const jamPulangAktual = (p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim() || null;
+      const jamMasukAktual  = ((p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
+      const jamPulangAktual = ((p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim()).replace(/^-+$/,'') || null;
 
       // Tentukan warna jam masuk
       const toMenitLocal = s => { if(!s||s==='-')return null; const[h,m]=(s.split(':').map(Number)); return isNaN(h)?null:h*60+(m||0); };

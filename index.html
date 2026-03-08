@@ -1227,7 +1227,7 @@ const REKAP_CHAT_ID = ADMIN_IDS[0];
 */
 const WIFI_CHECK_ENABLED = true;           // set false untuk nonaktifkan cek jaringan
 const KANTOR_IPS = [
-  //'103.XXX.XXX.XXX',                       // ← GANTI dengan IP publik WiFi kantor
+  '103.XXX.XXX.XXX',                       // ← GANTI dengan IP publik WiFi kantor
   // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
 ];
 // 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
@@ -3317,7 +3317,8 @@ async function loadRekap(){
         const t = getField(r,'Tanggal','tanggal');
         return t && t >= dari && t <= sampai;
       });
-      const computed = computeRekap(periodRowsRaw, allRowsRaw);
+      const _order = await orderPromise;
+      const computed = computeRekap(periodRowsRaw, allRowsRaw, _order);
       pegawai   = computed.pegawai;
       ringkasan = computed.ringkasan;
     }
@@ -3379,7 +3380,7 @@ function sortByUserList(pegawai, order) {
 }
 
 /* ════ COMPUTE REKAP (fallback) — v2 dengan all-time accumulation ════ */
-function computeRekap(rows, allRowsParam = null) {
+function computeRekap(rows, allRowsParam = null, userSeed = null) {
   // Jam batas GLOBAL (default)
   const JAM_MASUK_BATAS  = JAM_MASUK_MENIT;
   const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
@@ -3395,6 +3396,21 @@ function computeRekap(rows, allRowsParam = null) {
   }
 
   const map={};
+
+  // Pre-populate dari userSeed agar semua pegawai tampil meski tidak absen
+  (userSeed||[]).forEach((u,idx)=>{
+    const id=String(u.id||'').trim();
+    if(!id)return;
+    map[id]={id,
+      nama:u.nama||'—',nip:u.nip||'—',jabatan:u.jabatan||'',urutan:u.urutan??idx,
+      masuk:0,pulang:0,pulang_luar:0,di_luar_masuk:0,di_luar_pulang:0,
+      izin:0,sakit:0,tugas:0,
+      menit_terlambat:0,menit_lebih_awal:0,
+      jamMasuk:'-',jamPulang:'-',
+      all_menit_terlambat:0,all_menit_lebih_awal:0,
+      all_di_luar_masuk:0,all_di_luar_pulang:0,all_masuk:0
+    };
+  });
 
   // Process periode (filtered rows)
   rows.forEach(r=>{

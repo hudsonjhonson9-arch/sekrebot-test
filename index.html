@@ -456,8 +456,6 @@
     .libur-del-btn:hover{background:rgba(239,68,68,.25)}
     .libur-badge{display:inline-block;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);border-radius:8px;padding:1px 7px;font-size:9px;font-weight:800;margin-left:5px}
     .libur-month-header{display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:800;color:var(--muted);margin:10px 0 5px;padding:4px 8px;background:rgba(255,255,255,.04);border-radius:7px}
-    .libur-nasional-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px;margin-bottom:8px;background:rgba(201,168,76,.07);border:1px dashed rgba(201,168,76,.35);border-radius:10px;color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;transition:background .15s}
-    .libur-nasional-btn:hover{background:rgba(201,168,76,.13)}
     .libur-range-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
     /* ── Weather Card ── */
     .weather-card{background:linear-gradient(135deg,rgba(15,40,90,.9),rgba(20,60,110,.7));border:1px solid rgba(96,165,250,.25);border-radius:14px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:opacity .3s}
@@ -1213,10 +1211,6 @@
         <div class="btn-inner"><span>➕</span><span id="btnLiburText">Tambah Hari Libur</span></div>
       </button>
 
-      <!-- Tombol isi libur nasional -->
-      <button class="libur-nasional-btn" onclick="handleIsiLiburNasional()" id="btnIsiNasional">
-        🇮🇩 Isi Libur Nasional Indonesia 2026 (otomatis)
-      </button>
 
       <div class="card-title" style="margin-top:4px;margin-bottom:8px;font-size:11px">
         <span>Daftar Hari Libur Tersimpan</span>
@@ -4093,54 +4087,6 @@ async function handleTambahLibur(){
   setBtnL('btnTambahLibur',false,'➕ Tambah Hari Libur');
 }
 
-// Data libur nasional Indonesia 2026
-const LIBUR_NASIONAL_2026=[
-  {tanggal:'2026-01-01',nama:'Tahun Baru Masehi'},
-  {tanggal:'2026-01-27',nama:'Isra Mikraj Nabi Muhammad SAW'},
-  {tanggal:'2026-02-17',nama:'Tahun Baru Imlek 2577'},
-  {tanggal:'2026-03-20',nama:'Cuti Bersama Idul Fitri 1447 H'},
-  {tanggal:'2026-03-21',nama:'Hari Raya Idul Fitri 1447 H (1 Syawal)'},
-  {tanggal:'2026-03-22',nama:'Hari Raya Idul Fitri 1447 H (2 Syawal)'},
-  {tanggal:'2026-03-23',nama:'Cuti Bersama Idul Fitri 1447 H'},
-  {tanggal:'2026-03-24',nama:'Cuti Bersama Idul Fitri 1447 H'},
-  {tanggal:'2026-03-29',nama:'Hari Raya Nyepi (Tahun Baru Saka 1948)'},
-  {tanggal:'2026-04-03',nama:'Wafat Isa Al Masih'},
-  {tanggal:'2026-05-01',nama:'Hari Buruh Internasional'},
-  {tanggal:'2026-05-14',nama:'Kenaikan Isa Al Masih'},
-  {tanggal:'2026-05-23',nama:'Hari Waisak 2570 BE'},
-  {tanggal:'2026-05-27',nama:'Hari Raya Idul Adha 1447 H'},
-  {tanggal:'2026-05-28',nama:'Cuti Bersama Idul Adha 1447 H'},
-  {tanggal:'2026-06-01',nama:'Hari Lahir Pancasila'},
-  {tanggal:'2026-06-17',nama:'Tahun Baru Islam 1448 H'},
-  {tanggal:'2026-08-17',nama:'Hari Kemerdekaan Republik Indonesia'},
-  {tanggal:'2026-08-26',nama:'Maulid Nabi Muhammad SAW'},
-  {tanggal:'2026-12-25',nama:'Hari Raya Natal'},
-  {tanggal:'2026-12-26',nama:'Cuti Bersama Natal'}
-];
-
-// Admin: isi libur nasional 2026 sekaligus
-async function handleIsiLiburNasional(){
-  const sudah=Array.from(hariLiburSet);
-  const baru=LIBUR_NASIONAL_2026.filter(l=>!sudah.includes(l.tanggal));
-  if(!baru.length){showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','✅','Sudah Lengkap','Semua libur nasional 2026 sudah terdaftar.');$('liburResult').style.display='flex';return;}
-  if(!confirm(`Akan menambahkan ${baru.length} hari libur nasional 2026. Lanjutkan?`)) return;
-  const btn=$('btnIsiNasional');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
-  let ok=0;
-  for(const item of baru){
-    try{
-      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:item.tanggal,nama:item.nama,ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
-      let d={};try{d=await res.json()}catch(_){}
-      if(d.ok!==false){ok++;hariLiburSet.add(item.tanggal);}
-    }catch(_){}
-  }
-  showResult('liburResult','liburRIcon','liburRTitle','liburRMsg','success','🇮🇩','Selesai',`${ok} dari ${baru.length} libur nasional 2026 berhasil ditambahkan.`);
-  $('liburResult').style.display='flex';
-  liburLoaded=true;
-  loadLiburAdmin();
-  if(btn){btn.disabled=false;btn.textContent='🇮🇩 Isi Libur Nasional Indonesia 2026 (otomatis)';}
-}
-
 // Admin: load daftar libur — tampilan lebih baik
 async function loadLiburAdmin(){
   const el=$('liburAdminList');
@@ -4158,7 +4104,7 @@ async function loadLiburAdmin(){
     const badge=$('liburTotalBadge');
     if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'inline-block':'none';}
     if(!rows.length){
-      el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Belum ada hari libur tersimpan.<br>Gunakan tombol 🇮🇩 di atas untuk mengisi otomatis.</div>';
+      el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Belum ada hari libur tersimpan.</div>';
       return;
     }
     const BULAN=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];

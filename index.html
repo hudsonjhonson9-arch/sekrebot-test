@@ -1471,7 +1471,7 @@ function updateClock() {
   const n=nowWITA(), h=n.getDay(), tot=n.getHours()*60+n.getMinutes();
   $('clockTime').innerHTML = `${p2(n.getHours())}<span>:</span>${p2(n.getMinutes())}<span>:</span>${p2(n.getSeconds())}`;
   $('clockDate').textContent = n.toLocaleDateString('id-ID',{timeZone:TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  $('hariIni').textContent = H_DISP[h];
+  const _hEl=$('hariIni'); if(_hEl) _hEl.textContent=H_DISP[h];
   const jmStr=menitToStr(JAM_MASUK_MENIT), jpStr=menitToStr(JAM_PULANG_MENIT);
   let jenis='',batas='';
   if      (tot<=JAM_MASUK_MENIT) {jenis='🟢 Waktu Absen Masuk';     batas=`Masuk ≤ ${jmStr}`}

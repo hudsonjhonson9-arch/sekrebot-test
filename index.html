@@ -119,7 +119,7 @@
     .cam-video-wrap.face-ok{border-color:var(--success);box-shadow:0 0 16px rgba(34,197,94,.3)}
     .cam-video-wrap.face-warn{border-color:var(--warning);box-shadow:0 0 16px rgba(245,158,11,.25)}
     .cam-video-wrap.face-bad{border-color:var(--danger);box-shadow:0 0 16px rgba(239,68,68,.25)}
-    #camVideo{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+    #camVideo{width:100%;height:100%;object-fit:cover;object-position:center top;transform:scaleX(-1)}
     #camCanvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}
 
     /* Face guide oval */
@@ -446,6 +446,20 @@
     /* ── Jam pegawai di rekap ── */
     .jam-pegawai-row{display:flex;gap:6px;align-items:center;margin-top:4px;flex-wrap:wrap}
     .jam-pgw-item{font-size:9px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:7px;padding:2px 7px;font-family:'JetBrains Mono',monospace;color:var(--gold);font-weight:700}
+    .jam-aktual-row{display:flex;gap:8px;align-items:center;margin-top:6px;padding:7px 10px;background:rgba(15,30,60,.5);border-radius:10px;border:1px solid rgba(201,168,76,.15);flex-wrap:wrap}
+    .jam-aktual-item{display:flex;flex-direction:column;gap:1px;min-width:80px}
+    .jam-aktual-label{font-size:8px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+    .jam-aktual-val{font-size:14px;font-family:'JetBrains Mono',monospace;font-weight:800;letter-spacing:.5px}
+    .jam-aktual-val.hadir{color:var(--success)}
+    .jam-aktual-val.terlambat{color:var(--warning)}
+    .jam-aktual-val.cepat{color:#f97316}
+    .jam-aktual-val.alpa{color:var(--muted)}
+    .jam-aktual-divider{width:1px;height:32px;background:rgba(255,255,255,.08);flex-shrink:0}
+    .jam-aktual-status{font-size:9px;padding:2px 8px;border-radius:6px;font-weight:700;margin-left:auto}
+    .jam-aktual-status.hadir{background:rgba(34,197,94,.15);color:var(--success)}
+    .jam-aktual-status.alpa{background:rgba(239,68,68,.12);color:var(--danger)}
+    .jam-aktual-status.izin{background:rgba(139,92,246,.15);color:#a78bfa}
+    .jam-aktual-status.tugas{background:rgba(201,168,76,.15);color:var(--gold)}
     .jam-kerja-bar{height:4px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden}
     .jam-kerja-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--success),var(--gold));transition:width .4s}
     .tg-badge{background:rgba(96,165,250,.12);color:var(--info)}
@@ -1216,7 +1230,9 @@ const KANTOR_IPS = [
   '36.84.229.16',                       // ← GANTI dengan IP publik WiFi kantor
   // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
 ];
-const WIFI_MODE = 'warn';  // 'block' = tolak jika bukan WiFi kantor | 'warn' = boleh tapi ditandai
+// 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
+// 'warn'  = semua jaringan boleh absen, tapi IP dicatat untuk audit
+const WIFI_MODE = 'block';
 
 const P = {
   absen      : isTest ? '/webhook-test/absen'          : '/webhook/absen',
@@ -1224,6 +1240,7 @@ const P = {
   log        : isTest ? '/webhook-test/log-absen'      : '/webhook/log-absen',
   rekap      : isTest ? '/webhook-test/rekap-absen'    : '/webhook/rekap-absen',
   userList   : isTest ? '/webhook-test/user-list'      : '/webhook/user-list',
+  updateStatus: isTest ? '/webhook-test/update-status' : '/webhook/update-status',
   lokasiList : isTest ? '/webhook-test/lokasi-list'    : '/webhook/lokasi-list',
   lokasiAdd  : isTest ? '/webhook-test/lokasi-add'     : '/webhook/lokasi-add',
   lokasiDel  : isTest ? '/webhook-test/lokasi-delete'  : '/webhook/lokasi-delete',
@@ -1556,6 +1573,8 @@ function getTodayBadge(jenis) {
 }
 function renderTodayHistory(rows) {
   const el = $('todayList');
+  // Simpan ke global untuk dipakai cek masuk di pulang luar
+  window._todayRows = rows;
   if (!rows.length) { el.innerHTML = `<div class="today-empty">📭 Belum ada absen hari ini</div>`; return; }
   el.innerHTML = rows.map(r=>{
     const jenis  = getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '';
@@ -1570,7 +1589,51 @@ function renderTodayHistory(rows) {
   }).join('');
 }
 
-/* ════ HELPER ════ */
+/* ════ AUTO UPDATE STATUS AKTIF SAAT ABSEN ════ */
+async function autoUpdateStatusAktif() {
+  // Hanya update jika status pegawai bukan AKTIF
+  const statusSaatIni = (userProfile?.status||'AKTIF').toUpperCase();
+  if (statusSaatIni === 'AKTIF') return; // sudah aktif, skip
+
+  // Cek apakah ada keterangan aktif hari ini (IZIN/SAKIT/TUGAS yang disetujui)
+  // Jika ada, jangan ubah status — hormati keterangan yang disetujui admin
+  const todayStr = fmtD(nowWITA());
+  try {
+    const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
+    if (resKet.ok) {
+      const dKet = await resKet.json();
+      const ketRows = dKet.data || dKet.rows || [];
+      const adaKetAktif = ketRows.some(r => {
+        const st  = (r.status || r.Status || '').toUpperCase();
+        const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
+        const tglS= r.tgl_selesai || r.tanggal || '';
+        // Keterangan DISETUJUI yang mencakup hari ini
+        const disetujui = st === 'DISETUJUI' || st === 'APPROVED';
+        const mencakupHariIni = tgl <= todayStr && todayStr <= tglS;
+        return disetujui && mencakupHariIni;
+      });
+      if (adaKetAktif) {
+        console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
+        return;
+      }
+    }
+  } catch(_) {}
+
+  // Update status ke AKTIF
+  try {
+    await apiFetch(P.updateStatus, {method:'POST', body: JSON.stringify({
+      user_id    : MY_ID,
+      status_baru: 'AKTIF',
+      alasan     : 'Absen masuk otomatis',
+      timestamp  : Math.floor(Date.now()/1000)
+    })});
+    // Update lokal
+    if (userProfile) {
+      userProfile.status = 'AKTIF';
+      applyProfile();
+    }
+  } catch(_) {}
+}
 function setBtnL(id, loading, txt) {
   const b=$(id); b.disabled=loading;
   const map={btnAbsen:'btnText',btnKet:'btnKetText',btnTambahLokasi:'btnAdminText'};
@@ -2039,7 +2102,7 @@ async function openCamOverlay(onDone) {
   // Minta izin kamera & mulai stream
   try {
     _camStream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }, audio:false
+      video:{ facingMode:'user', width:{ideal:480}, height:{ideal:640} }, audio:false
     });
     const vid = $('camVideo');
     vid.srcObject = _camStream;
@@ -2087,12 +2150,11 @@ function closeCamOverlay() {
   stopDetectLoop();
   stopCamStream();
   $('camOverlay').classList.add('hidden');
-  // Batalkan absen jika belum capture
-  if (!_captureData && _absenCallbackAfterCam) {
-    const cb = _absenCallbackAfterCam;
-    if (typeof cb === 'object' && cb.onCancel) cb.onCancel();
-    else if (typeof cb === 'object' && cb?.onCancel) cb.onCancel();
-  }
+  // Reset tombol agar bisa absen lagi jika user batalkan
+  setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+  // Batalkan absen jika belum capture (hanya notif, tidak panggil callback)
+  _absenCallbackAfterCam = null;
+  _captureData = null;
 }
 
 function stopCamStream() {
@@ -2112,6 +2174,16 @@ function startDetectLoop(model) {
 
   let lastDetect = 0;
   const INTERVAL = 120; // ms antar deteksi (≈8 fps untuk hemat baterai)
+
+  // Fallback: setelah 15 detik tombol capture selalu aktif
+  // agar wajah susah terdeteksi (cahaya kurang, posisi dll) tidak memblokir absen
+  setTimeout(() => {
+    if (!$('btnCapture').dataset.enabled) {
+      $('btnCapture').disabled = false;
+      $('btnCapture').dataset.enabled = '1';
+      setCamStatus('warn','📷','Ambil Foto Sekarang','Posisikan wajah di dalam oval, lalu tekan tombol');
+    }
+  }, 15000);
 
   async function loop(ts) {
     _detectLoop = requestAnimationFrame(loop);
@@ -2220,8 +2292,11 @@ function startDetectLoop(model) {
     // ── Deteksi warna baju ──
     detectBajuColor(vid, face, hariIdx);
 
-    // Aktifkan tombol capture jika wajah terdeteksi
-    if (_livenessState.faceOk && !$('btnCapture').dataset.enabled) {
+    // Aktifkan tombol capture:
+    // - Segera saat liveness SELESAI (ch1 + ch2 done) — kondisi normal
+    // - Atau saat wajah terdeteksi minimal saja (faceOk) sebagai fallback
+    const livenessSelesai = _livenessState.ch1 && _livenessState.ch2;
+    if ((livenessSelesai || _livenessState.faceOk) && !$('btnCapture').dataset.enabled) {
       $('btnCapture').disabled = false;
       $('btnCapture').dataset.enabled = '1';
     }
@@ -2348,8 +2423,8 @@ async function doCapture() {
     $('camOverlay').classList.add('hidden');
     const cb = _absenCallbackAfterCam;
     if (cb) {
-      if (typeof cb === 'function') cb(_captureData);
-      else if (typeof cb === 'object' && cb.onDone) cb.onDone(_captureData);
+    if (typeof cb === 'function') cb(_captureData);
+    else if (cb && typeof cb === 'object' && typeof cb.onDone === 'function') cb.onDone(_captureData);
     }
   }, 1000);
 }
@@ -2392,7 +2467,7 @@ async function handleAbsen() {
   const isTgX = !initData && MY_ID && userProfile;
   if (!initData && !isTgX) {
     showResult('resultCard','rIcon','rTitle','rMsg','warning','⚠️','Buka via Telegram','Aplikasi harus dibuka melalui Telegram, bukan browser biasa.');
-    setBtnL('btnAbsen',false,'📍 Kirim Lokasi & Absen'); return;
+    setBtnL('btnAbsen',false,'Kirim Lokasi & Absen'); return;
   }
 
   // ── Cek jaringan WiFi ──
@@ -2400,7 +2475,9 @@ async function handleAbsen() {
   await cekJaringan();
 
   // Blokir jika mode 'block' dan bukan jaringan kantor
-  if (WIFI_CHECK_ENABLED && WIFI_MODE === 'block' && networkInfo.checked && networkInfo.is_kantor === false) {
+  // Hanya aktif jika IP kantor sudah dikonfigurasi (bukan placeholder)
+  const _ipSudahDiisi = KANTOR_IPS.length > 0 && !KANTOR_IPS[0].includes('XXX');
+  if (WIFI_CHECK_ENABLED && WIFI_MODE === 'block' && _ipSudahDiisi && networkInfo.checked && networkInfo.is_kantor === false) {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','🚫','Jaringan Tidak Diizinkan',
       `Absensi hanya bisa dilakukan dari jaringan WiFi kantor.\nIP Anda saat ini: ${networkInfo.ip_public || 'tidak diketahui'}\n\nSambungkan HP ke WiFi BAPPERIDA dan coba lagi.`);
     setBtnL('btnAbsen',false,'🔄 Coba Lagi'); return;
@@ -2414,7 +2491,7 @@ async function handleAbsen() {
   });
 
   // Kembalikan tombol ke normal (modal kamera yang handle sekarang)
-  setBtnL('btnAbsen',false,'📍 Kirim Lokasi & Absen');
+  setBtnL('btnAbsen',false,'Kirim Lokasi & Absen');
 }
 
 /* ── Proses GPS + Kirim payload absen (dipanggil setelah kamera) ── */
@@ -2432,17 +2509,21 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _gpsElapsed = Date.now() - _gpsT0;
       // GPS Fingerprint — data tambahan untuk deteksi fake GPS di server
       const gps_fingerprint = {
-        has_altitude    : _coords.altitude     !== null && _coords.altitude     !== undefined,
-        has_altitude_acc: _coords.altitudeAccuracy !== null && _coords.altitudeAccuracy !== undefined,
-        has_heading     : _coords.heading      !== null && _coords.heading      !== undefined,
-        has_speed       : _coords.speed        !== null && _coords.speed        !== undefined,
-        altitude        : _coords.altitude     ?? null,
-        altitude_acc    : _coords.altitudeAccuracy ?? null,
+        has_altitude    : _coords.altitude          !== null && _coords.altitude          !== undefined,
+        has_altitude_acc: _coords.altitudeAccuracy  !== null && _coords.altitudeAccuracy  !== undefined,
+        has_heading     : _coords.heading           !== null && _coords.heading           !== undefined,
+        has_speed       : _coords.speed             !== null && _coords.speed             !== undefined,
+        altitude        : _coords.altitude          ?? null,
+        altitude_acc    : _coords.altitudeAccuracy  ?? null,
+        speed           : _coords.speed             ?? null,
+        heading         : _coords.heading           ?? null,
+        gps_timestamp   : position.timestamp        ?? null,
+        system_timestamp: Date.now(),
         elapsed_ms      : _gpsElapsed
       };
 
       /* ══════════════════════════════════════════════════════
-         MULTI-LAYER FAKE GPS DETECTION
+         MULTI-LAYER FAKE GPS DETECTION v2
          Skor 0–100: ≥50 → tolak, 30–49 → suspicious/warning
          ══════════════════════════════════════════════════════ */
       const _ua     = navigator.userAgent;
@@ -2484,6 +2565,72 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _lonStr  = String(longitude);
       const _latDec  = (_latStr.split('.')[1]||'').length;
       if (_latDec >= 7 && (_latStr.endsWith('00') || _lonStr.endsWith('00'))) { _score += 10; _flags.push('COORD_TRAILING_ZEROS'); }
+
+      // ── Layer 6: Altitude check ───────────────────────────
+      // Fake GPS sering tidak mensimulasikan altitude secara natural
+      const _alt    = _coords.altitude;
+      const _altAcc = _coords.altitudeAccuracy;
+      const _hasAlt = _alt !== null && _alt !== undefined;
+      if (!_hasAlt) {
+        // Tidak ada altitude = indikasi mock (GPS asli Android hampir selalu ada altitude)
+        _score += 12; _flags.push('NO_ALTITUDE');
+      } else {
+        // Altitude bulat sempurna (tepat 0, 10, 100, dll) = mock tidak randomize
+        if (Number.isInteger(_alt) && Math.abs(_alt % 10) === 0) {
+          _score += 8; _flags.push('ALTITUDE_ROUNDED_' + _alt + 'm');
+        }
+        // Ada altitude tapi tidak ada altitudeAccuracy = ganjil
+        if (_altAcc === null || _altAcc === undefined) {
+          _score += 6; _flags.push('ALT_NO_ACCURACY');
+        }
+      }
+
+      // ── Layer 7: Speed anomaly ────────────────────────────
+      const _speed    = _coords.speed;
+      const _hasSpeed = _speed !== null && _speed !== undefined;
+      // Kecepatan tepat 0.0 (bukan null) saat pertama acquire = mock menetapkan 0
+      if (_hasSpeed && _speed === 0 && _gpsElapsed < 500) {
+        _score += 5; _flags.push('SPEED_EXACTLY_ZERO_INSTANT');
+      }
+      // Kecepatan > 100 km/h (28 m/s) saat absen = tidak wajar
+      if (_hasSpeed && _speed > 28) {
+        _score += 20; _flags.push('SPEED_TOO_HIGH_' + Math.round(_speed * 3.6) + 'kmh');
+      }
+
+      // ── Layer 8: GPS Timestamp vs system time ─────────────
+      // Lokasi palsu dari mock app sering punya timestamp tidak sync dengan jam sistem
+      const _gpsTsAge = Date.now() - position.timestamp;
+      if (_gpsTsAge < 0) {
+        // Timestamp dari masa depan = jelas tidak valid
+        _score += 30; _flags.push('GPS_TIMESTAMP_FUTURE');
+      } else if (_gpsTsAge > 30000) {
+        // Timestamp lokasi > 30 detik dari sekarang = lokasi basi/stale
+        _score += 15; _flags.push('GPS_TIMESTAMP_STALE_' + Math.round(_gpsTsAge/1000) + 's');
+      }
+
+      // ── Layer 9: Konstansi accuracy lintas sesi ───────────
+      // Fake GPS sering memberikan nilai accuracy yang sama persis setiap kali
+      try {
+        const _accHist = JSON.parse(sessionStorage.getItem('_gps_acc_hist')||'[]');
+        _accHist.push({ acc: accuracy, ts: Date.now() });
+        if (_accHist.length > 5) _accHist.shift();
+        sessionStorage.setItem('_gps_acc_hist', JSON.stringify(_accHist));
+        if (_accHist.length >= 3) {
+          const _allSame = _accHist.every(h => h.acc === accuracy);
+          const _allInt  = _accHist.every(h => Number.isInteger(h.acc));
+          if (_allSame && _allInt) {
+            _score += 12; _flags.push('ACCURACY_CONSTANT_' + accuracy + 'm_x' + _accHist.length);
+          }
+        }
+      } catch(_) {}
+
+      // ── Layer 10: Heading check ───────────────────────────
+      // Fake GPS jarang mengisi heading secara natural
+      const _heading    = _coords.heading;
+      const _hasHeading = _heading !== null && _heading !== undefined;
+      if (_hasHeading && (isNaN(_heading) || _heading < 0 || _heading > 360)) {
+        _score += 15; _flags.push('HEADING_INVALID_' + _heading);
+      }
 
       // ── Evaluasi skor ─────────────────────────────────────
       const _isFake       = _score >= 50;
@@ -2561,6 +2708,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           setBtnL('btnAbsen',false,'✅ Absen Tercatat');
           $('btnAbsen').disabled=true;
           logLoaded=false;
+          autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
           setTimeout(loadTodayHistory, 2000);
           if(tg)setTimeout(()=>tg.close(),3500);
         } else {
@@ -2606,7 +2754,18 @@ async function handlePulangLuar() {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','GPS Tidak Tersedia','Buka di Telegram versi terbaru.');
     return;
   }
-  // Disable tombol & tampilkan loading
+
+  // ── Cek: pegawai harus sudah absen masuk hari ini ──
+  const _todayRows = window._todayRows || [];
+  const _sudahMasuk = _todayRows.some(r => {
+    const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    return j === 'MASUK' || j === 'DI LUAR JAM MASUK';
+  });
+  if (!_sudahMasuk) {
+    showResult('resultCard','rIcon','rTitle','rMsg','fail','⚠️','Belum Absen Masuk',
+      'Anda harus absen masuk terlebih dahulu sebelum absen pulang dari lapangan.');
+    return;
+  }
   $('btnPulangLuar').disabled = true;
   const tSpan = $('btnPulangLuarText');
   if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengambil GPS...';
@@ -2652,6 +2811,7 @@ async function handlePulangLuar() {
           $('pulangLuarForm').classList.remove('show');
           $('btnPulangLuar').classList.remove('show');
           logLoaded = false;
+          autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
           setTimeout(loadTodayHistory, 2000);
           if (tg) setTimeout(() => tg.close(), 3500);
         } else {
@@ -3348,6 +3508,11 @@ function renderRekap(pg){
     el.innerHTML=`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">Belum ada data pegawai</div><div class="empty-sub">Coba pilih rentang tanggal lain</div></div>`;
     return;
   }
+  // Deteksi mode harian dari input tanggal
+  const _dari   = $('rekapDari')?.value   || '';
+  const _sampai = $('rekapSampai')?.value || '';
+  const isHarian = _dari && _sampai && _dari === _sampai;
+
   el.innerHTML=pg.map((p,idx)=>{
     const nama         = p.nama       || '—';
     const nip          = p.nip        || '—';
@@ -3436,6 +3601,49 @@ function renderRekap(pg){
         <span class="akk-badge akk-total">Σ Total: ${allTotalHHMM}</span>
       </div>` : '';
 
+    // ── Jam Aktual (mode harian) ──
+    let jamAktualBlock = '';
+    if (isHarian) {
+      const jamMasukAktual  = (p.jamMasuk  || '').replace(/\s*WITA\s*/i,'').trim() || null;
+      const jamPulangAktual = (p.jamPulang || '').replace(/\s*WITA\s*/i,'').trim() || null;
+
+      // Tentukan warna jam masuk
+      const toMenitLocal = s => { if(!s||s==='-')return null; const[h,m]=(s.split(':').map(Number)); return isNaN(h)?null:h*60+(m||0); };
+      const mMasukBatas  = toMenitLocal(jamMasukBatas);
+      const mPulangBatas = toMenitLocal(jamPulangBatas);
+      const mMasukAktual = toMenitLocal(jamMasukAktual);
+      const mPulangAktual= toMenitLocal(jamPulangAktual);
+      const masukLambat  = mMasukAktual  !== null && mMasukBatas  !== null && mMasukAktual  > mMasukBatas;
+      const pulangCepat_ = mPulangAktual !== null && mPulangBatas !== null && mPulangAktual < mPulangBatas;
+
+      const clsMasuk  = jamMasukAktual  ? (masukLambat  ? 'terlambat' : 'hadir') : 'alpa';
+      const clsPulang = jamPulangAktual ? (pulangCepat_ ? 'cepat'     : 'hadir') : 'alpa';
+
+      // Status kehadiran
+      const statusHarian = izin>0?'izin':sakit>0?'izin':tugas>0?'tugas':(masuk+luarMasuk)===0&&!jamMasukAktual?'alpa':'hadir';
+      const statusLabel  = izin>0?'Izin':sakit>0?'Sakit':tugas>0?'DL/Tugas':(masuk+luarMasuk)===0&&!jamMasukAktual?'Alpa':'Hadir';
+
+      // Catatan terlambat/cepat
+      const catatanParts = [];
+      if (masukLambat  && mMasukAktual  !== null) catatanParts.push(`⏰ Terlambat ${mMasukAktual - mMasukBatas}m`);
+      if (pulangCepat_ && mPulangAktual !== null) catatanParts.push(`🏃 Pulang cepat ${mPulangBatas - mPulangAktual}m`);
+      const catatanStr = catatanParts.join(' · ');
+
+      jamAktualBlock = `<div class="jam-aktual-row">
+        <div class="jam-aktual-item">
+          <span class="jam-aktual-label">🟢 Jam Masuk</span>
+          <span class="jam-aktual-val ${clsMasuk}">${jamMasukAktual || '—'}</span>
+        </div>
+        <div class="jam-aktual-divider"></div>
+        <div class="jam-aktual-item">
+          <span class="jam-aktual-label">🔵 Jam Pulang</span>
+          <span class="jam-aktual-val ${clsPulang}">${jamPulangAktual || '—'}</span>
+        </div>
+        ${catatanStr ? `<div class="jam-aktual-divider"></div><div style="flex:1;font-size:9px;color:var(--warning);font-weight:600">${catatanStr}</div>` : ''}
+        <span class="jam-aktual-status ${statusHarian}">${statusLabel}</span>
+      </div>`;
+    }
+
     return`<div class="pegawai-card">
       <div class="pegawai-top">
         <div class="pegawai-avatar">${idx+1}</div>
@@ -3446,7 +3654,7 @@ function renderRekap(pg){
         </div>
         ${disiplinBlock}
       </div>
-      <div class="pegawai-bar">
+      ${isHarian ? jamAktualBlock : `<div class="pegawai-bar">
         ${masuk      >0?`<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>`:''}
         ${pulang     >0?`<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>`:''}
         ${pulangLuar >0?`<span class="pbar-item pb-pulang-luar">🏃 Pulang Lapangan: ${pulangLuar}</span>`:''}
@@ -3454,9 +3662,9 @@ function renderRekap(pg){
         ${izin   >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
         ${sakit  >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
         ${tugas  >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
-      </div>
-      ${disiplinBar}
-      ${allTimeBlock}
+      </div>`}
+      ${isHarian ? '' : disiplinBar}
+      ${isHarian ? '' : allTimeBlock}
       ${jamBatasStr}
     </div>`;
   }).join('');
@@ -3550,15 +3758,28 @@ async function downloadRekap() {
     const jh  = parseFloat(p.jamHadir || 0);
     const jth = parseFloat(p.jamTdkHadir ?? Math.max(0, jamKerjaWajibTotal - jh).toFixed(1));
 
+    // Status keterlambatan / pulang cepat (harian)
+    const terlambatMenit = mLambat;
+    const cepatMenit     = mCepat;
+    const terlambatStr   = terlambatMenit > 0 ? `Terlambat ${terlambatMenit} menit` : '';
+    const cepatStr       = cepatMenit     > 0 ? `Pulang cepat ${cepatMenit} menit`  : '';
+    const statusKehadiran = izin>0 ? 'Izin'
+                          : sakit>0 ? 'Sakit'
+                          : tugas>0 ? 'Tugas/DL'
+                          : (masuk+luarMasuk)===0 ? 'Alpa'
+                          : 'Hadir';
+    const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
+    const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
+
     const dataExcelRow = isHarian ? {
-      'Nama'        : p.nama    || '—',
-      'NIP'         : p.nip     || '—',
-      'Jabatan'     : p.jabatan || '—',
-      'Jam Masuk'   : jamMasukBatasStr + ' (batas)',
-      'Jam Pulang'  : jamPulangBatasStr + ' (batas)',
-      'Masuk'       : jamMasuk,
-      'Pulang'      : jamPulang,
-      'Keterangan'  : ket
+      'No'        : i + 1,
+      'Nama'      : p.nama    || '—',
+      'NIP'       : p.nip     || '—',
+      'Jabatan'   : p.jabatan || '—',
+      'Jam Masuk' : jamMasuk  !== '-' ? jamMasuk  : '—',
+      'Jam Pulang': jamPulang !== '-' ? jamPulang : '—',
+      'Status'    : statusKehadiran,
+      'Catatan'   : catatanStr || '—'
     } : {
       'No'              : i + 1,
       'Nama'            : p.nama    || '—',
@@ -3591,6 +3812,10 @@ async function downloadRekap() {
   const payload = {
     dari,
     sampai,
+    is_harian  : isHarian,
+    tanggal_label: isHarian
+      ? new Date(dari).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+      : `${dari} s.d. ${sampai}`,
     chat_id : String(REKAP_CHAT_ID || MY_ID || ''),
     pegawai : pegawaiPayload
   };

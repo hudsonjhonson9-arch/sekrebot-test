@@ -1255,6 +1255,8 @@ const P = {
   liburList  : isTest ? '/webhook-test/libur-list'      : '/webhook/libur-list',
   liburAdd   : isTest ? '/webhook-test/libur-add'       : '/webhook/libur-add',
   liburDel   : isTest ? '/webhook-test/libur-delete'    : '/webhook/libur-delete',
+  faceRegister: isTest ? '/webhook-test/face-register'  : '/webhook/face-register',
+  faceGet     : isTest ? '/webhook-test/face-get'        : '/webhook/face-get',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1401,6 +1403,8 @@ function applyProfile(){
   if(pb){pb.textContent=`${stEmoji} ${st}`;pb.className=`profil-badge ${stCls==='s-aktif'?'aktif-badge':stCls==='s-nonaktif'?'nonaktif-badge':'ket-status-badge'}`;}
   renderReminders(p);
   updateProfilFaceUI();
+  // Sinkronisasi wajah dari server jika localStorage kosong
+  loadFaceFromServer();
 }
 function setUserFallback(){
   const n=fullName(),i=(n[0]||'?').toUpperCase();
@@ -1879,7 +1883,7 @@ function buildLivenessStepsUI(challenges) {
   wrap.innerHTML = step0 + stepCh;
 }
 
-// ── Face Recognition helpers (localStorage-based) ──
+// ── Face Recognition helpers (localStorage + server sync) ──
 const FACE_STORE_KEY = 'face_ref_bapperida';
 
 function getFaceRef() {
@@ -1897,10 +1901,45 @@ function saveFaceRef(dataUrl) {
     const raw = localStorage.getItem(FACE_STORE_KEY);
     const data = raw ? JSON.parse(raw) : {};
     const hist = buildColorHistogram(dataUrl);
-    data[String(MY_ID||'')] = { dataUrl, histogram: hist, savedAt: new Date().toISOString() };
+    const entry = { dataUrl, histogram: hist, savedAt: new Date().toISOString() };
+    data[String(MY_ID||'')] = entry;
     localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
+    // Simpan histogram ke server (async, tidak blokir UI)
+    _syncFaceToServer(hist, entry.savedAt);
     return true;
   } catch(_) { return false; }
+}
+
+// Kirim histogram ke n8n → disimpan di kolom face_histogram user_list
+async function _syncFaceToServer(histogram, savedAt) {
+  if (!MY_ID || !histogram) return;
+  try {
+    await apiFetch(P.faceRegister, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: MY_ID, histogram, saved_at: savedAt })
+    });
+  } catch(_) { /* silent — localStorage sudah tersimpan */ }
+}
+
+// Load histogram dari server jika localStorage kosong (misal: ganti HP)
+async function loadFaceFromServer() {
+  if (!MY_ID) return;
+  if (getFaceRef()) return; // sudah ada di localStorage, skip
+  try {
+    const res = await apiFetch(`${P.faceGet}?user_id=${MY_ID}`, { method: 'GET' });
+    if (!res.ok) return;
+    const d = await res.json();
+    const hist = d.histogram || d.face_histogram;
+    const savedAt = d.saved_at || d.savedAt || null;
+    if (!hist || !Array.isArray(hist) || !hist.length) return;
+    // Simpan ke localStorage tanpa dataUrl (thumbnail tidak tampil tapi matching jalan)
+    const raw = localStorage.getItem(FACE_STORE_KEY);
+    const data = raw ? JSON.parse(raw) : {};
+    data[String(MY_ID)] = { dataUrl: null, histogram: hist, savedAt, fromServer: true };
+    localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
+    updateFaceRegUI();
+    updateProfilFaceUI();
+  } catch(_) {}
 }
 
 function buildColorHistogram(dataUrl, bins=32) {
@@ -1971,12 +2010,18 @@ function compareFacePixel(dataUrl1, dataUrl2) {
 async function matchFace(capturedDataUrl) {
   const ref = getFaceRef();
   if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip' };
-  // Kombinasi histogram + pixel similarity
   const hist1 = ref.histogram || buildColorHistogram(ref.dataUrl);
   const hist2 = buildColorHistogram(capturedDataUrl);
   const histScore = compareFaceHistogram(hist1, hist2);
-  const pixScore  = await compareFacePixel(ref.dataUrl, capturedDataUrl);
-  const score = Math.round(histScore * 0.4 + pixScore * 0.6);
+  let score;
+  if (ref.dataUrl) {
+    // Ada foto lokal: kombinasi histogram (40%) + pixel (60%)
+    const pixScore = await compareFacePixel(ref.dataUrl, capturedDataUrl);
+    score = Math.round(histScore * 0.4 + pixScore * 0.6);
+  } else {
+    // Hanya histogram dari server: gunakan histogram saja
+    score = Math.round(histScore * 0.85);
+  }
   if (score >= 72) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok' };
   if (score >= 55) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn' };
   return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn' };
@@ -1989,14 +2034,13 @@ function updateFaceRegUI() {
   const status = $('faceRegStatus'), sub = $('faceRegSub');
   const btn = $('btnRegisterFace');
   if (ref) {
-    thumb.src = ref.dataUrl;
-    thumb.style.display = 'block';
-    if (thumbEmpty) thumbEmpty.style.display = 'none';
+    if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; if (thumbEmpty) thumbEmpty.style.display = 'none'; }
+    else { thumb.style.display = 'none'; if (thumbEmpty) thumbEmpty.style.display = 'flex'; }
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     status.textContent = '✅ Data Wajah Tersimpan';
     status.style.color = 'var(--success)';
-    sub.textContent = `Didaftarkan: ${tgl}`;
+    sub.textContent = ref.fromServer ? `Dari server · ${tgl} · Perbarui untuk simpan foto` : `Didaftarkan: ${tgl}`;
     btn.textContent = '🔄 Perbarui';
   } else {
     thumb.style.display = 'none';
@@ -2030,13 +2074,17 @@ function updateProfilFaceUI() {
   const btn    = $('btnProfilRegFace');
   if (!status) return;
   if (ref) {
-    if (thumb) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
-    if (empty) empty.style.display = 'none';
+    if (thumb) {
+      if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
+      else { thumb.style.display = 'none'; }
+    }
+    if (empty) empty.style.display = ref.dataUrl ? 'none' : 'flex';
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     status.textContent = '✅ Data Wajah Tersimpan';
     status.style.color = 'var(--success)';
-    if (sub) sub.textContent = `Didaftarkan: ${tgl} · Aktif untuk pengenalan absen`;
+    const src = ref.fromServer ? ' · Dimuat dari server' : ' · Aktif untuk pengenalan absen';
+    if (sub) sub.textContent = `Didaftarkan: ${tgl}${src}`;
     if (btn) btn.textContent = '🔄 Perbarui';
   } else {
     if (thumb) thumb.style.display = 'none';
@@ -2968,28 +3016,20 @@ async function loadKetStatus(){
 
 function renderKetStatusList(rows){
   const el=$('ketStatusList');
-  // Buang baris kosong atau yang tidak punya Jenis Absen valid
-  const VALID_JENIS=['IZIN','SAKIT','TUGAS'];
-  const validRows=(rows||[]).filter(r=>{
-    const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
-    if(!raw) return false;
-    const base=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','').replace(' DISETUJUI','').trim();
-    return VALID_JENIS.includes(base);
-  });
-  if(!validRows.length){
+  if(!rows||rows.length===0){
     el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Belum ada pengajuan keterangan.</div>';
     return;
   }
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
-  el.innerHTML=validRows.slice(0,20).map((r,i)=>{
+  el.innerHTML=rows.slice(0,20).map((r,i)=>{
     const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
     const isPending=raw.includes('PENDING');
     const isApproved=raw==='IZIN'||raw==='SAKIT'||raw==='TUGAS';
-    const isRejected=raw.includes('DITOLAK')||raw.includes('TOLAK')||raw.includes('REJECT');
+    const isRejected=raw.includes('TOLAK')||raw.includes('REJECT');
     const jenisBase=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','');
     const emoji=JENIS_EMOJI[jenisBase]||'📝';
-    const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':isRejected?'ket-badge-rejected':'ket-badge-pending';
-    const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':isRejected?'❌ DITOLAK':'⏳ PENDING';
+    const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':'ket-badge-rejected';
+    const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':'❌ DITOLAK';
     const tgl=r.Tanggal||r.tanggal||'—';
     const ket=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
     const actions=isPending?`<div class="ket-action-row">

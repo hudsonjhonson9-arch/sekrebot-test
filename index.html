@@ -3293,17 +3293,21 @@ async function loadRekap(){
     let pegawai=[], ringkasan={};
     let rekapOK=false;
 
-    try{
-      const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}`,{method:'GET'});
-      if(res.ok){
-        const json=await res.json();
-        const d=Array.isArray(json)?json[0]:json;
-        if(d?.pegawai?.length){ ringkasan=d.ringkasan||{};pegawai=d.pegawai;rekapOK=true; }
-      }
-    }catch(_){}
+    // ── Mode HARIAN: langsung dari log (n8n rekap tidak kirim jam aktual) ──
+    // ── Mode RANGE : pakai n8n rekap (lebih efisien untuk multi-hari) ──
+    if (!isHarianLoad) {
+      try{
+        const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}`,{method:'GET'});
+        if(res.ok){
+          const json=await res.json();
+          const d=Array.isArray(json)?json[0]:json;
+          if(d?.pegawai?.length){ ringkasan=d.ringkasan||{};pegawai=d.pegawai;rekapOK=true; }
+        }
+      }catch(_){}
+    }
 
     if(!rekapOK){
-      // Fallback: fetch all logs (no date filter) + period logs
+      // Fallback (selalu dipakai untuk harian, fallback untuk range jika n8n gagal)
       let allRowsRaw = [], periodRowsRaw = [];
       try {
         const resAll = await apiFetch(`${P.log}`, {method:'GET'});
@@ -3316,39 +3320,6 @@ async function loadRekap(){
       const computed = computeRekap(periodRowsRaw, allRowsRaw);
       pegawai   = computed.pegawai;
       ringkasan = computed.ringkasan;
-    }
-
-    // ── Jika harian & data dari n8n: ambil jam aktual dari log ──
-    // n8n hanya kirim agregat (count), bukan jam aktual per record.
-    // Solusi: fetch log hari ini → ekstrak jamMasuk & jamPulang per pegawai.
-    if (rekapOK && isHarianLoad && pegawai.length) {
-      try {
-        const resLog = await apiFetch(`${P.log}?tanggal=${dari}`, {method:'GET'});
-        if (resLog.ok) {
-          const logRows = parseRows(await resLog.json());
-          // Buat map: id → {jamMasuk, jamPulang}
-          const jamMap = {};
-          logRows.forEach(r => {
-            const id    = String(getField(r,'ID','id')||'').trim();
-            const tgl   = getField(r,'Tanggal','tanggal') || '';
-            if (!id || tgl !== dari) return;
-            const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
-            const jam   = (getField(r,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim();
-            if (!jamMap[id]) jamMap[id] = { jamMasuk:'-', jamPulang:'-' };
-            if ((jenis==='MASUK'||jenis==='DI LUAR JAM MASUK') && jam)
-              jamMap[id].jamMasuk = jam;
-            if ((jenis==='PULANG'||jenis==='DI LUAR JAM PULANG'||jenis==='PULANG LUAR') && jam)
-              jamMap[id].jamPulang = jam;
-          });
-          // Merge ke pegawai
-          pegawai = pegawai.map(p => {
-            const key = String(p.id||p.tg_id||'');
-            const jm  = jamMap[key];
-            if (!jm) return p;
-            return { ...p, jamMasuk: jm.jamMasuk, jamPulang: jm.jamPulang };
-          });
-        }
-      } catch(_) {}
     }
 
     $('rsMasuk').textContent      = ringkasan.masuk       ?? 0;

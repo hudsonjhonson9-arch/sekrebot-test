@@ -5280,11 +5280,6 @@ function renderSeragamAdmin() {
     { idx:6, singkat:'Sab', nama:'Sabtu' },
   ];
 
-  // Kumpulkan hari yang aktif per warna seragam
-  function hariUntukSeragam(warna) {
-    return HARI_KERJA.filter(h => JADWAL_SERAGAM[h.idx]?.warna === (warna || null)).map(h => h.idx);
-  }
-
   // Tampilkan seragam bukan libur saja
   const opts = SERAGAM_OPTIONS.filter(o => o.warna !== null);
 
@@ -5302,8 +5297,10 @@ function renderSeragamAdmin() {
   opts.forEach(opt => {
     const aktifHari = HARI_KERJA.filter(h => {
       const w = JADWAL_SERAGAM[h.idx]?.warna;
-      return Array.isArray(w) ? w.includes(opt.warna) : w === opt.warna;
+      const arr = Array.isArray(w) ? w : _parseWarnaArray(w);
+      return arr.includes(opt.warna);
     });
+    const aktifIdxSet = new Set(aktifHari.map(h => h.idx));
     const hslBg = opt.hMin !== null
       ? `linear-gradient(90deg,hsl(${opt.hMin},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 0%,hsl(${Math.round((opt.hMin+opt.hMax)/2)},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 50%,hsl(${opt.hMax},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 100%)`
       : opt.preview;
@@ -5323,8 +5320,8 @@ function renderSeragamAdmin() {
       <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-weight:600">📅 AKTIF PADA HARI:</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
         ${HARI_KERJA.map(h => {
-          const aktif = aktifHari.includes(h.idx);
-          return `<button onclick="toggleSeragamHari(${h.idx},'${opt.warna}')"
+          const aktif = aktifIdxSet.has(h.idx);
+          return `<button type="button" onclick="toggleSeragamHari(${h.idx},'${opt.warna}')"
             style="padding:5px 10px;border-radius:8px;border:1.5px solid ${aktif?'var(--gold)':'rgba(255,255,255,.12)'};background:${aktif?'rgba(201,168,76,.2)':'rgba(255,255,255,.03)'};cursor:pointer;font-size:10px;font-weight:${aktif?'700':'500'};color:${aktif?'var(--gold)':'rgba(255,255,255,.35)'};transition:all .15s;min-width:38px;text-align:center">
             ${h.singkat}
           </button>`;
@@ -5341,19 +5338,16 @@ function toggleSeragamHari(hariIdx, warna) {
   const cur = JADWAL_SERAGAM[hariIdx];
   if (!cur) return;
 
-  // Pastikan selalu array
-  if (!Array.isArray(cur.warna)) cur.warna = _parseWarnaArray(cur.warna);
+  // Selalu normalisasi ke array terlebih dahulu
+  cur.warna = Array.isArray(cur.warna) ? cur.warna : _parseWarnaArray(cur.warna);
 
   const idx = cur.warna.indexOf(warna);
   if (idx >= 0) {
-    // Sudah ada → hapus dari array
     cur.warna.splice(idx, 1);
   } else {
-    // Belum ada → tambahkan
     cur.warna.push(warna);
   }
 
-  // Rebuild label & emoji dari array terbaru
   const built = _buildSeragamLabel(cur.warna);
   cur.label = built.label;
   cur.emoji = built.emoji;

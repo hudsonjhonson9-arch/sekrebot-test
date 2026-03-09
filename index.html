@@ -2077,6 +2077,8 @@ let _camStream    = null;
 let _blazeModel   = null;
 let _modelLoading = false;
 let _detectLoop   = null;
+let _liveMatchTimer = null; // interval untuk live face match di overlay kamera
+let _autoCaptured   = false; // flag agar auto-capture hanya sekali per sesi
 let _faceHistory  = [];   // riwayat posisi hidung untuk deteksi geleng
 let _eyeHistory   = [];   // riwayat eye aspect ratio untuk deteksi kedip
 let _noseYHistory = [];   // riwayat posisi hidung vertikal untuk deteksi angguk
@@ -2340,6 +2342,7 @@ async function openCamOverlay(onDone) {
   _absenCallbackAfterCam = onDone;
   _captureData    = null;
   _skipVerifikasi = false;
+  _autoCaptured   = false;
   _livenessState  = { faceOk:false, ch1:false, ch2:false };
   _faceHistory    = [];
   _eyeHistory     = [];
@@ -2359,6 +2362,7 @@ async function openCamOverlay(onDone) {
   $('faceRegCard').style.display   = 'none';
   $('camPreview').classList.remove('show');
   $('btnCapture').disabled         = true;
+  delete $('btnCapture').dataset.enabled; // reset agar bisa diaktifkan kembali
   setCamStatus('idle','🔍','Memuat model AI...','Harap tunggu sebentar');
 
   // Tampilkan info seragam hari ini
@@ -2431,6 +2435,7 @@ function stopCamStream() {
 
 function stopDetectLoop() {
   if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop=null; }
+  if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer=null; }
 }
 
 /* ── Loop deteksi wajah (rAF) ── */
@@ -2452,6 +2457,41 @@ function startDetectLoop(model) {
       setCamStatus('warn','📷','Ambil Foto Sekarang','Posisikan wajah di dalam oval, lalu tekan tombol');
     }
   }, 15000);
+
+  // ── Live Face Match: tampilkan skor kecocokan histogram setiap 2 detik ──
+  const _ref = getFaceRef();
+  if (_ref) {
+    _liveMatchTimer = setInterval(() => {
+      try {
+        const lVid = $('camVideo');
+        if (!lVid || lVid.readyState < 2) return;
+        const lCnv = document.createElement('canvas');
+        lCnv.width = 64; lCnv.height = 64;
+        const lCtx = lCnv.getContext('2d');
+        lCtx.drawImage(lVid, 0, 0, 64, 64);
+        const lD = lCtx.getImageData(0, 0, 64, 64).data;
+        const bins = 32, step = 256 / bins;
+        const hist2 = new Array(bins).fill(0);
+        for (let i = 0; i < lD.length; i += 4) {
+          const g = Math.round(0.299*lD[i] + 0.587*lD[i+1] + 0.114*lD[i+2]);
+          hist2[Math.min(bins-1, Math.floor(g/step))]++;
+        }
+        const tot = hist2.reduce((a,b)=>a+b,0)||1;
+        const normH = hist2.map(v=>v/tot);
+        const hist1 = _ref.histogram;
+        if (!hist1 || hist1.length !== normH.length) return;
+        let bc = 0;
+        for (let i = 0; i < hist1.length; i++) bc += Math.sqrt(hist1[i] * normH[i]);
+        const score = Math.round(bc * 100);
+        const sub = $('faceRegSub');
+        if (sub) {
+          if (score >= 65) sub.textContent = `🟢 Wajah cocok ${score}% · Siap absen`;
+          else if (score >= 45) sub.textContent = `🟡 Kemiripan ${score}% · Posisikan wajah lebih dekat`;
+          else sub.textContent = `🔴 Belum cocok ${score}% · Pastikan pencahayaan cukup`;
+        }
+      } catch(_) {}
+    }, 2000);
+  }
 
   async function loop(ts) {
     _detectLoop = requestAnimationFrame(loop);
@@ -2567,6 +2607,11 @@ function startDetectLoop(model) {
     if ((livenessSelesai || _livenessState.faceOk) && !$('btnCapture').dataset.enabled) {
       $('btnCapture').disabled = false;
       $('btnCapture').dataset.enabled = '1';
+    }
+    // ── Auto-capture: langsung ambil foto setelah semua tantangan selesai ──
+    if (livenessSelesai && !_autoCaptured) {
+      _autoCaptured = true;
+      setTimeout(() => { if (!_captureData) doCapture(); }, 1200);
     }
   }
   _detectLoop = requestAnimationFrame(loop);

@@ -1300,6 +1300,20 @@
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
 
+    <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">
+        <span>👔 Pengaturan Seragam per Hari</span>
+        <button class="btn-sm-admin" onclick="renderSeragamAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">Atur seragam wajib per hari kerja. Digunakan untuk deteksi otomatis di kamera saat absen.</div>
+      <div id="seragamAdminList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+      <div class="result-card" id="seragamResult" style="margin-top:8px"><div class="r-icon" id="seragamRIcon">✅</div><div class="r-title" id="seragamRTitle">—</div><div class="r-msg" id="seragamRMsg">—</div></div>
+      <button class="btn-admin" id="btnSimpanSeragam" onclick="simpanSeragamAdmin()" style="margin-top:8px">
+        <div class="btn-inner"><span>💾</span><span id="btnSeragamText">Simpan Pengaturan Seragam</span></div>
+      </button>
+    </div>
+
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">⏰ Pengaturan Jam Absen</div>
@@ -1385,6 +1399,8 @@ const P = {
   dokumenAdd : isTest ? '/webhook-test/dokumen-add'      : '/webhook/dokumen-add',
   dokumenDel : isTest ? '/webhook-test/dokumen-delete'   : '/webhook/dokumen-delete',
   faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
+  seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
+  seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1448,7 +1464,7 @@ function switchTab(tab) {
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
   if (tab==='rekap'   && !rekapLoaded) loadRekap();
-  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); }
+  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); }
 }
 
 /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
@@ -1786,7 +1802,7 @@ function getTodayBadge(jenis) {
   if (j==='PULANG')                      return {cls:'tb-pulang',icon:'🔵',lbl:'PULANG'};
   if (j==='PULANG LUAR')                 return {cls:'tb-pulang-luar',icon:'🏃',lbl:'PULANG LAPANGAN'};
   if (j.includes('LUAR')&&j.includes('MASUK'))  return {cls:'tb-luar',icon:'⚠️',lbl:'LUAR JAM MASUK'};
-  if (j.includes('LUAR')&&j.includes('PULANG')) return {cls:'tb-luar',icon:'⚠️',lbl:'LUAR JAM PULANG'};
+  if (j.includes('LUAR')&&j.includes('PULANG')) return {cls:'tb-luar',icon:'🏃',lbl:'PULANG CEPAT'};
   if (j.includes('LUAR'))                return {cls:'tb-luar',  icon:'⚠️', lbl:'DI LUAR JAM'};
   if (j==='IZIN')                        return {cls:'tb-izin',  icon:'🙏', lbl:'IZIN'};
   if (j==='SAKIT')                       return {cls:'tb-sakit', icon:'🤒', lbl:'SAKIT'};
@@ -1996,6 +2012,19 @@ const JADWAL_SERAGAM = {
   5: { nama: 'Jumat',   warna: 'bebas',        label: 'Baju Bebas',                  emoji: '👕' },
   6: { nama: 'Sabtu',   warna: null,           label: 'Libur',                       emoji: '🏠' },
 };
+// Override dari server saat startup (dipanggil oleh loadSeragamPublik)
+function _applySeragamData(data) {
+  try {
+    Object.keys(data).forEach(k => {
+      const idx = parseInt(k);
+      if (JADWAL_SERAGAM[idx] && data[k]) {
+        if (data[k].warna !== undefined) JADWAL_SERAGAM[idx].warna = data[k].warna;
+        if (data[k].label)               JADWAL_SERAGAM[idx].label = data[k].label;
+        if (data[k].emoji)               JADWAL_SERAGAM[idx].emoji = data[k].emoji;
+      }
+    });
+  } catch(_) {}
+}
 
 /* ── Rentang warna HSL per seragam ──
    Format: { hMin,hMax, sMin,sMax, lMin,lMax }
@@ -3490,7 +3519,7 @@ function getLC(j){
   if(x==='PULANG')                     return{cls:'l-pulang',icon:'🔵',lbl:'PULANG'};
   if(x==='PULANG LUAR')                return{cls:'l-pulang-luar',icon:'🏃',lbl:'PULANG LAPANGAN'};
   if(x.includes('LUAR')&&x.includes('MASUK'))  return{cls:'l-luar',icon:'⚠️',lbl:'LUAR JAM MASUK'};
-  if(x.includes('LUAR')&&x.includes('PULANG')) return{cls:'l-luar',icon:'⚠️',lbl:'LUAR JAM PULANG'};
+  if(x.includes('LUAR')&&x.includes('PULANG')) return{cls:'l-luar',icon:'🏃',lbl:'PULANG CEPAT'};
   if(x.includes('LUAR'))               return{cls:'l-luar',  icon:'⚠️', lbl:'DI LUAR JAM'};
   if(x==='IZIN')                       return{cls:'l-izin',  icon:'🙏', lbl:'IZIN'};
   if(x==='SAKIT')                      return{cls:'l-sakit', icon:'🤒', lbl:'SAKIT'};
@@ -4902,6 +4931,92 @@ function initJamAdminUI(){
   });
 }
 
+/* ════ ADMIN SERAGAM ════ */
+const SERAGAM_OPTIONS = [
+  { warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e' },
+  { warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0' },
+  { warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)' },
+  { warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)' },
+  { warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540' },
+];
+
+function renderSeragamAdmin() {
+  const el = $('seragamAdminList');
+  if (!el) return;
+  const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  let html = '';
+  [1,2,3,4,5,6,0].forEach(idx => {
+    const cur = JADWAL_SERAGAM[idx];
+    const hariLabel = HARI[idx];
+    const isLibur = (idx === 0 || idx === 6);
+    html += `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:10px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--white)">${cur.emoji} ${hariLabel}</div>
+        <div style="font-size:10px;color:var(--muted)">${isLibur?'Hari Libur':''}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${SERAGAM_OPTIONS.map(opt => {
+          const sel = cur.warna === opt.warna;
+          return `<button onclick="patchSeragamHari(${idx},'${opt.warna||'null'}','${opt.label}','${opt.emoji}')"
+            style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;border:1.5px solid ${sel?'var(--gold)':'rgba(255,255,255,.12)'};background:${sel?'rgba(201,168,76,.18)':'rgba(255,255,255,.04)'};cursor:pointer;font-size:10px;font-weight:${sel?'700':'500'};color:${sel?'var(--gold)':'var(--muted)'};transition:all .2s" id="seragam-btn-${idx}-${opt.warna||'null'}">
+            <span style="width:12px;height:12px;border-radius:3px;display:inline-block;flex-shrink:0;background:${opt.preview};border:1px solid rgba(255,255,255,.15)"></span>
+            ${opt.emoji} ${opt.label.split('(')[0].trim()}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function patchSeragamHari(idx, warna, label, emoji) {
+  const realWarna = warna === 'null' ? null : warna;
+  JADWAL_SERAGAM[idx].warna = realWarna;
+  JADWAL_SERAGAM[idx].label = label;
+  JADWAL_SERAGAM[idx].emoji = emoji;
+  renderSeragamAdmin();
+}
+
+async function simpanSeragamAdmin() {
+  const btn = $('btnSimpanSeragam');
+  if (btn) { btn.disabled=true; $('btnSeragamText').textContent='💾 Menyimpan...'; }
+  try {
+    const rows = Object.keys(JADWAL_SERAGAM).map(k => ({
+      hari_idx : parseInt(k),
+      nama_hari: JADWAL_SERAGAM[k].nama,
+      warna    : JADWAL_SERAGAM[k].warna || '',
+      label    : JADWAL_SERAGAM[k].label,
+      emoji    : JADWAL_SERAGAM[k].emoji,
+    }));
+    const res = await apiFetch(P.seragamSave, { method:'POST', body: JSON.stringify({ rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000) }) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','success','✅','Seragam Tersimpan!',
+      'Jadwal seragam disimpan ke Google Sheets dan berlaku untuk semua pegawai.');
+  } catch(e) {
+    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','warning','⚠️','Gagal ke Server',
+      'Pastikan workflow n8n seragam-save aktif.\n'+e.message);
+  } finally {
+    if (btn) { setTimeout(()=>{ btn.disabled=false; $('btnSeragamText').textContent='Simpan Pengaturan Seragam'; },2500); }
+  }
+}
+
+async function loadSeragamPublik() {
+  try {
+    const res = await apiFetch(P.seragamGet, { method:'GET' });
+    if (!res.ok) throw 0;
+    const d = await res.json();
+    const rows = d.data || d || [];
+    if (!Array.isArray(rows) || !rows.length) return;
+    const map = {};
+    rows.forEach(r => {
+      const idx = parseInt(r.hari_idx);
+      if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
+    });
+    _applySeragamData(map);
+  } catch(_) {} // fallback ke default JADWAL_SERAGAM jika server tidak ada
+}
+
 async function loadJamAbsen(){
   // Fetch dari n8n jika ada, fallback ke localStorage
   try{
@@ -5025,6 +5140,7 @@ function _updateLocBadgeGPS(){
   );
 }
 loadJamAbsen(); // load jam absen dari server/localStorage
+loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak

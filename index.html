@@ -1300,6 +1300,46 @@
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
 
+    <!-- ══ KELOLA JENIS SERAGAM ══ -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">
+        <span>🎨 Kelola Jenis Seragam</span>
+        <button class="btn-sm-admin" onclick="loadSeragamTypeAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">Tambah, edit, atau hapus jenis seragam. Jenis ini akan muncul sebagai pilihan saat mengatur jadwal seragam harian.</div>
+
+      <!-- Form tambah / edit -->
+      <div id="seragamTypeForm" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px;margin:10px 0">
+        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:10px" id="seragamTypeFormTitle">➕ Tambah Jenis Seragam</div>
+        <input type="hidden" id="seragamTypeEditId" value="">
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">🏷️ Nama / Label Seragam</label>
+          <input type="text" class="form-input" id="inputSeragamLabel" placeholder="cth: Batik Korpri"/>
+        </div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">🔑 Kode Warna (huruf kecil, tanpa spasi)</label>
+          <input type="text" class="form-input" id="inputSeragamWarna" placeholder="cth: batik_korpri"/>
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">🎭 Emoji</label>
+          <input type="text" class="form-input" id="inputSeragamEmoji" placeholder="cth: 🟡" style="font-size:18px;width:80px"/>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-admin" id="btnSeragamTypeSubmit" onclick="submitSeragamType()" style="flex:1;margin-bottom:0;padding:10px">
+            <div class="btn-inner"><span>💾</span><span id="btnSeragamTypeText">Simpan</span></div>
+          </button>
+          <button onclick="resetSeragamTypeForm()" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">✕ Batal</button>
+        </div>
+      </div>
+
+      <!-- Daftar jenis seragam -->
+      <div id="seragamTypeList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        <div class="shimmer" style="height:44px;border-radius:10px"></div>
+        <div class="shimmer" style="height:44px;border-radius:10px"></div>
+      </div>
+      <div class="result-card" id="seragamTypeResult" style="margin-top:8px;display:none"><div class="r-icon" id="seragamTypeRIcon">✅</div><div class="r-title" id="seragamTypeRTitle">—</div><div class="r-msg" id="seragamTypeRMsg">—</div></div>
+    </div>
+
     <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">
@@ -1401,6 +1441,9 @@ const P = {
   faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
   seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
   seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
+  seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
+  seragamTypeAdd : isTest ? '/webhook-test/seragam-type-add'  : '/webhook/seragam-type-add',
+  seragamTypeDel : isTest ? '/webhook-test/seragam-type-delete': '/webhook/seragam-type-delete',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1464,7 +1507,7 @@ function switchTab(tab) {
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
   if (tab==='rekap'   && !rekapLoaded) loadRekap();
-  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); }
+  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); }
 }
 
 /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
@@ -4932,13 +4975,142 @@ function initJamAdminUI(){
 }
 
 /* ════ ADMIN SERAGAM ════ */
-const SERAGAM_OPTIONS = [
-  { warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e' },
-  { warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0' },
-  { warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)' },
-  { warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)' },
-  { warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540' },
+// SERAGAM_OPTIONS: dimuat ulang dari server via loadSeragamTypeAdmin()
+// Default bawaan dipakai jika server belum disetup
+let SERAGAM_OPTIONS = [
+  { id:'1', warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e' },
+  { id:'2', warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0' },
+  { id:'3', warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)' },
+  { id:'4', warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)' },
+  { id:'0', warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540' },
 ];
+
+function _seragamPreviewFromWarna(warna) {
+  const MAP = {
+    coklat_khaki: '#c8a96e', putih: '#f0f0f0',
+    tenun_sumba: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
+    bebas: 'linear-gradient(135deg,#667eea,#764ba2)',
+  };
+  return MAP[warna] || 'linear-gradient(135deg,var(--gold),#9b6e1a)';
+}
+
+/* ── CRUD Jenis Seragam ── */
+async function loadSeragamTypeAdmin() {
+  const el = $('seragamTypeList');
+  if (!el) return;
+  el.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
+  try {
+    const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
+    if (!res.ok) throw 0;
+    const d = await res.json();
+    const rows = d.data || d || [];
+    if (Array.isArray(rows) && rows.length) {
+      // Update SERAGAM_OPTIONS dari server
+      SERAGAM_OPTIONS = rows.map(r => ({
+        id: String(r.id || r.warna || ''),
+        warna: r.warna || null,
+        label: r.label,
+        emoji: r.emoji,
+        preview: _seragamPreviewFromWarna(r.warna),
+      }));
+      // Pastikan "Libur" selalu ada
+      if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
+        SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540' });
+      }
+    }
+    renderSeragamTypeList();
+    renderSeragamAdmin(); // refresh pilihan seragam per hari
+  } catch(_) {
+    renderSeragamTypeList(); // tampilkan default
+  }
+}
+
+function renderSeragamTypeList() {
+  const el = $('seragamTypeList');
+  if (!el) return;
+  const items = SERAGAM_OPTIONS.filter(o => o.warna !== null); // tidak tampilkan "Libur" di list
+  if (!items.length) { el.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:10px">Belum ada jenis seragam. Tambah di atas.</div>'; return; }
+  el.innerHTML = items.map(o => `
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px">
+      <span style="width:26px;height:26px;border-radius:7px;display:inline-block;flex-shrink:0;background:${o.preview};border:1px solid rgba(255,255,255,.15)"></span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;font-weight:700;color:var(--white)">${o.emoji} ${o.label}</div>
+        <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${o.warna}</div>
+      </div>
+      <button onclick="editSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}','${o.emoji}')"
+        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.1);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️</button>
+      <button onclick="deleteSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}')"
+        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:var(--danger);font-size:9px;font-weight:700;cursor:pointer">🗑️</button>
+    </div>`).join('');
+}
+
+function resetSeragamTypeForm() {
+  $('seragamTypeFormTitle').textContent = '➕ Tambah Jenis Seragam';
+  $('seragamTypeEditId').value = '';
+  $('inputSeragamLabel').value = '';
+  $('inputSeragamWarna').value = '';
+  $('inputSeragamEmoji').value = '';
+  $('btnSeragamTypeText').textContent = 'Simpan';
+  const r = $('seragamTypeResult'); if (r) r.style.display = 'none';
+}
+
+function editSeragamType(id, warna, label, emoji) {
+  $('seragamTypeFormTitle').textContent = '✏️ Edit Jenis Seragam';
+  $('seragamTypeEditId').value = id;
+  $('inputSeragamLabel').value = label;
+  $('inputSeragamWarna').value = warna;
+  $('inputSeragamEmoji').value = emoji;
+  $('btnSeragamTypeText').textContent = 'Perbarui';
+  $('seragamTypeForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function submitSeragamType() {
+  const label = $('inputSeragamLabel').value.trim();
+  const warna = $('inputSeragamWarna').value.trim().toLowerCase().replace(/\s+/g,'_');
+  const emoji = $('inputSeragamEmoji').value.trim();
+  const editId = $('seragamTypeEditId').value.trim();
+  $('seragamTypeResult').style.display = 'none';
+
+  if (!label || !warna || !emoji) {
+    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Lengkapi Form','Label, kode warna, dan emoji wajib diisi.');
+    $('seragamTypeResult').style.display = 'flex'; return;
+  }
+
+  const btn = $('btnSeragamTypeSubmit');
+  if (btn) btn.disabled = true;
+  try {
+    const payload = { id: editId || warna, warna, label, emoji, diubah_oleh: MY_ID };
+    const res = await apiFetch(P.seragamTypeAdd, { method: 'POST', body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅',
+      editId ? 'Seragam Diperbarui!' : 'Seragam Ditambahkan!',
+      `${emoji} ${label} berhasil ${editId ? 'diperbarui' : 'ditambahkan'}.`);
+    $('seragamTypeResult').style.display = 'flex';
+    resetSeragamTypeForm();
+    await loadSeragamTypeAdmin();
+  } catch(e) {
+    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal ke Server',
+      'Pastikan webhook seragam-type-add aktif di n8n.\n'+e.message);
+    $('seragamTypeResult').style.display = 'flex';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function deleteSeragamType(id, warna, label) {
+  if (!confirm(`Hapus jenis seragam "${label}"?\n\nPastikan tidak ada hari yang masih menggunakan jenis ini.`)) return;
+  try {
+    const res = await apiFetch(P.seragamTypeDel, { method: 'POST', body: JSON.stringify({ id, warna, diubah_oleh: MY_ID }) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅','Dihapus!',`${label} berhasil dihapus.`);
+    $('seragamTypeResult').style.display = 'flex';
+    await loadSeragamTypeAdmin();
+  } catch(e) {
+    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal',
+      'Pastikan webhook seragam-type-delete aktif di n8n.\n'+e.message);
+    $('seragamTypeResult').style.display = 'flex';
+  }
+}
 
 function renderSeragamAdmin() {
   const el = $('seragamAdminList');
@@ -5002,6 +5174,27 @@ async function simpanSeragamAdmin() {
 }
 
 async function loadSeragamPublik() {
+  // Load jenis seragam dari server agar SERAGAM_OPTIONS selalu up-to-date
+  try {
+    const res = await apiFetch(P.seragamTypeList, { method:'GET' });
+    if (res.ok) {
+      const d = await res.json();
+      const rows = d.data || d || [];
+      if (Array.isArray(rows) && rows.length) {
+        SERAGAM_OPTIONS = rows.map(r => ({
+          id: String(r.id || r.warna || ''),
+          warna: r.warna || null,
+          label: r.label,
+          emoji: r.emoji,
+          preview: _seragamPreviewFromWarna(r.warna),
+        }));
+        if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
+          SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540' });
+        }
+      }
+    }
+  } catch(_) {}
+  // Load jadwal seragam per hari
   try {
     const res = await apiFetch(P.seragamGet, { method:'GET' });
     if (!res.ok) throw 0;
@@ -5014,7 +5207,7 @@ async function loadSeragamPublik() {
       if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
     });
     _applySeragamData(map);
-  } catch(_) {} // fallback ke default JADWAL_SERAGAM jika server tidak ada
+  } catch(_) {}
 }
 
 async function loadJamAbsen(){

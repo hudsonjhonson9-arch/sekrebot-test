@@ -2093,23 +2093,47 @@ async function cekJaringan() {
 
 /* ── Jadwal Seragam Harian ── */
 const JADWAL_SERAGAM = {
-  0: { nama: 'Minggu',  warna: null,           label: 'Libur',                       emoji: '🏠' },
-  1: { nama: 'Senin',   warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  2: { nama: 'Selasa',  warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  3: { nama: 'Rabu',    warna: 'putih',        label: 'Kemeja Putih',                emoji: '⬜' },
-  4: { nama: 'Kamis',   warna: 'tenun_sumba',  label: 'Kain Tenun Sumba (Warna Cerah/Motif)',emoji: '🎨' },
-  5: { nama: 'Jumat',   warna: 'bebas',        label: 'Baju Bebas',                  emoji: '👕' },
-  6: { nama: 'Sabtu',   warna: null,           label: 'Libur',                       emoji: '🏠' },
+  0: { nama: 'Minggu',  warna: [],                      label: 'Libur',                       emoji: '🏠' },
+  1: { nama: 'Senin',   warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
+  2: { nama: 'Selasa',  warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
+  3: { nama: 'Rabu',    warna: ['putih'],                label: 'Kemeja Putih',                emoji: '⬜' },
+  4: { nama: 'Kamis',   warna: ['tenun_sumba'],          label: 'Kain Tenun Sumba (Warna Cerah/Motif)',emoji: '🎨' },
+  5: { nama: 'Jumat',   warna: ['bebas'],                label: 'Baju Bebas',                  emoji: '👕' },
+  6: { nama: 'Sabtu',   warna: [],                      label: 'Libur',                       emoji: '🏠' },
 };
+
+// Helper: parse warna field (string CSV atau array) → selalu array bersih
+function _parseWarnaArray(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  // String CSV dari Google Sheets: "coklat_khaki,putih"
+  return String(raw).split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Helper: build label + emoji dari array warna
+function _buildSeragamLabel(warnaArr) {
+  if (!warnaArr || !warnaArr.length) return { label: 'Libur', emoji: '🏠' };
+  const opts = warnaArr.map(w => SERAGAM_OPTIONS.find(o => o.warna === w)).filter(Boolean);
+  if (!opts.length) return { label: 'Libur', emoji: '🏠' };
+  return {
+    label: opts.map(o => o.label.split('(')[0].trim()).join(' / '),
+    emoji: opts.map(o => o.emoji).join('')
+  };
+}
+
 // Override dari server saat startup (dipanggil oleh loadSeragamPublik)
 function _applySeragamData(data) {
   try {
     Object.keys(data).forEach(k => {
       const idx = parseInt(k);
       if (JADWAL_SERAGAM[idx] && data[k]) {
-        if (data[k].warna !== undefined) JADWAL_SERAGAM[idx].warna = data[k].warna;
-        if (data[k].label)               JADWAL_SERAGAM[idx].label = data[k].label;
-        if (data[k].emoji)               JADWAL_SERAGAM[idx].emoji = data[k].emoji;
+        if (data[k].warna !== undefined) {
+          JADWAL_SERAGAM[idx].warna = _parseWarnaArray(data[k].warna);
+          const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
+          JADWAL_SERAGAM[idx].label = built.label;
+          JADWAL_SERAGAM[idx].emoji = built.emoji;
+        }
+        // label & emoji di-rebuild otomatis dari warna array
       }
     });
   } catch(_) {}
@@ -2140,60 +2164,57 @@ function cekWarnaSeragam(r, g, b, hariIdx) {
   const H=Math.round(h*360), S=Math.round(s*100), L=Math.round(l*100);
   const seragam = JADWAL_SERAGAM[hariIdx];
 
-  if (!seragam || !seragam.warna) {
+  if (!seragam || !seragam.warna || !seragam.warna.length) {
     return { verdict:'skip', nama_warna:'—', alasan:'Hari libur', H,S,L };
   }
 
   const nama_warna = getNamaWarna(H,S,L);
 
-  // ── Cari definisi HSL dari SERAGAM_OPTIONS (data dari server) ──
-  const opt = SERAGAM_OPTIONS.find(o => o.warna === seragam.warna);
-
-  // Jika punya HSL range dari server → deteksi dinamis
-  if (opt && opt.hMin !== undefined && opt.hMin !== null && opt.hMin !== '') {
-    const hMin=Number(opt.hMin), hMax=Number(opt.hMax);
-    const sMin=Number(opt.sMin), sMax=Number(opt.sMax);
-    const lMin=Number(opt.lMin), lMax=Number(opt.lMax);
-    // Handle H wrapping (cth: merah H 340–360 + 0–20)
-    const hOk = hMin <= hMax
-      ? (H >= hMin && H <= hMax)
-      : (H >= hMin || H <= hMax);
-    const sOk = S >= sMin && S <= sMax;
-    const lOk = L >= lMin && L <= lMax;
-    const verdict = (hOk && sOk && lOk) ? 'ok' : 'warn';
-    return {
-      verdict,
-      nama_warna,
-      alasan: verdict==='ok'
-        ? `✅ Sesuai ${seragam.label}`
-        : `⚠️ Seharusnya ${seragam.label} (terdeteksi: ${nama_warna})`,
-      H, S, L
-    };
+  // Helper: cek satu warna terhadap HSL pixel
+  function _cekSatuWarna(warna) {
+    const opt = SERAGAM_OPTIONS.find(o => o.warna === warna);
+    // Deteksi dinamis dari HSL range server
+    if (opt && opt.hMin !== null && opt.hMin !== undefined && opt.hMin !== '') {
+      const hMin=Number(opt.hMin), hMax=Number(opt.hMax);
+      const sMin=Number(opt.sMin), sMax=Number(opt.sMax);
+      const lMin=Number(opt.lMin), lMax=Number(opt.lMax);
+      const hOk = hMin <= hMax ? (H>=hMin&&H<=hMax) : (H>=hMin||H<=hMax);
+      return hOk && S>=sMin && S<=sMax && L>=lMin && L<=lMax;
+    }
+    // Fallback bawaan
+    switch(warna) {
+      case 'coklat_khaki': return H>=15&&H<=65&&S>=15&&S<=75&&L>=20&&L<=75;
+      case 'putih':        return S<20&&L>=68;
+      case 'tenun_sumba':  return S>28&&L>15&&L<90;
+      case 'bebas':        return true;
+      default:             return true; // custom tanpa HSL = bebas
+    }
   }
 
-  // ── Fallback: deteksi bawaan untuk jenis seragam default ──
-  switch(seragam.warna) {
-    case 'coklat_khaki': {
-      const ok = H>=15&&H<=65&&S>=15&&S<=75&&L>=20&&L<=75;
-      return { verdict: ok?'ok':'warn', nama_warna: ok?'Coklat/Khaki':nama_warna,
-        alasan: ok?'✅ Sesuai seragam dinas':`⚠️ Seharusnya Coklat/Khaki (terdeteksi: ${nama_warna})`, H,S,L };
-    }
-    case 'putih': {
-      const ok = S<20&&L>=68;
-      return { verdict: ok?'ok':'warn', nama_warna: ok?'Putih/Terang':nama_warna,
-        alasan: ok?'✅ Sesuai kemeja putih':`⚠️ Seharusnya Putih (terdeteksi: ${nama_warna})`, H,S,L };
-    }
-    case 'tenun_sumba': {
-      const ok = S>28&&L>15&&L<90;
-      return { verdict: ok?'ok':'warn', nama_warna,
-        alasan: ok?'✅ Warna cerah — cocok Tenun Sumba':`⚠️ Seharusnya Tenun Sumba berwarna (terdeteksi: ${nama_warna})`, H,S,L };
-    }
-    case 'bebas':
-      return { verdict:'ok', nama_warna, alasan:`✅ ${seragam.label}`, H,S,L };
-    default:
-      // Jenis custom tanpa HSL → bebas (tidak dicek)
-      return { verdict:'ok', nama_warna, alasan:`✅ ${seragam.label} (tidak dicek warna)`, H,S,L };
+  const warnaArr = seragam.warna; // selalu array
+  const labelsAktif = warnaArr.map(w => SERAGAM_OPTIONS.find(o=>o.warna===w)?.label || w).join(' / ');
+
+  // Jika ada 'bebas' di list → langsung ok
+  if (warnaArr.includes('bebas')) {
+    return { verdict:'ok', nama_warna, alasan:`✅ ${labelsAktif}`, H,S,L };
   }
+
+  // Cek apakah pixel cocok SALAH SATU dari seragam yang diizinkan
+  const adaYangCocok = warnaArr.some(w => _cekSatuWarna(w));
+  const verdict = adaYangCocok ? 'ok' : 'warn';
+
+  // Temukan nama seragam yang cocok (untuk pesan sukses)
+  const namaCocok = warnaArr.find(w => _cekSatuWarna(w));
+  const labelCocok = namaCocok ? (SERAGAM_OPTIONS.find(o=>o.warna===namaCocok)?.label || namaCocok) : null;
+
+  return {
+    verdict,
+    nama_warna,
+    alasan: verdict==='ok'
+      ? `✅ Sesuai ${labelCocok}`
+      : `⚠️ Seharusnya ${labelsAktif} (terdeteksi: ${nama_warna})`,
+    H, S, L
+  };
 }
 
 
@@ -2507,7 +2528,9 @@ async function openCamOverlay(onDone) {
   // Tampilkan info seragam hari ini
   const hariIdx = nowWITA().getDay();
   const s = JADWAL_SERAGAM[hariIdx];
-  $('seragamInfo').textContent = `${s.emoji} Seragam hari ini: ${s.label}`;
+  const warnaArr = Array.isArray(s.warna) ? s.warna : _parseWarnaArray(s.warna);
+  const builtLabel = _buildSeragamLabel(warnaArr);
+  $('seragamInfo').textContent = `${builtLabel.emoji} Seragam hari ini: ${builtLabel.label}`;
   $('seragamInfo').style.display = 'block';
 
   // Minta izin kamera & mulai stream
@@ -5045,11 +5068,16 @@ function initJamAdminUI(){
 // SERAGAM_OPTIONS: dimuat ulang dari server via loadSeragamTypeAdmin()
 // Default bawaan dipakai jika server belum disetup
 let SERAGAM_OPTIONS = [
-  { id:'1', warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e' },
-  { id:'2', warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0' },
-  { id:'3', warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)' },
-  { id:'4', warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)' },
-  { id:'0', warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540' },
+  { id:'1', warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e',
+    hMin:15, hMax:65, sMin:15, sMax:75, lMin:20, lMax:75 },
+  { id:'2', warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0',
+    hMin:0,  hMax:360,sMin:0,  sMax:20, lMin:68, lMax:100 },
+  { id:'3', warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
+    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
+  { id:'4', warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)',
+    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
+  { id:'0', warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540',
+    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
 ];
 
 function _seragamPreviewFromWarna(warna) {
@@ -5240,38 +5268,107 @@ async function deleteSeragamType(id, warna, label) {
 function renderSeragamAdmin() {
   const el = $('seragamAdminList');
   if (!el) return;
-  const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+  // Hari kerja yang bisa dipilih (Senin-Jumat = 1-5, Sabtu = 6 opsional)
+  // Format: { idx, singkat, nama }
+  const HARI_KERJA = [
+    { idx:1, singkat:'Sen', nama:'Senin' },
+    { idx:2, singkat:'Sel', nama:'Selasa' },
+    { idx:3, singkat:'Rab', nama:'Rabu' },
+    { idx:4, singkat:'Kam', nama:'Kamis' },
+    { idx:5, singkat:'Jum', nama:'Jumat' },
+    { idx:6, singkat:'Sab', nama:'Sabtu' },
+  ];
+
+  // Kumpulkan hari yang aktif per warna seragam
+  function hariUntukSeragam(warna) {
+    return HARI_KERJA.filter(h => JADWAL_SERAGAM[h.idx]?.warna === (warna || null)).map(h => h.idx);
+  }
+
+  // Tampilkan seragam bukan libur saja
+  const opts = SERAGAM_OPTIONS.filter(o => o.warna !== null);
+
   let html = '';
-  [1,2,3,4,5,6,0].forEach(idx => {
-    const cur = JADWAL_SERAGAM[idx];
-    const hariLabel = HARI[idx];
-    const isLibur = (idx === 0 || idx === 6);
+
+  // Baris hari libur info
+  html += `<div style="display:flex;gap:6px;align-items:center;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:10px;margin-bottom:4px">
+    <span style="font-size:14px">🏠</span>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted)">Minggu & Sabtu</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.3)">Hari libur — tidak ada pemeriksaan seragam</div>
+    </div>
+  </div>`;
+
+  opts.forEach(opt => {
+    const warnaArr = Array.isArray(cur.warna) ? cur.warna : _parseWarnaArray(cur.warna);
+    const aktifHari = HARI_KERJA.filter(h => {
+      const w = JADWAL_SERAGAM[h.idx]?.warna;
+      return Array.isArray(w) ? w.includes(opt.warna) : w === opt.warna;
+    });
+    const hslBg = opt.hMin !== null
+      ? `linear-gradient(90deg,hsl(${opt.hMin},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 0%,hsl(${Math.round((opt.hMin+opt.hMax)/2)},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 50%,hsl(${opt.hMax},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 100%)`
+      : opt.preview;
+    const hslInfo = opt.hMin !== null
+      ? `H${opt.hMin}–${opt.hMax} · S${opt.sMin}–${opt.sMax}% · L${opt.lMin}–${opt.lMax}%`
+      : 'Tidak cek warna (bebas)';
+
     html += `
     <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:10px 12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:700;color:var(--white)">${cur.emoji} ${hariLabel}</div>
-        <div style="font-size:10px;color:var(--muted)">${isLibur?'Hari Libur':''}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="width:32px;height:32px;border-radius:8px;flex-shrink:0;display:inline-block;background:${hslBg};border:1px solid rgba(255,255,255,.15)"></span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:var(--white)">${opt.emoji} ${opt.label}</div>
+          <div style="font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">${hslInfo}</div>
+        </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${SERAGAM_OPTIONS.map(opt => {
-          const sel = cur.warna === opt.warna;
-          return `<button onclick="patchSeragamHari(${idx},'${opt.warna||'null'}','${opt.label}','${opt.emoji}')"
-            style="display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;border:1.5px solid ${sel?'var(--gold)':'rgba(255,255,255,.12)'};background:${sel?'rgba(201,168,76,.18)':'rgba(255,255,255,.04)'};cursor:pointer;font-size:10px;font-weight:${sel?'700':'500'};color:${sel?'var(--gold)':'var(--muted)'};transition:all .2s" id="seragam-btn-${idx}-${opt.warna||'null'}">
-            <span style="width:12px;height:12px;border-radius:3px;display:inline-block;flex-shrink:0;background:${opt.preview};border:1px solid rgba(255,255,255,.15)"></span>
-            ${opt.emoji} ${opt.label.split('(')[0].trim()}
+      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-weight:600">📅 AKTIF PADA HARI:</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${HARI_KERJA.map(h => {
+          const aktif = aktifHari.includes(h.idx);
+          return `<button onclick="toggleSeragamHari(${h.idx},'${opt.warna}')"
+            style="padding:5px 10px;border-radius:8px;border:1.5px solid ${aktif?'var(--gold)':'rgba(255,255,255,.12)'};background:${aktif?'rgba(201,168,76,.2)':'rgba(255,255,255,.03)'};cursor:pointer;font-size:10px;font-weight:${aktif?'700':'500'};color:${aktif?'var(--gold)':'rgba(255,255,255,.35)'};transition:all .15s;min-width:38px;text-align:center">
+            ${h.singkat}
           </button>`;
         }).join('')}
       </div>
     </div>`;
   });
+
   el.innerHTML = html;
 }
 
+// Toggle hari pada seragam tertentu (multi-select)
+function toggleSeragamHari(hariIdx, warna) {
+  const cur = JADWAL_SERAGAM[hariIdx];
+  if (!cur) return;
+
+  // Pastikan selalu array
+  if (!Array.isArray(cur.warna)) cur.warna = _parseWarnaArray(cur.warna);
+
+  const idx = cur.warna.indexOf(warna);
+  if (idx >= 0) {
+    // Sudah ada → hapus dari array
+    cur.warna.splice(idx, 1);
+  } else {
+    // Belum ada → tambahkan
+    cur.warna.push(warna);
+  }
+
+  // Rebuild label & emoji dari array terbaru
+  const built = _buildSeragamLabel(cur.warna);
+  cur.label = built.label;
+  cur.emoji = built.emoji;
+
+  renderSeragamAdmin();
+}
+
+// Tetap untuk kompatibilitas
 function patchSeragamHari(idx, warna, label, emoji) {
   const realWarna = warna === 'null' ? null : warna;
-  JADWAL_SERAGAM[idx].warna = realWarna;
-  JADWAL_SERAGAM[idx].label = label;
-  JADWAL_SERAGAM[idx].emoji = emoji;
+  JADWAL_SERAGAM[idx].warna = realWarna ? [realWarna] : [];
+  const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
+  JADWAL_SERAGAM[idx].label = built.label;
+  JADWAL_SERAGAM[idx].emoji = built.emoji;
   renderSeragamAdmin();
 }
 
@@ -5279,13 +5376,18 @@ async function simpanSeragamAdmin() {
   const btn = $('btnSimpanSeragam');
   if (btn) { btn.disabled=true; $('btnSeragamText').textContent='💾 Menyimpan...'; }
   try {
-    const rows = Object.keys(JADWAL_SERAGAM).map(k => ({
-      hari_idx : parseInt(k),
-      nama_hari: JADWAL_SERAGAM[k].nama,
-      warna    : JADWAL_SERAGAM[k].warna || '',
-      label    : JADWAL_SERAGAM[k].label,
-      emoji    : JADWAL_SERAGAM[k].emoji,
-    }));
+    const rows = Object.keys(JADWAL_SERAGAM).map(k => {
+      const d = JADWAL_SERAGAM[k];
+      const warnaArr = Array.isArray(d.warna) ? d.warna : _parseWarnaArray(d.warna);
+      const built = _buildSeragamLabel(warnaArr);
+      return {
+        hari_idx : parseInt(k),
+        nama_hari: d.nama,
+        warna    : warnaArr.join(','),   // CSV: "coklat_khaki,putih"
+        label    : built.label,
+        emoji    : built.emoji,
+      };
+    });
     const res = await apiFetch(P.seragamSave, { method:'POST', body: JSON.stringify({ rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000) }) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','success','✅','Seragam Tersimpan!',
@@ -5312,9 +5414,15 @@ async function loadSeragamPublik() {
           label: r.label,
           emoji: r.emoji,
           preview: _seragamPreviewFromWarna(r.warna),
+          hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
+          hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
+          sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
+          sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
+          lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
+          lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
         }));
         if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-          SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540' });
+          SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
         }
       }
     }

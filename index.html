@@ -1354,7 +1354,7 @@ const REKAP_CHAT_ID = ADMIN_IDS[0];
 */
 const WIFI_CHECK_ENABLED = true;           // set false untuk nonaktifkan cek jaringan
 const KANTOR_IPS = [
-  '103.XXX.XXX.XXX',                       // ← GANTI dengan IP publik WiFi kantor
+  '36.84.229.29', '110.136.219.46', '36.85.106.21', '36.84.229.16'                       // ← GANTI dengan IP publik WiFi kantor
   // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
 ];
 // 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
@@ -4905,41 +4905,41 @@ async function loadLokasiPublik(){
 }
 loadLokasiPublik();
 // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
+// GPS badge — minta izin 1x, pakai watchPosition permanen (tidak restart)
 let _locWatchId=null;
-function _updateLocBadgeGPS(){
-  if(!navigator.geolocation)return;
-  // Hentikan watch sebelumnya jika masih berjalan
-  if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
-  function _applyPos(lat,lon){
-    if(!window._lokasiCoords||!window._lokasiCoords.length)return;
-    let best=null,bestDist=Infinity;
-    window._lokasiCoords.forEach(l=>{
-      const R=6371000,dLat=(l.lat-lat)*Math.PI/180,dLon=(l.lon-lon)*Math.PI/180;
-      const a=Math.sin(dLat/2)**2+Math.cos(lat*Math.PI/180)*Math.cos(l.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-      const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-      if(dist<bestDist){bestDist=dist;best=l;}
-    });
-    const clb=$('clockLocBadge'); if(!clb)return;
-    if(best&&bestDist<=(best.radius||150)){
-      clb.textContent='📍 '+best.nama; clb.className='clock-loc-badge';
-    } else {
-      clb.textContent='📍 Di luar area kantor'; clb.className='clock-loc-badge unknown';
-    }
+let _locPermDenied=false;
+
+function _applyLocPos(lat,lon){
+  if(!window._lokasiCoords||!window._lokasiCoords.length)return;
+  let best=null,bestDist=Infinity;
+  window._lokasiCoords.forEach(l=>{
+    const R=6371000,dLat=(l.lat-lat)*Math.PI/180,dLon=(l.lon-lon)*Math.PI/180;
+    const a=Math.sin(dLat/2)**2+Math.cos(lat*Math.PI/180)*Math.cos(l.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+    const dist=R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    if(dist<bestDist){bestDist=dist;best=l;}
+  });
+  const clb=$('clockLocBadge'); if(!clb)return;
+  if(best&&bestDist<=(best.radius||150)){
+    clb.textContent='📍 '+best.nama; clb.className='clock-loc-badge';
+  } else {
+    clb.textContent='📍 Di luar area kantor'; clb.className='clock-loc-badge unknown';
   }
-  // watchPosition: dapat posisi pertama → langsung apply & stop, lalu retry setiap 60 detik
-  _locWatchId=navigator.geolocation.watchPosition(
-    pos=>{
-      _applyPos(pos.coords.latitude,pos.coords.longitude);
-      // Setelah dapat fix, stop watch dan jadwalkan refresh 60 detik lagi
-      if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
-      setTimeout(_updateLocBadgeGPS,60000);
+}
+
+function _updateLocBadgeGPS(){
+  if(!navigator.geolocation||_locPermDenied||_locWatchId!==null)return;
+  _locWatchId=1; // tandai sudah dijalankan agar tidak dipanggil ulang
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ _applyLocPos(pos.coords.latitude,pos.coords.longitude); },
+    err=>{
+      const clb=$('clockLocBadge');
+      if(err&&err.code===1){
+        _locPermDenied=true;
+        if(clb){clb.textContent='📍 Izin lokasi ditolak';clb.className='clock-loc-badge unknown';}
+      }
+      // timeout/unavailable → badge tetap "Mendeteksi", tidak minta lagi
     },
-    ()=>{
-      // Error → badge tetap "Mendeteksi", retry 20 detik kemudian
-      if(_locWatchId!==null){navigator.geolocation.clearWatch(_locWatchId);_locWatchId=null;}
-      setTimeout(_updateLocBadgeGPS,20000);
-    },
-    {enableHighAccuracy:false,timeout:15000,maximumAge:30000}
+    {enableHighAccuracy:false,timeout:15000,maximumAge:300000}
   );
 }
 loadJamAbsen(); // load jam absen dari server/localStorage

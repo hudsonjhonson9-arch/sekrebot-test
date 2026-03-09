@@ -5300,7 +5300,6 @@ function renderSeragamAdmin() {
   </div>`;
 
   opts.forEach(opt => {
-    const warnaArr = Array.isArray(cur.warna) ? cur.warna : _parseWarnaArray(cur.warna);
     const aktifHari = HARI_KERJA.filter(h => {
       const w = JADWAL_SERAGAM[h.idx]?.warna;
       return Array.isArray(w) ? w.includes(opt.warna) : w === opt.warna;

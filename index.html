@@ -1081,12 +1081,12 @@
     </div>
     <div class="filter-bar">
       <button class="filter-chip active" onclick="filterLog('SEMUA',this)">Semua</button>
-      <button class="filter-chip" onclick="filterLog('MASUK', this)">Masuk</button>
-      <button class="filter-chip" onclick="filterLog('PULANG',this)">Pulang</button>
-      <button class="filter-chip" onclick="filterLog('IZIN',  this)">Izin</button>
-      <button class="filter-chip" onclick="filterLog('SAKIT', this)">Sakit</button>
-      <button class="filter-chip" onclick="filterLog('TUGAS', this)">Tugas</button>
+      <button class="filter-chip" onclick="filterLog('HADIR', this)">✅ Hadir</button>
+      <button class="filter-chip" onclick="filterLog('IZIN',  this)">🙏 Izin</button>
+      <button class="filter-chip" onclick="filterLog('SAKIT', this)">🤒 Sakit</button>
+      <button class="filter-chip" onclick="filterLog('TUGAS', this)">💼 Tugas</button>
       <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
+      <button class="filter-chip" onclick="filterLog('ALPA',  this)">❌ Alpa</button>
     </div>
     <div class="log-list" id="logList">
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:60%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
@@ -3553,16 +3553,33 @@ function updateLogStats(l){
 }
 function filterLog(f,el){
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');
-  renderLog(f==='SEMUA'?allLogs:allLogs.filter(r=>{
-    const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
-    if(f==='MASUK')       return j==='MASUK' || j==='DI LUAR JAM MASUK';
-    if(f==='PULANG')      return j==='PULANG' || j==='DI LUAR JAM PULANG';
-    if(f==='IZIN')        return j==='IZIN';
-    if(f==='SAKIT')       return j==='SAKIT';
-    if(f==='TUGAS')       return j==='TUGAS';
-    if(f==='PULANG LUAR') return j==='PULANG LUAR';
-    return j.includes(f);
-  }));
+  // Untuk card per-hari, filter berdasarkan tanggal yang memenuhi kriteria
+  if(f==='SEMUA'){renderLog(allLogs);return;}
+  // Group by tanggal dulu, filter per hari
+  const byDate={};
+  allLogs.forEach(r=>{
+    const tgl=getField(r,'Tanggal','tanggal')||'—';
+    if(!byDate[tgl])byDate[tgl]=[];
+    byDate[tgl].push(r);
+  });
+  const filtered=[];
+  Object.entries(byDate).forEach(([tgl,rows])=>{
+    const jenis=rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const adaMasuk   = jenis.some(j=>j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK'));
+    const adaIzin    = jenis.some(j=>j.includes('IZIN'));
+    const adaSakit   = jenis.some(j=>j.includes('SAKIT'));
+    const adaTugas   = jenis.some(j=>j.includes('TUGAS'));
+    const adaLapangan= jenis.some(j=>j==='PULANG LUAR');
+    const adaAlpa    = jenis.some(j=>j==='TANPA BERITA');
+    const hadir = adaMasuk||adaIzin||adaSakit||adaTugas;
+    if(f==='HADIR'    && hadir)     filtered.push(...rows);
+    if(f==='IZIN'     && adaIzin)   filtered.push(...rows);
+    if(f==='SAKIT'    && adaSakit)  filtered.push(...rows);
+    if(f==='TUGAS'    && adaTugas)  filtered.push(...rows);
+    if(f==='PULANG LUAR'&&adaLapangan) filtered.push(...rows);
+    if(f==='ALPA'     && adaAlpa)   filtered.push(...rows);
+  });
+  renderLog(filtered);
 }
 
 /* ════ REKAP ════ */

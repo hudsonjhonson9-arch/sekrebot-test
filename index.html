@@ -228,8 +228,9 @@
     .r-warning{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3)}
     .r-icon{font-size:22px;margin-bottom:5px}
     .r-title{font-size:13px;font-weight:800;margin-bottom:2px}
-    .r-success .r-title{color:var(--success)}
-    .r-fail    .r-title{color:var(--danger)}
+    .r-success  .r-title{color:var(--success)}
+    .r-fail     .r-title{color:var(--danger)}
+    .r-warning  .r-title{color:#f59e0b}
     .r-warning .r-title{color:var(--warning)}
     .r-msg{font-size:11px;color:var(--muted);line-height:1.5;white-space:pre-line}
 
@@ -3177,6 +3178,8 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi (tersimpan untuk admin)';
         const bajuKet = camResult?.bajuVerdikt ? `\n👔 ${camResult.bajuVerdikt}` : '';
 
+        const kode_tolak = d?.validasi?.kode_tolak || '';
+
         if(ok){
           showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Absen Berhasil!',
             `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}${bajuKet}`);
@@ -3186,6 +3189,14 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
           setTimeout(loadTodayHistory, 2000);
           if(tg)setTimeout(()=>tg.close(),3500);
+        } else if (kode_tolak === 'SUDAH_ABSEN') {
+          // Pendobelan — tampilkan info bukan error merah
+          showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
+            `${ket}\n\nRiwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.`);
+          setBtnL('btnAbsen',false,'✅ Sudah Tercatat');
+          $('btnAbsen').disabled=true;
+          logLoaded=false;
+          setTimeout(loadTodayHistory, 1500);
         } else {
           showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','Absen Ditolak',ket);
           setBtnL('btnAbsen',false,'🔄 Coba Lagi');

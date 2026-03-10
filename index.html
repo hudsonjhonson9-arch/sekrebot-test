@@ -1465,7 +1465,7 @@
 /* ════ KONFIGURASI ════ */
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
 const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
-const isTest    = true;
+const isTest    = false;
 const ADMIN_IDS    = [1383864355, 8504296866];
 // Chat ID tujuan pengiriman rekap via Telegram (ganti dengan Group ID jika perlu)
 const REKAP_CHAT_ID = ADMIN_IDS[0];
@@ -3554,11 +3554,27 @@ async function handleKet(){
     }
     $('btnKet').disabled=true;
     logLoaded=false;
+    ketStatusLoaded=false;
     setTimeout(()=>loadKetStatus(),800);
+    setTimeout(()=>resetKetForm(),3200);
   }catch{
     showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','fail','🔌','Gagal Mengirim','Semua server tidak merespons.');
     setBtnL('btnKet',false,'📤 Kirim Keterangan');
   }
+}
+
+function resetKetForm(){
+  selectedJenis='IZIN';
+  document.querySelectorAll('#tab-ket .jenis-pill').forEach((p,i)=>{
+    p.classList.toggle('active',i===0);
+  });
+  const t=fmtD(nowWITA());
+  $('tglMulai').value=t; $('tglSelesai').value=t; updateDur();
+  $('ketText').value='';
+  clearBukti();
+  $('btnKet').disabled=false;
+  setBtnL('btnKet',false,'📤 Kirim Keterangan');
+  $('ketResult').classList.remove('show');
 }
 
 /* ════ KET STATUS LIST ════ */
@@ -3681,14 +3697,18 @@ async function confirmKetDelete(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
   const tgl=r.Tanggal||'?';
+  const tglMulai=r['Tgl Mulai']||r.Tanggal||'?';
+  const tglSelesai=r['Tgl Selesai']||r.Tanggal||'?';
   const jenis=(r['Jenis Absen']||'').replace(' PENDING','');
-  if(!confirm(`Hapus pengajuan ${jenis} tanggal ${tgl}?\nTindakan ini tidak dapat dibatalkan.`)) return;
+  if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
     const res=await apiFetch(P.ketDelete,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:r.row_number||r.rowNumber, tanggal:tgl,
+      user_id:MY_ID, row_number:r.row_number||r.rowNumber,
+      tgl_mulai:tglMulai, tgl_selesai:tglSelesai, tanggal:tgl,
       timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
+    if(d.ok===false){alert('Gagal: '+(d.message||'Terjadi kesalahan.'));return;}
     loadKetStatus();
   }catch{alert('Gagal menghapus. Coba lagi.');}
 }

@@ -1568,6 +1568,9 @@ const P = {
   seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
   seragamTypeAdd : isTest ? '/webhook-test/seragam-type-add'  : '/webhook/seragam-type-add',
   seragamTypeDel : isTest ? '/webhook-test/seragam-type-delete': '/webhook/seragam-type-delete',
+  jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
+  jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
+  jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1640,6 +1643,48 @@ let JAM_MASUK_MENIT  = 8*60;    // 480
 let JAM_PULANG_MENIT = 14*60+30; // 870
 function toMenitStr(str){ const [h,m]=(str||'').split(':').map(Number); return(isNaN(h)||isNaN(m))?null:h*60+m; }
 function menitToStr(m){ return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
+
+/* ════ JAM PERIODE KHUSUS (Ramadan, dll) ════ */
+let jamPeriodeList = []; // [{id, nama, dari:'YYYY-MM-DD', sampai:'YYYY-MM-DD', masuk:'HH:MM', pulang:'HH:MM'}]
+
+function normToISO(tgl){
+  if(!tgl) return '';
+  // Konversi DD/MM/YYYY → YYYY-MM-DD
+  const dm = tgl.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(dm) return `${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+  return tgl; // sudah ISO
+}
+
+function getJamForTanggal(tglStr){
+  // Prioritas: 1) Periode khusus aktif di tanggal tsb → 2) Global default
+  const t = normToISO(tglStr);
+  const periode = jamPeriodeList.find(p => {
+    const dari   = normToISO(p.dari);
+    const sampai = normToISO(p.sampai);
+    return t >= dari && t <= sampai;
+  });
+  if(periode && periode.masuk && periode.pulang){
+    return { masuk: periode.masuk, pulang: periode.pulang, nama: periode.nama };
+  }
+  return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
+}
+
+async function fetchJamPeriode(){
+  try{
+    const res = await apiFetch(P.jamPeriodeList, {method:'GET'});
+    if(!res.ok) return;
+    const json = await res.json();
+    const list = json.data || json.list || (Array.isArray(json) ? json : []);
+    jamPeriodeList = list.map(p=>({
+      id    : p.id || p.ID || '',
+      nama  : p.nama || p.Nama || '',
+      dari  : normToISO(p.dari || p.Dari || ''),
+      sampai: normToISO(p.sampai || p.Sampai || ''),
+      masuk : p.masuk || p.Masuk || '',
+      pulang: p.pulang || p.Pulang || '',
+    }));
+  }catch(_){}
+}
 
 // Load dari localStorage jika admin pernah simpan
 (function loadJamFromStorage(){
@@ -3842,7 +3887,10 @@ async function loadLog(){
   $('rIcon2').outerHTML='<span class="spin-sm" id="rIcon2"></span>';
   $('logList').innerHTML=shimmerRows();
   try{
-    const res=await apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'});
+    const [res] = await Promise.all([
+      apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
+      fetchJamPeriode()
+    ]);
     if(!res.ok)throw 0;
     const json=await res.json();
     let rows = parseRows(json);
@@ -3889,13 +3937,19 @@ function renderLog(logs){
   });
 
   const toMenit=s=>{if(!s||s==='-')return null;const p=s.replace(/\s*WITA\s*/i,'').trim().split(':').map(Number);return isNaN(p[0])?null:p[0]*60+(p[1]||0);};
-  const jmBatas=menitToStr(JAM_MASUK_MENIT), jpBatas=menitToStr(JAM_PULANG_MENIT);
-  const mMasukBatas=toMenit(jmBatas), mPulangBatas=toMenit(jpBatas);
 
   const HARI_ID=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
   const BULAN_ID=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 
   el.innerHTML=Object.entries(byDate).map(([tgl,rows])=>{
+    // ── Jam batas per tanggal (periode khusus atau global) ──
+    const _jamTgl     = getJamForTanggal(tgl);
+    const jmBatas     = _jamTgl.masuk;
+    const jpBatas     = _jamTgl.pulang;
+    const mMasukBatas = toMenit(jmBatas);
+    const mPulangBatas= toMenit(jpBatas);
+    const periodeNama = _jamTgl.nama; // null jika global
+
     // Pisahkan per jenis
     const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
     const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
@@ -3961,7 +4015,10 @@ function renderLog(logs){
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTop}"></div>
       <!-- Header tanggal -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px 6px">
-        <div style="font-size:10px;font-weight:800;color:var(--white)">${tglLabel}</div>
+        <div>
+          <div style="font-size:10px;font-weight:800;color:var(--white)">${tglLabel}</div>
+          ${periodeNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeNama}</div>` : ''}
+        </div>
         <div style="font-size:16px">${masukIcon}</div>
       </div>
       <!-- Grid jam masuk/pulang -->
@@ -4038,10 +4095,12 @@ function updateLogStats(l){
   let sumPulangMnt=0, countPulang=0;
   let sumKerjaMnt=0, countKerja=0;
 
-  const mMasukBatas = JAM_MASUK_MENIT;
-  const mPulangBatas= JAM_PULANG_MENIT;
+  Object.entries(byDate).forEach(([tgl,rows])=>{
+    // Jam batas per tanggal (pakai periode khusus jika ada)
+    const _jamTgl      = getJamForTanggal(tgl);
+    const mMasukBatas  = toMnt(_jamTgl.masuk);
+    const mPulangBatas = toMnt(_jamTgl.pulang);
 
-  Object.values(byDate).forEach(rows=>{
     const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
     const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
@@ -4080,7 +4139,10 @@ function updateLogStats(l){
   const disiplinDays = hariHadir - hariTerlambat - hariCepat + Math.min(hariTerlambat,hariCepat); // hari yg keduanya ok
   // Cara lebih tepat: hitung per hari
   let hariDisiplin=0;
-  Object.values(byDate).forEach(rows=>{
+  Object.entries(byDate).forEach(([tgl,rows])=>{
+    const _jamTgl2     = getJamForTanggal(tgl);
+    const mMasukBatas2 = toMnt(_jamTgl2.masuk);
+    const mPulangBatas2= toMnt(_jamTgl2.pulang);
     const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const isKet = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
     if(isKet){ hariDisiplin++; return; }
@@ -4089,7 +4151,7 @@ function updateLogStats(l){
     if(!rM) return;
     const mM2 = toMnt((getField(rM,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim());
     const mP2 = rP ? toMnt((getField(rP,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim()) : null;
-    const tepat = (mM2===null||mM2<=mMasukBatas) && (mP2===null||mP2>=mPulangBatas);
+    const tepat = (mM2===null||mM2<=mMasukBatas2) && (mP2===null||mP2>=mPulangBatas2);
     if(tepat) hariDisiplin++;
   });
   const pct = hariHadir>0 ? Math.round(hariDisiplin/hariHadir*100) : null;

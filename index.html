@@ -4320,21 +4320,23 @@ async function loadRekap(){
     let pegawai=[], ringkasan={};
     let rekapOK=false;
 
-    // ── Mode HARIAN: langsung dari log (n8n rekap tidak kirim jam aktual) ──
-    // ── Mode RANGE : pakai n8n rekap (lebih efisien untuk multi-hari) ──
-    if (!isHarianLoad) {
-      try{
-        const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}`,{method:'GET'});
-        if(res.ok){
-          const json=await res.json();
-          const d=Array.isArray(json)?json[0]:json;
-          if(d?.pegawai?.length){ ringkasan=d.ringkasan||{};pegawai=d.pegawai;rekapOK=true; }
-        }
-      }catch(_){}
-    }
+    // ── Selalu coba pakai n8n rekap (harian maupun range) ──
+    // n8n Hitung Rekap sudah mengurutkan sesuai user_list dan isi semua pegawai
+    try{
+      // Kirim juga jam batas aktif (periode khusus atau global) ke n8n
+      const _jamReq = getJamForTanggal(dari);
+      const jamMasukParam  = _jamReq.masuk;
+      const jamPulangParam = _jamReq.pulang;
+      const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}`,{method:'GET'});
+      if(res.ok){
+        const json=await res.json();
+        const d=Array.isArray(json)?json[0]:json;
+        if(d?.pegawai?.length){ ringkasan=d.ringkasan||{};pegawai=d.pegawai;rekapOK=true; }
+      }
+    }catch(_){}
 
+    // ── Fallback frontend jika n8n gagal ──
     if(!rekapOK){
-      // Fallback (selalu dipakai untuk harian, fallback untuk range jika n8n gagal)
       let allRowsRaw = [], periodRowsRaw = [];
       try {
         const resAll = await apiFetch(`${P.log}`, {method:'GET'});
@@ -4350,6 +4352,37 @@ async function loadRekap(){
       ringkasan = computed.ringkasan;
     }
 
+    // ── Untuk mode HARIAN: enrich jam masuk/pulang aktual dari log ──
+    // n8n Hitung Rekap tidak menyimpan jam aktual karena aggregate —
+    // kita ambil dari P.log lalu pasangkan ke masing-masing pegawai
+    if(isHarianLoad && rekapOK){
+      try{
+        // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
+        let logHarian = allLogs.filter(r => getField(r,'Tanggal','tanggal') === dari);
+        if(!logHarian.length){
+          const rLog = await apiFetch(`${P.log}?tanggal=${dari}`, {method:'GET'});
+          if(rLog.ok){ const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r=>getField(r,'Tanggal','tanggal')===dari); }
+        }
+        // Bangun map: id → {jamMasuk, jamPulang}
+        const jamMap={};
+        logHarian.forEach(r=>{
+          const id = String(getField(r,'ID','id')||'').trim();
+          if(!id) return;
+          const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+          const jam = (getField(r,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim();
+          if(!jamMap[id]) jamMap[id]={jamMasuk:'-',jamPulang:'-'};
+          if(j==='MASUK'||j==='DI LUAR JAM MASUK') jamMap[id].jamMasuk=jam||'-';
+          if(j==='PULANG'||j==='DI LUAR JAM PULANG'||j==='PULANG LUAR') jamMap[id].jamPulang=jam||'-';
+        });
+        // Pasangkan ke pegawai
+        pegawai = pegawai.map(p=>{
+          const id = String(p.id||'');
+          const jm = jamMap[id];
+          return jm ? {...p, jamMasuk:jm.jamMasuk, jamPulang:jm.jamPulang} : p;
+        });
+      }catch(_){}
+    }
+
     $('rsMasuk').textContent      = ringkasan.masuk       ?? 0;
     $('rsPulang').textContent     = ringkasan.pulang      ?? 0;
     $('rsPulangLuar').textContent = ringkasan.pulang_luar ?? 0;
@@ -4359,22 +4392,23 @@ async function loadRekap(){
     $('rsTugas').textContent      = ringkasan.tugas       ?? 0;
 
     const order = await orderPromise;
-    // Selalu sort berdasarkan urutan di user_list (database_sekrebot sheet user_list)
-    pegawai = sortByUserList(pegawai, order);
+    // Enrich jabatan dari user_list jika belum ada, lalu sort by urutan
     if (order.length > 0) {
       pegawai = pegawai.map(p => {
-        const match = order.find(u => u.id === String(p.id||'') ||
+        const match = order.find(u =>
+          u.id === String(p.id||'') ||
           u.nama.toLowerCase().trim() === (p.nama||'').toLowerCase().trim() ||
           (u.nip && u.nip === p.nip));
-        return match ? {...p, jabatan: p.jabatan || match.jabatan, urutan: match.urutan} : p;
-      });
-      // Sort ulang setelah enrich urutan
-      pegawai.sort((a,b)=>{
-        const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
-        if(ua !== ub) return ua - ub;
-        return (a.nama||'').localeCompare(b.nama||'','id');
+        return match
+          ? {...p, jabatan: p.jabatan || match.jabatan, urutan: p.urutan ?? match.urutan}
+          : p;
       });
     }
+    pegawai.sort((a,b)=>{
+      const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
+      if(ua !== ub) return ua - ub;
+      return (a.nama||'').localeCompare(b.nama||'','id');
+    });
 
     lastRekapPegawai = pegawai;
     rekapLoaded=true;
@@ -4724,19 +4758,18 @@ function renderRekap(pg){
           ${cepatMnt>0 ? `<span class="pbar-item pb-luar-pulang" style="font-family:'JetBrains Mono',monospace">🏃 -${cepatMnt}m</span>` : ''}
         </div>
 
-        ${(()=>{
-          // Blok akumulasi all-time
-          const aLambat = p.totalLambatAllHHMM || p.akkLambatHHMM || '00:00';
-          const aCepat  = p.totalCepatAllHHMM  || p.akkCepatHHMM  || '00:00';
-          const aTotal  = p.totalAkkAllHHMM    || p.totalAkkHHMM  || '00:00';
-          const aTotalM = p.totalAkkAllMenit   || p.all_menit_terlambat+p.all_menit_lebih_awal || 0;
+        ${(function(){
+          const aLambat = p.totalLambatAllHHMM || '00:00';
+          const aCepat  = p.totalCepatAllHHMM  || '00:00';
+          const aTotal  = p.totalAkkAllHHMM    || '00:00';
+          const aTotalM = p.totalAkkAllMenit   || 0;
           if(aTotalM===0 && aLambat==='00:00' && aCepat==='00:00') return '';
-          return `<div class="akk-all-row" style="margin-top:8px">
-            <span class="akk-all-label">📈 Akumulasi Keseluruhan</span>
-            ${aLambat!=='00:00' ? `<span class="akk-badge akk-lambat">⏰ Lambat: ${aLambat}</span>` : ''}
-            ${aCepat !=='00:00' ? `<span class="akk-badge akk-cepat">🏃 Cepat: ${aCepat}</span>`  : ''}
-            ${aTotal !=='00:00' ? `<span class="akk-badge akk-total">Σ Total: ${aTotal}</span>`   : ''}
-          </div>`;
+          return '<div class="akk-all-row" style="margin-top:8px">'
+            + '<span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>'
+            + (aLambat!=='00:00' ? '<span class="akk-badge akk-lambat">⏰ Lambat: '+aLambat+'</span>' : '')
+            + (aCepat !=='00:00' ? '<span class="akk-badge akk-cepat">🏃 Cepat: '+aCepat+'</span>'  : '')
+            + (aTotal !=='00:00' ? '<span class="akk-badge akk-total">Σ Total: '+aTotal+'</span>'   : '')
+            + '</div>';
         })()}
       </div>`;
     }

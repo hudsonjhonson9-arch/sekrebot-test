@@ -4310,9 +4310,10 @@ async function loadRekap(){
   $('rekapRefIcon').outerHTML='<span class="spin-sm" id="rekapRefIcon"></span>';
   $('pegawaiList').innerHTML=shimmerRows(4);
   resetRekapStats();
-  // Fetch hari libur & jam pegawai secara paralel
+  // Fetch hari libur, jam pegawai & jam periode secara paralel
   if(!liburLoaded) fetchLiburForRekap();
   fetchJamPegawai();
+  fetchJamPeriode();
   const isHarianLoad = dari === sampai;
   try{
     const orderPromise = fetchUserListOrder();
@@ -4358,22 +4359,21 @@ async function loadRekap(){
     $('rsTugas').textContent      = ringkasan.tugas       ?? 0;
 
     const order = await orderPromise;
-    if (rekapOK) {
-      pegawai = [...pegawai].sort((a,b)=>{
+    // Selalu sort berdasarkan urutan di user_list (database_sekrebot sheet user_list)
+    pegawai = sortByUserList(pegawai, order);
+    if (order.length > 0) {
+      pegawai = pegawai.map(p => {
+        const match = order.find(u => u.id === String(p.id||'') ||
+          u.nama.toLowerCase().trim() === (p.nama||'').toLowerCase().trim() ||
+          (u.nip && u.nip === p.nip));
+        return match ? {...p, jabatan: p.jabatan || match.jabatan, urutan: match.urutan} : p;
+      });
+      // Sort ulang setelah enrich urutan
+      pegawai.sort((a,b)=>{
         const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
-        if (ua !== ub) return ua - ub;
+        if(ua !== ub) return ua - ub;
         return (a.nama||'').localeCompare(b.nama||'','id');
       });
-    } else {
-      pegawai = sortByUserList(pegawai, order);
-      if (order.length > 0) {
-        pegawai = pegawai.map(p => {
-          const match = order.find(u => u.id === String(p.id||'') ||
-            u.nama.toLowerCase().trim() === (p.nama||'').toLowerCase().trim() ||
-            (u.nip && u.nip === p.nip));
-          return match ? {...p, jabatan: p.jabatan || match.jabatan, urutan: match.urutan} : p;
-        });
-      }
     }
 
     lastRekapPegawai = pegawai;
@@ -4410,9 +4410,15 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
   // Jam batas GLOBAL (default)
   const JAM_MASUK_BATAS  = JAM_MASUK_MENIT;
   const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
-  // Helper: jam batas per pegawai (fallback ke global)
-  function getMasukBatas(id)  { return jamPegawaiMap[id]?.masukMenit  ?? JAM_MASUK_BATAS; }
-  function getPulangBatas(id) { return jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS; }
+  // Helper: jam batas per pegawai + per tanggal (periode khusus mengalahkan per-pegawai yg mengalahkan global)
+  function getMasukBatas(id, tgl)  {
+    if(tgl){ const p=getJamForTanggal(tgl); if(p.nama) return toMenit(p.masuk) ?? JAM_MASUK_BATAS; }
+    return jamPegawaiMap[id]?.masukMenit  ?? JAM_MASUK_BATAS;
+  }
+  function getPulangBatas(id, tgl) {
+    if(tgl){ const p=getJamForTanggal(tgl); if(p.nama) return toMenit(p.pulang) ?? JAM_PULANG_BATAS; }
+    return jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS;
+  }
 
   function toMenit(jamStr){
     const s=String(jamStr||'').replace(/\s.*/,'').split(':');
@@ -4444,6 +4450,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     if(!id) return;
     const nama  = getField(r,'Nama','nama') || '—';
     const nip   = getField(r,'NIP','nip')   || '—';
+    const tgl   = normToISO(getField(r,'Tanggal','tanggal') || '');
     const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr= getField(r,'Jam','jam') || '';
     if(!map[id]) map[id]={id,nama,nip,jabatan:'',urutan:9999,
@@ -4461,11 +4468,11 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const jam=toMenit(jamStr);
     if     (jenis==='MASUK')             { map[id].masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis==='DI LUAR JAM MASUK') { map[id].di_luar_masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim();
-      if(jam!==null&&jam>getMasukBatas(id)) map[id].menit_terlambat+=(jam-getMasukBatas(id));
+      if(jam!==null&&jam>getMasukBatas(id,tgl)) map[id].menit_terlambat+=(jam-getMasukBatas(id,tgl));
     }
     else if(jenis==='PULANG')            { map[id].pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis==='DI LUAR JAM PULANG'){ map[id].di_luar_pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim();
-      if(jam!==null&&jam<getPulangBatas(id)) map[id].menit_lebih_awal+=(getPulangBatas(id)-jam);
+      if(jam!==null&&jam<getPulangBatas(id,tgl)) map[id].menit_lebih_awal+=(getPulangBatas(id,tgl)-jam);
     }
     else if(jenis==='PULANG LUAR')       { map[id].pulang_luar++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis.includes('LUAR'))      { map[id].di_luar_masuk++; }
@@ -4479,17 +4486,18 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
   allRows.forEach(r=>{
     const id = String(getField(r,'ID','id')||'').trim();
     if(!id || !map[id]) return; // only process existing employees
+    const tglA  = normToISO(getField(r,'Tanggal','tanggal') || '');
     const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr = getField(r,'Jam','jam') || '';
     const jam = toMenit(jamStr);
     if(jenis==='MASUK') { map[id].all_masuk++; }
     else if(jenis==='DI LUAR JAM MASUK') {
       map[id].all_di_luar_masuk++;
-      if(jam!==null&&jam>getMasukBatas(id)) map[id].all_menit_terlambat+=(jam-getMasukBatas(id));
+      if(jam!==null&&jam>getMasukBatas(id,tglA)) map[id].all_menit_terlambat+=(jam-getMasukBatas(id,tglA));
     }
     else if(jenis==='DI LUAR JAM PULANG') {
       map[id].all_di_luar_pulang++;
-      if(jam!==null&&jam<getPulangBatas(id)) map[id].all_menit_lebih_awal+=(getPulangBatas(id)-jam);
+      if(jam!==null&&jam<getPulangBatas(id,tglA)) map[id].all_menit_lebih_awal+=(getPulangBatas(id,tglA)-jam);
     }
   });
 
@@ -4600,8 +4608,11 @@ function renderRekap(pg){
       };
       const pgwId  = String(p.id||'');
       const jpgw   = jamPegawaiMap[pgwId];
-      const jmBatas = jpgw?.masuk  || menitToStr(JAM_MASUK_MENIT);
-      const jpBatas = jpgw?.pulang || menitToStr(JAM_PULANG_MENIT);
+      // Prioritas: 1) Periode khusus di tanggal tsb → 2) Jam per-pegawai → 3) Global
+      const _jamHarian   = getJamForTanggal(_dari);
+      const jmBatas = _jamHarian.nama ? _jamHarian.masuk  : (jpgw?.masuk  || menitToStr(JAM_MASUK_MENIT));
+      const jpBatas = _jamHarian.nama ? _jamHarian.pulang : (jpgw?.pulang || menitToStr(JAM_PULANG_MENIT));
+      const periodeHarianNama = _jamHarian.nama;
       const mMasukBatas  = toMenitLocal(jmBatas);
       const mPulangBatas = toMenitLocal(jpBatas);
       const mMasuk  = toMenitLocal(rawMasuk);
@@ -4655,6 +4666,7 @@ function renderRekap(pg){
             <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
             ${jabatanStr}
             <div class="pegawai-jabatan" style="margin-top:2px">NIP: ${nip}</div>
+            ${periodeHarianNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeHarianNama}</div>` : ''}
           </div>
           <!-- Badge status utama -->
           <div style="flex-shrink:0;text-align:right">
@@ -4709,7 +4721,23 @@ function renderRekap(pg){
           ${tugas>0      ? `<span class="pbar-item pb-tugas"     >💼 Tugas/DL</span>` : ''}
           ${isAlpa       ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ Tidak Hadir</span>` : ''}
           ${terlambatMnt>0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
+          ${cepatMnt>0 ? `<span class="pbar-item pb-luar-pulang" style="font-family:'JetBrains Mono',monospace">🏃 -${cepatMnt}m</span>` : ''}
         </div>
+
+        ${(()=>{
+          // Blok akumulasi all-time
+          const aLambat = p.totalLambatAllHHMM || p.akkLambatHHMM || '00:00';
+          const aCepat  = p.totalCepatAllHHMM  || p.akkCepatHHMM  || '00:00';
+          const aTotal  = p.totalAkkAllHHMM    || p.totalAkkHHMM  || '00:00';
+          const aTotalM = p.totalAkkAllMenit   || p.all_menit_terlambat+p.all_menit_lebih_awal || 0;
+          if(aTotalM===0 && aLambat==='00:00' && aCepat==='00:00') return '';
+          return `<div class="akk-all-row" style="margin-top:8px">
+            <span class="akk-all-label">📈 Akumulasi Keseluruhan</span>
+            ${aLambat!=='00:00' ? `<span class="akk-badge akk-lambat">⏰ Lambat: ${aLambat}</span>` : ''}
+            ${aCepat !=='00:00' ? `<span class="akk-badge akk-cepat">🏃 Cepat: ${aCepat}</span>`  : ''}
+            ${aTotal !=='00:00' ? `<span class="akk-badge akk-total">Σ Total: ${aTotal}</span>`   : ''}
+          </div>`;
+        })()}
       </div>`;
     }
 
@@ -4733,9 +4761,12 @@ function renderRekap(pg){
     const dColor= dLevel===4?'var(--success)':dLevel===3?'var(--info)':dLevel===2?'var(--warning)':'var(--danger)';
     const pgwIdR = String(p.id||'');
     const jpgwR  = jamPegawaiMap[pgwIdR];
-    const jamMasukBatas  = jpgwR?.masuk  || menitToStr(JAM_MASUK_MENIT);
-    const jamPulangBatas = jpgwR?.pulang || menitToStr(JAM_PULANG_MENIT);
-    const hasCustomJam   = !!jpgwR;
+    // Untuk range: cek apakah ada periode aktif di tanggal "dari" (untuk info tampilan)
+    const _jamRange    = getJamForTanggal(_dari);
+    const jamMasukBatas  = _jamRange.nama ? _jamRange.masuk  : (jpgwR?.masuk  || menitToStr(JAM_MASUK_MENIT));
+    const jamPulangBatas = _jamRange.nama ? _jamRange.pulang : (jpgwR?.pulang || menitToStr(JAM_PULANG_MENIT));
+    const hasCustomJam   = !!jpgwR || !!_jamRange.nama;
+    const customJamLabel = _jamRange.nama ? `🌙 ${_jamRange.nama}` : (jpgwR ? '✨ Jam Khusus' : '');
 
     const disiplinBlock = dPct !== null ? `
       <div class="pegawai-disiplin-wrap">
@@ -4772,7 +4803,7 @@ function renderRekap(pg){
     const jamBatasStr = `<div class="jam-pegawai-row">
       <span class="jam-pgw-item" title="${hasCustomJam?'Jam khusus':'Jam global'}">🟢 Masuk ≤ ${jamMasukBatas}</span>
       <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
-      ${hasCustomJam?'<span style="font-size:8px;color:var(--gold);font-weight:700">✨ Jam Khusus</span>':''}
+      ${customJamLabel?`<span style="font-size:8px;color:var(--gold);font-weight:700">${customJamLabel}</span>`:''}
     </div>`;
 
     return`<div class="pegawai-card">
@@ -4866,11 +4897,12 @@ async function downloadRekap() {
     const sakit      = p.sakit       || 0;
     const tugas      = p.tugas       || 0;
 
-    // Jam per pegawai (prioritas custom, fallback global)
+    // Jam per pegawai (prioritas: periode khusus → custom per-pegawai → global)
     const pgwId = String(p.id||'');
     const jpgw  = jamPegawaiMap[pgwId];
-    const jamMasukBatasStr  = jpgw?.masuk  || JAM_MASUK_STANDAR;
-    const jamPulangBatasStr = jpgw?.pulang || JAM_PULANG_STANDAR;
+    const _jamDl        = getJamForTanggal(dari); // periode aktif di tanggal "dari"
+    const jamMasukBatasStr  = _jamDl.nama ? _jamDl.masuk  : (jpgw?.masuk  || JAM_MASUK_STANDAR);
+    const jamPulangBatasStr = _jamDl.nama ? _jamDl.pulang : (jpgw?.pulang || JAM_PULANG_STANDAR);
     const mPgwMasuk  = toMenitDl(jamMasukBatasStr)  ?? mStandarMasuk;
     const mPgwPulang = toMenitDl(jamPulangBatasStr) ?? mStandarPulang;
     // Jam kerja wajib harian untuk pegawai ini

@@ -909,7 +909,7 @@
       </div>
     </div>
 
-    <div class="footer">IZIN → tunggu persetujuan admin (lalu broadcast) · SAKIT/TUGAS → otomatis tercatat &amp; broadcast · Tugas &amp; Sakit &gt;1 hari wajib bukti</div>
+    <div class="footer">IZIN → tunggu persetujuan admin lalu broadcast · SAKIT &amp; TUGAS → otomatis disetujui &amp; broadcast · Sakit &gt;1 hari &amp; Tugas wajib bukti</div>
   </div>
 
   <!-- ══ MODAL EDIT KETERANGAN ══ -->
@@ -3512,14 +3512,16 @@ async function handleKet(){
   const tm=$('tglMulai').value, ts=$('tglSelesai').value, k=$('ketText').value.trim();
   if(!tm||!ts){showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⚠️','Lengkapi Form','Tanggal wajib diisi.');return;}
   if(!k){showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⚠️','Keterangan Kosong','Tuliskan alasan terlebih dahulu.');return;}
-  // ── Validasi bukti wajib (frontend guard) ──
+  // ── Validasi bukti wajib (frontend guard — backend juga validasi) ──
   if(selectedJenis==='TUGAS'&&!fileBase64){
-    showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','📎','Bukti Wajib','Surat Tugas / Dinas Luar wajib menyertakan bukti (foto surat tugas / dokumen).');return;
+    showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','📎','Bukti Wajib',
+      'Surat Tugas / Dinas Luar wajib menyertakan bukti (foto surat tugas / dokumen).');return;
   }
   if(selectedJenis==='SAKIT'&&tm&&ts){
-    const _selisih=Math.round((new Date(ts)-new Date(tm))/(1000*60*60*24))+1;
-    if(_selisih>1&&!fileBase64){
-      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','📎','Bukti Wajib',`Izin Sakit lebih dari 1 hari (${_selisih} hari) wajib menyertakan bukti (surat dokter / keterangan sakit).`);return;
+    const _d=Math.round((new Date(ts)-new Date(tm))/864e5)+1;
+    if(_d>1&&!fileBase64){
+      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','📎','Bukti Wajib',
+        `Izin Sakit lebih dari 1 hari (${_d} hari) wajib menyertakan bukti (surat dokter / keterangan sakit).`);return;
     }
   }
   setBtnL('btnKet',true,'Mengirim...');
@@ -3533,13 +3535,22 @@ async function handleKet(){
   try{
     const res=await apiFetch(P.ket,{method:'POST',body:JSON.stringify(payload)});
     let d={};try{d=await res.json()}catch(_){}
+    // Tampilkan pesan sesuai jenis & status dari server
+    if(d.ok===false){
+      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⚠️','Gagal Mengajukan',d.message||'Terjadi kesalahan.');
+      setBtnL('btnKet',false,'📤 Kirim Keterangan');
+      return;
+    }
     const isAutoApprove=['SAKIT','TUGAS'].includes(selectedJenis);
     if(isAutoApprove){
-      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','success','✅',`${selectedJenis} Disetujui Otomatis`,`Keterangan ${selectedJenis} Anda telah tercatat, disetujui otomatis, dan akan disiarkan ke seluruh pegawai.`);
-      setBtnL('btnKet',false,'✅ Tercatat Otomatis');
+      const label=selectedJenis==='TUGAS'?'Surat Tugas / DL':'Izin Sakit';
+      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','success','✅',`${label} Tercatat Otomatis`,
+        `Keterangan ${selectedJenis} Anda telah disetujui otomatis, tercatat di sistem, dan akan disiarkan kepada seluruh pegawai.`);
+      setBtnL('btnKet',false,'✅ Tercatat & Disetujui');
     }else{
-      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⏳','IZIN Menunggu Konfirmasi','Pengajuan IZIN Anda telah dikirim ke admin. Setelah disetujui, info akan disiarkan ke seluruh pegawai.');
-      setBtnL('btnKet',false,'⏳ Menunggu Konfirmasi');
+      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⏳','IZIN Menunggu Konfirmasi Admin',
+        'Pengajuan IZIN Anda telah dikirim. Setelah admin menyetujui, informasi akan disiarkan kepada seluruh pegawai.');
+      setBtnL('btnKet',false,'⏳ Menunggu Persetujuan Admin');
     }
     $('btnKet').disabled=true;
     logLoaded=false;

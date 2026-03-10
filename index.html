@@ -895,7 +895,7 @@
       </div>
     </div>
     <div class="result-card" id="ketResult"><div class="r-icon" id="ketRIcon">✅</div><div class="r-title" id="ketRTitle">—</div><div class="r-msg" id="ketRMsg">—</div></div>
-    <button class="btn-primary" id="btnKet" onclick="handleKet()"><div class="btn-inner"><span id="btnKetText">📤 Kirim Keterangan</span></div></button>
+    <button class="btn-primary" id="btnKet" onclick="handleKet()"><div class="btn-inner"><span>📤</span><span id="btnKetText">Kirim Keterangan</span></div></button>
 
     <!-- ── Riwayat Pengajuan Keterangan ── -->
     <div class="ket-list-wrap">
@@ -1089,6 +1089,59 @@
       <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
       <button class="filter-chip" onclick="filterLog('ALPA',  this)">❌ Alpa</button>
     </div>
+    <!-- ══ AKUMULASI WAKTU ══ -->
+    <div id="akumulasiBox" style="display:none;margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px">⏱️ Akumulasi Waktu</div>
+
+      <!-- Baris 1: Hadir / Terlambat / Pulang Cepat -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:5px">
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akHadir" style="font-size:20px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">✅ Hari Hadir</div>
+        </div>
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akTerlambat" style="font-size:20px;font-weight:800;color:var(--warning);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">⏰ Hari Terlambat</div>
+        </div>
+        <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akCepat" style="font-size:20px;font-weight:800;color:#f97316;font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">🏃 Pulang Cepat</div>
+        </div>
+      </div>
+
+      <!-- Baris 2: Total keterlambatan / Total pulang cepat / Efisiensi -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:5px">
+        <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akTotalLambat" style="font-size:13px;font-weight:800;color:var(--warning);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Terlambat</div>
+        </div>
+        <div style="background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.18);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akTotalCepat" style="font-size:13px;font-weight:800;color:#f97316;font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Pulang Cepat</div>
+        </div>
+        <div style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.18);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akEfisiensi" style="font-size:13px;font-weight:800;color:var(--info);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">📊 Disiplin</div>
+        </div>
+      </div>
+
+      <!-- Baris 3: Rata-rata masuk / Rata-rata pulang / Total kerja -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+        <div style="background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akAvgMasuk" style="font-size:13px;font-weight:800;color:var(--success);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">⌀ Jam Masuk</div>
+        </div>
+        <div style="background:rgba(96,165,250,.05);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akAvgPulang" style="font-size:13px;font-weight:800;color:var(--info);font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">⌀ Jam Pulang</div>
+        </div>
+        <div style="background:rgba(139,92,246,.05);border:1px solid rgba(139,92,246,.15);border-radius:10px;padding:8px 5px;text-align:center">
+          <div id="akTotalKerja" style="font-size:13px;font-weight:800;color:#8b5cf6;font-family:'JetBrains Mono',monospace">—</div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">⏳ Total Kerja</div>
+        </div>
+      </div>
+    </div>
+
     <div class="log-list" id="logList">
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:60%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:70%"></div><div class="shimmer sh-line" style="width:45%"></div></div></div>
@@ -3954,6 +4007,111 @@ function updateLogStats(l){
   $('stIzin').textContent      = c('IZIN')   || '0';
   $('stSakit').textContent     = c('SAKIT')  || '0';
   $('stTugas').textContent     = c('TUGAS')  || '0';
+
+  // ══ AKUMULASI WAKTU ══
+  const toMnt = s => {
+    if(!s||s==='-') return null;
+    const p = s.replace(/\s*WITA\s*/i,'').trim().split(':').map(Number);
+    return isNaN(p[0]) ? null : p[0]*60+(p[1]||0);
+  };
+  const fmtMnt = m => {
+    if(m===null||isNaN(m)||m<0) return '—';
+    const h=Math.floor(m/60), mn=m%60;
+    return h>0 ? `${h}j ${mn}m` : `${mn}m`;
+  };
+  const fmtJam = m => {
+    if(m===null||isNaN(m)) return '—';
+    return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  };
+
+  // Group by tanggal
+  const byDate={};
+  l.forEach(r=>{
+    const tgl=getField(r,'Tanggal','tanggal')||'—';
+    if(!byDate[tgl]) byDate[tgl]=[];
+    byDate[tgl].push(r);
+  });
+
+  let hariHadir=0, hariTerlambat=0, hariCepat=0;
+  let totalLambatMnt=0, totalCepatMnt=0;
+  let sumMasukMnt=0, countMasuk=0;
+  let sumPulangMnt=0, countPulang=0;
+  let sumKerjaMnt=0, countKerja=0;
+
+  const mMasukBatas = JAM_MASUK_MENIT;
+  const mPulangBatas= JAM_PULANG_MENIT;
+
+  Object.values(byDate).forEach(rows=>{
+    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
+    const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
+    const isKet   = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
+
+    if(isKet){ hariHadir++; return; }
+    if(!rMasuk) return;
+
+    hariHadir++;
+
+    const jamMasuk  = rMasuk  ? (getField(rMasuk, 'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
+    const jamPulang = rPulang ? (getField(rPulang,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
+    const mM = toMnt(jamMasuk);
+    const mP = toMnt(jamPulang);
+
+    if(mM!==null){
+      sumMasukMnt+=mM; countMasuk++;
+      const lambat = mM - mMasukBatas;
+      if(lambat>0){ hariTerlambat++; totalLambatMnt+=lambat; }
+    }
+    if(mP!==null){
+      sumPulangMnt+=mP; countPulang++;
+      const cepat = mPulangBatas - mP;
+      if(cepat>0){ hariCepat++; totalCepatMnt+=cepat; }
+    }
+    if(mM!==null && mP!==null && mP>mM){
+      sumKerjaMnt+=(mP-mM); countKerja++;
+    }
+  });
+
+  const avgMasukMnt  = countMasuk  ? Math.round(sumMasukMnt/countMasuk)  : null;
+  const avgPulangMnt = countPulang ? Math.round(sumPulangMnt/countPulang): null;
+  const avgKerjaMnt  = countKerja  ? Math.round(sumKerjaMnt/countKerja)  : null;
+
+  // Disiplin score: persentase hari tanpa terlambat & tanpa pulang cepat dari total hadir
+  const disiplinDays = hariHadir - hariTerlambat - hariCepat + Math.min(hariTerlambat,hariCepat); // hari yg keduanya ok
+  // Cara lebih tepat: hitung per hari
+  let hariDisiplin=0;
+  Object.values(byDate).forEach(rows=>{
+    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const isKet = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
+    if(isKet){ hariDisiplin++; return; }
+    const rM = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK');});
+    const rP = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG');});
+    if(!rM) return;
+    const mM2 = toMnt((getField(rM,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim());
+    const mP2 = rP ? toMnt((getField(rP,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim()) : null;
+    const tepat = (mM2===null||mM2<=mMasukBatas) && (mP2===null||mP2>=mPulangBatas);
+    if(tepat) hariDisiplin++;
+  });
+  const pct = hariHadir>0 ? Math.round(hariDisiplin/hariHadir*100) : null;
+  const disiplinColor = pct===null?'var(--info)':pct>=90?'var(--success)':pct>=70?'var(--warning)':'var(--danger)';
+
+  // Update DOM
+  const box=$('akumulasiBox');
+  if(box && hariHadir>0){
+    box.style.display='block';
+    $('akHadir').textContent       = hariHadir;
+    $('akTerlambat').textContent   = hariTerlambat;
+    $('akCepat').textContent       = hariCepat;
+    $('akTotalLambat').textContent = totalLambatMnt>0 ? fmtMnt(totalLambatMnt) : '0m';
+    $('akTotalCepat').textContent  = totalCepatMnt>0  ? fmtMnt(totalCepatMnt)  : '0m';
+    $('akEfisiensi').textContent   = pct!==null ? pct+'%' : '—';
+    $('akEfisiensi').style.color   = disiplinColor;
+    $('akAvgMasuk').textContent    = fmtJam(avgMasukMnt);
+    $('akAvgPulang').textContent   = fmtJam(avgPulangMnt);
+    $('akTotalKerja').textContent  = avgKerjaMnt ? fmtMnt(avgKerjaMnt)+'/hr' : '—';
+  } else if(box){
+    box.style.display='none';
+  }
 }
 function filterLog(f,el){
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');

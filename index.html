@@ -4323,11 +4323,21 @@ async function loadRekap(){
     // ── Selalu coba pakai n8n rekap (harian maupun range) ──
     // n8n Hitung Rekap sudah mengurutkan sesuai user_list dan isi semua pegawai
     try{
-      // Kirim juga jam batas aktif (periode khusus atau global) ke n8n
+      // Kirim juga jam batas aktif (periode khusus atau global) + hari libur ke n8n
       const _jamReq = getJamForTanggal(dari);
       const jamMasukParam  = _jamReq.masuk;
       const jamPulangParam = _jamReq.pulang;
-      const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}`,{method:'GET'});
+      // Hitung hari kerja di frontend (sudah punya hariLiburSet) lalu kirim ke n8n
+      function _countHK(d1, d2){
+        let c=0; const dd=new Date(d1+'T00:00:00'), ds=new Date(d2+'T00:00:00');
+        while(dd<=ds){ const dy=dd.getDay(), t=dd.toISOString().split('T')[0];
+          if(dy!==0&&dy!==6&&!hariLiburSet.has(t)) c++;
+          dd.setDate(dd.getDate()+1); }
+        return c;
+      }
+      const hariKerjaParam = _countHK(dari, sampai);
+      const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t=>t>=dari&&t<=sampai)));
+      const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`,{method:'GET'});
       if(res.ok){
         const json=await res.json();
         const d=Array.isArray(json)?json[0]:json;
@@ -4602,6 +4612,17 @@ function renderRekap(pg){
   const _sampai = $('rekapSampai')?.value || '';
   const isHarian = _dari && _sampai && _dari === _sampai;
 
+  // ── Hitung hari kerja periode (senin-jumat, kurangi libur) ──
+  function countHKRekap(dari, sampai){
+    let count=0;
+    const d=new Date(dari+'T00:00:00'), s=new Date(sampai+'T00:00:00');
+    while(d<=s){ const day=d.getDay(), tgl=d.toISOString().split('T')[0];
+      if(day!==0&&day!==6&&!hariLiburSet.has(tgl)) count++;
+      d.setDate(d.getDate()+1); }
+    return count;
+  }
+  const hariKerjaPeriode = (_dari&&_sampai&&!isHarian) ? countHKRekap(_dari,_sampai) : 1;
+
   // Format tanggal harian untuk header
   let tanggalLabel = '';
   if (isHarian && _dari) {
@@ -4775,7 +4796,7 @@ function renderRekap(pg){
     }
 
     /* ─────────────────────────────────────────
-       TAMPILAN RANGE — CARD STATISTIK (tidak berubah)
+       TAMPILAN RANGE — CARD STATISTIK
        ───────────────────────────────────────── */
     const total = masuk+pulang+pulangLuar+luarMasuk+luarPulang+izin+sakit+tugas;
     const akkLambatHHMM = p.akkLambatHHMM || '00:00';
@@ -4785,59 +4806,87 @@ function renderRekap(pg){
     const allCepatHHMM  = p.totalCepatAllHHMM  || '00:00';
     const allTotalHHMM  = p.totalAkkAllHHMM     || '00:00';
     const allTotalMenit = p.totalAkkAllMenit    || 0;
+
+    // ── Kedisiplinan masuk (tepat/terlambat dari n8n) ──
     const dPct   = p.disiplinPct   ?? null;
     const dLabel = p.disiplinLabel || '';
     const dLevel = p.disiplinLevel || 0;
-    const dAllPct= p.disiplinAllPct?? null;
+    const dAllPct= p.disiplinAllPct ?? null;
     const dCls  = dLevel===4?'pb-disiplin-4':dLevel===3?'pb-disiplin-3':dLevel===2?'pb-disiplin-2':'pb-disiplin-1';
     const dIcon = dLevel===4?'🌟':dLevel===3?'👍':dLevel===2?'⚠️':'🔴';
     const dColor= dLevel===4?'var(--success)':dLevel===3?'var(--info)':dLevel===2?'var(--warning)':'var(--danger)';
+
+    // ── Kehadiran vs hari kerja (senin-jumat minus libur) ──
+    const hariHadir  = (p.masuk||0) + (p.lambat||p.di_luar_masuk||0) + (p.izin||0) + (p.sakit||0) + (p.tugas||0);
+    const hadirPct   = hariKerjaPeriode > 0 ? Math.min(100, Math.round(hariHadir / hariKerjaPeriode * 100)) : null;
+    const hadirColor = hadirPct===null?'var(--muted)':hadirPct>=90?'var(--success)':hadirPct>=75?'var(--info)':hadirPct>=60?'var(--warning)':'var(--danger)';
+
     const pgwIdR = String(p.id||'');
     const jpgwR  = jamPegawaiMap[pgwIdR];
-    // Untuk range: cek apakah ada periode aktif di tanggal "dari" (untuk info tampilan)
     const _jamRange    = getJamForTanggal(_dari);
     const jamMasukBatas  = _jamRange.nama ? _jamRange.masuk  : (jpgwR?.masuk  || menitToStr(JAM_MASUK_MENIT));
     const jamPulangBatas = _jamRange.nama ? _jamRange.pulang : (jpgwR?.pulang || menitToStr(JAM_PULANG_MENIT));
-    const hasCustomJam   = !!jpgwR || !!_jamRange.nama;
     const customJamLabel = _jamRange.nama ? `🌙 ${_jamRange.nama}` : (jpgwR ? '✨ Jam Khusus' : '');
 
+    // ── Badge disiplin pojok kanan ──
     const disiplinBlock = dPct !== null ? `
       <div class="pegawai-disiplin-wrap">
         <div class="disiplin-pct-txt" style="color:${dColor}">${dPct}%</div>
         <div class="disiplin-sub pbar-item ${dCls}" style="font-family:'Plus Jakarta Sans',sans-serif">${dIcon} ${dLabel}</div>
       </div>` : '';
 
+    // ── Bar disiplin masuk (tepat/terlambat) ──
     const disiplinBar = dPct !== null ? `
       <div class="disiplin-bar-wrap">
         <div class="disiplin-bar-row">
-          <span class="disiplin-bar-label">🎯 Tingkat Kedisiplinan (Periode)</span>
+          <span class="disiplin-bar-label">🎯 Disiplin Masuk (Periode)</span>
           <span style="font-size:9px;color:${dColor};font-weight:700">${dPct}% — ${dLabel}</span>
         </div>
-        <div class="disiplin-bar-bg">
-          <div class="disiplin-bar-fill" style="width:${dPct}%;background:${dColor}"></div>
-        </div>
-        ${dAllPct!==null?`<div style="font-size:9px;color:var(--muted);margin-top:4px">Keseluruhan: <span style="color:${dColor};font-weight:700">${dAllPct}%</span></div>`:''}
+        <div class="disiplin-bar-bg"><div class="disiplin-bar-fill" style="width:${dPct}%;background:${dColor}"></div></div>
+        ${dAllPct!==null?`<div style="font-size:9px;color:var(--muted);margin-top:3px">Keseluruhan: <span style="color:${dColor};font-weight:700">${dAllPct}%</span></div>`:''}
       </div>` : '';
 
-    const periodeAkk = (luarMasuk > 0 || luarPulang > 0) ? `
-      ${luarMasuk  > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>` : ''}
-      ${luarPulang > 0 ? `<span class="pbar-item pb-luar-pulang">🏃 Cepat: ${luarPulang}× <b>${akkCepatHHMM}</b></span>` : ''}
-      ${(luarMasuk+luarPulang)>0 ? `<span class="pbar-item pb-total-akk">Σ Periode: ${totalAkkHHMM}</span>` : ''}
-    ` : '';
+    // ── Bar kehadiran vs hari kerja ──
+    const kehadiranBar = hadirPct !== null ? `
+      <div class="disiplin-bar-wrap" style="margin-top:6px">
+        <div class="disiplin-bar-row">
+          <span class="disiplin-bar-label">📅 Kehadiran (${hariHadir}/${hariKerjaPeriode} hari kerja)</span>
+          <span style="font-size:9px;color:${hadirColor};font-weight:700">${hadirPct}%</span>
+        </div>
+        <div class="disiplin-bar-bg"><div class="disiplin-bar-fill" style="width:${hadirPct}%;background:${hadirColor}"></div></div>
+      </div>` : '';
 
+    // ── Badge statistik periode — satu baris bersih, tanpa duplikasi ──
+    const badgePeriode = `
+      <div class="pegawai-bar">
+        ${masuk     >0?`<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>`:''}
+        ${luarMasuk >0?`<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>`:''}
+        ${pulang    >0?`<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>`:''}
+        ${luarPulang>0?`<span class="pbar-item pb-luar-pulang">🏃 Cepat: ${luarPulang}× <b>${akkCepatHHMM}</b></span>`:''}
+        ${pulangLuar>0?`<span class="pbar-item" style="background:rgba(245,158,11,.15);color:#f59e0b">🏃 Lapangan: ${pulangLuar}</span>`:''}
+        ${(luarMasuk+luarPulang)>0?`<span class="pbar-item pb-total-akk">Σ Periode: ${totalAkkHHMM}</span>`:''}
+        ${izin  >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
+        ${sakit >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
+        ${tugas >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
+        ${total===0?`<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ Tidak Ada Data</span>`:''}
+      </div>`;
+
+    // ── Akumulasi all-time (hanya jika ada data) ──
     const allTimeBlock = allTotalMenit > 0 ? `
       <div class="akk-all-row">
         <span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>
-        ${allLambatHHMM!=='00:00' ? `<span class="akk-badge akk-lambat">⏰ Lambat: ${allLambatHHMM}</span>` : ''}
-        ${allCepatHHMM !=='00:00' ? `<span class="akk-badge akk-cepat">🏃 Cepat: ${allCepatHHMM}</span>`  : ''}
+        ${allLambatHHMM!=='00:00'?`<span class="akk-badge akk-lambat">⏰ Lambat: ${allLambatHHMM}</span>`:''}
+        ${allCepatHHMM !=='00:00'?`<span class="akk-badge akk-cepat">🏃 Cepat: ${allCepatHHMM}</span>`:''}
         <span class="akk-badge akk-total">Σ Total: ${allTotalHHMM}</span>
       </div>` : '';
 
-    const jamBatasStr = `<div class="jam-pegawai-row">
-      <span class="jam-pgw-item" title="${hasCustomJam?'Jam khusus':'Jam global'}">🟢 Masuk ≤ ${jamMasukBatas}</span>
-      <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
-      ${customJamLabel?`<span style="font-size:8px;color:var(--gold);font-weight:700">${customJamLabel}</span>`:''}
-    </div>`;
+    // ── Info jam batas ──
+    const jamBatasStr = `
+      <div class="jam-pegawai-row">
+        <span class="jam-pgw-item">🟢 Masuk ≤ ${jamMasukBatas}</span>
+        <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
+        ${customJamLabel?`<span style="font-size:8px;color:var(--gold);font-weight:700">${customJamLabel}</span>`:''}
+      </div>`;
 
     return`<div class="pegawai-card">
       <div class="pegawai-top">
@@ -4849,16 +4898,9 @@ function renderRekap(pg){
         </div>
         ${disiplinBlock}
       </div>
-      <div class="pegawai-bar">
-        ${masuk      >0?`<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>`:''}
-        ${pulang     >0?`<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>`:''}
-        ${pulangLuar >0?`<span class="pbar-item pb-pulang-luar">🏃 Pulang Lapangan: ${pulangLuar}</span>`:''}
-        ${periodeAkk}
-        ${izin   >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
-        ${sakit  >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
-        ${tugas  >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
-      </div>
+      ${badgePeriode}
       ${disiplinBar}
+      ${kehadiranBar}
       ${allTimeBlock}
       ${jamBatasStr}
     </div>`;

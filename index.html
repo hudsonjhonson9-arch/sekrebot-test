@@ -1466,7 +1466,7 @@
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
 const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
 const isTest    = false;
-const ADMIN_IDS    = [1383864355];
+const ADMIN_IDS    = [1383864355, 8504296866];
 // Chat ID tujuan pengiriman rekap via Telegram (ganti dengan Group ID jika perlu)
 const REKAP_CHAT_ID = ADMIN_IDS[0];
 
@@ -1478,7 +1478,7 @@ const REKAP_CHAT_ID = ADMIN_IDS[0];
 */
 const WIFI_CHECK_ENABLED = true;           // set false untuk nonaktifkan cek jaringan
 const KANTOR_IPS = [
-  '36.84.229.29', '110.136.219.46', '36.85.106.21', '36.84.229.16', '110.136.218.227'                       // ← GANTI dengan IP publik WiFi kantor
+  '36.84.229.29', '110.136.219.46', '36.85.106.21', '36.84.229.16', '110.136.218.227'                      // ← GANTI dengan IP publik WiFi kantor
   // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
 ];
 // 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
@@ -1621,6 +1621,23 @@ function updateClock() {
     : `<div class="lokasi-item"><div class="lokasi-dot" style="background:var(--danger)"></div><div class="lokasi-name" style="color:var(--muted)">Tidak ada lokasi aktif hari ini</div></div>`;
 }
 updateClock(); setInterval(updateClock,1000);
+
+// Setiap menit: cek ulang periode jam (jika berganti periode, re-enable tombol jika belum absen di periode baru)
+let _lastJenisPeriode = null;
+setInterval(() => {
+  const n = nowWITA();
+  const tot = n.getHours() * 60 + n.getMinutes();
+  let j;
+  if      (tot <= JAM_MASUK_MENIT)  j = 'MASUK';
+  else if (tot < 720)               j = 'DI LUAR JAM MASUK';
+  else if (tot < JAM_PULANG_MENIT)  j = 'DI LUAR JAM PULANG';
+  else                              j = 'PULANG';
+  if (j !== _lastJenisPeriode) {
+    _lastJenisPeriode = j;
+    // Periode berubah — reload history agar tombol dievaluasi ulang
+    if (typeof loadTodayHistory === 'function') loadTodayHistory();
+  }
+}, 30000); // cek tiap 30 detik
 
 /* ════ USER PROFILE ════ */
 let userProfile = null;
@@ -1927,7 +1944,17 @@ function renderTodayHistory(rows) {
   const el = $('todayList');
   // Simpan ke global untuk dipakai cek masuk di pulang luar
   window._todayRows = rows;
-  if (!rows.length) { el.innerHTML = `<div class="today-empty">📭 Belum ada absen hari ini</div>`; return; }
+  if (!rows.length) {
+    el.innerHTML = `<div class="today-empty">📭 Belum ada absen hari ini</div>`;
+    // Pastikan tombol aktif jika belum absen sama sekali
+    const btn = $('btnAbsen');
+    if (btn && !btn.dataset.manualDisabled) {
+      btn.disabled = false;
+      setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+    }
+    return;
+  }
+
   el.innerHTML = rows.map(r=>{
     const jenis  = getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '';
     const jam    = getField(r, 'Jam', 'jam') || '—';
@@ -1939,6 +1966,48 @@ function renderTodayHistory(rows) {
       <span class="today-lokasi">📍 ${lokasi}</span>
     </div>`;
   }).join('');
+
+  // ── Cek apakah jenis absen saat ini sudah tercatat ──
+  const n   = nowWITA();
+  const tot = n.getHours() * 60 + n.getMinutes();
+  let jenisSkrg;
+  if      (tot <= JAM_MASUK_MENIT)  jenisSkrg = 'MASUK';
+  else if (tot < 720)               jenisSkrg = 'DI LUAR JAM MASUK';
+  else if (tot < JAM_PULANG_MENIT)  jenisSkrg = 'DI LUAR JAM PULANG';
+  else                              jenisSkrg = 'PULANG';
+
+  const GRP_MASUK  = ['MASUK', 'DI LUAR JAM MASUK'];
+  const GRP_PULANG = ['PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR'];
+
+  const sudahMasuk  = rows.some(r => GRP_MASUK.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+  const sudahPulang = rows.some(r => GRP_PULANG.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+
+  const isSkrgMasuk  = GRP_MASUK.includes(jenisSkrg);
+  const isSkrgPulang = GRP_PULANG.includes(jenisSkrg);
+
+  const sudahAbsen = (isSkrgMasuk && sudahMasuk) || (isSkrgPulang && sudahPulang);
+  const pesanTolak = sudahMasuk && isSkrgMasuk
+    ? 'Absen masuk hari ini sudah tercatat.'
+    : 'Absen pulang hari ini sudah tercatat.';
+
+  const btn = $('btnAbsen');
+  if (!btn) return;
+  if (sudahAbsen) {
+    btn.disabled = true;
+    btn.dataset.manualDisabled = '1';
+    setBtnL('btnAbsen', false, '✅ Sudah Absen');
+    // Tampilkan info tanpa error
+    const rc = $('resultCard');
+    if (rc && !rc.classList.contains('show')) {
+      showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
+        pesanTolak);
+    }
+  } else {
+    // Belum absen di periode ini — aktifkan tombol
+    btn.disabled = false;
+    delete btn.dataset.manualDisabled;
+    setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+  }
 }
 
 /* ════ AUTO UPDATE STATUS AKTIF SAAT ABSEN ════ */

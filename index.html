@@ -3525,7 +3525,7 @@ async function handleKet(){
     let d={};try{d=await res.json()}catch(_){}
     const isAutoApprove=['SAKIT','TUGAS'].includes(selectedJenis);
     if(isAutoApprove){
-      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','success','✅',`${selectedJenis} Disetujui Otomatis`,`Keterangan ${selectedJenis} Anda telah tercatat dan disetujui secara otomatis.`);
+      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','success','✅',`${selectedJenis} Disetujui Otomatis`,`Keterangan ${selectedJenis} Anda telah tercatat, disetujui otomatis, dan akan disiarkan ke seluruh pegawai.`);
       setBtnL('btnKet',false,'✅ Tercatat Otomatis');
     }else{
       showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⏳',`${selectedJenis} Menunggu Konfirmasi`,`Pengajuan IZIN Anda telah dikirim ke admin. Tunggu konfirmasi sebelum berlaku.`);

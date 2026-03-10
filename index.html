@@ -1409,7 +1409,7 @@
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">⏰ Pengaturan Jam Absen</div>
-      <div class="radius-note">Atur batas waktu absen masuk & pulang. Berlaku langsung setelah disimpan.</div>
+      <div class="radius-note">Atur batas waktu absen masuk &amp; pulang. Disimpan di <strong>Google Sheet</strong> (<code>jam_absen</code>) dan berlaku langsung. Untuk jam Ramadan/periode khusus, gunakan kartu <strong>🌙 Jam Kerja Periode Khusus</strong> di bawah.</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div>
@@ -1438,6 +1438,64 @@
       <button class="btn-admin" id="btnSimpanJam" onclick="simpanJamAbsen()">
         <div class="btn-inner"><span>💾</span><span id="btnJamText">Simpan Pengaturan Jam</span></div>
       </button>
+    </div>
+
+    <!-- ══ JAM KERJA PERIODE KHUSUS (Ramadan, dll) ══ -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">
+        <span>🌙 Jam Kerja Periode Khusus</span>
+        <button class="btn-sm-admin" onclick="loadJamPeriodeAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">Atur jam masuk &amp; pulang untuk periode tertentu (misal: Ramadan, Libur Nasional panjang). Disimpan di <strong>Google Sheet</strong> (<code>jam_periode</code>). Berlaku otomatis pada rekap sesuai rentang tanggal. Prioritas: <b>Per-Pegawai → Periode Khusus → Global</b>.</div>
+
+      <!-- Form tambah -->
+      <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:12px;margin:10px 0">
+        <div style="font-size:10px;font-weight:800;color:#a78bfa;margin-bottom:10px">➕ Tambah Periode Jam Khusus</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label class="form-label">🏷️ Nama Periode</label>
+          <input type="text" class="form-input" id="inputPeriodeNama" placeholder="cth: Ramadan 1446 H"/>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div>
+            <div class="date-range-label" style="margin-bottom:4px">📅 Tanggal Mulai</div>
+            <input type="date" class="date-range-input" id="inputPeriodeDari" onchange="updatePeriodePreview()"/>
+          </div>
+          <div>
+            <div class="date-range-label" style="margin-bottom:4px">📅 Tanggal Selesai</div>
+            <input type="date" class="date-range-input" id="inputPeriodeSampai" onchange="updatePeriodePreview()"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div class="date-range-label" style="margin-bottom:4px">🟢 Batas Masuk (≤)</div>
+            <input type="time" class="date-range-input" id="inputPeriodeMasuk"
+              style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700"
+              onchange="updatePeriodePreview()"/>
+          </div>
+          <div>
+            <div class="date-range-label" style="margin-bottom:4px">🔵 Batas Pulang (≥)</div>
+            <input type="time" class="date-range-input" id="inputPeriodePulang"
+              style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700"
+              onchange="updatePeriodePreview()"/>
+          </div>
+        </div>
+        <!-- Preview -->
+        <div id="periodePreview" style="display:none;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px;padding:8px 11px;margin-bottom:10px;font-size:10px;color:var(--muted);line-height:1.8">
+          <span style="color:#a78bfa;font-weight:700" id="prevPeriodeNama">—</span><br>
+          📅 <span id="prevPeriodeTgl">—</span><br>
+          🟢 Masuk ≤ <b id="prevPeriodeMasuk">—</b> &nbsp;|&nbsp; 🔵 Pulang ≥ <b id="prevPeriodePulang">—</b>
+        </div>
+        <div class="result-card" id="periodeJamResult" style="display:none"><div class="r-icon" id="periodeJamRIcon">✅</div><div class="r-title" id="periodeJamRTitle">—</div><div class="r-msg" id="periodeJamRMsg">—</div></div>
+        <button class="btn-admin" id="btnTambahPeriode" onclick="tambahJamPeriode()" style="margin-bottom:0">
+          <div class="btn-inner"><span>💾</span><span id="btnTambahPeriodeText">Simpan Periode</span></div>
+        </button>
+      </div>
+
+      <!-- Daftar periode tersimpan -->
+      <div id="jamPeriodeAdminList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        <div class="shimmer" style="height:44px;border-radius:10px"></div>
+        <div class="shimmer" style="height:44px;border-radius:10px"></div>
+      </div>
     </div>
 
     <!-- ══ PENGATURAN FACE RECOGNITION ══ -->
@@ -1502,7 +1560,10 @@ const P = {
   lokasiDel  : isTest ? '/webhook-test/lokasi-delete'  : '/webhook/lokasi-delete',
   lokasiUpdate: isTest ? '/webhook-test/lokasi-update' : '/webhook/lokasi-update',
   dokumenList : isTest ? '/webhook-test/dokumen-list'  : '/webhook/dokumen-list',
-  jamAbsen    : isTest ? '/webhook-test/jam-absen'     : '/webhook/jam-absen',
+  jamAbsen       : isTest ? '/webhook-test/jam-absen'        : '/webhook/jam-absen',
+  jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
+  jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
+  jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
   kirimRekap : isTest ? '/webhook-test/kirim-rekap'    : '/webhook/kirim-rekap',
   ketList    : isTest ? '/webhook-test/ket-list'        : '/webhook/ket-list',
   ketEdit    : isTest ? '/webhook-test/ket-edit'        : '/webhook/ket-edit',
@@ -1583,7 +1644,7 @@ function switchTab(tab) {
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
   if (tab==='rekap'   && !rekapLoaded) loadRekap();
-  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); loadFaceToggle(); }
+  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); loadFaceToggle(); loadJamPeriodeAdmin(); }
 }
 
 /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
@@ -3950,6 +4011,33 @@ let rekapLoaded = false;
 let hariLiburSet = new Set(); // Set of 'YYYY-MM-DD' strings
 let hariLiburMap = {};       // Map 'YYYY-MM-DD' → nama_libur (untuk label)
 let jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
+
+// ── Jam Kerja Periode (Ramadan, dll) ──
+// Array of { id, nama, dari:'YYYY-MM-DD', sampai:'YYYY-MM-DD', masuk:'HH:MM', pulang:'HH:MM' }
+let jamPeriodeList = [];
+
+/**
+ * Dapatkan batas jam masuk & pulang (dalam menit) untuk tanggal tertentu.
+ * Prioritas: 1) Per-pegawai (jamPegawaiMap), 2) Periode khusus (jamPeriodeList), 3) Global default.
+ * Jika dipanggil tanpa pgwId, hanya cek periode vs global.
+ */
+function getJamForTanggal(tglStr, pgwId) {
+  // 1. Per-pegawai override
+  if (pgwId && jamPegawaiMap[pgwId]) {
+    return { masukMenit: jamPegawaiMap[pgwId].masukMenit, pulangMenit: jamPegawaiMap[pgwId].pulangMenit };
+  }
+  // 2. Periode khusus (cek apakah tglStr masuk dalam salah satu range aktif)
+  if (tglStr && jamPeriodeList.length) {
+    for (const p of jamPeriodeList) {
+      if (tglStr >= p.dari && tglStr <= p.sampai) {
+        const m = toMenitStr(p.masuk), pl = toMenitStr(p.pulang);
+        if (m !== null && pl !== null) return { masukMenit: m, pulangMenit: pl, periodeName: p.nama };
+      }
+    }
+  }
+  // 3. Global default
+  return { masukMenit: JAM_MASUK_MENIT, pulangMenit: JAM_PULANG_MENIT };
+}
 let liburLoaded = false;
 let userListOrder = [];
 let lastRekapPegawai = [];
@@ -4005,6 +4093,7 @@ async function loadRekap(){
   // Fetch hari libur & jam pegawai secara paralel
   if(!liburLoaded) fetchLiburForRekap();
   fetchJamPegawai();
+  fetchJamPeriode(); // fetch jam periode khusus (Ramadan, dll)
   const isHarianLoad = dari === sampai;
   try{
     const orderPromise = fetchUserListOrder();
@@ -4103,9 +4192,15 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
   // Jam batas GLOBAL (default)
   const JAM_MASUK_BATAS  = JAM_MASUK_MENIT;
   const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
-  // Helper: jam batas per pegawai (fallback ke global)
-  function getMasukBatas(id)  { return jamPegawaiMap[id]?.masukMenit  ?? JAM_MASUK_BATAS; }
-  function getPulangBatas(id) { return jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS; }
+  // Helper: jam batas per pegawai + periode khusus (fallback ke global)
+  function getMasukBatas(id, tgl)  {
+    if (tgl) { const j=getJamForTanggal(tgl,id); return j.masukMenit; }
+    return jamPegawaiMap[id]?.masukMenit  ?? JAM_MASUK_BATAS;
+  }
+  function getPulangBatas(id, tgl) {
+    if (tgl) { const j=getJamForTanggal(tgl,id); return j.pulangMenit; }
+    return jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS;
+  }
 
   function toMenit(jamStr){
     const s=String(jamStr||'').replace(/\s.*/,'').split(':');
@@ -4151,14 +4246,15 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const curNama=getField(r,'Nama','nama')||'';
     if(curNama.length>map[id].nama.length) map[id].nama=curNama;
     if(nip&&map[id].nip==='—') map[id].nip=nip;
+    const tglRow = String(getField(r,'Tanggal','tanggal')||'').trim();
     const jam=toMenit(jamStr);
     if     (jenis==='MASUK')             { map[id].masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis==='DI LUAR JAM MASUK') { map[id].di_luar_masuk++; if(jamStr) map[id].jamMasuk=jamStr.replace(/\s*WITA\s*/i,'').trim();
-      if(jam!==null&&jam>getMasukBatas(id)) map[id].menit_terlambat+=(jam-getMasukBatas(id));
+      if(jam!==null&&jam>getMasukBatas(id,tglRow)) map[id].menit_terlambat+=(jam-getMasukBatas(id,tglRow));
     }
     else if(jenis==='PULANG')            { map[id].pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis==='DI LUAR JAM PULANG'){ map[id].di_luar_pulang++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim();
-      if(jam!==null&&jam<getPulangBatas(id)) map[id].menit_lebih_awal+=(getPulangBatas(id)-jam);
+      if(jam!==null&&jam<getPulangBatas(id,tglRow)) map[id].menit_lebih_awal+=(getPulangBatas(id,tglRow)-jam);
     }
     else if(jenis==='PULANG LUAR')       { map[id].pulang_luar++; if(jamStr) map[id].jamPulang=jamStr.replace(/\s*WITA\s*/i,'').trim(); }
     else if(jenis.includes('LUAR'))      { map[id].di_luar_masuk++; }
@@ -4314,11 +4410,15 @@ function renderRekap(pg){
         return isNaN(parts[0]) ? null : parts[0]*60+(parts[1]||0);
       };
       const pgwId  = String(p.id||'');
-      const jpgw   = jamPegawaiMap[pgwId];
-      const jmBatas = jpgw?.masuk  || menitToStr(JAM_MASUK_MENIT);
-      const jpBatas = jpgw?.pulang || menitToStr(JAM_PULANG_MENIT);
-      const mMasukBatas  = toMenitLocal(jmBatas);
-      const mPulangBatas = toMenitLocal(jpBatas);
+      // ── Ambil jam batas: per-pegawai → periode khusus → global ──
+      const _jamEfektif = getJamForTanggal(_dari, pgwId);
+      const jmBatas  = menitToStr(_jamEfektif.masukMenit);
+      const jpBatas  = menitToStr(_jamEfektif.pulangMenit);
+      const _periodeBadge = _jamEfektif.periodeName
+        ? `<span style="font-size:8px;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:#a78bfa;border-radius:5px;padding:1px 6px;font-weight:700;margin-left:4px">🌙 ${_jamEfektif.periodeName}</span>`
+        : '';
+      const mMasukBatas  = _jamEfektif.masukMenit;
+      const mPulangBatas = _jamEfektif.pulangMenit;
       const mMasuk  = toMenitLocal(rawMasuk);
       const mPulang = toMenitLocal(rawPulang);
 
@@ -4398,7 +4498,7 @@ function renderRekap(pg){
                 : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
                    <div style="font-size:9px;color:var(--muted);font-weight:700;margin-top:3px">${masukLabel}</div>`
             }
-            <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}${_periodeBadge}</div>
           </div>
 
           <!-- JAM PULANG -->
@@ -4454,9 +4554,16 @@ function renderRekap(pg){
     const dColor= dLevel===4?'var(--success)':dLevel===3?'var(--info)':dLevel===2?'var(--warning)':'var(--danger)';
     const pgwIdR = String(p.id||'');
     const jpgwR  = jamPegawaiMap[pgwIdR];
-    const jamMasukBatas  = jpgwR?.masuk  || menitToStr(JAM_MASUK_MENIT);
-    const jamPulangBatas = jpgwR?.pulang || menitToStr(JAM_PULANG_MENIT);
     const hasCustomJam   = !!jpgwR;
+    // Cari periode yang aktif dalam range _dari–_sampai untuk label
+    const _aktivePeriode = jamPeriodeList.filter(pr => pr.dari <= _sampai && pr.sampai >= _dari);
+    // Jam batas efektif di awal periode (untuk display label)
+    const _jamEfektifRange = getJamForTanggal(_dari, pgwIdR);
+    const jamMasukBatas  = menitToStr(_jamEfektifRange.masukMenit);
+    const jamPulangBatas = menitToStr(_jamEfektifRange.pulangMenit);
+    const _periodeRangeNote = _aktivePeriode.length
+      ? `<div style="font-size:8.5px;color:#a78bfa;font-weight:700;margin-top:4px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:6px;padding:3px 7px">🌙 Jam Khusus aktif: ${_aktivePeriode.map(pr=>`<b>${pr.nama}</b> (${pr.dari}→${pr.sampai} · ≤${pr.masuk} / ≥${pr.pulang})`).join(', ')}</div>`
+      : '';
 
     const disiplinBlock = dPct !== null ? `
       <div class="pegawai-disiplin-wrap">
@@ -4494,7 +4601,7 @@ function renderRekap(pg){
       <span class="jam-pgw-item" title="${hasCustomJam?'Jam khusus':'Jam global'}">🟢 Masuk ≤ ${jamMasukBatas}</span>
       <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
       ${hasCustomJam?'<span style="font-size:8px;color:var(--gold);font-weight:700">✨ Jam Khusus</span>':''}
-    </div>`;
+    </div>${_periodeRangeNote}`;
 
     return`<div class="pegawai-card">
       <div class="pegawai-top">
@@ -4789,6 +4896,24 @@ async function fetchJamPegawai(){
   }catch(_){}
 }
 
+// Fetch jam periode khusus (Ramadan, dll)
+async function fetchJamPeriode(){
+  try{
+    const res=await apiFetch(P.jamPeriodeList,{method:'GET'});
+    if(!res.ok) return;
+    const d=await res.json();
+    const rows=Array.isArray(d)?d:(d.data||d.rows||[]);
+    jamPeriodeList=rows.map(r=>({
+      id    : String(r.id||r.ID||'').trim(),
+      nama  : String(r.nama||r.Nama||'').trim()||'Periode Khusus',
+      dari  : String(r.dari||r.Dari||r.tanggal_mulai||'').trim(),
+      sampai: String(r.sampai||r.Sampai||r.tanggal_selesai||'').trim(),
+      masuk : String(r.masuk||r.jam_masuk||'').trim(),
+      pulang: String(r.pulang||r.jam_pulang||'').trim(),
+    })).filter(r=>r.dari&&r.sampai&&r.masuk&&r.pulang);
+  }catch(_){}
+}
+
 // Durasi preview saat range berubah
 function updateLiburDurasi(){
   const mulai=$('inputTglLiburMulai').value, selesai=$('inputTglLiburSelesai').value;
@@ -4920,6 +5045,103 @@ async function hapusLibur(tgl, rowNum){
     delete hariLiburMap[tgl];
     loadLiburAdmin();
   }catch{alert('Gagal menghapus. Coba lagi.');}
+}
+
+/* ════ JAM KERJA PERIODE KHUSUS (Admin) ════ */
+
+function updatePeriodePreview(){
+  const nama   = ($('inputPeriodeNama')?.value||'').trim();
+  const dari   = $('inputPeriodeDari')?.value||'';
+  const sampai = $('inputPeriodeSampai')?.value||'';
+  const masuk  = $('inputPeriodeMasuk')?.value||'';
+  const pulang = $('inputPeriodePulang')?.value||'';
+  const prev = $('periodePreview');
+  if(!prev) return;
+  if(!dari&&!masuk){ prev.style.display='none'; return; }
+  prev.style.display='block';
+  if($('prevPeriodeNama')) $('prevPeriodeNama').textContent = nama||'Periode Khusus';
+  const fmt = tgl => { try{const d=new Date(tgl+'T00:00:00'); return d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch{return tgl;} };
+  if($('prevPeriodeTgl'))    $('prevPeriodeTgl').textContent   = dari&&sampai ? `${fmt(dari)} s/d ${fmt(sampai)}` : (dari ? fmt(dari) : '—');
+  if($('prevPeriodeMasuk'))  $('prevPeriodeMasuk').textContent  = masuk||'—';
+  if($('prevPeriodePulang')) $('prevPeriodePulang').textContent = pulang||'—';
+}
+
+async function tambahJamPeriode(){
+  const nama   = ($('inputPeriodeNama')?.value||'').trim()||'Periode Khusus';
+  const dari   = $('inputPeriodeDari')?.value||'';
+  const sampai = ($('inputPeriodeSampai')?.value||dari);
+  const masuk  = $('inputPeriodeMasuk')?.value||'';
+  const pulang = $('inputPeriodePulang')?.value||'';
+  if(!dari||!masuk||!pulang){
+    showResult('periodeJamResult','periodeJamRIcon','periodeJamRTitle','periodeJamRMsg','warning','⚠️','Lengkapi Data','Tanggal mulai, jam masuk, dan jam pulang wajib diisi.');
+    $('periodeJamResult').style.display='flex'; return;
+  }
+  if(sampai<dari){ alert('Tanggal selesai tidak boleh sebelum tanggal mulai.'); return; }
+  setBtnL('btnTambahPeriode',true,'Menyimpan...');
+  $('periodeJamResult').style.display='none';
+  try{
+    const res=await apiFetch(P.jamPeriodeAdd,{method:'POST',body:JSON.stringify({
+      nama, dari, sampai, masuk, pulang,
+      ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000)
+    })});
+    const d=await res.json().catch(()=>({}));
+    if(d.ok!==false){
+      showResult('periodeJamResult','periodeJamRIcon','periodeJamRTitle','periodeJamRMsg','success','✅','Berhasil',`Periode "${nama}" (${dari} s/d ${sampai}) disimpan.`);
+      $('inputPeriodeNama').value=''; $('inputPeriodeDari').value=''; $('inputPeriodeSampai').value='';
+      $('inputPeriodeMasuk').value=''; $('inputPeriodePulang').value='';
+      if($('periodePreview')) $('periodePreview').style.display='none';
+      await fetchJamPeriode(); loadJamPeriodeAdmin();
+    } else {
+      showResult('periodeJamResult','periodeJamRIcon','periodeJamRTitle','periodeJamRMsg','fail','❌','Gagal',d.message||'Simpan gagal. Coba lagi.');
+    }
+  }catch{
+    showResult('periodeJamResult','periodeJamRIcon','periodeJamRTitle','periodeJamRMsg','fail','❌','Error','Koneksi gagal. Pastikan webhook n8n aktif.');
+  }finally{
+    setBtnL('btnTambahPeriode',false,'Simpan Periode');
+    $('periodeJamResult').style.display='flex';
+  }
+}
+
+async function hapusJamPeriode(id, nama){
+  if(!confirm(`Hapus periode "${nama}"?`)) return;
+  try{
+    const res=await apiFetch(P.jamPeriodeDel,{method:'POST',body:JSON.stringify({id, timestamp:Math.floor(Date.now()/1000)})});
+    jamPeriodeList=jamPeriodeList.filter(p=>String(p.id)!==String(id));
+    loadJamPeriodeAdmin();
+  }catch{ alert('Gagal menghapus. Coba lagi.'); }
+}
+
+async function loadJamPeriodeAdmin(){
+  const el=$('jamPeriodeAdminList');
+  if(!el) return;
+  el.innerHTML='<div class="shimmer" style="height:44px;border-radius:10px"></div>';
+  await fetchJamPeriode();
+  if(!jamPeriodeList.length){
+    el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Belum ada periode jam khusus tersimpan.</div>';
+    return;
+  }
+  const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const fmtTgl = tgl => { try{const d=new Date(tgl+'T00:00:00');return `${HARI[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;}catch{return tgl;} };
+  // Cek apakah periode sedang aktif hari ini
+  const todayStr = (()=>{const n=nowWITA();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;})();
+  el.innerHTML = jamPeriodeList.map(p=>{
+    const isAktif = todayStr>=p.dari && todayStr<=p.sampai;
+    return `<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,${isAktif?'.4':'.15'});border-radius:11px;padding:10px 12px;display:flex;align-items:center;gap:8px;position:relative;overflow:hidden">
+      ${isAktif?'<div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#a78bfa,transparent)"></div>':''}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:800;color:${isAktif?'#a78bfa':'var(--white)'}">${p.nama}</span>
+          ${isAktif?'<span style="font-size:8px;background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.4);color:#a78bfa;border-radius:5px;padding:1px 6px;font-weight:800">● Aktif Sekarang</span>':''}
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">📅 ${fmtTgl(p.dari)} — ${fmtTgl(p.sampai)}</div>
+        <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+          <span style="font-size:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--success);border-radius:5px;padding:1px 7px;font-family:'JetBrains Mono',monospace;font-weight:700">🟢 ≤ ${p.masuk}</span>
+          <span style="font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);color:var(--info);border-radius:5px;padding:1px 7px;font-family:'JetBrains Mono',monospace;font-weight:700">🔵 ≥ ${p.pulang}</span>
+        </div>
+      </div>
+      <button class="btn-del" onclick="hapusJamPeriode('${p.id}','${p.nama.replace(/'/g,"\\'")}')">Hapus</button>
+    </div>`;
+  }).join('');
 }
 
 /* ════ ADMIN ════ */
@@ -5692,8 +5914,8 @@ async function simpanJamAbsen(){
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:inM.value,pulang:inP.value})); }catch(_){}
     updateClock();
     updateJamPreview();
-    showResult('jamResult','jamRIcon','jamRTitle','jamRMsg','success','✅','Jam Tersimpan!',
-      `Masuk ≤ ${inM.value} · Pulang ≥ ${inP.value}\nBerlaku langsung untuk semua pengguna.`);
+    showResult('jamResult','jamRIcon','jamRTitle','jamRMsg','success','✅','Jam Tersimpan ke Sheet!',
+      `Masuk ≤ ${inM.value} · Pulang ≥ ${inP.value}\nTersimpan di Google Sheet — berlaku langsung untuk semua pengguna.`);
   }catch{
     showResult('jamResult','jamRIcon','jamRTitle','jamRMsg','warning','⚠️','Gagal Menyimpan',
       'Simpan lokal berhasil, tapi gagal ke server. Pastikan webhook jam-absen aktif di n8n.');

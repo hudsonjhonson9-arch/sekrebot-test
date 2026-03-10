@@ -1172,6 +1172,11 @@
       </div>
     </div>
     <div id="rekapToast" style="display:none;border-radius:11px;padding:10px 13px;margin-bottom:10px;font-size:11px;font-weight:700;animation:slideUp .3s ease"></div>
+    <!-- ── Info hari libur dalam periode ── -->
+    <div id="rekapLiburInfo" style="display:none;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:11px;padding:9px 12px;margin-bottom:10px;font-size:10px;color:var(--muted);animation:slideUp .3s ease">
+      <span style="color:var(--danger);font-weight:800">🏖️ Hari Libur dalam Periode:</span>
+      <div id="rekapLiburList" style="margin-top:5px;display:flex;flex-direction:column;gap:3px"></div>
+    </div>
     <div class="pegawai-list" id="pegawaiList">
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:65%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:75%"></div><div class="shimmer sh-line" style="width:50%"></div></div></div>
@@ -3943,6 +3948,7 @@ function filterLog(f,el){
 let rekapLoaded = false;
 // Global state: hari libur & jam per pegawai
 let hariLiburSet = new Set(); // Set of 'YYYY-MM-DD' strings
+let hariLiburMap = {};       // Map 'YYYY-MM-DD' → nama_libur (untuk label)
 let jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
 let liburLoaded = false;
 let userListOrder = [];
@@ -4065,6 +4071,7 @@ async function loadRekap(){
     lastRekapPegawai = pegawai;
     rekapLoaded=true;
     renderRekap(pegawai);
+    renderRekapLiburInfo(); // tampilkan info hari libur dalam periode
   }catch(e){
     console.warn('loadRekap error:',e);
     $('pegawaiList').innerHTML=`<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat rekap</div><div class="empty-sub">Pastikan webhook n8n aktif</div></div>`;
@@ -4246,6 +4253,10 @@ function renderRekap(pg){
   const _sampai = $('rekapSampai')?.value || '';
   const isHarian = _dari && _sampai && _dari === _sampai;
 
+  // ── Deteksi hari libur (daily view) ──
+  const isHariLibur = isHarian && hariLiburSet.has(_dari);
+  const namaLiburHari = isHariLibur ? (hariLiburMap[_dari] || 'Hari Libur') : '';
+
   // Format tanggal harian untuk header
   let tanggalLabel = '';
   if (isHarian && _dari) {
@@ -4253,7 +4264,18 @@ function renderRekap(pg){
     tanggalLabel = d.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   }
 
-  el.innerHTML = pg.map((p, idx) => {
+  // ── Banner hari libur (tampil sebelum daftar pegawai) ──
+  const liburBanner = isHariLibur ? `
+    <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:13px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;animation:slideUp .3s ease">
+      <div style="font-size:28px;flex-shrink:0">🏖️</div>
+      <div>
+        <div style="font-size:12px;font-weight:800;color:var(--danger)">Hari Libur Nasional / Cuti Bersama</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${namaLiburHari}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Pegawai <strong style="color:var(--white)">tidak diwajibkan hadir</strong> — tidak dihitung Alpa</div>
+      </div>
+    </div>` : '';
+
+  el.innerHTML = liburBanner + pg.map((p, idx) => {
     const nama       = p.nama    || '—';
     const nip        = p.nip     || '—';
     const jabatan    = p.jabatan || '';
@@ -4304,39 +4326,44 @@ function renderRekap(pg){
       if      (izin>0)                    { masukLabel='Izin';   masukColor='var(--warning)'; masukBg='rgba(245,158,11,.12)'; masukIcon='🙏'; }
       else if (sakit>0)                   { masukLabel='Sakit';  masukColor='var(--danger)';  masukBg='rgba(239,68,68,.12)';  masukIcon='🤒'; }
       else if (tugas>0)                   { masukLabel='Tugas';  masukColor='#8b5cf6';         masukBg='rgba(139,92,246,.12)'; masukIcon='💼'; }
+      else if (!rawMasuk && isHariLibur)  { masukLabel='Libur';  masukColor='var(--danger)';   masukBg='rgba(239,68,68,.06)';  masukIcon='🏖️'; }
       else if (!rawMasuk)                 { masukLabel='Alpa';   masukColor='var(--muted)';    masukBg='rgba(255,255,255,.04)'; masukIcon='❌'; }
       else if (terlambatMnt>0)            { masukLabel=`Terlambat ${terlambatMnt}m`; masukColor='var(--warning)'; masukBg='rgba(245,158,11,.08)'; masukIcon='⏰'; }
       else                                { masukLabel='Tepat Waktu'; masukColor='var(--success)'; masukBg='rgba(34,197,94,.08)'; masukIcon='✅'; }
 
       // Label & warna jam pulang
       let pulangLabel='', pulangColor='', pulangIcon='';
-      if      (izin>0||sakit>0||tugas>0)  { pulangLabel='—';          pulangColor='var(--muted)'; pulangIcon='—'; }
-      else if (!rawPulang && !rawMasuk)   { pulangLabel='Belum';      pulangColor='var(--muted)'; pulangIcon='⏳'; }
-      else if (!rawPulang)                { pulangLabel='Belum Absen'; pulangColor='var(--warning)'; pulangIcon='⏳'; }
-      else if (cepatMnt>0)                { pulangLabel=`Cepat ${cepatMnt}m`; pulangColor='#f97316'; pulangIcon='🏃'; }
-      else if (pulangLuar>0)              { pulangLabel='Lapangan';   pulangColor='#f59e0b'; pulangIcon='🏃'; }
-      else                                { pulangLabel='Tepat';      pulangColor='var(--info)'; pulangIcon='🔵'; }
+      if      (izin>0||sakit>0||tugas>0)          { pulangLabel='—';          pulangColor='var(--muted)'; pulangIcon='—'; }
+      else if (!rawPulang && !rawMasuk && isHariLibur){ pulangLabel='Libur'; pulangColor='var(--danger)'; pulangIcon='🏖️'; }
+      else if (!rawPulang && !rawMasuk)           { pulangLabel='Belum';      pulangColor='var(--muted)'; pulangIcon='⏳'; }
+      else if (!rawPulang)                        { pulangLabel='Belum Absen'; pulangColor='var(--warning)'; pulangIcon='⏳'; }
+      else if (cepatMnt>0)                        { pulangLabel=`Cepat ${cepatMnt}m`; pulangColor='#f97316'; pulangIcon='🏃'; }
+      else if (pulangLuar>0)                      { pulangLabel='Lapangan';   pulangColor='#f59e0b'; pulangIcon='🏃'; }
+      else                                        { pulangLabel='Tepat';      pulangColor='var(--info)'; pulangIcon='🔵'; }
 
       // Kehadiran overall status untuk warna border card
       const isHadir = (masuk+luarMasuk)>0;
       const isKet   = izin>0||sakit>0||tugas>0;
-      const isAlpa  = !isHadir && !isKet;
-      const cardBorderColor = isKet  ? 'rgba(139,92,246,.25)'
-                            : isAlpa ? 'rgba(239,68,68,.2)'
+      const isLiburHari = isHariLibur && !isHadir && !isKet;  // Hari libur & tidak hadir → bukan alpa
+      const isAlpa  = !isHadir && !isKet && !isLiburHari;
+      const cardBorderColor = isKet       ? 'rgba(139,92,246,.25)'
+                            : isLiburHari ? 'rgba(239,68,68,.18)'
+                            : isAlpa      ? 'rgba(239,68,68,.2)'
                             : terlambatMnt>0||cepatMnt>0 ? 'rgba(245,158,11,.3)'
                             : 'rgba(34,197,94,.2)';
-      const cardTopColor = isKet  ? '#8b5cf6'
-                         : isAlpa ? 'var(--danger)'
+      const cardTopColor = isKet       ? '#8b5cf6'
+                         : isLiburHari ? 'rgba(239,68,68,.5)'
+                         : isAlpa      ? 'var(--danger)'
                          : terlambatMnt>0||cepatMnt>0 ? 'var(--warning)'
                          : 'var(--success)';
 
       return `
-      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px">
+      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px;${isLiburHari?'opacity:0.75':''}">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
         <div class="pegawai-top" style="margin-bottom:10px">
-          <div class="pegawai-avatar" style="background:linear-gradient(135deg,${cardTopColor},${isAlpa?'#7f1d1d':isKet?'#4c1d95':'#065f46'});font-size:11px">${idx+1}</div>
+          <div class="pegawai-avatar" style="background:linear-gradient(135deg,${cardTopColor},${isLiburHari?'#7f1d1d':isAlpa?'#7f1d1d':isKet?'#4c1d95':'#065f46'});font-size:11px">${idx+1}</div>
           <div style="flex:1;min-width:0">
             <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
             ${jabatanStr}
@@ -4394,6 +4421,7 @@ function renderRekap(pg){
           ${sakit>0      ? `<span class="pbar-item pb-sakit"     >🤒 Sakit</span>` : ''}
           ${tugas>0      ? `<span class="pbar-item pb-tugas"     >💼 Tugas/DL</span>` : ''}
           ${isAlpa       ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ Tidak Hadir</span>` : ''}
+          ${isLiburHari  ? `<span class="pbar-item" style="background:rgba(239,68,68,.08);color:rgba(239,68,68,.7);border:1px solid rgba(239,68,68,.2)">🏖️ Hari Libur</span>` : ''}
           ${terlambatMnt>0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
         </div>
       </div>`;
@@ -4485,6 +4513,41 @@ function renderRekap(pg){
       ${jamBatasStr}
     </div>`;
   }).join('');
+}
+
+/* ════ RENDER INFO HARI LIBUR DALAM PERIODE ════ */
+function renderRekapLiburInfo(){
+  const el=$('rekapLiburInfo');
+  const listEl=$('rekapLiburList');
+  if(!el||!listEl) return;
+  const dari=$('rekapDari')?.value||'';
+  const sampai=$('rekapSampai')?.value||'';
+  if(!dari||!sampai||!hariLiburSet.size){el.style.display='none';return;}
+  // Kumpulkan semua hari libur dalam rentang periode
+  const liburDalam=[];
+  const cur=new Date(dari);
+  const end=new Date(sampai);
+  while(cur<=end){
+    const tgl=cur.toISOString().split('T')[0];
+    if(hariLiburSet.has(tgl)){
+      const namaL=hariLiburMap[tgl]||'Hari Libur';
+      const dObj=new Date(tgl+'T00:00:00');
+      const label=dObj.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      liburDalam.push({tgl,label,nama:namaL});
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  if(!liburDalam.length){el.style.display='none';return;}
+  el.style.display='block';
+  listEl.innerHTML=liburDalam.map(l=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.08)">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--gold);flex-shrink:0;min-width:78px">${l.tgl}</span>
+      <span style="font-size:9px;color:var(--muted);flex-shrink:0">${l.label.split(',')[0]}</span>
+      <span style="font-size:9px;color:var(--white);font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nama}</span>
+    </div>`).join('')+`
+    <div style="margin-top:5px;font-size:9px;color:rgba(239,68,68,.7);font-weight:700">
+      Total ${liburDalam.length} hari libur — <strong>tidak dihitung sebagai hari kerja</strong>
+    </div>`;
 }
 
 /* ════ DOWNLOAD REKAP (Excel) ════ */
@@ -4583,6 +4646,7 @@ async function downloadRekap() {
     const statusKehadiran = izin>0 ? 'Izin'
                           : sakit>0 ? 'Sakit'
                           : tugas>0 ? 'Tugas/DL'
+                          : (masuk+luarMasuk)===0 && isHarian && hariLiburSet.has(dari) ? 'Libur'
                           : (masuk+luarMasuk)===0 ? 'Alpa'
                           : 'Hadir';
     const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
@@ -4664,6 +4728,11 @@ async function fetchLiburForRekap(){
     const d=await res.json();
     const rows=d.data||d.rows||[];
     hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{
+      const tgl=String(r.tanggal||r.Tanggal||'').trim();
+      if(tgl) hariLiburMap[tgl]=String(r.nama||r.Nama||r.nama_libur||'Hari Libur').trim();
+    });
     liburLoaded=true;
   }catch(_){}
 }
@@ -4733,7 +4802,7 @@ async function handleTambahLibur(){
     try{
       const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
       let d={};try{d=await res.json()}catch(_){}
-      if(d.ok!==false){ok++;hariLiburSet.add(tgl);}else fail++;
+      if(d.ok!==false){ok++;hariLiburSet.add(tgl);hariLiburMap[tgl]=nama||'Hari Libur';}else fail++;
     }catch{fail++;}
   }
   if(ok>0){
@@ -4762,6 +4831,11 @@ async function loadLiburAdmin(){
       .filter(r=>String(r.tanggal||r.Tanggal||'').trim())
       .sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
     hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{
+      const tgl=String(r.tanggal||r.Tanggal||'').trim();
+      if(tgl) hariLiburMap[tgl]=String(r.nama||r.Nama||r.nama_libur||'Hari Libur').trim();
+    });
     liburLoaded=true;
     const badge=$('liburTotalBadge');
     if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'inline-block':'none';}
@@ -4814,6 +4888,7 @@ async function hapusLibur(tgl, rowNum){
   try{
     const res=await apiFetch(P.liburDel,{method:'POST',body:JSON.stringify({tanggal:tgl,row_number:rowNum,timestamp:Math.floor(Date.now()/1000)})});
     hariLiburSet.delete(tgl);
+    delete hariLiburMap[tgl];
     loadLiburAdmin();
   }catch{alert('Gagal menghapus. Coba lagi.');}
 }

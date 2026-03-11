@@ -5052,7 +5052,9 @@ async function downloadRekap() {
 
     // Jam hadir aktual (hitung dari log masuk+pulang dalam periode)
     const jh  = parseFloat(p.jamHadir || 0);
-    const jth = parseFloat(p.jamTdkHadir ?? Math.max(0, jamKerjaWajibTotal - jh).toFixed(1));
+    // jth selalu dihitung ulang dari jamKerjaWajibTotal (periode-aware × HK_EFEKTIF),
+    // BUKAN dari p.jamTdkHadir server yang memakai konstanta 150 jam hardcoded.
+    const jth = parseFloat(Math.max(0, jamKerjaWajibTotal - jh).toFixed(1));
 
     // Status keterlambatan / pulang cepat (harian)
     const terlambatMenit = mLambat;
@@ -5115,7 +5117,10 @@ async function downloadRekap() {
       'Info Periode'     : labelHariBerjalan
     };
 
-    return { ...p, masuk, pulang, lambat:luarMasuk, pulangCepat:luarPulang, dataExcelRow };
+    // Override jamTdkHadir & jamKerjaWajib dengan nilai periode-aware yang sudah benar,
+    // agar Format Pesan n8n (Telegram) juga memakai nilai ini, bukan konstanta server.
+    return { ...p, masuk, pulang, lambat:luarMasuk, pulangCepat:luarPulang,
+             jamTdkHadir: jth, jamKerjaWajib: jamKerjaWajibTotal, dataExcelRow };
   });
 
   const payload = {

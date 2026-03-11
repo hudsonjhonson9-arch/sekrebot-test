@@ -1277,35 +1277,57 @@
         <div class="btn-inner"><span>📌</span><span id="btnAdminText">Simpan Lokasi ke Database</span></div>
       </button>
     </div>
-    <div class="card">
-      <div class="card-title">
-        <span>📋 Daftar Lokasi Tersimpan</span>
-        <button class="btn-sm-admin" onclick="loadLokasiAdmin()">🔄</button>
+    <!-- ══ DAFTAR LOKASI + JADWAL — 1 CARD DENGAN TAB ══ -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <!-- Card Header -->
+      <div style="padding:12px 14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:7px">
+            <span>🗺️</span> Manajemen Lokasi
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="lokasiCountBadge" style="font-size:10px;color:var(--gold);background:var(--gold-dim);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-weight:700;display:none">0 lokasi</span>
+            <button class="btn-sm-admin" onclick="loadLokasiAdmin()" title="Refresh">🔄</button>
+          </div>
+        </div>
+        <!-- Tabs -->
+        <div style="display:flex">
+          <button id="lokTabDaftar" onclick="switchLokasiTab('daftar')"
+            style="flex:1;padding:8px 6px;font-size:11px;font-weight:700;border:none;background:none;cursor:pointer;color:var(--gold);border-bottom:2px solid var(--gold);transition:all .2s;font-family:inherit;letter-spacing:.02em">
+            📍 Daftar Lokasi
+          </button>
+          <button id="lokTabJadwal" onclick="switchLokasiTab('jadwal')"
+            style="flex:1;padding:8px 6px;font-size:11px;font-weight:700;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;font-family:inherit;letter-spacing:.02em">
+            📅 Jadwal per Hari
+          </button>
+        </div>
       </div>
-      <div id="lokasiMgmtList" class="lokasi-mgmt-list">
-        <div class="shimmer" style="height:40px;border-radius:10px"></div>
-        <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
+      <!-- Tab: Daftar Lokasi -->
+      <div id="lokPanelDaftar" style="padding:10px 12px 12px">
+        <div id="lokasiMgmtList" class="lokasi-mgmt-list">
+          <div class="shimmer" style="height:40px;border-radius:10px"></div>
+          <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
+        </div>
+      </div>
+      <!-- Tab: Jadwal per Hari -->
+      <div id="lokPanelJadwal" style="padding:10px 12px 12px;display:none">
+        <div class="radius-note" style="margin-bottom:10px">📏 Radius toleransi absen: <strong>100 meter</strong> dari titik lokasi</div>
+        <div id="jadwalLokasiContainer">
+          <div class="shimmer" style="height:60px;border-radius:10px"></div>
+          <div class="shimmer" style="height:60px;border-radius:10px;margin-top:6px"></div>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn-admin" onclick="simpanJadwal()" id="btnSimpanJadwal">
+            <div class="btn-inner"><span>💾</span><span id="btnJadwalText">Simpan Jadwal</span></div>
+          </button>
+        </div>
+        <div class="result-card" id="jadwalResult"><div class="r-icon" id="jadwalRIcon">✅</div><div class="r-title" id="jadwalRTitle">—</div><div class="r-msg" id="jadwalRMsg">—</div></div>
+      </div>
+      <!-- Footer note -->
+      <div style="padding:7px 12px 10px;border-top:1px solid rgba(255,255,255,.05)">
+        <div style="text-align:center;font-size:9px;color:var(--muted)">💡 Perubahan langsung tersimpan ke n8n datatables</div>
       </div>
     </div>
-    <!-- ══ JADWAL LOKASI PER HARI ══ -->
-    <div class="card">
-      <div class="card-title">
-        <span>📅 Jadwal Lokasi per Hari</span>
-        <button class="btn-sm-admin" onclick="renderJadwalAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">📏 Radius toleransi absen: <strong>100 meter</strong> dari titik lokasi</div>
-      <div id="jadwalLokasiContainer">
-        <div class="shimmer" style="height:60px;border-radius:10px"></div>
-        <div class="shimmer" style="height:60px;border-radius:10px;margin-top:6px"></div>
-      </div>
-      <div style="margin-top:10px">
-        <button class="btn-admin" onclick="simpanJadwal()" id="btnSimpanJadwal">
-          <div class="btn-inner"><span>💾</span><span id="btnJadwalText">Simpan Jadwal</span></div>
-        </button>
-      </div>
-      <div class="result-card" id="jadwalResult"><div class="r-icon" id="jadwalRIcon">✅</div><div class="r-title" id="jadwalRTitle">—</div><div class="r-msg" id="jadwalRMsg">—</div></div>
-    </div>
-    <div class="footer">Perubahan langsung tersimpan ke n8n datatables</div>
 
     <!-- ══ KONFIRMASI KETERANGAN ══ -->
     <div class="card" style="margin-top:10px">
@@ -5334,6 +5356,17 @@ async function handleTambahLokasi(){
     loadLokasiAdmin();
   }catch{showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','fail','🔌','Gagal Menyimpan','Server tidak merespons.');setBtnL('btnTambahLokasi',false,'Simpan Lokasi ke Database');}
 }
+/* ════ TAB SWITCHER LOKASI ════ */
+function switchLokasiTab(tab) {
+  const isDaftar = tab === 'daftar';
+  const pD = $('lokPanelDaftar'), pJ = $('lokPanelJadwal');
+  if (pD) pD.style.display = isDaftar ? 'block' : 'none';
+  if (pJ) pJ.style.display = isDaftar ? 'none'  : 'block';
+  const tD = $('lokTabDaftar'), tJ = $('lokTabJadwal');
+  if (tD) { tD.style.color = isDaftar ? 'var(--gold)' : 'var(--muted)'; tD.style.borderBottomColor = isDaftar ? 'var(--gold)' : 'transparent'; }
+  if (tJ) { tJ.style.color = isDaftar ? 'var(--muted)' : 'var(--gold)'; tJ.style.borderBottomColor = isDaftar ? 'transparent' : 'var(--gold)'; }
+}
+
 async function loadLokasiAdmin(){
   const el=$('lokasiMgmtList');
   el.innerHTML=`<div class="shimmer" style="height:38px;border-radius:10px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>`;
@@ -5341,6 +5374,9 @@ async function loadLokasiAdmin(){
   try{
     const res=await apiFetch(P.lokasiList,{method:'GET'});if(!res.ok)throw 0;
     const json=await res.json();list=Array.isArray(json)?json:(json.data||[]);
+    // Update badge count
+    const badge=$('lokasiCountBadge');
+    if(badge){badge.textContent=list.length+' lokasi';badge.style.display=list.length?'inline':'none';}
     if(!list.length){el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;
     }else{
       if(adminMap){list.forEach(l=>{const lat=parseFloat(l.latitude||l.lat||0),lng=parseFloat(l.longitude||l.lng||0);if(!lat||!lng)return;L.circle([lat,lng],{radius:l.radius||100,color:'#c9a84c',fillColor:'rgba(201,168,76,.1)',fillOpacity:1,weight:1}).addTo(adminMap).bindTooltip(l.nama_lokasi||l.nama||'Lokasi');});}
@@ -6048,7 +6084,6 @@ async function tambahAdmin() {
     const res = await apiFetch(P.adminAdd, { method: 'POST', body: JSON.stringify({
       telegram_id: tgId, nama, role,
       ditambahkan_oleh: MY_ID,
-      admin_ids: [...ADMIN_IDS],
       timestamp: Math.floor(Date.now() / 1000)
     })});
     const data = await res.json().catch(() => ({}));
@@ -6079,7 +6114,7 @@ async function hapusAdmin(tgId, nama) {
   if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
   try {
     const res = await apiFetch(P.adminDel + '?telegram_id=' + tgId, { method: 'DELETE',
-      body: JSON.stringify({ ditambahkan_oleh: MY_ID, admin_ids: [...ADMIN_IDS] })
+      body: JSON.stringify({ ditambahkan_oleh: MY_ID })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.ok === false) {

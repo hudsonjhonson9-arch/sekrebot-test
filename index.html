@@ -5385,7 +5385,16 @@ async function loadLokasiAdmin(){
               <button onclick="batalEditRadius('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
             </div>
             <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${hariPills}</div>
-            ${(l.ip_range||l.IP_Range)?`<div style="margin-top:4px;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)}</div>`:''}
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="ip-display-${id}">
+              <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)||'—'}</span>
+              <button onclick="showEditIP('${id}','${((l.ip_range||l.IP_Range)||'').replace(/'/g,'&apos;')}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(96,165,250,.3);background:rgba(96,165,250,.1);color:var(--info);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit IP</button>
+            </div>
+            <div style="display:none;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap" id="ip-edit-${id}">
+              <input type="text" id="ip-input-${id}" value="${(l.ip_range||l.IP_Range)||''}" placeholder="192.168.1.0/24 atau kosongkan"
+                style="flex:1;min-width:140px;background:rgba(255,255,255,.07);border:1px solid var(--info);border-radius:7px;padding:3px 7px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none"/>
+              <button onclick="simpanIP('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--info);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
+              <button onclick="batalEditIP('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
+            </div>
           </div>
           <button class="btn-del" onclick="hapusLokasi('${id}','${namaEsc}')">🗑</button>
         </div>`;
@@ -5434,6 +5443,37 @@ async function simpanRadius(id, nama){
     batalEditRadius(id);
   }catch{
     alert('Gagal menyimpan radius. Coba lagi.');
+  }finally{
+    if(inp) inp.disabled=false;
+  }
+}
+
+function showEditIP(id, currentIP){
+  $(`ip-display-${id}`).style.display='none';
+  const editEl=$(`ip-edit-${id}`);
+  editEl.style.display='flex';
+  const inp=$(`ip-input-${id}`);
+  if(inp){inp.value=currentIP;inp.focus();inp.select();}
+}
+function batalEditIP(id){
+  $(`ip-display-${id}`).style.display='flex';
+  $(`ip-edit-${id}`).style.display='none';
+}
+async function simpanIP(id, nama){
+  const inp=$(`ip-input-${id}`);
+  if(!inp)return;
+  const ip_range=inp.value.trim();
+  inp.disabled=true;
+  try{
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,ip_range})});
+    const displayEl=$(`ip-display-${id}`);
+    if(displayEl){
+      const span=displayEl.querySelector('span');
+      if(span) span.textContent=`🌐 ${ip_range||'—'}`;
+    }
+    batalEditIP(id);
+  }catch{
+    alert('Gagal menyimpan IP. Coba lagi.');
   }finally{
     if(inp) inp.disabled=false;
   }

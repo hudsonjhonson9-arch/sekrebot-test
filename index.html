@@ -1489,7 +1489,7 @@
       <!-- Preview -->
       <div id="jamPreview" style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:10px;line-height:1.7">
         <div>🟢 Masuk tepat waktu : ≤ <b id="prevMasuk">08:00</b></div>
-        <div>⚠️ Terlambat masuk   : 08:01 — <b id="prevTengah">11:59</b></div>
+        <div>⚠️ Terlambat masuk   : <b id="prevMasuk1">08:01</b> — <b id="prevTengah">11:59</b></div>
         <div>🟡 Belum waktunya    : <b id="prevTengah2">12:00</b> — <b id="prevPulang1">14:29</b></div>
         <div>🔵 Waktu pulang      : ≥ <b id="prevPulang">14:30</b></div>
       </div>
@@ -5574,13 +5574,11 @@ async function simpanJadwal(){
 function updateJamPreview(){
   const jmStr = menitToStr(JAM_MASUK_MENIT);
   const jpStr = menitToStr(JAM_PULANG_MENIT);
-  // Hitung menit tengah (12:00 tetap hardcode sebagai batas tdk bisa masuk)
-  const tengah1 = menitToStr(JAM_MASUK_MENIT + 1);
-  const tengah2 = menitToStr(JAM_PULANG_MENIT - 1);
   setT('prevMasuk',   jmStr);
-  setT('prevTengah',  tengah2.replace(/(\d+):(\d+)/, (_,h,m)=>`${String(parseInt(h)).padStart(2,'0')}:${m}`));
+  setT('prevMasuk1',  menitToStr(JAM_MASUK_MENIT + 1));  // Terlambat mulai dari JamMasuk+1
+  setT('prevTengah',  '11:59');                           // Terlambat s/d sebelum tengah hari
   setT('prevTengah2', '12:00');
-  setT('prevPulang1', menitToStr(JAM_PULANG_MENIT - 1));
+  setT('prevPulang1', menitToStr(JAM_PULANG_MENIT - 1)); // Belum waktunya s/d JamPulang-1
   setT('prevPulang',  jpStr);
 }
 

@@ -1500,6 +1500,44 @@
       </button>
     </div>
 
+    <!-- ══ MANAJEMEN ADMIN ══ -->
+    <div class="card" style="margin-top:10px" id="adminMgmtCard">
+      <div class="card-title">
+        <span>👑 Manajemen Admin</span>
+        <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
+      </div>
+      <div class="radius-note">Kelola daftar akun admin. Perubahan aktif setelah app di-refresh.</div>
+
+      <!-- Daftar admin -->
+      <div id="adminMgmtList" style="margin-bottom:12px">
+        <div class="shimmer" style="height:38px;border-radius:10px"></div>
+        <div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>
+      </div>
+
+      <!-- Form tambah -->
+      <div style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:8px;letter-spacing:.04em">➕ TAMBAH ADMIN BARU</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="inputAdminTgId" type="number" class="form-input" placeholder="Telegram ID" style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px"/>
+          <input id="inputAdminNama" type="text" class="form-input" placeholder="Nama" style="flex:1"/>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+          <label style="font-size:10px;color:var(--muted);flex-shrink:0">Role:</label>
+          <select id="inputAdminRole" class="form-input" style="flex:1;font-size:11px">
+            <option value="admin">admin</option>
+            <option value="superadmin">superadmin</option>
+          </select>
+        </div>
+        <div class="result-card" id="adminMgmtResult" style="display:none"><div class="r-icon" id="adminMgmtRIcon">✅</div><div class="r-title" id="adminMgmtRTitle">—</div><div class="r-msg" id="adminMgmtRMsg">—</div></div>
+        <button class="btn-admin" onclick="tambahAdmin()">
+          <div class="btn-inner"><span>👑</span><span>Tambah Admin</span></div>
+        </button>
+      </div>
+
+      <div style="font-size:9px;color:var(--muted)">💡 ID Telegram bisa ditemukan via @userinfobot di Telegram. Minimal 1 admin harus selalu ada.</div>
+    </div>
+
+
     <!-- ══ JAM KERJA PERIODE KHUSUS ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">🌙 Jam Kerja Periode Khusus</div>
@@ -1578,9 +1616,10 @@
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
 const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
 const isTest    = false;
-const ADMIN_IDS    = [1383864355, 8504296866];
-// Chat ID tujuan pengiriman rekap via Telegram (ganti dengan Group ID jika perlu)
-const REKAP_CHAT_ID = ADMIN_IDS[0];
+// ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
+// Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
+let ADMIN_IDS = [];          // diisi oleh loadJamAbsen()
+let REKAP_CHAT_ID = null;    // diisi setelah ADMIN_IDS loaded
 
 /* ════ KONFIGURASI JARINGAN WIFI KANTOR ════
    WAJIB DIISI: Daftar IP publik jaringan WiFi kantor.
@@ -1626,6 +1665,8 @@ const P = {
   jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
   jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
   jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
+  adminAdd       : isTest ? '/webhook-test/admin-add'         : '/webhook/admin-add',
+  adminDel       : isTest ? '/webhook-test/admin-delete'      : '/webhook/admin-delete',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -1652,7 +1693,8 @@ const tg     = window.Telegram?.WebApp;
 const tgUser = tg?.initDataUnsafe?.user || {};
 if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
 const MY_ID    = tgUser.id ? Number(tgUser.id) : null;
-const IS_ADMIN = ADMIN_IDS.includes(MY_ID);
+// IS_ADMIN dievaluasi ulang setelah ADMIN_IDS dimuat dari server
+let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
 
 /* ════ KONSTANTA ════ */
 const TZ     = 'Asia/Makassar';
@@ -1689,7 +1731,7 @@ function switchTab(tab) {
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
   if (tab==='rekap'   && !rekapLoaded) loadRekap();
-  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); loadFaceToggle(); loadJamPeriodeAdmin(); _initPeriodeListeners(); }
+  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); loadFaceToggle(); loadJamPeriodeAdmin(); _initPeriodeListeners(); loadAdminMgmt(); }
 }
 
 /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
@@ -3906,7 +3948,7 @@ async function handleKonfirmasi(rowNum, action, jenis, tanggal){
   try{
     const res=await apiFetch(P.ketApprove,{method:'POST',body:JSON.stringify({
       row_number:rowNum, action, jenis, tanggal,
-      admin_id:MY_ID, timestamp:Math.floor(Date.now()/1000)
+      admin_id:MY_ID, admin_ids:ADMIN_IDS, timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
     if(d.ok!==false){
@@ -5153,7 +5195,7 @@ async function handleTambahLibur(){
   let ok=0,fail=0;
   for(const tgl of dates){
     try{
-      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,admin_ids:ADMIN_IDS,timestamp:Math.floor(Date.now()/1000)})});
       let d={};try{d=await res.json()}catch(_){}
       if(d.ok!==false){ok++;hariLiburSet.add(tgl);}else fail++;
     }catch{fail++;}
@@ -5970,8 +6012,135 @@ async function loadSeragamPublik() {
   } catch(_) {}
 }
 
+
+/* ════════════════════════════════════════════════════════
+   MANAJEMEN ADMIN — baca/tulis sheet admin_list via n8n
+   Endpoint: gunakan user-list webhook untuk read,
+             dan endpoint khusus admin-list untuk write
+   ════════════════════════════════════════════════════════ */
+
+async function loadAdminMgmt() {
+  const el = $('adminMgmtList');
+  if (!el) return;
+  el.innerHTML = `<div class="shimmer" style="height:38px;border-radius:10px"></div>`;
+  try {
+    // Re-fetch admin list langsung dari endpoint jam-absen (sudah include admin_ids)
+    const res = await apiFetch(P.jamAbsen, { method: 'GET' });
+    if (!res.ok) throw 0;
+    const d = await res.json();
+    const ids = (d.data || d || {}).admin_ids || [];
+
+    // Update global ADMIN_IDS
+    if (ids.length) {
+      ADMIN_IDS.length = 0;
+      ids.forEach(id => ADMIN_IDS.push(id));
+      IS_ADMIN = ADMIN_IDS.includes(MY_ID);
+      REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
+    }
+
+    if (!ids.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada admin terdaftar</div></div>`;
+      return;
+    }
+
+    // Untuk tampilkan nama, fetch dari user-list
+    let namaMap = {};
+    try {
+      const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+      if (ur.ok) {
+        const ud = await ur.json();
+        const users = Array.isArray(ud) ? ud : (ud.data || []);
+        users.forEach(u => {
+          const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
+          if (uid) namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
+        });
+      }
+    } catch(_) {}
+
+    el.innerHTML = ids.map(id => {
+      const nama = namaMap[id] || `ID: ${id}`;
+      const isMe = id === MY_ID;
+      const isSuperAdmin = id === ids[0]; // admin pertama = superadmin
+      return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px">
+        <div style="font-size:18px">${isSuperAdmin ? '👑' : '🛡️'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${nama}${isMe ? ' <span style="color:var(--gold);font-size:9px">(Anda)</span>' : ''}</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${id} · ${isSuperAdmin ? 'superadmin' : 'admin'}</div>
+        </div>
+        ${!isMe && ids.length > 1 ? `<button onclick="hapusAdmin(${id},'${nama.replace(/'/g,"&#39;")}')" style="padding:3px 10px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#ef4444;font-size:10px;font-weight:700;cursor:pointer">🗑 Hapus</button>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat daftar admin</div></div>`;
+  }
+}
+
+async function tambahAdmin() {
+  const idInput  = $('inputAdminTgId');
+  const namaInput= $('inputAdminNama');
+  const roleInput= $('inputAdminRole');
+  const tgId = parseInt(idInput?.value || 0);
+  const nama = (namaInput?.value || '').trim();
+  const role = roleInput?.value || 'admin';
+
+  if (!tgId || tgId < 1) {
+    _showAdminMgmtResult('warning', '⚠️', 'ID Tidak Valid', 'Masukkan Telegram ID yang benar.');
+    return;
+  }
+  if (ADMIN_IDS.includes(tgId)) {
+    _showAdminMgmtResult('warning', '⚠️', 'Sudah Ada', `ID ${tgId} sudah terdaftar sebagai admin.`);
+    return;
+  }
+  try {
+    await apiFetch(P.adminAdd, { method: 'POST', body: JSON.stringify({
+      telegram_id: tgId, nama, role,
+      ditambahkan_oleh: MY_ID,
+      admin_ids: ADMIN_IDS,
+      timestamp: Math.floor(Date.now() / 1000)
+    })});
+    ADMIN_IDS.push(tgId);
+    REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
+    if (idInput)   idInput.value = '';
+    if (namaInput) namaInput.value = '';
+    _showAdminMgmtResult('success', '✅', 'Admin Ditambahkan', `${nama || tgId} berhasil ditambahkan sebagai ${role}.`);
+    loadAdminMgmt();
+  } catch(e) {
+    _showAdminMgmtResult('fail', '🔌', 'Gagal', 'Server tidak merespons. Coba lagi.');
+  }
+}
+
+async function hapusAdmin(tgId, nama) {
+  if (tgId === MY_ID) {
+    _showAdminMgmtResult('warning', '⚠️', 'Tidak Bisa', 'Anda tidak bisa menghapus akun Anda sendiri.');
+    return;
+  }
+  if (ADMIN_IDS.length <= 1) {
+    _showAdminMgmtResult('warning', '⚠️', 'Minimal 1 Admin', 'Harus ada minimal 1 admin yang terdaftar.');
+    return;
+  }
+  if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
+  try {
+    await apiFetch(P.adminDel + '?telegram_id=' + tgId, { method: 'DELETE',
+      body: JSON.stringify({ ditambahkan_oleh: MY_ID, admin_ids: ADMIN_IDS })
+    });
+    const idx = ADMIN_IDS.indexOf(tgId);
+    if (idx > -1) ADMIN_IDS.splice(idx, 1);
+    REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
+    _showAdminMgmtResult('success', '✅', 'Dihapus', `${nama} dihapus dari daftar admin.`);
+    loadAdminMgmt();
+  } catch(e) {
+    _showAdminMgmtResult('fail', '🔌', 'Gagal', 'Server tidak merespons.');
+  }
+}
+
+function _showAdminMgmtResult(type, icon, title, msg) {
+  const el = $('adminMgmtResult');
+  if (!el) return;
+  el.style.display = 'block';
+  showResult('adminMgmtResult', 'adminMgmtRIcon', 'adminMgmtRTitle', 'adminMgmtRMsg', type, icon, title, msg);
+}
+
 async function loadJamAbsen(){
-  // Fetch dari n8n jika ada, fallback ke localStorage
   try{
     const res=await apiFetch(P.jamAbsen,{method:'GET'});
     if(!res.ok)throw 0;
@@ -5980,11 +6149,38 @@ async function loadJamAbsen(){
     if(jam.masuk)  { const m=toMenitStr(jam.masuk);  if(m!==null) JAM_MASUK_MENIT=m; }
     if(jam.pulang) { const m=toMenitStr(jam.pulang); if(m!==null) JAM_PULANG_MENIT=m; }
 
+    // ── Muat daftar admin dari server (dinamis, tanpa hardcode) ──
+    if(Array.isArray(jam.admin_ids) && jam.admin_ids.length){
+      ADMIN_IDS.length = 0;
+      jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
+    }
+    // Re-evaluasi IS_ADMIN setelah ADMIN_IDS dimuat
+    IS_ADMIN = ADMIN_IDS.includes(MY_ID);
+    REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID || null;
+    // Tampilkan/sembunyikan tab Admin sesuai hasil
+    _applyAdminUI();
+
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:menitToStr(JAM_MASUK_MENIT),pulang:menitToStr(JAM_PULANG_MENIT)})); }catch(_){}
     updateClock();
     initJamAdminUI();
   }catch{
-    initJamAdminUI(); // gunakan nilai dari localStorage
+    initJamAdminUI();
+  }
+}
+
+function _applyAdminUI(){
+  const panelAdmin = $('panel-admin');
+  if(!panelAdmin) return;
+  if(!IS_ADMIN){
+    panelAdmin.style.display='none';
+    // Jika sedang di tab admin, kembali ke absen
+    const allTabs = getAllTabs();
+    if(!allTabs.includes('admin')) switchTab('absen');
+  } else {
+    panelAdmin.style.display='';
+    // Pastikan tombol tab admin muncul
+    const btn = document.querySelector('.tab[data-tab="admin"]');
+    if(btn) btn.style.display='';
   }
 }
 
@@ -6194,7 +6390,7 @@ async function simpanFaceToggle() {
   const rc = $('faceToggleResult');
   if (rc) rc.style.display = 'flex';
   try {
-    await apiFetch(P.faceToggle, { method:'POST', body: JSON.stringify({ enabled, admin_id: MY_ID }) });
+    await apiFetch(P.faceToggle, { method:'POST', body: JSON.stringify({ enabled, admin_id: MY_ID, admin_ids: ADMIN_IDS }) });
     FACE_RECOGNITION_ENABLED = enabled;
     try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch(_){}
     _applyFaceToggleUI(enabled);

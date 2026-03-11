@@ -1710,14 +1710,19 @@ const toHHMM  = m => { if(!m||m<=0)return'00:00'; const h=Math.floor(m/60),mn=m%
 const $       = id => document.getElementById(id);
 
 /* ════ ADMIN TAB SETUP ════ */
-(function(){
-  if (!IS_ADMIN) { $('panel-admin').style.display='none'; return; }
+// Dipanggil oleh _applyAdminUI() setelah ADMIN_IDS dimuat dari server
+function setupAdminTab(){
+  const existing = document.querySelector('.tab[data-tab="admin"]');
+  if (existing) return; // sudah ada, skip
   const btn = document.createElement('button');
   btn.className = 'tab admin-tab';
+  btn.setAttribute('data-tab','admin');
   btn.innerHTML = '⚙️ Admin';
   btn.onclick = () => switchTab('admin');
   $('tabsBar').appendChild(btn);
-})();
+}
+// Sembunyikan panel admin dulu sampai ADMIN_IDS dimuat
+if($('panel-admin')) $('panel-admin').style.display='none';
 
 /* ════ TABS ════ */
 function getAllTabs(){ return IS_ADMIN ? ['absen','ket','rekap','profil','admin'] : ['absen','ket','rekap','profil']; }
@@ -6173,12 +6178,16 @@ function _applyAdminUI(){
   if(!panelAdmin) return;
   if(!IS_ADMIN){
     panelAdmin.style.display='none';
+    // Sembunyikan tombol tab admin jika ada
+    const btn = document.querySelector('.tab[data-tab="admin"]');
+    if(btn) btn.style.display='none';
     // Jika sedang di tab admin, kembali ke absen
     const allTabs = getAllTabs();
     if(!allTabs.includes('admin')) switchTab('absen');
   } else {
     panelAdmin.style.display='';
-    // Pastikan tombol tab admin muncul
+    // Buat tombol tab admin jika belum ada, lalu tampilkan
+    setupAdminTab();
     const btn = document.querySelector('.tab[data-tab="admin"]');
     if(btn) btn.style.display='';
   }

@@ -5367,12 +5367,26 @@ async function loadLokasiAdmin(){
         const id=l.id||l.ID||'';
         const radius=l.radius||100;
         const hariRaw=(l.hari||'senin,selasa,rabu,kamis,jumat');
+        const ipVal=(l.ip_range||l.IP_Range||'');
         const hariPills=hariRaw.split(',').map(h=>`<span style="padding:1px 6px;border-radius:10px;background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700">${h.trim()}</span>`).join(' ');
         const namaEsc=(l.nama_lokasi||l.nama||'').replace(/'/g,'&apos;');
-        return`<div class="lokasi-mgmt-item" id="lokasi-item-${id}">
+        const ipEsc=ipVal.replace(/'/g,'&apos;');
+        const hariEsc=hariRaw.replace(/'/g,'&apos;');
+        const SEMUA_HARI=['senin','selasa','rabu','kamis','jumat','sabtu','minggu'];
+        const hariChecks=SEMUA_HARI.map(h=>{
+          const checked=hariRaw.split(',').map(x=>x.trim()).includes(h)?'checked':'';
+          return`<label style="display:flex;align-items:center;gap:3px;font-size:9px;font-weight:700;color:var(--admin);cursor:pointer">
+            <input type="checkbox" id="hari-cb-${id}-${h}" value="${h}" ${checked}
+              style="accent-color:var(--admin);width:12px;height:12px;cursor:pointer"/>
+            ${h.charAt(0).toUpperCase()+h.slice(1)}</label>`;
+        }).join('');
+        return`<div class="lokasi-mgmt-item" id="lokasi-item-${id}"
+            data-radius="${radius}" data-hari="${hariEsc}" data-ip="${ipEsc}">
           <div style="flex:1;min-width:0">
             <div class="lokasi-mgmt-name">📍 ${l.nama_lokasi||l.nama||'—'}</div>
             <div class="lokasi-mgmt-coord">${lat}, ${lng}</div>
+
+            <!-- ── RADIUS ── -->
             <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="radius-display-${id}">
               <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">📏 ${radius}m</span>
               <button onclick="showEditRadius('${id}',${radius})" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.3);background:var(--gold-dim);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit</button>
@@ -5384,13 +5398,27 @@ async function loadLokasiAdmin(){
               <button onclick="simpanRadius('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
               <button onclick="batalEditRadius('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
             </div>
-            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${hariPills}</div>
+
+            <!-- ── HARI ── -->
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap" id="hari-display-${id}">
+              <div style="display:flex;flex-wrap:wrap;gap:3px" id="hari-pills-${id}">${hariPills}</div>
+              <button onclick="showEditHari('${id}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(167,139,250,.3);background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit</button>
+            </div>
+            <div style="display:none;flex-direction:column;gap:6px;margin-top:4px;padding:8px 10px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px" id="hari-edit-${id}">
+              <div style="display:flex;flex-wrap:wrap;gap:8px">${hariChecks}</div>
+              <div style="display:flex;gap:5px;margin-top:2px">
+                <button onclick="simpanHari('${id}','${namaEsc}')" style="padding:2px 10px;border-radius:6px;border:none;background:var(--admin);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅ Simpan</button>
+                <button onclick="batalEditHari('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
+              </div>
+            </div>
+
+            <!-- ── IP RANGE ── -->
             <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="ip-display-${id}">
-              <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)||'—'}</span>
-              <button onclick="showEditIP('${id}','${((l.ip_range||l.IP_Range)||'').replace(/'/g,'&apos;')}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(96,165,250,.3);background:rgba(96,165,250,.1);color:var(--info);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit IP</button>
+              <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${ipVal||'—'}</span>
+              <button onclick="showEditIP('${id}','${ipEsc}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(96,165,250,.3);background:rgba(96,165,250,.1);color:var(--info);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit IP</button>
             </div>
             <div style="display:none;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap" id="ip-edit-${id}">
-              <input type="text" id="ip-input-${id}" value="${(l.ip_range||l.IP_Range)||''}" placeholder="192.168.1.0/24 atau kosongkan"
+              <input type="text" id="ip-input-${id}" value="${ipVal}" placeholder="192.168.1.0/24 atau kosongkan"
                 style="flex:1;min-width:140px;background:rgba(255,255,255,.07);border:1px solid var(--info);border-radius:7px;padding:3px 7px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none"/>
               <button onclick="simpanIP('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--info);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
               <button onclick="batalEditIP('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
@@ -5432,19 +5460,59 @@ async function simpanRadius(id, nama){
     return;
   }
   inp.disabled=true;
+  const item=document.getElementById(`lokasi-item-${id}`);
+  const hari=item?item.dataset.hari:'';
+  const ip_range=item?item.dataset.ip:'';
   try{
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius})});
-    // Update tampilan langsung tanpa reload
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius,hari,ip_range})});
     const displayEl=$(`radius-display-${id}`);
-    if(displayEl){
-      const span=displayEl.querySelector('span');
-      if(span) span.textContent=`📏 ${radius}m`;
-    }
+    if(displayEl){const span=displayEl.querySelector('span');if(span)span.textContent=`📏 ${radius}m`;}
+    if(item)item.dataset.radius=radius;
     batalEditRadius(id);
   }catch{
     alert('Gagal menyimpan radius. Coba lagi.');
   }finally{
-    if(inp) inp.disabled=false;
+    if(inp)inp.disabled=false;
+  }
+}
+
+function showEditHari(id){
+  $(`hari-display-${id}`).style.display='none';
+  const editEl=$(`hari-edit-${id}`);
+  editEl.style.display='flex';
+}
+function batalEditHari(id){
+  $(`hari-display-${id}`).style.display='flex';
+  $(`hari-edit-${id}`).style.display='none';
+}
+async function simpanHari(id, nama){
+  const editEl=$(`hari-edit-${id}`);
+  if(!editEl)return;
+  const cbs=editEl.querySelectorAll('input[type=checkbox]:checked');
+  const hariArr=Array.from(cbs).map(c=>c.value);
+  if(!hariArr.length){
+    alert('Pilih minimal 1 hari.');
+    return;
+  }
+  const hari=hariArr.join(',');
+  const item=document.getElementById(`lokasi-item-${id}`);
+  const radius=item?parseInt(item.dataset.radius)||100:100;
+  const ip_range=item?item.dataset.ip:'';
+  const btns=editEl.querySelectorAll('button');
+  btns.forEach(b=>b.disabled=true);
+  try{
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,hari,radius,ip_range})});
+    // Update pills display
+    const pillsEl=$(`hari-pills-${id}`);
+    if(pillsEl){
+      pillsEl.innerHTML=hariArr.map(h=>`<span style="padding:1px 6px;border-radius:10px;background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700">${h}</span>`).join(' ');
+    }
+    if(item)item.dataset.hari=hari;
+    batalEditHari(id);
+  }catch{
+    alert('Gagal menyimpan hari. Coba lagi.');
+  }finally{
+    btns.forEach(b=>b.disabled=false);
   }
 }
 
@@ -5464,18 +5532,19 @@ async function simpanIP(id, nama){
   if(!inp)return;
   const ip_range=inp.value.trim();
   inp.disabled=true;
+  const item=document.getElementById(`lokasi-item-${id}`);
+  const hari=item?item.dataset.hari:'';
+  const radius=item?parseInt(item.dataset.radius)||100:100;
   try{
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,ip_range})});
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,ip_range,hari,radius})});
     const displayEl=$(`ip-display-${id}`);
-    if(displayEl){
-      const span=displayEl.querySelector('span');
-      if(span) span.textContent=`🌐 ${ip_range||'—'}`;
-    }
+    if(displayEl){const span=displayEl.querySelector('span');if(span)span.textContent=`🌐 ${ip_range||'—'}`;}
+    if(item)item.dataset.ip=ip_range;
     batalEditIP(id);
   }catch{
     alert('Gagal menyimpan IP. Coba lagi.');
   }finally{
-    if(inp) inp.disabled=false;
+    if(inp)inp.disabled=false;
   }
 }
 

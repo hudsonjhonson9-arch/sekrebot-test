@@ -965,6 +965,8 @@
       <!-- diisi JS -->
     </div>
 
+
+
     <!-- ══ FACE RECOGNITION ══ -->
     <div class="profil-section-title">🧠 Face Recognition</div>
     <div style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px">
@@ -1251,6 +1253,16 @@
       </div>
       <div class="form-group"><label class="form-label">🏢 Nama Lokasi</label><input type="text" class="form-input" id="namaLokasi" placeholder="Contoh: Kantor BAPPERIDA"/></div>
       <div class="form-group"><label class="form-label">📏 Radius Toleransi (meter)</label><input type="number" class="form-input" id="radiusLokasi" value="100" min="50" max="2000"/></div>
+      <div class="form-group">
+        <label class="form-label">🌐 IP Range Kantor (CIDR)</label>
+        <input type="text" class="form-input" id="ipRangeLokasi"
+          placeholder="contoh: 36.84.229.0/24, 110.136.0.0/16"
+          style="font-family:'JetBrains Mono',monospace;font-size:12px"/>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px">
+          💡 Pisahkan dengan koma. Support CIDR (misal <code>36.84.0.0/16</code>) atau IP exact.<br>
+          Kosongkan jika tidak ingin membatasi jaringan untuk lokasi ini.
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">📅 Hari Aktif Lokasi Ini</label>
         <div class="hari-grid" id="hariCheckGrid">
@@ -1576,13 +1588,9 @@ const REKAP_CHAT_ID = ADMIN_IDS[0];
    Bisa isi lebih dari satu IP jika ada beberapa koneksi internet kantor.
    Jika WIFI_CHECK_ENABLED = false, cek jaringan dinonaktifkan (semua jaringan boleh).
 */
-const WIFI_CHECK_ENABLED = true;           // set false untuk nonaktifkan cek jaringan
-const KANTOR_IPS = [
-  '36.84.229.29', '110.136.219.46', '36.85.106.21', '36.84.229.16', '110.136.218.227', '110.136.219.35'                      // ← GANTI dengan IP publik WiFi kantor
-  // '103.YYY.YYY.YYY',                    // ← tambahkan jika ada IP cadangan
-];
-// 'block' = HANYA jaringan dengan IP di KANTOR_IPS yang bisa absen (DIREKOMENDASIKAN)
-// 'warn'  = semua jaringan boleh absen, tapi IP dicatat untuk audit
+const WIFI_CHECK_ENABLED = true;
+// IP dicek server-side via ip_range di sheet lokasiabsen (support CIDR, e.g. 36.84.0.0/16)
+// Frontend hanya fetch IP publik untuk dikirim ke n8n — validasi dilakukan di n8n
 const WIFI_MODE = 'block';
 
 const P = {
@@ -1748,15 +1756,22 @@ function updateClock() {
   $('clockTime').innerHTML = `${p2(n.getHours())}<span>:</span>${p2(n.getMinutes())}<span>:</span>${p2(n.getSeconds())}`;
   $('clockDate').textContent = n.toLocaleDateString('id-ID',{timeZone:TZ,weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const _hEl=$('hariIni'); if(_hEl) _hEl.textContent=H_DISP[h];
-  const jmStr=menitToStr(JAM_MASUK_MENIT), jpStr=menitToStr(JAM_PULANG_MENIT);
+
+  // ── Gunakan jam periode aktif hari ini (bukan selalu jam global) ──
+  const _tglHari = n.toLocaleDateString('sv-SE',{timeZone:TZ}); // YYYY-MM-DD
+  const _jamHari = getJamForTanggal(_tglHari);
+  const _jamMasukHari  = toMenitStr(_jamHari.masuk)  ?? JAM_MASUK_MENIT;
+  const _jamPulangHari = toMenitStr(_jamHari.pulang) ?? JAM_PULANG_MENIT;
+  const jmStr = _jamHari.masuk, jpStr = _jamHari.pulang;
+
   let jenis='',batas='';
-  if      (tot<=JAM_MASUK_MENIT) {jenis='🟢 Waktu Absen Masuk';     batas=`Masuk ≤ ${jmStr}`}
-  else if (tot>=JAM_PULANG_MENIT){jenis='🔵 Waktu Absen Pulang';    batas=`Pulang ≥ ${jpStr}`}
-  else if (tot<720)               {jenis='🔴 Di luar jam masuk';     batas='Terlambat'}
-  else                            {jenis='🟡 Belum Waktunya Pulang'; batas=`Pulang ≥ ${jpStr}`}
+  if      (tot<=_jamMasukHari) {jenis=`🟢 Waktu Absen Masuk${_jamHari.nama?' 🌙 '+_jamHari.nama:''}`;  batas=`Masuk ≤ ${jmStr}`}
+  else if (tot>=_jamPulangHari){jenis='🔵 Waktu Absen Pulang';  batas=`Pulang ≥ ${jpStr}`}
+  else if (tot<720)             {jenis='🔴 Di luar jam masuk';  batas='Terlambat'}
+  else                          {jenis='🟡 Belum Waktunya Pulang'; batas=`Pulang ≥ ${jpStr}`}
   $('jenisAbsen').textContent = jenis;
   $('batasAbsen').textContent = batas;
-  const isJamPulang = tot >= JAM_PULANG_MENIT;
+  const isJamPulang = tot >= _jamPulangHari;
   const btnPL = $('btnPulangLuar'), formPL = $('pulangLuarForm');
   if(btnPL) btnPL.classList.toggle('show', isJamPulang && !btnPL.disabled);
   if(formPL) formPL.classList.toggle('show', isJamPulang && !$('btnPulangLuar')?.disabled);
@@ -1772,11 +1787,15 @@ let _lastJenisPeriode = null;
 setInterval(() => {
   const n = nowWITA();
   const tot = n.getHours() * 60 + n.getMinutes();
+  const _tgl = n.toLocaleDateString('sv-SE',{timeZone:TZ});
+  const _jH  = getJamForTanggal(_tgl);
+  const _jmH = toMenitStr(_jH.masuk)  ?? JAM_MASUK_MENIT;
+  const _jpH = toMenitStr(_jH.pulang) ?? JAM_PULANG_MENIT;
   let j;
-  if      (tot <= JAM_MASUK_MENIT)  j = 'MASUK';
-  else if (tot < 720)               j = 'DI LUAR JAM MASUK';
-  else if (tot < JAM_PULANG_MENIT)  j = 'DI LUAR JAM PULANG';
-  else                              j = 'PULANG';
+  if      (tot <= _jmH)  j = 'MASUK';
+  else if (tot < 720)    j = 'DI LUAR JAM MASUK';
+  else if (tot < _jpH)   j = 'DI LUAR JAM PULANG';
+  else                   j = 'PULANG';
   if (j !== _lastJenisPeriode) {
     _lastJenisPeriode = j;
     // Periode berubah — reload history agar tombol dievaluasi ulang
@@ -2115,11 +2134,15 @@ function renderTodayHistory(rows) {
   // ── Cek apakah jenis absen saat ini sudah tercatat ──
   const n   = nowWITA();
   const tot = n.getHours() * 60 + n.getMinutes();
+  const _tglHari2 = n.toLocaleDateString('sv-SE',{timeZone:TZ});
+  const _jH2  = getJamForTanggal(_tglHari2);
+  const _jmH2 = toMenitStr(_jH2.masuk)  ?? JAM_MASUK_MENIT;
+  const _jpH2 = toMenitStr(_jH2.pulang) ?? JAM_PULANG_MENIT;
   let jenisSkrg;
-  if      (tot <= JAM_MASUK_MENIT)  jenisSkrg = 'MASUK';
-  else if (tot < 720)               jenisSkrg = 'DI LUAR JAM MASUK';
-  else if (tot < JAM_PULANG_MENIT)  jenisSkrg = 'DI LUAR JAM PULANG';
-  else                              jenisSkrg = 'PULANG';
+  if      (tot <= _jmH2)  jenisSkrg = 'MASUK';
+  else if (tot < 720)     jenisSkrg = 'DI LUAR JAM MASUK';
+  else if (tot < _jpH2)   jenisSkrg = 'DI LUAR JAM PULANG';
+  else                    jenisSkrg = 'PULANG';
 
   const GRP_MASUK  = ['MASUK', 'DI LUAR JAM MASUK'];
   const GRP_PULANG = ['PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR'];
@@ -2233,13 +2256,13 @@ function showGPS(lat,lon,acc,lokasi){
 }
 
 /* ════ DETEKSI JARINGAN / WIFI ════
-   Mengambil IP publik dari api.ipify.org lalu bandingkan dengan KANTOR_IPS.
-   Hasilnya disimpan di networkInfo untuk disertakan di payload absen.
+   Fetch IP publik → kirim ke n8n → n8n validasi via CIDR di sheet lokasiabsen.
+   Frontend hanya menampilkan status, tidak memblokir sendiri.
    ════════════════════════════════ */
 let networkInfo = {
   ip_public   : null,
-  is_kantor   : null,    // true | false | null (belum dicek)
-  network_type: null,    // 'wifi' | 'cellular' | 'ethernet' | 'unknown'
+  is_kantor   : null,    // null = belum tahu (n8n yang menentukan)
+  network_type: null,
   checked     : false,
   error       : null
 };
@@ -2250,14 +2273,13 @@ async function cekJaringan() {
   const status = $('wifiStatus');
   const detail = $('wifiDetail');
 
-  // Deteksi tipe koneksi (Network Information API — hanya Android Chrome/Telegram)
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   const netType = conn?.type || conn?.effectiveType || 'unknown';
   networkInfo.network_type = netType;
 
   if (!WIFI_CHECK_ENABLED) {
-    networkInfo.checked  = true;
-    networkInfo.is_kantor = null; // tidak dicek
+    networkInfo.checked   = true;
+    networkInfo.is_kantor = null;
     bar.className   = 'wifi-bar unknown';
     icon.textContent = '📶';
     status.textContent = 'Cek Jaringan Dinonaktifkan';
@@ -2265,14 +2287,12 @@ async function cekJaringan() {
     return networkInfo;
   }
 
-  // Tampilkan loading
   bar.className   = 'wifi-bar checking';
   icon.textContent = '🔄';
   status.textContent = 'Memeriksa jaringan...';
   detail.textContent = 'Mengambil IP publik...';
 
   try {
-    // Ambil IP publik dengan timeout 5 detik
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 5000);
     const res  = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
@@ -2281,32 +2301,19 @@ async function cekJaringan() {
     const ip   = data.ip || '';
 
     networkInfo.ip_public = ip;
-    networkInfo.is_kantor = KANTOR_IPS.includes(ip);
     networkInfo.checked   = true;
+    // is_kantor tidak bisa ditentukan frontend (butuh CIDR check di server)
+    // Tampilkan IP saja — server yang akan menolak jika tidak sesuai ip_range
+    networkInfo.is_kantor = null;
 
     const connLabel = netType.includes('wifi') ? '📶 WiFi'
                     : netType.includes('cellular') || ['2g','3g','4g','5g'].includes(netType) ? '📱 Data Seluler'
                     : '🔌 Jaringan';
-
-    if (networkInfo.is_kantor) {
-      bar.className   = 'wifi-bar kantor';
-      icon.textContent = '✅';
-      status.textContent = 'Jaringan Kantor Terdeteksi';
-      detail.textContent = `${connLabel} · IP: ${ip}`;
-    } else {
-      if (WIFI_MODE === 'block') {
-        bar.className   = 'wifi-bar luar';
-        icon.textContent = '🚫';
-        status.textContent = 'Bukan Jaringan Kantor';
-        detail.textContent = `IP Anda: ${ip} · Sambungkan ke WiFi kantor`;
-      } else {
-        bar.className   = 'wifi-bar warn';
-        icon.textContent = '⚠️';
-        status.textContent = 'Jaringan di Luar Kantor';
-        detail.textContent = `${connLabel} · IP: ${ip} · Absen tetap diproses`;
-      }
-    }
-    if ($('gpsNet')) $('gpsNet').textContent = `${ip} ${networkInfo.is_kantor ? '(Kantor ✓)' : '(Luar Kantor)'}`;
+    bar.className   = 'wifi-bar kantor'; // tampil hijau, validasi di server
+    icon.textContent = '📡';
+    status.textContent = 'IP Publik Terdeteksi';
+    detail.textContent = `${connLabel} · IP: ${ip}`;
+    if ($('gpsNet')) $('gpsNet').textContent = `${ip}`;
 
   } catch(e) {
     networkInfo.checked = true;
@@ -3189,14 +3196,8 @@ async function handleAbsen() {
   setBtnL('btnAbsen',true,'Memeriksa jaringan...');
   await cekJaringan();
 
-  // Blokir jika mode 'block' dan bukan jaringan kantor
-  // Hanya aktif jika IP kantor sudah dikonfigurasi (bukan placeholder)
-  const _ipSudahDiisi = KANTOR_IPS.length > 0 && !KANTOR_IPS[0].includes('XXX');
-  if (WIFI_CHECK_ENABLED && WIFI_MODE === 'block' && _ipSudahDiisi && networkInfo.checked && networkInfo.is_kantor === false) {
-    showResult('resultCard','rIcon','rTitle','rMsg','fail','🚫','Jaringan Tidak Diizinkan',
-      `Absensi hanya bisa dilakukan dari jaringan WiFi kantor.\nIP Anda saat ini: ${networkInfo.ip_public || 'tidak diketahui'}\n\nSambungkan HP ke WiFi BAPPERIDA dan coba lagi.`);
-    setBtnL('btnAbsen',false,'🔄 Coba Lagi'); return;
-  }
+  // Validasi IP dilakukan di server (n8n) via CIDR range di sheet lokasiabsen
+  // Frontend hanya fetch IP dan kirim ke payload — tidak memblokir sendiri
 
   // ── Buka kamera untuk verifikasi wajah & seragam ──
   setBtnL('btnAbsen',true,'Membuka kamera...');
@@ -5264,21 +5265,21 @@ function initAdminMap(){
 }
 async function handleTambahLokasi(){
   const nama=$('namaLokasi').value.trim(),radius=parseInt($('radiusLokasi').value)||100;
+  const ipRange=($('ipRangeLokasi')?.value||'').split(',').map(s=>s.trim()).filter(Boolean).join(',');
   if(!selectedPin){showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','warning','⚠️','Pilih Lokasi','Tap pada peta untuk menentukan titik lokasi.');return;}
   if(!nama){showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','warning','⚠️','Nama Kosong','Masukkan nama lokasi terlebih dahulu.');return;}
-  // Ambil hari yang dicentang
   const hariChecked = Array.from(document.querySelectorAll('#hariCheckGrid input:checked')).map(el=>el.value);
   if(!hariChecked.length){showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','warning','⚠️','Pilih Hari','Pilih minimal satu hari aktif.');return;}
   const hariStr = hariChecked.join(',');
   setBtnL('btnTambahLokasi',true,'Menyimpan...');
   try{
-    await apiFetch(P.lokasiAdd,{method:'POST',body:JSON.stringify({nama_lokasi:nama,latitude:selectedPin.lat,longitude:selectedPin.lng,radius,hari:hariStr,ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
-    showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','success','📌','Lokasi Tersimpan!',`${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}`);
+    await apiFetch(P.lokasiAdd,{method:'POST',body:JSON.stringify({nama_lokasi:nama,latitude:selectedPin.lat,longitude:selectedPin.lng,radius,hari:hariStr,ip_range:ipRange,ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+    const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
+    showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','success','📌','Lokasi Tersimpan!',`${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
     setBtnL('btnTambahLokasi',false,'Simpan Lokasi ke Database');
-    $('namaLokasi').value='';selectedPin=null;
+    $('namaLokasi').value='';if($('ipRangeLokasi'))$('ipRangeLokasi').value='';selectedPin=null;
     if(adminMarker){adminMap.removeLayer(adminMarker);adminMarker=null;}
     $('mapCoords').classList.remove('show');
-    // Reset checkbox: Senin–Jumat checked, Sabtu–Minggu unchecked
     document.querySelectorAll('#hariCheckGrid .hari-check-label').forEach(l=>{
       const val=l.querySelector('input').value;
       const def=['senin','selasa','rabu','kamis','jumat'].includes(val);
@@ -5337,6 +5338,7 @@ async function loadLokasiAdmin(){
               <button onclick="batalEditRadius('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
             </div>
             <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${hariPills}</div>
+            ${(l.ip_range||l.IP_Range)?`<div style="margin-top:4px;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)}</div>`:''}
           </div>
           <button class="btn-del" onclick="hapusLokasi('${id}','${namaEsc}')">🗑</button>
         </div>`;
@@ -5979,6 +5981,7 @@ async function loadJamAbsen(){
     const jam=d.data||d||{};
     if(jam.masuk)  { const m=toMenitStr(jam.masuk);  if(m!==null) JAM_MASUK_MENIT=m; }
     if(jam.pulang) { const m=toMenitStr(jam.pulang); if(m!==null) JAM_PULANG_MENIT=m; }
+
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:menitToStr(JAM_MASUK_MENIT),pulang:menitToStr(JAM_PULANG_MENIT)})); }catch(_){}
     updateClock();
     initJamAdminUI();
@@ -6283,6 +6286,7 @@ function _updateLocBadgeGPS(){
     {enableHighAccuracy:false,timeout:15000,maximumAge:300000}
   );
 }
+
 loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
 loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n

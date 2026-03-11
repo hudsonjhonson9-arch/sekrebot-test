@@ -4982,36 +4982,34 @@ async function downloadRekap() {
   btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
   showRekapToast('loading','<span class="spin-sm"></span> &nbsp;Mengirim rekap ke Telegram...');
 
-  // ── Helper menit ──
+  // Helper konversi jam string → menit
   const toMenitDl = w => { const [h,m]=(w||'').replace(/\s.*/,'').split(':').map(Number); return(isNaN(h)||isNaN(m))?null:h*60+m; };
 
-  // ── Hitung hari kerja: senin-jumat, kurangi libur, batas s.d. min(sampai, hariIni) ──
-  function countHariKerja(dari, sampai, batasHari = null) {
+  // Hitung hari kerja: senin-jumat, kurangi libur nasional, opsional batas hari ini
+  function countHariKerja(dari, sampai, batasHari) {
     let count = 0;
-    const d   = new Date(dari  + 'T00:00:00');
+    const d   = new Date(dari   + 'T00:00:00');
     const s   = new Date(sampai + 'T00:00:00');
     const bts = batasHari ? new Date(batasHari + 'T00:00:00') : s;
-    const end = bts < s ? bts : s; // pakai yang lebih awal
+    const end = bts < s ? bts : s;
     while (d <= end) {
-      const day    = d.getDay();
-      const tglStr = d.toISOString().split('T')[0];
+      const day = d.getDay(), tglStr = d.toISOString().split('T')[0];
       if (day !== 0 && day !== 6 && !hariLiburSet.has(tglStr)) count++;
       d.setDate(d.getDate() + 1);
     }
     return count;
   }
 
-  // ── Hari ini (WITA) ──
-  const hariIniStr = fmtD(nowWITA()); // "YYYY-MM-DD"
-
-  // ── Hari berjalan: jumlah HK yang sudah lewat s.d. hari ini dalam periode ──
+  // Hari ini (WITA)
+  const hariIniStr        = fmtD(nowWITA());
+  // HK penuh periode (tanpa batas)
+  const HARI_KERJA_PERIODE = countHariKerja(dari, sampai, null);
+  // HK berjalan: s.d. hari ini (untuk periode yang belum selesai)
   const HARI_KERJA_BERJALAN = countHariKerja(dari, sampai, hariIniStr);
-  // ── Total HK penuh periode (tanpa batas hari ini) ──
-  const HARI_KERJA_PERIODE  = countHariKerja(dari, sampai, null);
-  // ── Gunakan hari berjalan untuk menghitung jam wajib (agar tidak membebani hari yg belum berlalu) ──
+  // Efektif: gunakan berjalan jika > 0, fallback ke penuh (untuk periode lampau)
   const HK_EFEKTIF = HARI_KERJA_BERJALAN > 0 ? HARI_KERJA_BERJALAN : HARI_KERJA_PERIODE;
 
-  // ── Jam standar global ──
+  // Jam standar global
   const JAM_MASUK_STANDAR  = menitToStr(JAM_MASUK_MENIT);
   const JAM_PULANG_STANDAR = menitToStr(JAM_PULANG_MENIT);
   const mStandarMasuk  = JAM_MASUK_MENIT;
@@ -5019,24 +5017,18 @@ async function downloadRekap() {
   const JAM_KERJA_WAJIB_MENIT = mStandarPulang - mStandarMasuk;
   const JAM_KERJA_WAJIB_TOTAL = (JAM_KERJA_WAJIB_MENIT / 60) * HK_EFEKTIF;
 
-  // ── Cek apakah tanggal dari/sampai adalah hari libur ──
-  const isLiburDari   = hariLiburSet.has(dari);
-  const isLiburSampai = hariLiburSet.has(sampai);
-  const hariDariJS    = new Date(dari   + 'T00:00:00').getDay();
-  const hariSampaiJS  = new Date(sampai + 'T00:00:00').getDay();
-  const NAMA_HARI     = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-  const namaHariDari   = NAMA_HARI[hariDariJS];
-  const namaHariSampai = NAMA_HARI[hariSampaiJS];
+  // Info hari (untuk kolom Excel)
+  const NAMA_HARI       = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const isHarian        = dari === sampai;
+  const hariDariJS      = new Date(dari   + 'T00:00:00').getDay();
+  const namaHariDari    = NAMA_HARI[hariDariJS];
   const isWeekendDari   = hariDariJS === 0 || hariDariJS === 6;
-  const isWeekendSampai = hariSampaiJS === 0 || hariSampaiJS === 6;
+  const isLiburDari     = hariLiburSet.has(dari);
+  // Label ringkas untuk kolom Info Periode (rekap bulanan)
+  const labelHariBerjalan = `${HK_EFEKTIF} HK berjalan dari ${HARI_KERJA_PERIODE} HK total (libur dikecualikan)`;
 
-  // ── Format HARIAN vs PERIODIK ──
-  const isHarian = dari === sampai;
-
-  // ── Label hari berjalan untuk kolom keterangan ──
-  const labelHariBerjalan = isHarian
-    ? (isWeekendDari   ? `${namaHariDari} (Akhir Pekan)`   : isLiburDari   ? `${namaHariDari} (Hari Libur)` : namaHariDari)
-    : `${HK_EFEKTIF} HK berjalan dari ${HARI_KERJA_PERIODE} HK total`;
+  // Format HARIAN jika 1 hari, PERIODIK jika range
+  // (isHarian sudah di atas)
 
   const pegawaiPayload = lastRekapPegawai.map((p, i) => {
     const masuk      = p.masuk       || 0;
@@ -5055,7 +5047,8 @@ async function downloadRekap() {
     const jamPulangBatasStr = _jamDl.nama ? _jamDl.pulang : (jpgw?.pulang || JAM_PULANG_STANDAR);
     const mPgwMasuk  = toMenitDl(jamMasukBatasStr)  ?? mStandarMasuk;
     const mPgwPulang = toMenitDl(jamPulangBatasStr) ?? mStandarPulang;
-    // Jam kerja wajib harian untuk pegawai ini (gunakan HK_EFEKTIF agar hari belum lewat tidak membebani)
+    // Jam kerja wajib harian untuk pegawai ini
+    // Pakai HK_EFEKTIF (hari berjalan s.d. hari ini) agar hari yang belum lewat tidak membebani
     const jamKerjaHarianMenit = mPgwPulang - mPgwMasuk;
     const jamKerjaWajibTotal  = parseFloat(((jamKerjaHarianMenit / 60) * HK_EFEKTIF).toFixed(1));
 
@@ -5084,42 +5077,43 @@ async function downloadRekap() {
     const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
     const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
 
-    // ── Info hari libur / akhir pekan untuk harian ──
-    const infoHariLibur = isWeekendDari
+    // Keterangan hari untuk rekap harian
+    const infoHariExcel = isWeekendDari
       ? `${namaHariDari} – Akhir Pekan`
       : isLiburDari
         ? `${namaHariDari} – Hari Libur Nasional`
         : namaHariDari;
+    const isHariTidakKerja = isWeekendDari || isLiburDari;
 
     const dataExcelRow = isHarian ? {
       'No'         : i + 1,
       'Nama'       : p.nama    || '—',
       'NIP'        : p.nip     || '—',
       'Jabatan'    : p.jabatan || '—',
-      'Hari'       : infoHariLibur,
+      'Hari'       : infoHariExcel,
       'Jam Masuk'  : jamMasuk  !== '-' ? jamMasuk  : '—',
       'Jam Pulang' : jamPulang !== '-' ? jamPulang : '—',
-      'Status'     : (isWeekendDari || isLiburDari) ? 'Libur' : statusKehadiran,
-      'Catatan'    : (isWeekendDari || isLiburDari)
+      'Status'     : isHariTidakKerja ? 'Libur' : statusKehadiran,
+      'Catatan'    : isHariTidakKerja
                        ? (isWeekendDari ? 'Hari libur – akhir pekan' : 'Hari libur nasional')
                        : (catatanStr || '—')
     } : {
-      'No'                  : i + 1,
-      'Nama'                : p.nama    || '—',
-      'NIP'                 : p.nip     || '—',
-      'Jabatan'             : p.jabatan || '—',
-      'HK Total'            : HARI_KERJA_PERIODE,
-      'HK Berjalan'         : HK_EFEKTIF,
-      'Jam Masuk Batas'     : jamMasukBatasStr,
-      'Jam Pulang Batas'    : jamPulangBatasStr,
-      'Jam Kerja Wajib'     : jamKerjaWajibTotal + ' jam',
-      'Jam Hadir'           : jh.toFixed(1),
-      'Jam Tidak Hadir'     : jth.toFixed(1),
-      'Sakit'               : sakit,
-      'Izin'                : izin,
-      'Dinas Luar (DL)'     : tugas,
-      'Alpa'                : 0,
-      'Keterangan'          : [
+      'No'               : i + 1,
+      'Nama'             : p.nama    || '—',
+      'NIP'              : p.nip     || '—',
+      'Jabatan'          : p.jabatan || '—',
+      'HK Total'         : HARI_KERJA_PERIODE,
+      'HK Berjalan'      : HK_EFEKTIF,
+      'Jam Masuk Batas'  : jamMasukBatasStr,
+      'Jam Pulang Batas' : jamPulangBatasStr,
+      'Jam Kerja Wajib'  : jamKerjaWajibTotal + ' jam',
+      'Jam Hadir'        : jh.toFixed(1),
+      'Jam Tidak Hadir'  : jth.toFixed(1),
+      'Sakit'            : sakit,
+      'Izin'             : izin,
+      'Dinas Luar (DL)'  : tugas,
+      'Alpa'             : 0,
+      'Keterangan'       : [
         masuk      > 0 ? `M:${masuk}`      : '',
         pulang     > 0 ? `P:${pulang}`     : '',
         luarMasuk  > 0 ? `L:${luarMasuk}`  : '',
@@ -5128,7 +5122,7 @@ async function downloadRekap() {
         sakit      > 0 ? `S:${sakit}`      : '',
         tugas      > 0 ? `DL:${tugas}`     : ''
       ].filter(Boolean).join(' ') || 'Tidak Hadir',
-      'Info Periode'        : labelHariBerjalan
+      'Info Periode'     : labelHariBerjalan
     };
 
     return { ...p, masuk, pulang, lambat:luarMasuk, pulangCepat:luarPulang, dataExcelRow };
@@ -5137,15 +5131,15 @@ async function downloadRekap() {
   const payload = {
     dari,
     sampai,
-    is_harian     : isHarian,
-    tanggal_label : isHarian
+    is_harian            : isHarian,
+    tanggal_label        : isHarian
       ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
       : `${dari} s.d. ${sampai}`,
-    hari_kerja_total    : HARI_KERJA_PERIODE,
-    hari_kerja_berjalan : HK_EFEKTIF,
-    is_libur_dari       : isLiburDari || isWeekendDari,
-    nama_hari_dari      : namaHariDari,
-    info_periode        : labelHariBerjalan,
+    hari_kerja_total     : HARI_KERJA_PERIODE,
+    hari_kerja_berjalan  : HK_EFEKTIF,
+    is_hari_libur        : isHarian ? (isLiburDari || isWeekendDari) : false,
+    nama_hari            : isHarian ? namaHariDari : null,
+    info_periode         : labelHariBerjalan,
     chat_id : String(REKAP_CHAT_ID || MY_ID || ''),
     pegawai : pegawaiPayload
   };

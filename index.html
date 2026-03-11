@@ -1277,28 +1277,35 @@
         <div class="btn-inner"><span>📌</span><span id="btnAdminText">Simpan Lokasi ke Database</span></div>
       </button>
     </div>
-    <!-- ══ DAFTAR LOKASI — ALL IN ONE CARD ══ -->
-    <div class="card" style="padding:0;overflow:hidden">
-      <div style="padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:7px">
-          <span>🗺️</span> Daftar Lokasi Tersimpan
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span id="lokasiCountBadge" style="font-size:10px;color:var(--gold);background:var(--gold-dim);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-weight:700;display:none">0 lokasi</span>
-          <button class="btn-sm-admin" onclick="loadLokasiAdmin()">🔄</button>
-        </div>
+    <div class="card">
+      <div class="card-title">
+        <span>📋 Daftar Lokasi Tersimpan</span>
+        <button class="btn-sm-admin" onclick="loadLokasiAdmin()">🔄</button>
       </div>
-      <div style="padding:10px 12px 12px">
-        <div id="lokasiMgmtList" class="lokasi-mgmt-list">
-          <div class="shimmer" style="height:80px;border-radius:12px"></div>
-          <div class="shimmer" style="height:80px;border-radius:12px;margin-top:7px"></div>
-        </div>
-        <div id="jadwalLokasiContainer" style="display:none"></div>
-      </div>
-      <div style="padding:6px 12px 10px;border-top:1px solid rgba(255,255,255,.05)">
-        <div style="text-align:center;font-size:9px;color:var(--muted)">💡 Perubahan disimpan per lokasi · Hapus memerlukan konfirmasi</div>
+      <div id="lokasiMgmtList" class="lokasi-mgmt-list">
+        <div class="shimmer" style="height:40px;border-radius:10px"></div>
+        <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
       </div>
     </div>
+    <!-- ══ JADWAL LOKASI PER HARI ══ -->
+    <div class="card">
+      <div class="card-title">
+        <span>📅 Jadwal Lokasi per Hari</span>
+        <button class="btn-sm-admin" onclick="renderJadwalAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">📏 Radius toleransi absen: <strong>100 meter</strong> dari titik lokasi</div>
+      <div id="jadwalLokasiContainer">
+        <div class="shimmer" style="height:60px;border-radius:10px"></div>
+        <div class="shimmer" style="height:60px;border-radius:10px;margin-top:6px"></div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="btn-admin" onclick="simpanJadwal()" id="btnSimpanJadwal">
+          <div class="btn-inner"><span>💾</span><span id="btnJadwalText">Simpan Jadwal</span></div>
+        </button>
+      </div>
+      <div class="result-card" id="jadwalResult"><div class="r-icon" id="jadwalRIcon">✅</div><div class="r-title" id="jadwalRTitle">—</div><div class="r-msg" id="jadwalRMsg">—</div></div>
+    </div>
+    <div class="footer">Perubahan langsung tersimpan ke n8n datatables</div>
 
     <!-- ══ KONFIRMASI KETERANGAN ══ -->
     <div class="card" style="margin-top:10px">
@@ -4975,32 +4982,61 @@ async function downloadRekap() {
   btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
   showRekapToast('loading','<span class="spin-sm"></span> &nbsp;Mengirim rekap ke Telegram...');
 
-  // Hitung hari kerja aktual dalam periode (senin-jumat, kurangi libur)
-  function countHariKerja(dari, sampai) {
+  // ── Helper menit ──
+  const toMenitDl = w => { const [h,m]=(w||'').replace(/\s.*/,'').split(':').map(Number); return(isNaN(h)||isNaN(m))?null:h*60+m; };
+
+  // ── Hitung hari kerja: senin-jumat, kurangi libur, batas s.d. min(sampai, hariIni) ──
+  function countHariKerja(dari, sampai, batasHari = null) {
     let count = 0;
-    const d = new Date(dari);
-    const s = new Date(sampai);
-    while (d <= s) {
-      const day = d.getDay(); // 0=minggu, 6=sabtu
+    const d   = new Date(dari  + 'T00:00:00');
+    const s   = new Date(sampai + 'T00:00:00');
+    const bts = batasHari ? new Date(batasHari + 'T00:00:00') : s;
+    const end = bts < s ? bts : s; // pakai yang lebih awal
+    while (d <= end) {
+      const day    = d.getDay();
       const tglStr = d.toISOString().split('T')[0];
       if (day !== 0 && day !== 6 && !hariLiburSet.has(tglStr)) count++;
       d.setDate(d.getDate() + 1);
     }
     return count;
   }
-  const HARI_KERJA_PERIODE = countHariKerja(dari, sampai);
-  // Jam kerja per menit (masuk→pulang) dari jam global
+
+  // ── Hari ini (WITA) ──
+  const hariIniStr = fmtD(nowWITA()); // "YYYY-MM-DD"
+
+  // ── Hari berjalan: jumlah HK yang sudah lewat s.d. hari ini dalam periode ──
+  const HARI_KERJA_BERJALAN = countHariKerja(dari, sampai, hariIniStr);
+  // ── Total HK penuh periode (tanpa batas hari ini) ──
+  const HARI_KERJA_PERIODE  = countHariKerja(dari, sampai, null);
+  // ── Gunakan hari berjalan untuk menghitung jam wajib (agar tidak membebani hari yg belum berlalu) ──
+  const HK_EFEKTIF = HARI_KERJA_BERJALAN > 0 ? HARI_KERJA_BERJALAN : HARI_KERJA_PERIODE;
+
+  // ── Jam standar global ──
   const JAM_MASUK_STANDAR  = menitToStr(JAM_MASUK_MENIT);
   const JAM_PULANG_STANDAR = menitToStr(JAM_PULANG_MENIT);
-  const toMenitDl = w => { const [h,m]=(w||'').replace(/\s.*/,'').split(':').map(Number); return(isNaN(h)||isNaN(m))?null:h*60+m; };
   const mStandarMasuk  = JAM_MASUK_MENIT;
   const mStandarPulang = JAM_PULANG_MENIT;
-  // Jam kerja wajib harian dalam menit (pulang - masuk)
-  const JAM_KERJA_WAJIB_MENIT = mStandarPulang - mStandarMasuk; // misal 390 menit = 6.5 jam
-  const JAM_KERJA_WAJIB_TOTAL = (JAM_KERJA_WAJIB_MENIT / 60) * HARI_KERJA_PERIODE;
+  const JAM_KERJA_WAJIB_MENIT = mStandarPulang - mStandarMasuk;
+  const JAM_KERJA_WAJIB_TOTAL = (JAM_KERJA_WAJIB_MENIT / 60) * HK_EFEKTIF;
 
-  // Format HARIAN jika 1 hari, BULANAN jika range
+  // ── Cek apakah tanggal dari/sampai adalah hari libur ──
+  const isLiburDari   = hariLiburSet.has(dari);
+  const isLiburSampai = hariLiburSet.has(sampai);
+  const hariDariJS    = new Date(dari   + 'T00:00:00').getDay();
+  const hariSampaiJS  = new Date(sampai + 'T00:00:00').getDay();
+  const NAMA_HARI     = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const namaHariDari   = NAMA_HARI[hariDariJS];
+  const namaHariSampai = NAMA_HARI[hariSampaiJS];
+  const isWeekendDari   = hariDariJS === 0 || hariDariJS === 6;
+  const isWeekendSampai = hariSampaiJS === 0 || hariSampaiJS === 6;
+
+  // ── Format HARIAN vs PERIODIK ──
   const isHarian = dari === sampai;
+
+  // ── Label hari berjalan untuk kolom keterangan ──
+  const labelHariBerjalan = isHarian
+    ? (isWeekendDari   ? `${namaHariDari} (Akhir Pekan)`   : isLiburDari   ? `${namaHariDari} (Hari Libur)` : namaHariDari)
+    : `${HK_EFEKTIF} HK berjalan dari ${HARI_KERJA_PERIODE} HK total`;
 
   const pegawaiPayload = lastRekapPegawai.map((p, i) => {
     const masuk      = p.masuk       || 0;
@@ -5019,9 +5055,9 @@ async function downloadRekap() {
     const jamPulangBatasStr = _jamDl.nama ? _jamDl.pulang : (jpgw?.pulang || JAM_PULANG_STANDAR);
     const mPgwMasuk  = toMenitDl(jamMasukBatasStr)  ?? mStandarMasuk;
     const mPgwPulang = toMenitDl(jamPulangBatasStr) ?? mStandarPulang;
-    // Jam kerja wajib harian untuk pegawai ini
+    // Jam kerja wajib harian untuk pegawai ini (gunakan HK_EFEKTIF agar hari belum lewat tidak membebani)
     const jamKerjaHarianMenit = mPgwPulang - mPgwMasuk;
-    const jamKerjaWajibTotal  = parseFloat(((jamKerjaHarianMenit / 60) * HARI_KERJA_PERIODE).toFixed(1));
+    const jamKerjaWajibTotal  = parseFloat(((jamKerjaHarianMenit / 60) * HK_EFEKTIF).toFixed(1));
 
     const jamMasuk  = p.jamMasuk  || '-';
     const jamPulang = p.jamPulang || '-';
@@ -5048,31 +5084,42 @@ async function downloadRekap() {
     const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
     const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
 
+    // ── Info hari libur / akhir pekan untuk harian ──
+    const infoHariLibur = isWeekendDari
+      ? `${namaHariDari} – Akhir Pekan`
+      : isLiburDari
+        ? `${namaHariDari} – Hari Libur Nasional`
+        : namaHariDari;
+
     const dataExcelRow = isHarian ? {
-      'No'        : i + 1,
-      'Nama'      : p.nama    || '—',
-      'NIP'       : p.nip     || '—',
-      'Jabatan'   : p.jabatan || '—',
-      'Jam Masuk' : jamMasuk  !== '-' ? jamMasuk  : '—',
-      'Jam Pulang': jamPulang !== '-' ? jamPulang : '—',
-      'Status'    : statusKehadiran,
-      'Catatan'   : catatanStr || '—'
+      'No'         : i + 1,
+      'Nama'       : p.nama    || '—',
+      'NIP'        : p.nip     || '—',
+      'Jabatan'    : p.jabatan || '—',
+      'Hari'       : infoHariLibur,
+      'Jam Masuk'  : jamMasuk  !== '-' ? jamMasuk  : '—',
+      'Jam Pulang' : jamPulang !== '-' ? jamPulang : '—',
+      'Status'     : (isWeekendDari || isLiburDari) ? 'Libur' : statusKehadiran,
+      'Catatan'    : (isWeekendDari || isLiburDari)
+                       ? (isWeekendDari ? 'Hari libur – akhir pekan' : 'Hari libur nasional')
+                       : (catatanStr || '—')
     } : {
-      'No'              : i + 1,
-      'Nama'            : p.nama    || '—',
-      'NIP'             : p.nip     || '—',
-      'Jabatan'         : p.jabatan || '—',
-      'Hari Kerja'      : HARI_KERJA_PERIODE,
-      'Jam Masuk Batas' : jamMasukBatasStr,
-      'Jam Pulang Batas': jamPulangBatasStr,
-      'Jam Kerja Wajib' : jamKerjaWajibTotal + ' jam',
-      'Jam Hadir'       : jh.toFixed(1),
-      'Jam Tidak Hadir' : jth.toFixed(1),
-      'Sakit'           : sakit,
-      'Izin'            : izin,
-      'Dinas Luar (DL)' : tugas,
-      'Alpa'            : 0,
-      'Keterangan'      : [
+      'No'                  : i + 1,
+      'Nama'                : p.nama    || '—',
+      'NIP'                 : p.nip     || '—',
+      'Jabatan'             : p.jabatan || '—',
+      'HK Total'            : HARI_KERJA_PERIODE,
+      'HK Berjalan'         : HK_EFEKTIF,
+      'Jam Masuk Batas'     : jamMasukBatasStr,
+      'Jam Pulang Batas'    : jamPulangBatasStr,
+      'Jam Kerja Wajib'     : jamKerjaWajibTotal + ' jam',
+      'Jam Hadir'           : jh.toFixed(1),
+      'Jam Tidak Hadir'     : jth.toFixed(1),
+      'Sakit'               : sakit,
+      'Izin'                : izin,
+      'Dinas Luar (DL)'     : tugas,
+      'Alpa'                : 0,
+      'Keterangan'          : [
         masuk      > 0 ? `M:${masuk}`      : '',
         pulang     > 0 ? `P:${pulang}`     : '',
         luarMasuk  > 0 ? `L:${luarMasuk}`  : '',
@@ -5080,7 +5127,8 @@ async function downloadRekap() {
         izin       > 0 ? `I:${izin}`       : '',
         sakit      > 0 ? `S:${sakit}`      : '',
         tugas      > 0 ? `DL:${tugas}`     : ''
-      ].filter(Boolean).join(' ') || 'Tidak Hadir'
+      ].filter(Boolean).join(' ') || 'Tidak Hadir',
+      'Info Periode'        : labelHariBerjalan
     };
 
     return { ...p, masuk, pulang, lambat:luarMasuk, pulangCepat:luarPulang, dataExcelRow };
@@ -5089,10 +5137,15 @@ async function downloadRekap() {
   const payload = {
     dari,
     sampai,
-    is_harian  : isHarian,
-    tanggal_label: isHarian
-      ? new Date(dari).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+    is_harian     : isHarian,
+    tanggal_label : isHarian
+      ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
       : `${dari} s.d. ${sampai}`,
+    hari_kerja_total    : HARI_KERJA_PERIODE,
+    hari_kerja_berjalan : HK_EFEKTIF,
+    is_libur_dari       : isLiburDari || isWeekendDari,
+    nama_hari_dari      : namaHariDari,
+    info_periode        : labelHariBerjalan,
     chat_id : String(REKAP_CHAT_ID || MY_ID || ''),
     pegawai : pegawaiPayload
   };
@@ -5334,8 +5387,6 @@ async function loadLokasiAdmin(){
   try{
     const res=await apiFetch(P.lokasiList,{method:'GET'});if(!res.ok)throw 0;
     const json=await res.json();list=Array.isArray(json)?json:(json.data||[]);
-    const cntBadge=$('lokasiCountBadge');
-    if(cntBadge){cntBadge.textContent=list.length+' lokasi';cntBadge.style.display=list.length?'inline':'none';}
     if(!list.length){el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;
     }else{
       if(adminMap){list.forEach(l=>{const lat=parseFloat(l.latitude||l.lat||0),lng=parseFloat(l.longitude||l.lng||0);if(!lat||!lng)return;L.circle([lat,lng],{radius:l.radius||100,color:'#c9a84c',fillColor:'rgba(201,168,76,.1)',fillOpacity:1,weight:1}).addTo(adminMap).bindTooltip(l.nama_lokasi||l.nama||'Lokasi');});}
@@ -5362,68 +5413,33 @@ async function loadLokasiAdmin(){
         hari: (l.hari||'').toLowerCase().split(',').map(h=>h.trim()).filter(Boolean)
       }));
       updateClock();
-      el.innerHTML=list.map((l,idx)=>{
+      el.innerHTML=list.map(l=>{
         const lat=parseFloat(l.latitude||l.lat||0).toFixed(5);
         const lng=parseFloat(l.longitude||l.lng||0).toFixed(5);
         const id=l.id||l.ID||'';
         const radius=l.radius||100;
-        const ipVal=(l.ip_range||l.IP_Range||'');
+        const hariRaw=(l.hari||'senin,selasa,rabu,kamis,jumat');
+        const hariPills=hariRaw.split(',').map(h=>`<span style="padding:1px 6px;border-radius:10px;background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700">${h.trim()}</span>`).join(' ');
         const namaEsc=(l.nama_lokasi||l.nama||'').replace(/'/g,'&apos;');
-        const hariAktif=(l.hari||'').toLowerCase().split(',').map(h=>h.trim()).filter(Boolean);
-        const hariCount=hariAktif.length;
-        const hariToggles=HARI_KERJA.map(h=>{
-          const aktif=hariAktif.includes(h.id);
-          return `<button class="jadwal-hari-btn${aktif?' aktif':''}" onclick="toggleHariLokasi(${idx},'${h.id}',this)">${h.label}</button>`;
-        }).join('');
-        const badgeStyle=hariCount>0?'background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,.3)':'background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)';
-        return`<div id="lokasi-item-${id}" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:13px;margin-bottom:8px;overflow:hidden">
-          <!-- Baris nama + koordinat + hapus -->
-          <div style="display:flex;align-items:center;gap:9px;padding:10px 12px 9px">
-            <div style="width:30px;height:30px;border-radius:8px;background:var(--gold-dim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📍</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:700;color:var(--white)">${l.nama_lokasi||l.nama||'—'}</div>
-              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:1px">${lat}, ${lng}</div>
+        return`<div class="lokasi-mgmt-item" id="lokasi-item-${id}">
+          <div style="flex:1;min-width:0">
+            <div class="lokasi-mgmt-name">📍 ${l.nama_lokasi||l.nama||'—'}</div>
+            <div class="lokasi-mgmt-coord">${lat}, ${lng}</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="radius-display-${id}">
+              <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">📏 ${radius}m</span>
+              <button onclick="showEditRadius('${id}',${radius})" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.3);background:var(--gold-dim);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit</button>
             </div>
-            <button class="btn-del" onclick="hapusLokasi('${id}','${namaEsc}')">🗑</button>
-          </div>
-          <!-- Divider -->
-          <div style="height:1px;background:rgba(255,255,255,.05);margin:0 12px"></div>
-          <!-- Toggle hari -->
-          <div style="padding:9px 12px 8px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">📅 Hari Aktif</span>
-              <span id="hariCountBadge-${id}" style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;${badgeStyle}">${hariCount>0?hariCount+' hari':'Nonaktif'}</span>
-            </div>
-            <div class="jadwal-hari-toggles">${hariToggles}</div>
-          </div>
-          <!-- Divider -->
-          <div style="height:1px;background:rgba(255,255,255,.05);margin:0 12px"></div>
-          <!-- Input Radius + IP -->
-          <div style="padding:9px 12px 9px;display:flex;flex-direction:column;gap:7px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;width:48px;flex-shrink:0">📏 Radius</span>
+            <div style="display:none;align-items:center;gap:5px;margin-top:4px" id="radius-edit-${id}">
               <input type="number" id="radius-input-${id}" value="${radius}" min="10" max="5000"
-                style="width:74px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;transition:border-color .2s"
-                onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
-              <span style="font-size:10px;color:var(--muted)">meter</span>
+                style="width:70px;background:rgba(255,255,255,.07);border:1px solid var(--gold);border-radius:7px;padding:3px 7px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none"/>
+              <span style="font-size:10px;color:var(--muted)">m</span>
+              <button onclick="simpanRadius('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
+              <button onclick="batalEditRadius('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;width:48px;flex-shrink:0">🌐 IP</span>
-              <input type="text" id="ip-input-${id}" value="${ipVal}" placeholder="cth: 36.84.0.0/16 (kosongkan jika tidak ada)"
-                style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s"
-                onfocus="this.style.borderColor='rgba(34,197,94,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
-            </div>
+            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${hariPills}</div>
+            ${(l.ip_range||l.IP_Range)?`<div style="margin-top:4px;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)}</div>`:''}
           </div>
-          <!-- Divider -->
-          <div style="height:1px;background:rgba(255,255,255,.05);margin:0 12px"></div>
-          <!-- Tombol Simpan per lokasi -->
-          <div style="padding:8px 12px 10px">
-            <button onclick="simpanLokasiItem('${id}','${namaEsc}',${idx})" id="btnSimpanLokasi-${id}"
-              style="width:100%;padding:8px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--gold),#9b6e1a);color:var(--navy);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s">
-              <span>💾</span><span id="btnSimpanLokasiTxt-${id}">Simpan Perubahan</span>
-            </button>
-            <div id="simpanLokasiResult-${id}" style="display:none;margin-top:6px;padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;text-align:center"></div>
-          </div>
+          <button class="btn-del" onclick="hapusLokasi('${id}','${namaEsc}')">🗑</button>
         </div>`;
       }).join('');
     }
@@ -5436,55 +5452,40 @@ async function hapusLokasi(id,nama){
   catch{alert('Gagal menghapus. Coba lagi.');}
 }
 
-async function simpanLokasiItem(id, nama, idx) {
-  const btn   = $(`btnSimpanLokasi-${id}`);
-  const txtEl = $(`btnSimpanLokasiTxt-${id}`);
-  const resEl = $(`simpanLokasiResult-${id}`);
-
-  if (btn) { btn.disabled=true; if(txtEl) txtEl.textContent='Menyimpan...'; }
-
-  const radiusInp = $(`radius-input-${id}`);
-  const ipInp     = $(`ip-input-${id}`);
-  const radius    = parseInt(radiusInp?.value||100);
-  const ip_range  = (ipInp?.value||'').trim();
-
-  if (isNaN(radius)||radius<10||radius>5000) {
-    if(radiusInp){radiusInp.style.borderColor='var(--danger)';setTimeout(()=>{radiusInp.style.borderColor='rgba(255,255,255,.12)';},1500);}
-    if(btn){btn.disabled=false;if(txtEl)txtEl.textContent='Simpan Perubahan';}
+function showEditRadius(id, currentRadius){
+  $(`radius-display-${id}`).style.display='none';
+  const editEl=$(`radius-edit-${id}`);
+  editEl.style.display='flex';
+  const inp=$(`radius-input-${id}`);
+  if(inp){inp.value=currentRadius;inp.focus();inp.select();}
+}
+function batalEditRadius(id){
+  $(`radius-display-${id}`).style.display='flex';
+  $(`radius-edit-${id}`).style.display='none';
+}
+async function simpanRadius(id, nama){
+  const inp=$(`radius-input-${id}`);
+  if(!inp)return;
+  const radius=parseInt(inp.value);
+  if(isNaN(radius)||radius<10||radius>5000){
+    inp.style.borderColor='var(--danger)';
+    setTimeout(()=>{inp.style.borderColor='var(--gold)';},1500);
     return;
   }
-
-  const lok     = jadwalLokData[idx];
-  const hariStr = lok ? (lok.hari||[]).join(',') : '';
-
-  try {
-    await apiFetch(P.lokasiUpdate, {method:'POST', body:JSON.stringify({
-      id, nama_lokasi:nama, radius, hari:hariStr, ip_range
-    })});
-    if(lok) lok.radius=radius;
-    // Sync LOK_DEF
-    Object.keys(LOK_DEF).forEach(k=>delete LOK_DEF[k]);
-    jadwalLokData.forEach(l=>{
-      (l.hari||[]).forEach(h=>{
-        if(!LOK_DEF[h]) LOK_DEF[h]=[];
-        if(!LOK_DEF[h].includes(l.nama)) LOK_DEF[h].push(l.nama);
-      });
-    });
-    updateClock();
-    if(resEl){
-      resEl.style.display='block';
-      resEl.style.cssText='display:block;margin-top:6px;padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;text-align:center;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--success)';
-      resEl.textContent='✅ Tersimpan!';
+  inp.disabled=true;
+  try{
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius})});
+    // Update tampilan langsung tanpa reload
+    const displayEl=$(`radius-display-${id}`);
+    if(displayEl){
+      const span=displayEl.querySelector('span');
+      if(span) span.textContent=`📏 ${radius}m`;
     }
-    setTimeout(()=>{if(resEl)resEl.style.display='none';},2500);
-  } catch(_) {
-    if(resEl){
-      resEl.style.cssText='display:block;margin-top:6px;padding:6px 10px;border-radius:8px;font-size:10px;font-weight:700;text-align:center;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:var(--danger)';
-      resEl.textContent='🔌 Gagal menyimpan. Coba lagi.';
-    }
-    setTimeout(()=>{if(resEl)resEl.style.display='none';},3000);
-  } finally {
-    if(btn){btn.disabled=false;if(txtEl)txtEl.textContent='Simpan Perubahan';}
+    batalEditRadius(id);
+  }catch{
+    alert('Gagal menyimpan radius. Coba lagi.');
+  }finally{
+    if(inp) inp.disabled=false;
   }
 }
 
@@ -5547,15 +5548,17 @@ function toggleHariLokasi(idx, hariId, btn) {
     lok.hari.push(hariId);
     btn.classList.add('aktif');
   }
-  // Update badge hari di header item
-  const lokId = jadwalLokData[idx]?.id || '';
-  const badge = lokId ? $(`hariCountBadge-${lokId}`) : null;
-  if (badge) {
-    const cnt = lok.hari.length;
-    badge.textContent = cnt > 0 ? `${cnt} hari` : 'Nonaktif';
-    badge.style.cssText = cnt > 0
-      ? 'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,.3)'
-      : 'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)';
+  // Update badge langsung
+  const card = btn.closest('.jadwal-lok-card');
+  if (card) {
+    const badge = card.querySelector('.jadwal-lok-badge');
+    if (badge) {
+      const cnt = lok.hari.length;
+      badge.textContent = cnt > 0 ? `${cnt} hari` : 'Nonaktif';
+      badge.style.cssText = cnt > 0
+        ? 'background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,.3)'
+        : 'background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.3)';
+    }
   }
 }
 

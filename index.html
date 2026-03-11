@@ -609,22 +609,19 @@
     .hari-check-label input{display:none}
     .hari-check-label.checked{border-color:var(--admin);background:var(--admin-dim);color:var(--admin)}
 
-    /* Jadwal Lokasi */
-    .jadwal-hari-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-    .jadwal-hari-row{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:11px;padding:10px 12px}
-    .jadwal-hari-label{font-size:10px;font-weight:700;color:var(--admin);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
-    .jadwal-hari-label span{font-size:14px}
-    .jadwal-lokasi-pills{display:flex;flex-wrap:wrap;gap:5px}
-    .jadwal-lokasi-pill{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;border:1px solid rgba(201,168,76,.35);background:var(--gold-dim);font-size:10px;font-weight:600;color:var(--gold)}
-    .jadwal-lokasi-pill.default-pill{border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.1);color:var(--info)}
-    .jadwal-lokasi-pill .pill-del{background:none;border:none;color:var(--danger);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:.7}
-    .jadwal-lokasi-pill .pill-del:hover{opacity:1}
-    .jadwal-add-row{display:flex;gap:6px;margin-top:8px}
-    .jadwal-add-row select{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:7px 10px;color:var(--white);font-family:inherit;font-size:11px;outline:none}
-    .jadwal-add-row select option{background:#112240}
-    .btn-jadwal-add{padding:7px 12px;border-radius:8px;border:1px solid rgba(167,139,250,.4);background:var(--admin-dim);color:var(--admin);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
-    .jadwal-empty{font-size:10px;color:var(--muted);font-style:italic}
+    /* Jadwal Lokasi — per-location card design */
+    .jadwal-lok-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:9px}
+    .jadwal-lok-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .jadwal-lok-card-name{font-size:13px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:6px}
+    .jadwal-lok-card-name span.lok-icon{font-size:15px}
+    .jadwal-lok-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,.3)}
+    .jadwal-hari-toggles{display:flex;flex-wrap:wrap;gap:5px}
+    .jadwal-hari-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;letter-spacing:.02em}
+    .jadwal-hari-btn.aktif{background:var(--admin-dim);border-color:rgba(167,139,250,.5);color:var(--admin)}
+    .jadwal-hari-btn:hover{border-color:var(--admin);color:var(--admin)}
+    .jadwal-lok-meta{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace}
     .radius-note{font-size:10px;color:var(--gold);background:var(--gold-dim);border:1px solid var(--border);border-radius:8px;padding:6px 10px;margin-bottom:10px;text-align:center;font-weight:600}
+    .jadwal-empty{font-size:10px;color:var(--muted);font-style:italic}
 
     /* Empty state */
     .empty-state{text-align:center;padding:24px 16px;color:var(--muted)}
@@ -1674,7 +1671,8 @@ async function apiFetch(path, opts={}) {
   for (const base of [SERVER_1, SERVER_2]) {
     try {
       const r = await fetch(base+path, {...opts, headers:HDR});
-      if (r.ok) return r;
+      // Return response for both ok AND client errors (4xx) — let caller handle
+      if (r.ok || (r.status >= 400 && r.status < 500)) return r;
       throw new Error(`HTTP ${r.status}`);
     } catch(e) { console.warn(`[Fallback] ${base}:`, e.message) }
   }
@@ -5359,7 +5357,15 @@ async function loadLokasiAdmin(){
       // Hapus semua key lama lalu assign baru
       Object.keys(LOK_DEF).forEach(k=>delete LOK_DEF[k]);
       Object.assign(LOK_DEF,newLOK);
-      syncJadwalState(); // ← sync jadwalState dari LOK_DEF terbaru
+      // ── Rebuild jadwalLokData untuk Jadwal UI baru ──
+      jadwalLokData = list.map(l => ({
+        id: l.id||l.ID||'',
+        nama: l.nama_lokasi||l.nama||'',
+        radius: l.radius||100,
+        lat: l.latitude||l.lat||0,
+        lng: l.longitude||l.lng||0,
+        hari: (l.hari||'').toLowerCase().split(',').map(h=>h.trim()).filter(Boolean)
+      }));
       updateClock();
       el.innerHTML=list.map(l=>{
         const lat=parseFloat(l.latitude||l.lat||0).toFixed(5);
@@ -5367,26 +5373,12 @@ async function loadLokasiAdmin(){
         const id=l.id||l.ID||'';
         const radius=l.radius||100;
         const hariRaw=(l.hari||'senin,selasa,rabu,kamis,jumat');
-        const ipVal=(l.ip_range||l.IP_Range||'');
         const hariPills=hariRaw.split(',').map(h=>`<span style="padding:1px 6px;border-radius:10px;background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700">${h.trim()}</span>`).join(' ');
         const namaEsc=(l.nama_lokasi||l.nama||'').replace(/'/g,'&apos;');
-        const ipEsc=ipVal.replace(/'/g,'&apos;');
-        const hariEsc=hariRaw.replace(/'/g,'&apos;');
-        const SEMUA_HARI=['senin','selasa','rabu','kamis','jumat','sabtu','minggu'];
-        const hariChecks=SEMUA_HARI.map(h=>{
-          const checked=hariRaw.split(',').map(x=>x.trim()).includes(h)?'checked':'';
-          return`<label style="display:flex;align-items:center;gap:3px;font-size:9px;font-weight:700;color:var(--admin);cursor:pointer">
-            <input type="checkbox" id="hari-cb-${id}-${h}" value="${h}" ${checked}
-              style="accent-color:var(--admin);width:12px;height:12px;cursor:pointer"/>
-            ${h.charAt(0).toUpperCase()+h.slice(1)}</label>`;
-        }).join('');
-        return`<div class="lokasi-mgmt-item" id="lokasi-item-${id}"
-            data-radius="${radius}" data-hari="${hariEsc}" data-ip="${ipEsc}">
+        return`<div class="lokasi-mgmt-item" id="lokasi-item-${id}">
           <div style="flex:1;min-width:0">
             <div class="lokasi-mgmt-name">📍 ${l.nama_lokasi||l.nama||'—'}</div>
             <div class="lokasi-mgmt-coord">${lat}, ${lng}</div>
-
-            <!-- ── RADIUS ── -->
             <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="radius-display-${id}">
               <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">📏 ${radius}m</span>
               <button onclick="showEditRadius('${id}',${radius})" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(201,168,76,.3);background:var(--gold-dim);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit</button>
@@ -5398,39 +5390,14 @@ async function loadLokasiAdmin(){
               <button onclick="simpanRadius('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
               <button onclick="batalEditRadius('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
             </div>
-
-            <!-- ── HARI ── -->
-            <div style="display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap" id="hari-display-${id}">
-              <div style="display:flex;flex-wrap:wrap;gap:3px" id="hari-pills-${id}">${hariPills}</div>
-              <button onclick="showEditHari('${id}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(167,139,250,.3);background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit</button>
-            </div>
-            <div style="display:none;flex-direction:column;gap:6px;margin-top:4px;padding:8px 10px;background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:9px" id="hari-edit-${id}">
-              <div style="display:flex;flex-wrap:wrap;gap:8px">${hariChecks}</div>
-              <div style="display:flex;gap:5px;margin-top:2px">
-                <button onclick="simpanHari('${id}','${namaEsc}')" style="padding:2px 10px;border-radius:6px;border:none;background:var(--admin);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅ Simpan</button>
-                <button onclick="batalEditHari('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
-              </div>
-            </div>
-
-            <!-- ── IP RANGE ── -->
-            <div style="display:flex;align-items:center;gap:5px;margin-top:4px" id="ip-display-${id}">
-              <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${ipVal||'—'}</span>
-              <button onclick="showEditIP('${id}','${ipEsc}')" style="padding:1px 7px;border-radius:6px;border:1px solid rgba(96,165,250,.3);background:rgba(96,165,250,.1);color:var(--info);font-size:9px;font-weight:700;cursor:pointer">✏️ Edit IP</button>
-            </div>
-            <div style="display:none;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap" id="ip-edit-${id}">
-              <input type="text" id="ip-input-${id}" value="${ipVal}" placeholder="192.168.1.0/24 atau kosongkan"
-                style="flex:1;min-width:140px;background:rgba(255,255,255,.07);border:1px solid var(--info);border-radius:7px;padding:3px 7px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none"/>
-              <button onclick="simpanIP('${id}','${namaEsc}')" style="padding:2px 8px;border-radius:6px;border:none;background:var(--info);color:var(--navy);font-size:9px;font-weight:800;cursor:pointer">✅</button>
-              <button onclick="batalEditIP('${id}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✕</button>
-            </div>
+            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">${hariPills}</div>
+            ${(l.ip_range||l.IP_Range)?`<div style="margin-top:4px;font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">🌐 ${(l.ip_range||l.IP_Range)}</div>`:''}
           </div>
           <button class="btn-del" onclick="hapusLokasi('${id}','${namaEsc}')">🗑</button>
         </div>`;
       }).join('');
     }
   }catch{el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat</div></div>`;}
-  // Update daftar lokasi tersedia untuk jadwal
-  availableLokasi=list.map(l=>l.nama_lokasi||l.nama||'').filter(Boolean);
   renderJadwalAdmin();
 }
 async function hapusLokasi(id,nama){
@@ -5460,271 +5427,143 @@ async function simpanRadius(id, nama){
     return;
   }
   inp.disabled=true;
-  const item=document.getElementById(`lokasi-item-${id}`);
-  const hari=item?item.dataset.hari:'';
-  const ip_range=item?item.dataset.ip:'';
   try{
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius,hari,ip_range})});
+    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius})});
+    // Update tampilan langsung tanpa reload
     const displayEl=$(`radius-display-${id}`);
-    if(displayEl){const span=displayEl.querySelector('span');if(span)span.textContent=`📏 ${radius}m`;}
-    if(item)item.dataset.radius=radius;
+    if(displayEl){
+      const span=displayEl.querySelector('span');
+      if(span) span.textContent=`📏 ${radius}m`;
+    }
     batalEditRadius(id);
   }catch{
     alert('Gagal menyimpan radius. Coba lagi.');
   }finally{
-    if(inp)inp.disabled=false;
-  }
-}
-
-function showEditHari(id){
-  $(`hari-display-${id}`).style.display='none';
-  const editEl=$(`hari-edit-${id}`);
-  editEl.style.display='flex';
-}
-function batalEditHari(id){
-  $(`hari-display-${id}`).style.display='flex';
-  $(`hari-edit-${id}`).style.display='none';
-}
-async function simpanHari(id, nama){
-  const editEl=$(`hari-edit-${id}`);
-  if(!editEl)return;
-  const cbs=editEl.querySelectorAll('input[type=checkbox]:checked');
-  const hariArr=Array.from(cbs).map(c=>c.value);
-  if(!hariArr.length){
-    alert('Pilih minimal 1 hari.');
-    return;
-  }
-  const hari=hariArr.join(',');
-  const item=document.getElementById(`lokasi-item-${id}`);
-  const radius=item?parseInt(item.dataset.radius)||100:100;
-  const ip_range=item?item.dataset.ip:'';
-  const btns=editEl.querySelectorAll('button');
-  btns.forEach(b=>b.disabled=true);
-  try{
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,hari,radius,ip_range})});
-    // Update pills display
-    const pillsEl=$(`hari-pills-${id}`);
-    if(pillsEl){
-      pillsEl.innerHTML=hariArr.map(h=>`<span style="padding:1px 6px;border-radius:10px;background:var(--admin-dim);color:var(--admin);font-size:9px;font-weight:700">${h}</span>`).join(' ');
-    }
-    if(item)item.dataset.hari=hari;
-    batalEditHari(id);
-  }catch{
-    alert('Gagal menyimpan hari. Coba lagi.');
-  }finally{
-    btns.forEach(b=>b.disabled=false);
-  }
-}
-
-function showEditIP(id, currentIP){
-  $(`ip-display-${id}`).style.display='none';
-  const editEl=$(`ip-edit-${id}`);
-  editEl.style.display='flex';
-  const inp=$(`ip-input-${id}`);
-  if(inp){inp.value=currentIP;inp.focus();inp.select();}
-}
-function batalEditIP(id){
-  $(`ip-display-${id}`).style.display='flex';
-  $(`ip-edit-${id}`).style.display='none';
-}
-async function simpanIP(id, nama){
-  const inp=$(`ip-input-${id}`);
-  if(!inp)return;
-  const ip_range=inp.value.trim();
-  inp.disabled=true;
-  const item=document.getElementById(`lokasi-item-${id}`);
-  const hari=item?item.dataset.hari:'';
-  const radius=item?parseInt(item.dataset.radius)||100:100;
-  try{
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,ip_range,hari,radius})});
-    const displayEl=$(`ip-display-${id}`);
-    if(displayEl){const span=displayEl.querySelector('span');if(span)span.textContent=`🌐 ${ip_range||'—'}`;}
-    if(item)item.dataset.ip=ip_range;
-    batalEditIP(id);
-  }catch{
-    alert('Gagal menyimpan IP. Coba lagi.');
-  }finally{
-    if(inp)inp.disabled=false;
+    if(inp) inp.disabled=false;
   }
 }
 
 /* ════ JADWAL LOKASI ADMIN ════ */
-// Hari kerja yang bisa diatur (Senin–Jumat)
 const HARI_KERJA = [
-  {id:'senin',   label:'Senin',   emoji:'1️⃣'},
-  {id:'selasa',  label:'Selasa',  emoji:'2️⃣'},
-  {id:'rabu',    label:'Rabu',    emoji:'3️⃣'},
-  {id:'kamis',   label:'Kamis',   emoji:'4️⃣'},
-  {id:'jumat',   label:'Jumat',   emoji:'5️⃣'},
-  {id:'sabtu',   label:'Sabtu',   emoji:'6️⃣'},
-  {id:'minggu',  label:'Minggu',  emoji:'7️⃣'},
+  {id:'senin',   label:'Sen'},
+  {id:'selasa',  label:'Sel'},
+  {id:'rabu',    label:'Rab'},
+  {id:'kamis',   label:'Kam'},
+  {id:'jumat',   label:'Jum'},
+  {id:'sabtu',   label:'Sab'},
+  {id:'minggu',  label:'Min'},
 ];
 
-// State jadwal — di-init ulang setiap kali loadLokasiAdmin selesai
-let jadwalState = {};
-function syncJadwalState(){
-  HARI_KERJA.forEach(h => {
-    jadwalState[h.id] = [...(LOK_DEF[h.id] || [])];
-  });
-}
-syncJadwalState(); // init awal (mungkin kosong, akan di-sync ulang setelah load)
+// jadwalLokData: [ { id, nama, radius, lat, lng, hari:['senin','selasa',...] } ]
+let jadwalLokData = [];
 
-// Daftar lokasi tersedia (diisi saat loadLokasiAdmin)
-let availableLokasi = [];
-
-// Render seluruh jadwal ke container
-function renderJadwalAdmin(){
+function renderJadwalAdmin() {
   const container = $('jadwalLokasiContainer');
   if (!container) return;
 
-  // Refresh daftar lokasi dari adminMap circles jika ada
-  refreshAvailableLokasi();
+  if (!jadwalLokData.length) {
+    container.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">🗺️</div><div class="empty-text">Belum ada lokasi</div><div class="empty-sub">Tambah lokasi terlebih dahulu</div></div>`;
+    return;
+  }
 
-  container.innerHTML = HARI_KERJA.map(h => {
-    const loks = jadwalState[h.id] || [];
-    const isDefault = JSON.stringify(loks) === JSON.stringify(LOK_DEF.default || []);
-    const pillsHTML = loks.length
-      ? loks.map((l,i) => `
-          <span class="jadwal-lokasi-pill${isDefault&&loks.length===(LOK_DEF.default||[]).length?' default-pill':''}">
-            📍 ${l}
-            <button class="pill-del" title="Hapus" onclick="hapusPillJadwal('${h.id}',${i})">✕</button>
-          </span>`).join('')
-      : `<span class="jadwal-empty">— Tidak ada lokasi (pegawai tidak bisa absen)</span>`;
+  container.innerHTML = jadwalLokData.map((lok, idx) => {
+    const hariAktif = lok.hari || [];
+    const toggles = HARI_KERJA.map(h => {
+      const aktif = hariAktif.includes(h.id);
+      return `<button class="jadwal-hari-btn${aktif ? ' aktif' : ''}"
+        onclick="toggleHariLokasi(${idx},'${h.id}',this)">${h.label}</button>`;
+    }).join('');
 
-    // Select opsi lokasi
-    const optsHTML = availableLokasi.length
-      ? availableLokasi.map(l => `<option value="${l}">${l}</option>`).join('')
-      : `<option value="">— Muat lokasi dulu —</option>`;
+    const aktifCount = hariAktif.length;
+    const badge = aktifCount > 0
+      ? `<span class="jadwal-lok-badge">${aktifCount} hari</span>`
+      : `<span class="jadwal-lok-badge" style="background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.3)">Nonaktif</span>`;
 
-    return `
-      <div class="jadwal-hari-row">
-        <div class="jadwal-hari-label"><span>${h.emoji}</span>${h.label}</div>
-        <div class="jadwal-lokasi-pills" id="pills_${h.id}">${pillsHTML}</div>
-        <div class="jadwal-add-row">
-          <select id="sel_${h.id}">${optsHTML}</select>
-          <button class="btn-jadwal-add" onclick="tambahPillJadwal('${h.id}')">＋ Tambah</button>
-        </div>
-      </div>`;
+    return `<div class="jadwal-lok-card">
+      <div class="jadwal-lok-card-header">
+        <div class="jadwal-lok-card-name"><span class="lok-icon">📍</span>${lok.nama}</div>
+        ${badge}
+      </div>
+      <div class="jadwal-hari-toggles">${toggles}</div>
+      <div class="jadwal-lok-meta">📏 ${lok.radius||100}m &nbsp;·&nbsp; ${(parseFloat(lok.lat||0)).toFixed(5)}, ${(parseFloat(lok.lng||0)).toFixed(5)}</div>
+    </div>`;
   }).join('');
 }
 
-function refreshAvailableLokasi(){
-  // Ambil dari list yang sudah di-load di lokasiMgmtList
-  const items = document.querySelectorAll('.lokasi-mgmt-name');
-  if (items.length) {
-    availableLokasi = Array.from(items).map(el => el.textContent.replace('📍 ','').trim()).filter(Boolean);
+function toggleHariLokasi(idx, hariId, btn) {
+  if (!jadwalLokData[idx]) return;
+  const lok = jadwalLokData[idx];
+  if (!lok.hari) lok.hari = [];
+  const i = lok.hari.indexOf(hariId);
+  if (i > -1) {
+    lok.hari.splice(i, 1);
+    btn.classList.remove('aktif');
+  } else {
+    lok.hari.push(hariId);
+    btn.classList.add('aktif');
   }
-  // Fallback ke nilai LOK_DEF jika belum ada
-  if (!availableLokasi.length) {
-    const all = Object.values(LOK_DEF).flat();
-    availableLokasi = [...new Set(all)];
+  // Update badge langsung
+  const card = btn.closest('.jadwal-lok-card');
+  if (card) {
+    const badge = card.querySelector('.jadwal-lok-badge');
+    if (badge) {
+      const cnt = lok.hari.length;
+      badge.textContent = cnt > 0 ? `${cnt} hari` : 'Nonaktif';
+      badge.style.cssText = cnt > 0
+        ? 'background:var(--gold-dim);color:var(--gold);border-color:rgba(201,168,76,.3)'
+        : 'background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.3)';
+    }
   }
 }
 
-function tambahPillJadwal(hariId){
-  const sel = $(`sel_${hariId}`);
-  if (!sel || !sel.value) return;
-  const nama = sel.value.trim();
-  if (!nama) return;
-  if (!jadwalState[hariId]) jadwalState[hariId] = [];
-  if (jadwalState[hariId].includes(nama)) {
-    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','warning','⚠️','Sudah Ada',`${nama} sudah ada di jadwal ${hariId}.`);
-    return;
-  }
-  jadwalState[hariId].push(nama);
-  renderJadwalAdmin();
-}
-
-function hapusPillJadwal(hariId, idx){
-  if (!jadwalState[hariId]) return;
-  jadwalState[hariId].splice(idx, 1);
-  renderJadwalAdmin();
-}
-
-async function simpanJadwal(){
+async function simpanJadwal() {
   const btn = $('btnSimpanJadwal');
-  if(btn) { btn.disabled=true; $('btnJadwalText').textContent='💾 Menyimpan...'; }
+  if (btn) { btn.disabled = true; $('btnJadwalText').textContent = '💾 Menyimpan...'; }
 
-  // Bangun map: nama_lokasi → hari aktif (dari jadwalState)
-  const namaToHari = {};
-  HARI_KERJA.forEach(h => {
-    (jadwalState[h.id]||[]).forEach(nama => {
-      if(!namaToHari[nama]) namaToHari[nama] = [];
-      if(!namaToHari[nama].includes(h.id)) namaToHari[nama].push(h.id);
-    });
-  });
-
-  // Ambil semua lokasi dari lokasiMgmtList (sudah ada id-nya)
-  const lokasiEls = document.querySelectorAll('.lokasi-mgmt-item');
-  if(!lokasiEls.length){
-    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','warning','⚠️','Tidak Ada Lokasi',
-      'Muat daftar lokasi terlebih dahulu.');
-    if(btn){btn.disabled=false;$('btnJadwalText').textContent='Simpan Jadwal';}
+  if (!jadwalLokData.length) {
+    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','warning','⚠️','Tidak Ada Lokasi','Muat daftar lokasi terlebih dahulu.');
+    if (btn) { btn.disabled = false; $('btnJadwalText').textContent = 'Simpan Jadwal'; }
     return;
   }
 
-  // Kumpulkan id & nama dari setiap item list
-  const lokasiList = [];
-  lokasiEls.forEach(el => {
-    const delBtn = el.querySelector('.btn-del');
-    if(!delBtn) return;
-    const onclickStr = delBtn.getAttribute('onclick')||'';
-    const m = onclickStr.match(/hapusLokasi\('([^']+)'/);
-    const id = m ? m[1] : null;
-    const namaEl = el.querySelector('.lokasi-mgmt-name');
-    const nama = namaEl ? namaEl.textContent.replace('📍 ','').trim() : '';
-    if(id && nama) lokasiList.push({id, nama});
-  });
-
-  // Kirim update per lokasi
-  let berhasil=0, gagal=0;
-  for(const lok of lokasiList){
-    const hariAktif = (namaToHari[lok.nama]||[]).join(',') || '';
-    try{
+  let berhasil = 0, gagal = 0;
+  for (const lok of jadwalLokData) {
+    const hariStr = (lok.hari || []).join(',');
+    try {
       await apiFetch(P.lokasiUpdate, {
-        method:'POST',
-        body: JSON.stringify({id: lok.id, nama_lokasi: lok.nama, hari: hariAktif})
+        method: 'POST',
+        body: JSON.stringify({ id: lok.id, nama_lokasi: lok.nama, hari: hariStr })
       });
       berhasil++;
-    }catch(_){ gagal++; }
+    } catch(_) { gagal++; }
   }
 
-  // Terapkan ke LOK_DEF lokal & localStorage
-  HARI_KERJA.forEach(h => {
-    if(jadwalState[h.id]&&jadwalState[h.id].length>0) LOK_DEF[h.id]=[...jadwalState[h.id]];
-    else delete LOK_DEF[h.id];
+  // Sync ke LOK_DEF
+  Object.keys(LOK_DEF).forEach(k => delete LOK_DEF[k]);
+  jadwalLokData.forEach(lok => {
+    (lok.hari || []).forEach(h => {
+      if (!LOK_DEF[h]) LOK_DEF[h] = [];
+      if (!LOK_DEF[h].includes(lok.nama)) LOK_DEF[h].push(lok.nama);
+    });
   });
-  try{ localStorage.setItem('jadwal_lokasi_bapperida', JSON.stringify(LOK_DEF)); }catch(_){}
-
   updateClock();
 
-  if(gagal===0){
-    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','success','✅','Jadwal Tersimpan!',
-      `${berhasil} lokasi berhasil diperbarui.\nTampilan "Lokasi Absen Hari Ini" sudah diperbarui.`);
+  if (gagal === 0) {
+    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','success','✅','Jadwal Tersimpan!',`${berhasil} lokasi berhasil diperbarui.`);
   } else {
-    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','warning','⚠️','Sebagian Gagal',
-      `${berhasil} berhasil, ${gagal} gagal. Pastikan webhook lokasi-update aktif di n8n.`);
+    showResult('jadwalResult','jadwalRIcon','jadwalRTitle','jadwalRMsg','warning','⚠️','Sebagian Gagal',`${berhasil} berhasil, ${gagal} gagal.`);
   }
 
-  if(btn){
-    setTimeout(()=>{ btn.disabled=false; $('btnJadwalText').textContent='Simpan Jadwal'; }, 2500);
-  }
+  if (btn) { setTimeout(() => { btn.disabled = false; $('btnJadwalText').textContent = 'Simpan Jadwal'; }, 2500); }
 }
 
-// Load jadwal dari localStorage jika ada
-(function loadJadwalFromStorage(){
-  try {
-    const saved = localStorage.getItem('jadwal_lokasi_bapperida');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      Object.assign(LOK_DEF, parsed);
-      // Sync ke jadwalState
-      HARI_KERJA.forEach(h => {
-        jadwalState[h.id] = [...(LOK_DEF[h.id] || LOK_DEF.default || [])];
-      });
-    }
-  } catch(_) {}
-})();
+// syncJadwalState: dipanggil dari loadLokasiAdmin setelah list dimuat
+function syncJadwalState() {
+  // Sync LOK_DEF ke jadwalLokData.hari (dipanggil setelah load)
+  jadwalLokData.forEach(lok => {
+    // jadwalLokData sudah punya hari dari server, tidak perlu sync ulang
+  });
+}
 
 /* ════ PENGATURAN JAM ABSEN (ADMIN) ════ */
 function updateJamPreview(){
@@ -6206,12 +6045,16 @@ async function tambahAdmin() {
     return;
   }
   try {
-    await apiFetch(P.adminAdd, { method: 'POST', body: JSON.stringify({
+    const res = await apiFetch(P.adminAdd, { method: 'POST', body: JSON.stringify({
       telegram_id: tgId, nama, role,
       ditambahkan_oleh: MY_ID,
-      admin_ids: ADMIN_IDS,
       timestamp: Math.floor(Date.now() / 1000)
     })});
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) {
+      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menambahkan admin.');
+      return;
+    }
     ADMIN_IDS.push(tgId);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
     if (idInput)   idInput.value = '';
@@ -6234,9 +6077,14 @@ async function hapusAdmin(tgId, nama) {
   }
   if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
   try {
-    await apiFetch(P.adminDel + '?telegram_id=' + tgId, { method: 'DELETE',
-      body: JSON.stringify({ ditambahkan_oleh: MY_ID, admin_ids: ADMIN_IDS })
+    const res = await apiFetch(P.adminDel + '?telegram_id=' + tgId, { method: 'DELETE',
+      body: JSON.stringify({ ditambahkan_oleh: MY_ID })
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) {
+      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menghapus admin.');
+      return;
+    }
     const idx = ADMIN_IDS.indexOf(tgId);
     if (idx > -1) ADMIN_IDS.splice(idx, 1);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;

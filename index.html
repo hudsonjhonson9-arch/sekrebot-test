@@ -983,16 +983,7 @@
       </div>
     </div>
 
-    <!-- ══ STATISTIK ABSEN BULAN INI ══ -->
-    <div class="profil-section-title">📊 Statistik Absen</div>
-    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
-      <div class="stat-card s-masuk">     <div class="stat-num" id="stMasuk"     >—</div><div class="stat-lbl">✅ Masuk</div></div>
-      <div class="stat-card s-pulang">    <div class="stat-num" id="stPulang"    >—</div><div class="stat-lbl">🔵 Pulang</div></div>
-      <div class="stat-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)"><div class="stat-num" id="stPulangLuar" style="color:#f59e0b">—</div><div class="stat-lbl">🏃 Lap.</div></div>
-      <div class="stat-card s-izin">      <div class="stat-num" id="stIzin"     >—</div><div class="stat-lbl">🙏 Izin</div></div>
-      <div class="stat-card s-sakit">     <div class="stat-num" id="stSakit"    >—</div><div class="stat-lbl">🤒 Sakit</div></div>
-      <div class="stat-card" style="background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3)"><div class="stat-num" id="stTugas" style="color:#8b5cf6">—</div><div class="stat-lbl">💼 Tugas</div></div>
-    </div>
+
 
     <!-- ══ DOKUMEN KEPEGAWAIAN ══ -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -1087,6 +1078,7 @@
       <button class="filter-chip" onclick="filterLog('TUGAS', this)">💼 Tugas</button>
       <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
       <button class="filter-chip" onclick="filterLog('ALPA',  this)">❌ Alpa</button>
+      <button class="filter-chip" onclick="filterLog('LIBUR', this)">🎉 Libur</button>
     </div>
     <!-- ══ AKUMULASI WAKTU ══ -->
     <div id="akumulasiBox" style="display:none;margin-bottom:10px">
@@ -4012,7 +4004,8 @@ async function loadLog(){
     const [res] = await Promise.all([
       apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
       fetchJamPeriode(),
-      window._jamAbsenReady   // pastikan JAM_MASUK_MENIT sudah ter-update sebelum render
+      window._jamAbsenReady,
+      liburLoaded ? Promise.resolve() : fetchLiburForRekap()
     ]);
     if(!res.ok)throw 0;
     const json=await res.json();
@@ -4072,6 +4065,16 @@ function renderLog(logs){
     const mMasukBatas = toMenit(jmBatas);
     const mPulangBatas= toMenit(jpBatas);
     const periodeNama = _jamTgl.nama; // null jika global
+
+    // ── Deteksi hari libur & akhir pekan ──
+    let _dayIdx = -1;
+    try { _dayIdx = new Date(tgl+'T00:00:00').getDay(); } catch(_) {}
+    const isWeekend        = _dayIdx === 0 || _dayIdx === 6;
+    const isLiburNasional  = hariLiburSet.has(tgl);
+    const isLibur          = isWeekend || isLiburNasional;
+    const namaLibur        = isLiburNasional ? (hariLiburMap[tgl] || 'Hari Libur')
+                           : isWeekend       ? (_dayIdx === 0 ? 'Minggu' : 'Sabtu')
+                           : null;
 
     // Pisahkan per jenis
     const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
@@ -4141,6 +4144,7 @@ function renderLog(logs){
         <div>
           <div style="font-size:10px;font-weight:800;color:var(--white)">${tglLabel}</div>
           ${periodeNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeNama}</div>` : ''}
+          ${isLibur ? `<div style="font-size:8px;font-weight:700;color:${isLiburNasional?'#f87171':'var(--muted)'};margin-top:2px;background:${isLiburNasional?'rgba(239,68,68,.10)':'rgba(255,255,255,.05)'};border:1px solid ${isLiburNasional?'rgba(239,68,68,.25)':'rgba(255,255,255,.1)'};border-radius:5px;padding:1px 6px;display:inline-block">${isLiburNasional?'🎉':'📅'} ${namaLibur}</div>` : ''}
         </div>
         <div style="font-size:16px">${masukIcon}</div>
       </div>
@@ -4178,15 +4182,7 @@ function renderLog(logs){
   }).join('');
 }
 function updateLogStats(l){
-  const c=k=>l.filter(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
-  const masukTotal  = c('MASUK') + c('DI LUAR JAM MASUK');
-  const pulangTotal = c('PULANG') + c('DI LUAR JAM PULANG');
-  $('stMasuk').textContent     = masukTotal  || '0';
-  $('stPulang').textContent    = pulangTotal || '0';
-  $('stPulangLuar').textContent= c('PULANG LUAR') || '0';
-  $('stIzin').textContent      = c('IZIN')   || '0';
-  $('stSakit').textContent     = c('SAKIT')  || '0';
-  $('stTugas').textContent     = c('TUGAS')  || '0';
+  // ── Statistik sederhana dihapus (sudah ada di Akumulasi) ──
 
   // ══ AKUMULASI WAKTU ══
   const toMnt = s => {
@@ -4325,6 +4321,11 @@ function filterLog(f,el){
     if(f==='TUGAS'    && adaTugas)  filtered.push(...rows);
     if(f==='PULANG LUAR'&&adaLapangan) filtered.push(...rows);
     if(f==='ALPA'     && adaAlpa)   filtered.push(...rows);
+    if(f==='LIBUR') {
+      let _di=-1; try{_di=new Date(tgl+'T00:00:00').getDay();}catch(_){}
+      const adaLibur = hariLiburSet.has(tgl) || _di===0 || _di===6;
+      if(adaLibur) filtered.push(...rows);
+    }
   });
   renderLog(filtered);
 }
@@ -4333,6 +4334,7 @@ function filterLog(f,el){
 let rekapLoaded = false;
 // Global state: hari libur & jam per pegawai
 let hariLiburSet = new Set(); // Set of 'YYYY-MM-DD' strings
+let hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
 let jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
 let liburLoaded = false;
 let userListOrder = [];
@@ -5202,7 +5204,12 @@ async function fetchLiburForRekap(){
     if(!res.ok) return;
     const d=await res.json();
     const rows=d.data||d.rows||[];
-    hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{
+      const tgl=String(r.tanggal||r.Tanggal||'').trim();
+      if(tgl) hariLiburMap[tgl]=r.nama||r.Nama||r.keterangan||r.Keterangan||'Hari Libur';
+    });
+    hariLiburSet=new Set(Object.keys(hariLiburMap));
     liburLoaded=true;
   }catch(_){}
 }
@@ -5300,7 +5307,9 @@ async function loadLiburAdmin(){
     const rows=(d.data||d.rows||[])
       .filter(r=>String(r.tanggal||r.Tanggal||'').trim())
       .sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
-    hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{ const t=String(r.tanggal||r.Tanggal||'').trim(); if(t) hariLiburMap[t]=r.nama||r.Nama||r.keterangan||r.Keterangan||'Hari Libur'; });
+    hariLiburSet=new Set(Object.keys(hariLiburMap));
     liburLoaded=true;
     const badge=$('liburTotalBadge');
     if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'inline-block':'none';}

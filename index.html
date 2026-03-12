@@ -1356,106 +1356,6 @@
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
 
-    <!-- ══ KELOLA JENIS SERAGAM ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>🎨 Kelola Jenis Seragam</span>
-        <button class="btn-sm-admin" onclick="loadSeragamTypeAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Tambah, edit, atau hapus jenis seragam. Jenis ini akan muncul sebagai pilihan saat mengatur jadwal seragam harian.</div>
-
-      <!-- Form tambah / edit -->
-      <div id="seragamTypeForm" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px;margin:10px 0">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:10px" id="seragamTypeFormTitle">➕ Tambah Jenis Seragam</div>
-        <input type="hidden" id="seragamTypeEditId" value="">
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🏷️ Nama / Label Seragam</label>
-          <input type="text" class="form-input" id="inputSeragamLabel" placeholder="cth: Batik Korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🔑 Kode Warna (huruf kecil, tanpa spasi)</label>
-          <input type="text" class="form-input" id="inputSeragamWarna" placeholder="cth: batik_korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:10px">
-          <label class="form-label">🎭 Emoji</label>
-          <input type="text" class="form-input" id="inputSeragamEmoji" placeholder="cth: 🟡" style="font-size:18px;width:80px"/>
-        </div>
-
-        <!-- HSL Range -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--white);margin-bottom:2px">🎨 Rentang Warna HSL untuk Deteksi Kamera</div>
-          <div style="font-size:9px;color:var(--muted);margin-bottom:10px">H = Hue (0–360°) · S = Saturasi (0–100%) · L = Kecerahan (0–100%)</div>
-
-          <!-- Preview warna live -->
-          <div id="hslPreviewBar" style="height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);margin-bottom:10px;background:#333;transition:background .3s;display:flex;align-items:center;justify-content:center">
-            <span id="hslPreviewLabel" style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7)">Preview warna akan muncul di sini</span>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label class="form-label" style="font-size:9px">H Min (0–360)</label>
-              <input type="number" class="form-input" id="inputHMin" min="0" max="360" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">H Max (0–360)</label>
-              <input type="number" class="form-input" id="inputHMax" min="0" max="360" placeholder="360" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Min (0–100)</label>
-              <input type="number" class="form-input" id="inputSMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Max (0–100)</label>
-              <input type="number" class="form-input" id="inputSMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Min (0–100)</label>
-              <input type="number" class="form-input" id="inputLMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Max (0–100)</label>
-              <input type="number" class="form-input" id="inputLMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6">
-            💡 <b>Contoh referensi:</b><br>
-            Batik Korpri Biru: H 200–240, S 30–100, L 20–70<br>
-            Coklat/Khaki: H 15–65, S 15–75, L 20–75<br>
-            Putih: H 0–360, S 0–20, L 68–100<br>
-            Kosongkan semua = Baju Bebas (tidak cek warna)
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px">
-          <button class="btn-admin" id="btnSeragamTypeSubmit" onclick="submitSeragamType()" style="flex:1;margin-bottom:0;padding:10px">
-            <div class="btn-inner"><span>💾</span><span id="btnSeragamTypeText">Simpan</span></div>
-          </button>
-          <button onclick="resetSeragamTypeForm()" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">✕ Batal</button>
-        </div>
-      </div>
-
-      <!-- Daftar jenis seragam -->
-      <div id="seragamTypeList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-      </div>
-      <div class="result-card" id="seragamTypeResult" style="margin-top:8px;display:none"><div class="r-icon" id="seragamTypeRIcon">✅</div><div class="r-title" id="seragamTypeRTitle">—</div><div class="r-msg" id="seragamTypeRMsg">—</div></div>
-    </div>
-
-    <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>👔 Pengaturan Seragam per Hari</span>
-        <button class="btn-sm-admin" onclick="renderSeragamAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Atur seragam wajib per hari kerja. Digunakan untuk deteksi otomatis di kamera saat absen.</div>
-      <div id="seragamAdminList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
-      <div class="result-card" id="seragamResult" style="margin-top:8px"><div class="r-icon" id="seragamRIcon">✅</div><div class="r-title" id="seragamRTitle">—</div><div class="r-msg" id="seragamRMsg">—</div></div>
-      <button class="btn-admin" id="btnSimpanSeragam" onclick="simpanSeragamAdmin()" style="margin-top:8px">
-        <div class="btn-inner"><span>💾</span><span id="btnSeragamText">Simpan Pengaturan Seragam</span></div>
-      </button>
-    </div>
-
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">⏰ Pengaturan Jam Absen</div>
@@ -1732,8 +1632,8 @@ function switchTab(tab) {
     initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
     if (!adminLoaded) {
       adminLoaded = true;
-      loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin();
-      loadSeragamTypeAdmin(); loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadKonfirmasiAdmin(); loadLiburAdmin();
+      loadJamPeriodeAdmin(); loadAdminMgmt();
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
   }
@@ -6545,7 +6445,7 @@ function _updateLocBadgeGPS(){
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
-loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
+
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak

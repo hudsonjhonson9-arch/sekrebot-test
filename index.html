@@ -3994,7 +3994,8 @@ async function loadLog(){
   try{
     const [res] = await Promise.all([
       apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
-      fetchJamPeriode()
+      fetchJamPeriode(),
+      window._jamAbsenReady   // pastikan JAM_MASUK_MENIT sudah ter-update sebelum render
     ]);
     if(!res.ok)throw 0;
     const json=await res.json();
@@ -4371,7 +4372,7 @@ async function loadRekap(){
   // Fetch hari libur, jam pegawai & jam periode secara paralel
   if(!liburLoaded) fetchLiburForRekap();
   fetchJamPegawai();
-  fetchJamPeriode();
+  await Promise.all([fetchJamPeriode(), window._jamAbsenReady]); // pastikan JAM & periode sudah siap
   const isHarianLoad = dari === sampai;
   try{
     const orderPromise = fetchUserListOrder();
@@ -6526,7 +6527,7 @@ function _updateLocBadgeGPS(){
   );
 }
 
-loadJamAbsen(); // load jam absen dari server/localStorage
+window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
 loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
 loadTodayHistory();

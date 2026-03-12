@@ -1500,7 +1500,9 @@ const WIFI_MODE = 'block';
    ════════════════════════════════════════════════════════ */
 async function sbFetch(table, opts = {}) {
   const { method = 'GET', select, filters = [], body, order, limit, single = false, upsert = false } = opts;
-  let url = `${SB_URL}/rest/v1/${encodeURIComponent(table)}`;
+  // Nama tabel/kolom dengan spasi perlu double-quote di PostgREST
+  const tblEnc = table.includes(' ') ? encodeURIComponent('"'+table+'"') : encodeURIComponent(table);
+  let url = `${SB_URL}/rest/v1/${tblEnc}`;
   const params = [];
   if (select) params.push('select=' + encodeURIComponent(select));
   filters.forEach(f => params.push(f));
@@ -1763,8 +1765,9 @@ let userProfile = null;
 async function loadUserProfile() {
   if (!MY_ID){ setUserFallback(); return; }
   try {
-    const res  = await sbFetch('user_list', { select: 'id,username,NIP,Jabatan,Status,tgl_pangkat,tgl_berkala,face_histogram,face_saved_at', filters: [`id=eq.${MY_ID}`], single: true });
-    const d    = await res.json();
+    const res  = await sbFetch('user_list', { select: 'id,username,NIP,Jabatan,Status,tgl_pangkat,tgl_berkala,face_histogram,face_saved_at', filters: [`id=eq.${MY_ID}`] });
+    const rows = await res.json();
+    const d    = Array.isArray(rows) ? rows[0] : rows;
     if (d && d.id) {
       userProfile={ nama: d.username||'', jabatan: d.Jabatan||'', nip: d.NIP||'', username: d.username||tgUser.username||'', status: d.Status||'AKTIF', tgl_pangkat: d.tgl_pangkat||null, tgl_berkala: d.tgl_berkala||null, face_histogram: d.face_histogram||null, face_saved_at: d.face_saved_at||null };
       applyProfile();
@@ -2034,7 +2037,7 @@ async function loadTodayHistory(force = false) {
     const todayStr = fmtD(nowWITA());
     const filters = [`Tanggal=eq.${todayStr}`];
     if (MY_ID) filters.push(`ID=eq.${MY_ID}`);
-    const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,Jenis Absen,Lokasi,Ket,koordinat', filters, order: 'Jam.asc' });
+    const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters, order: 'Jam.asc' });
     const json = await res.json();
     const rows = (Array.isArray(json) ? json : []).map(r => ({
       ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
@@ -3197,7 +3200,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         })();
 
         // ── Cek duplikasi absen hari ini ──
-        const _existing = await sbFetch('Log Absensi', { select: 'ID_Log,Jenis Absen', filters:[`ID=eq.${MY_ID}`,`Tanggal=eq.${_todayStr}`,`Jenis Absen=eq.${_jenisAbsen}`] });
+        const _existing = await sbFetch('Log Absensi', { select: 'ID_Log,"Jenis Absen"', filters:[`ID=eq.${MY_ID}`,`Tanggal=eq.${_todayStr}`,`"Jenis Absen"=eq.${_jenisAbsen}`] });
         const _existRows = await _existing.json();
         if (Array.isArray(_existRows) && _existRows.length > 0) {
           showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
@@ -3540,16 +3543,17 @@ function renderKetStatusList(rows){
   }
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
   el.innerHTML=rows.slice(0,20).map((r,i)=>{
-    const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
-    const isPending=raw.includes('PENDING');
-    const isApproved=raw==='IZIN'||raw==='SAKIT'||raw==='TUGAS';
-    const isRejected=raw.includes('TOLAK')||raw.includes('REJECT');
-    const jenisBase=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','');
+    // Field mapping ket_temp Supabase
+    const jenisBase=(r.jenis||r['Jenis Absen']||'').trim().toUpperCase();
+    const statusRaw=(r.status||'').toUpperCase();
+    const isPending  = statusRaw==='PENDING'   || jenisBase.includes('PENDING');
+    const isApproved = statusRaw==='APPROVED'  || statusRaw==='APPROVE';
+    const isRejected = statusRaw==='REJECTED'  || statusRaw==='REJECT' || jenisBase.includes('TOLAK');
     const emoji=JENIS_EMOJI[jenisBase]||'📝';
     const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':'ket-badge-rejected';
     const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':'❌ DITOLAK';
-    const tgl=r.Tanggal||r.tanggal||'—';
-    const ket=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+    const tgl=r.tanggal||r.Tanggal||'—';
+    const ket=(r.keterangan||r.Ket||'').replace(/\|.*$/,'').trim();
     const actions=isPending?`<div class="ket-action-row">
       <button class="ket-btn-edit" onclick="openKetEdit(${i})">✏️ Edit</button>
       <button class="ket-btn-del"  onclick="confirmKetDelete(${i})">🗑️ Hapus</button>
@@ -3571,18 +3575,18 @@ function renderKetStatusList(rows){
 function openKetEdit(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const raw=(r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
-  $('editKetRowNum').value=r.row_number||r.rowNumber||idx;
-  $('editKetOrigTglMulai').value=r.Tanggal||r.tanggal||'';
+  const raw=(r.jenis||r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
+  $('editKetRowNum').value=r.id||r.row_number||r.rowNumber||idx;
+  $('editKetOrigTglMulai').value=r.tanggal||r.Tanggal||'';
   // Set jenis pills
   ['IZIN','SAKIT','TUGAS'].forEach(j=>{
     const el=$('editJenisPill_'+j);
     if(el) el.classList.toggle('active', j===raw);
   });
   editSelectedJenis=raw||'IZIN';
-  $('editTglMulai').value=r['Tgl Mulai']||r.Tanggal||'';
-  $('editTglSelesai').value=r['Tgl Selesai']||r.Tanggal||'';
-  $('editKetText').value=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+  $('editTglMulai').value=r.tanggal||r['Tgl Mulai']||r.Tanggal||'';
+  $('editTglSelesai').value=r.tgl_selesai||r['Tgl Selesai']||r.tanggal||'';
+  $('editKetText').value=(r.keterangan||r.Ket||'').replace(/\|.*$/,'').trim();
   $('editKetResult').style.display='none';
   $('ketEditOverlay').classList.add('open');
 }
@@ -3623,10 +3627,10 @@ async function handleKetEdit(){
 async function confirmKetDelete(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const tgl=r.Tanggal||'?';
-  const tglMulai=r['Tgl Mulai']||r.Tanggal||'?';
-  const tglSelesai=r['Tgl Selesai']||r.Tanggal||'?';
-  const jenis=(r['Jenis Absen']||'').replace(' PENDING','');
+  const tgl=r.tanggal||r.Tanggal||'?';
+  const tglMulai=r.tanggal||r['Tgl Mulai']||r.Tanggal||'?';
+  const tglSelesai=r.tgl_selesai||r['Tgl Selesai']||r.tanggal||'?';
+  const jenis=(r.jenis||r['Jenis Absen']||'').replace(' PENDING','');
   if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
     const ketId = r.id || r.row_number || r.rowNumber;
@@ -3710,7 +3714,7 @@ async function loadLog(){
   try{
     const filters = MY_ID ? [`ID=eq.${MY_ID}`] : [];
     const [res] = await Promise.all([
-      sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,Jenis Absen,Lokasi,Ket,koordinat', filters, order: 'Tanggal.desc,Jam.desc', limit: 500 }),
+      sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters, order: 'Tanggal.desc,Jam.desc', limit: 500 }),
       fetchJamPeriode(),
       window._jamAbsenReady
     ]);
@@ -4109,7 +4113,7 @@ async function loadRekap(){
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t=>t>=dari&&t<=sampai)));
       // ── Rekap dihitung frontend dari Log Absensi Supabase ──
       const _filterRekap = [`Tanggal=gte.${dari}`, `Tanggal=lte.${sampai}`];
-      const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,Jenis Absen,Lokasi,Ket,koordinat', filters: _filterRekap, order: 'Tanggal.asc,Jam.asc', limit: 5000 });
+      const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters: _filterRekap, order: 'Tanggal.asc,Jam.asc', limit: 5000 });
       const _rekapRows = await res.json();
       const periodRowsSB = (Array.isArray(_rekapRows)?_rekapRows:[]).map(r => ({
         ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
@@ -4135,7 +4139,7 @@ async function loadRekap(){
         // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
         let logHarian = allLogs.filter(r => getField(r,'Tanggal','tanggal') === dari);
         if(!logHarian.length){
-          const rLog = await sbFetch('Log Absensi', { select: 'ID,Jam,Jenis Absen,Tanggal', filters:[`Tanggal=eq.${dari}`] });
+          const rLog = await sbFetch('Log Absensi', { select: 'ID,Jam,"Jenis Absen",Tanggal', filters:[`Tanggal=eq.${dari}`] });
           const jLog = await rLog.json();
           logHarian = (Array.isArray(jLog)?jLog:[]).map(r=>({'ID':r.ID,'Jam':r.Jam,'Jenis Absen':r['Jenis Absen'],'Tanggal':r.Tanggal})).filter(r=>r.Tanggal===dari);
         }
@@ -5417,7 +5421,7 @@ async function loadAdminMgmt() {
       const users = await ur.json();
       (Array.isArray(users)?users:[]).forEach(u => {
         const uid = parseInt(u.id || 0);
-        if (uid) namaMap[uid] = u.username || String(uid);
+        if (uid) namaMap[uid] = u.username || u.nama || String(uid);
       });
     } catch(_) {}
 
@@ -5740,8 +5744,9 @@ function _applyFaceToggleUI(enabled) {
 
 async function loadFaceToggle() {
   try {
-    const res = await sbFetch('pengaturan', { select: 'value', filters: [`key=eq.face_recognition`], single: true });
-    const d   = await res.json();
+    const res = await sbFetch('pengaturan', { select: 'value', filters: [`key=eq.face_recognition`] });
+    const rows = await res.json();
+    const d    = Array.isArray(rows) ? rows[0] : rows;
     FACE_RECOGNITION_ENABLED = (d?.value ?? '1') !== '0';
   } catch {
     // fallback localStorage

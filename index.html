@@ -1645,24 +1645,33 @@ let jamPeriodeList = []; // [{id, nama, dari:'YYYY-MM-DD', sampai:'YYYY-MM-DD', 
 function normToISO(tgl){
   if(!tgl) return '';
   const s = String(tgl).trim();
-  // Konversi DD/MM/YYYY → YYYY-MM-DD
+  // DD/MM/YYYY → YYYY-MM-DD
   const dm = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(dm) return `${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
-  // Strip time component dari datetime: "YYYY-MM-DDTHH:MM..." atau "YYYY-MM-DD HH:MM..."
+  // DD-MM-YYYY → YYYY-MM-DD  (pisah dash, bukan YYYY-MM-DD)
+  const dd = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if(dd) return `${dd[3]}-${dd[2].padStart(2,'0')}-${dd[1].padStart(2,'0')}`;
+  // Strip time component: "YYYY-MM-DDTHH:MM..." atau "YYYY-MM-DD HH:MM..."
   const dt = s.match(/^(\d{4}-\d{2}-\d{2})[T ].*$/);
   if(dt) return dt[1];
-  return s; // sudah ISO date
+  // Sudah ISO date (YYYY-MM-DD) — validasi format ketat
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return ''; // format tidak dikenal → kembalikan kosong agar tidak lolos guard
 }
+
+// Regex untuk validasi tanggal ISO final setelah normalisasi
+const _ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function getJamForTanggal(tglStr){
   // Prioritas: 1) Periode khusus aktif di tanggal tsb → 2) Global default
   const t = normToISO(tglStr);
-  if(!t || t.length < 10) return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
+  if(!t || !_ISO_RE.test(t)) return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
   const periode = jamPeriodeList.find(p => {
-    const dari   = normToISO(p.dari);
-    const sampai = normToISO(p.sampai);
-    // Guard: skip periode dengan dari/sampai kosong atau tidak valid (mencegah match semua tanggal)
-    if(!dari || !sampai || dari.length < 10 || sampai.length < 10) return false;
+    // p.dari & p.sampai sudah dinormalisasi saat fetchJamPeriode, tapi validasi ulang
+    const dari   = _ISO_RE.test(p.dari)   ? p.dari   : normToISO(p.dari);
+    const sampai = _ISO_RE.test(p.sampai) ? p.sampai : normToISO(p.sampai);
+    // Guard ketat: wajib format YYYY-MM-DD valid
+    if(!_ISO_RE.test(dari) || !_ISO_RE.test(sampai)) return false;
     return t >= dari && t <= sampai;
   });
   if(periode && periode.masuk && periode.pulang){
@@ -1684,7 +1693,7 @@ async function fetchJamPeriode(){
       sampai: normToISO(p.sampai || p.Sampai || ''),
       masuk : p.masuk || p.Masuk || '',
       pulang: p.pulang || p.Pulang || '',
-    }));
+    })).filter(p => _ISO_RE.test(p.dari) && _ISO_RE.test(p.sampai) && p.masuk && p.pulang);
   }catch(_){}
 }
 

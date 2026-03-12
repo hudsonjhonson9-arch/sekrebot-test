@@ -1686,6 +1686,7 @@ if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroun
 const MY_ID    = tgUser.id ? Number(tgUser.id) : null;
 // IS_ADMIN dievaluasi ulang setelah ADMIN_IDS dimuat dari server
 let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
+let adminLoaded = false; // guard: cegah reload semua fungsi admin tiap tab dibuka
 
 /* ════ KONSTANTA ════ */
 const TZ     = 'Asia/Makassar';
@@ -1727,7 +1728,15 @@ function switchTab(tab) {
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
   if (tab==='rekap'   && !rekapLoaded) loadRekap();
-  if (tab==='admin'   && IS_ADMIN)     { initAdminMap(); initJamAdminUI(); loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin(); loadSeragamTypeAdmin(); loadFaceToggle(); loadJamPeriodeAdmin(); _initPeriodeListeners(); loadAdminMgmt(); }
+  if (tab==='admin'   && IS_ADMIN)     {
+    initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
+    if (!adminLoaded) {
+      adminLoaded = true;
+      loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin();
+      loadSeragamTypeAdmin(); loadJamPeriodeAdmin(); loadAdminMgmt();
+      // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
+    }
+  }
 }
 
 /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
@@ -1821,19 +1830,22 @@ function updateClock() {
 updateClock(); setInterval(updateClock,1000);
 
 // Setiap menit: cek ulang periode jam (jika berganti periode, re-enable tombol jika belum absen di periode baru)
-let _lastJenisPeriode = null;
-setInterval(() => {
-  const n = nowWITA();
-  const tot = n.getHours() * 60 + n.getMinutes();
-  const _tgl = n.toLocaleDateString('sv-SE',{timeZone:TZ});
+// Inisialisasi dengan nilai aktual saat ini agar interval pertama tidak langsung memanggil loadTodayHistory()
+function _hitungJenisPeriode() {
+  const _n = nowWITA();
+  const _tot = _n.getHours() * 60 + _n.getMinutes();
+  const _tgl = _n.toLocaleDateString('sv-SE',{timeZone:TZ});
   const _jH  = getJamForTanggal(_tgl);
   const _jmH = toMenitStr(_jH.masuk)  ?? JAM_MASUK_MENIT;
   const _jpH = toMenitStr(_jH.pulang) ?? JAM_PULANG_MENIT;
-  let j;
-  if      (tot <= _jmH)  j = 'MASUK';
-  else if (tot < 720)    j = 'DI LUAR JAM MASUK';
-  else if (tot < _jpH)   j = 'DI LUAR JAM PULANG';
-  else                   j = 'PULANG';
+  if      (_tot <= _jmH)  return 'MASUK';
+  else if (_tot < 720)    return 'DI LUAR JAM MASUK';
+  else if (_tot < _jpH)   return 'DI LUAR JAM PULANG';
+  else                    return 'PULANG';
+}
+let _lastJenisPeriode = _hitungJenisPeriode(); // nilai awal = kondisi saat halaman dimuat
+setInterval(() => {
+  const j = _hitungJenisPeriode();
   if (j !== _lastJenisPeriode) {
     _lastJenisPeriode = j;
     // Periode berubah — reload history agar tombol dievaluasi ulang

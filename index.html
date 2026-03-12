@@ -1500,8 +1500,8 @@ const WIFI_MODE = 'block';
    ════════════════════════════════════════════════════════ */
 async function sbFetch(table, opts = {}) {
   const { method = 'GET', select, filters = [], body, order, limit, single = false, upsert = false } = opts;
-  // Nama tabel/kolom dengan spasi perlu double-quote di PostgREST
-  const tblEnc = table.includes(' ') ? encodeURIComponent('"'+table+'"') : encodeURIComponent(table);
+  // Nama tabel dengan spasi: Supabase pakai %20 di URL path
+  const tblEnc = encodeURIComponent(table);
   let url = `${SB_URL}/rest/v1/${tblEnc}`;
   const params = [];
   if (select) params.push('select=' + encodeURIComponent(select));
@@ -2037,11 +2037,11 @@ async function loadTodayHistory(force = false) {
     const todayStr = fmtD(nowWITA());
     const filters = [`Tanggal=eq.${todayStr}`];
     if (MY_ID) filters.push(`ID=eq.${MY_ID}`);
-    const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters, order: 'Jam.asc' });
+    const res = await sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters, order: 'Jam.asc' });
     const json = await res.json();
     const rows = (Array.isArray(json) ? json : []).map(r => ({
       ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
-      'Jenis Absen': r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+      'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
     }));
     renderTodayHistory(rows);
   } catch(e) {
@@ -2104,8 +2104,8 @@ function renderTodayHistory(rows) {
   const GRP_MASUK  = ['MASUK', 'DI LUAR JAM MASUK'];
   const GRP_PULANG = ['PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR'];
 
-  const sudahMasuk  = rows.some(r => GRP_MASUK.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
-  const sudahPulang = rows.some(r => GRP_PULANG.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+  const sudahMasuk  = rows.some(r => GRP_MASUK.includes((getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+  const sudahPulang = rows.some(r => GRP_PULANG.includes((getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
 
   const isSkrgMasuk  = GRP_MASUK.includes(jenisSkrg);
   const isSkrgPulang = GRP_PULANG.includes(jenisSkrg);
@@ -3200,7 +3200,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         })();
 
         // ── Cek duplikasi absen hari ini ──
-        const _existing = await sbFetch('Log Absensi', { select: 'ID_Log,"Jenis Absen"', filters:[`ID=eq.${MY_ID}`,`Tanggal=eq.${_todayStr}`,`"Jenis Absen"=eq.${_jenisAbsen}`] });
+        const _existing = await sbFetch('log_absensi', { select: 'ID_Log,jenis_absen', filters:[`ID=eq.${MY_ID}`,`Tanggal=eq.${_todayStr}`,`jenis_absen=eq.${_jenisAbsen}`] });
         const _existRows = await _existing.json();
         if (Array.isArray(_existRows) && _existRows.length > 0) {
           showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
@@ -3281,7 +3281,7 @@ async function handlePulangLuar() {
   // ── Cek: pegawai harus sudah absen masuk hari ini ──
   const _todayRows = window._todayRows || [];
   const _sudahMasuk = _todayRows.some(r => {
-    const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const j = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     return j === 'MASUK' || j === 'DI LUAR JAM MASUK';
   });
   if (!_sudahMasuk) {
@@ -3544,7 +3544,7 @@ function renderKetStatusList(rows){
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
   el.innerHTML=rows.slice(0,20).map((r,i)=>{
     // Field mapping ket_temp Supabase
-    const jenisBase=(r.jenis||r['Jenis Absen']||'').trim().toUpperCase();
+    const jenisBase=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
     const statusRaw=(r.status||'').toUpperCase();
     const isPending  = statusRaw==='PENDING'   || jenisBase.includes('PENDING');
     const isApproved = statusRaw==='APPROVED'  || statusRaw==='APPROVE';
@@ -3575,7 +3575,7 @@ function renderKetStatusList(rows){
 function openKetEdit(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const raw=(r.jenis||r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
+  const raw=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').toUpperCase().replace(' PENDING','');
   $('editKetRowNum').value=r.id||r.row_number||r.rowNumber||idx;
   $('editKetOrigTglMulai').value=r.tanggal||r.Tanggal||'';
   // Set jenis pills
@@ -3630,7 +3630,7 @@ async function confirmKetDelete(idx){
   const tgl=r.tanggal||r.Tanggal||'?';
   const tglMulai=r.tanggal||r['Tgl Mulai']||r.Tanggal||'?';
   const tglSelesai=r.tgl_selesai||r['Tgl Selesai']||r.tanggal||'?';
-  const jenis=(r.jenis||r['Jenis Absen']||'').replace(' PENDING','');
+  const jenis=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').replace(' PENDING','');
   if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
     const ketId = r.id || r.row_number || r.rowNumber;
@@ -3659,7 +3659,7 @@ async function loadKonfirmasiAdmin(){
     }
     const EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
     el.innerHTML=rows.map((r,i)=>{
-      const jenis=(r['Jenis Absen']||'').replace(' PENDING','').toUpperCase();
+      const jenis=(r['Jenis Absen']||r.jenis_absen||'').replace(' PENDING','').toUpperCase();
       const em=EMOJI[jenis]||'📝';
       const nama=r.Nama||'—';
       const nip=r.NIP||'—';
@@ -3714,14 +3714,14 @@ async function loadLog(){
   try{
     const filters = MY_ID ? [`ID=eq.${MY_ID}`] : [];
     const [res] = await Promise.all([
-      sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters, order: 'Tanggal.desc,Jam.desc', limit: 500 }),
+      sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters, order: 'Tanggal.desc,Jam.desc', limit: 500 }),
       fetchJamPeriode(),
       window._jamAbsenReady
     ]);
     const json = await res.json();
     let rows = (Array.isArray(json) ? json : []).map(r => ({
       ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
-      'Jenis Absen': r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+      'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
     }));
     allLogs=rows;logLoaded=true;
     renderLog(allLogs);updateLogStats(allLogs);
@@ -3774,12 +3774,12 @@ function renderLog(logs){
     const periodeNama = _jamTgl.nama; // null jika global
 
     // Pisahkan per jenis
-    const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
-    const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
-    const rIzin   = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('IZIN'));
-    const rSakit  = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('SAKIT'));
-    const rTugas  = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('TUGAS'));
-    const rAlpa   = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase()==='TANPA BERITA');
+    const rMasuk  = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
+    const rPulang = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
+    const rIzin   = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('IZIN'));
+    const rSakit  = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('SAKIT'));
+    const rTugas  = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('TUGAS'));
+    const rAlpa   = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase()==='TANPA BERITA');
 
     const jamMasuk  = rMasuk  ? (getField(rMasuk, 'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
     const jamPulang = rPulang ? (getField(rPulang,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
@@ -3878,7 +3878,7 @@ function renderLog(logs){
   }).join('');
 }
 function updateLogStats(l){
-  const c=k=>l.filter(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
+  const c=k=>l.filter(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
   const masukTotal  = c('MASUK') + c('DI LUAR JAM MASUK');
   const pulangTotal = c('PULANG') + c('DI LUAR JAM PULANG');
   $('stMasuk').textContent     = masukTotal  || '0';
@@ -3924,9 +3924,9 @@ function updateLogStats(l){
     const mMasukBatas  = toMnt(_jamTgl.masuk);
     const mPulangBatas = toMnt(_jamTgl.pulang);
 
-    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
-    const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
-    const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
+    const jenisList = rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const rMasuk  = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
+    const rPulang = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
     const isKet   = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
 
     if(isKet){ hariHadir++; return; }
@@ -3966,11 +3966,11 @@ function updateLogStats(l){
     const _jamTgl2     = getJamForTanggal(tgl);
     const mMasukBatas2 = toMnt(_jamTgl2.masuk);
     const mPulangBatas2= toMnt(_jamTgl2.pulang);
-    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const jenisList = rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const isKet = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
     if(isKet){ hariDisiplin++; return; }
-    const rM = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK');});
-    const rP = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG');});
+    const rM = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK');});
+    const rP = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG');});
     if(!rM) return;
     const mM2 = toMnt((getField(rM,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim());
     const mP2 = rP ? toMnt((getField(rP,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim()) : null;
@@ -4011,7 +4011,7 @@ function filterLog(f,el){
   });
   const filtered=[];
   Object.entries(byDate).forEach(([tgl,rows])=>{
-    const jenis=rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const jenis=rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const adaMasuk   = jenis.some(j=>j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK'));
     const adaIzin    = jenis.some(j=>j.includes('IZIN'));
     const adaSakit   = jenis.some(j=>j.includes('SAKIT'));
@@ -4113,11 +4113,11 @@ async function loadRekap(){
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t=>t>=dari&&t<=sampai)));
       // ── Rekap dihitung frontend dari Log Absensi Supabase ──
       const _filterRekap = [`Tanggal=gte.${dari}`, `Tanggal=lte.${sampai}`];
-      const res = await sbFetch('Log Absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,"Jenis Absen",Lokasi,Ket,koordinat', filters: _filterRekap, order: 'Tanggal.asc,Jam.asc', limit: 5000 });
+      const res = await sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters: _filterRekap, order: 'Tanggal.asc,Jam.asc', limit: 5000 });
       const _rekapRows = await res.json();
       const periodRowsSB = (Array.isArray(_rekapRows)?_rekapRows:[]).map(r => ({
         ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
-        'Jenis Absen': r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+        'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
       }));
       const _order = await orderPromise;
       const computed = computeRekap(periodRowsSB, periodRowsSB, _order);
@@ -4139,16 +4139,16 @@ async function loadRekap(){
         // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
         let logHarian = allLogs.filter(r => getField(r,'Tanggal','tanggal') === dari);
         if(!logHarian.length){
-          const rLog = await sbFetch('Log Absensi', { select: 'ID,Jam,"Jenis Absen",Tanggal', filters:[`Tanggal=eq.${dari}`] });
+          const rLog = await sbFetch('log_absensi', { select: 'ID,Jam,jenis_absen,Tanggal', filters:[`Tanggal=eq.${dari}`] });
           const jLog = await rLog.json();
-          logHarian = (Array.isArray(jLog)?jLog:[]).map(r=>({'ID':r.ID,'Jam':r.Jam,'Jenis Absen':r['Jenis Absen'],'Tanggal':r.Tanggal})).filter(r=>r.Tanggal===dari);
+          logHarian = (Array.isArray(jLog)?jLog:[]).map(r=>({'ID':r.ID,'Jam':r.Jam,'Jenis Absen':r['Jenis Absen']||r.jenis_absen,'Tanggal':r.Tanggal})).filter(r=>r.Tanggal===dari);
         }
         // Bangun map: id → {jamMasuk, jamPulang}
         const jamMap={};
         logHarian.forEach(r=>{
           const id = String(getField(r,'ID','id')||'').trim();
           if(!id) return;
-          const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+          const j = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
           const jam = (getField(r,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim();
           if(!jamMap[id]) jamMap[id]={jamMasuk:'-',jamPulang:'-'};
           if(j==='MASUK'||j==='DI LUAR JAM MASUK') jamMap[id].jamMasuk=jam||'-';
@@ -4265,7 +4265,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const nama  = getField(r,'Nama','nama') || '—';
     const nip   = getField(r,'NIP','nip')   || '—';
     const tgl   = normToISO(getField(r,'Tanggal','tanggal') || '');
-    const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const jenis = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr= getField(r,'Jam','jam') || '';
     if(!map[id]) map[id]={id,nama,nip,jabatan:'',urutan:9999,
       masuk:0,pulang:0,pulang_luar:0,di_luar_masuk:0,di_luar_pulang:0,
@@ -4301,7 +4301,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const id = String(getField(r,'ID','id')||'').trim();
     if(!id || !map[id]) return; // only process existing employees
     const tglA  = normToISO(getField(r,'Tanggal','tanggal') || '');
-    const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const jenis = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr = getField(r,'Jam','jam') || '';
     const jam = toMenit(jamStr);
     if(jenis==='MASUK') { map[id].all_masuk++; }

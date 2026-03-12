@@ -2219,6 +2219,95 @@ function showGPS(lat,lon,acc,lokasi){
    Fetch IP publik → kirim ke n8n → n8n validasi via CIDR di sheet lokasiabsen.
    Frontend hanya menampilkan status, tidak memblokir sendiri.
    ════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   PERMISSIONS API + localStorage CACHE MODULE  v1.0
+   ─────────────────────────────────────────────────────────────
+   • _queryPermission(name)   → query Permissions API + watch
+   • initPermissions()        → pre-check geo & camera on startup
+   • IP cache  (TTL 5 menit)  → _IP_CACHE_KEY
+   • GPS cache (TTL 2 menit)  → _GPS_CACHE_KEY (badge only)
+   ═══════════════════════════════════════════════════════════════ */
+const _PERM_STORE_KEY  = 'bapperida_perm_v1';
+const _IP_CACHE_KEY    = 'bapperida_ip_v1';
+const _GPS_CACHE_KEY   = 'bapperida_gps_v1';
+const _IP_TTL_MS       = 5 * 60 * 1000;   // 5 menit
+const _GPS_TTL_MS      = 2 * 60 * 1000;   // 2 menit
+
+/* ── localStorage helpers ── */
+function _lsGet(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+function _lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+/* ── Baca/tulis permission state ke localStorage ── */
+function _readPermStore()        { return _lsGet(_PERM_STORE_KEY) || {}; }
+function _writePermStore(patch)  { _lsSet(_PERM_STORE_KEY, { ..._readPermStore(), ...patch, _ts: Date.now() }); }
+
+/* ── Query Permissions API dengan watch perubahan ── */
+async function _queryPermission(name) {
+  try {
+    if (!navigator.permissions) return 'unknown';
+    const status = await navigator.permissions.query({ name });
+    _writePermStore({ [name]: status.state });
+    status.onchange = () => {
+      _writePermStore({ [name]: status.state });
+      if (name === 'geolocation') _onGeoPerm(status.state);
+      if (name === 'camera')      _onCamPerm(status.state);
+    };
+    return status.state; // 'granted' | 'denied' | 'prompt'
+  } catch { return 'unknown'; }
+}
+
+/* ── Reaksi perubahan izin geolocation ── */
+function _onGeoPerm(state) {
+  if (state === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent = '📍 Izin lokasi ditolak'; clb.className = 'clock-loc-badge unknown'; }
+  } else if (state === 'granted') {
+    _locPermDenied = false;
+    _updateLocBadgeGPS();
+  }
+}
+
+/* ── Reaksi perubahan izin kamera ── */
+function _onCamPerm(state) { /* state sudah tersimpan, cukup untuk guard di openCamOverlay */ }
+
+/* ── IP cache helpers ── */
+function _getCachedIP() {
+  const c = _lsGet(_IP_CACHE_KEY);
+  if (c && c.ip && (Date.now() - c.ts) < _IP_TTL_MS) return c.ip;
+  return null;
+}
+function _setCachedIP(ip) { _lsSet(_IP_CACHE_KEY, { ip, ts: Date.now() }); }
+
+/* ── GPS cache helpers (hanya untuk badge, bukan absen) ── */
+function _getCachedGPS() {
+  const c = _lsGet(_GPS_CACHE_KEY);
+  if (c && (Date.now() - c.ts) < _GPS_TTL_MS) return c;
+  return null;
+}
+function _setCachedGPS(lat, lon) { _lsSet(_GPS_CACHE_KEY, { lat, lon, ts: Date.now() }); }
+
+/* ── Init Permissions — panggil 1x saat startup ── */
+let _permInitDone = false;
+async function initPermissions() {
+  if (_permInitDone) return;
+  _permInitDone = true;
+  const [geoState, camState] = await Promise.all([
+    _queryPermission('geolocation'),
+    _queryPermission('camera')
+  ]);
+  if (geoState === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent = '📍 Izin lokasi ditolak'; clb.className = 'clock-loc-badge unknown'; }
+  }
+  return { geolocation: geoState, camera: camState };
+}
+
 let networkInfo = {
   ip_public   : null,
   is_kantor   : null,    // null = belum tahu (n8n yang menentukan)
@@ -2253,12 +2342,17 @@ async function cekJaringan() {
   detail.textContent = 'Mengambil IP publik...';
 
   try {
-    const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 5000);
-    const res  = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
-    clearTimeout(tid);
-    const data = await res.json();
-    const ip   = data.ip || '';
+    // ── Coba pakai IP yang sudah di-cache (TTL 5 menit) ──
+    let ip = _getCachedIP();
+    if (!ip) {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 5000);
+      const res  = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
+      clearTimeout(tid);
+      const data = await res.json();
+      ip = data.ip || '';
+      if (ip) _setCachedIP(ip); // simpan ke cache
+    }
 
     networkInfo.ip_public = ip;
     networkInfo.checked   = true;
@@ -2742,14 +2836,26 @@ async function openCamOverlay(onDone) {
 
   // Minta izin kamera & mulai stream
   try {
+    // ── Pre-check permission kamera via Permissions API ──
+    const _camPermState = (_readPermStore()['camera']) || 'unknown';
+    if (_camPermState === 'denied') {
+      $('modelLoading').textContent = '❌ Izin kamera ditolak. Buka pengaturan browser/Telegram dan aktifkan izin kamera.';
+      return;
+    }
     _camStream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }, audio:false
     });
+    // Permission berhasil → update cache
+    _writePermStore({ camera: 'granted' });
     const vid = $('camVideo');
     vid.srcObject = _camStream;
     await new Promise(r => { vid.onloadedmetadata=r; });
     await vid.play();
   } catch(e) {
+    // Catat status denied ke cache jika user menolak
+    if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {
+      _writePermStore({ camera: 'denied' });
+    }
     $('modelLoading').textContent = '❌ Izin kamera ditolak. Berikan izin kamera dan coba lagi.';
     return;
   }
@@ -3182,6 +3288,14 @@ async function handleAbsen() {
 async function _doAbsenWithGPS(initData, isTgX, camResult) {
   if (!navigator.geolocation) {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','GPS Tidak Tersedia','Buka di Telegram versi terbaru.');
+    setBtnL('btnAbsen',false,'Coba Lagi'); return;
+  }
+
+  // ── Pre-check permission geolocation (Permissions API, tanpa trigger prompt) ──
+  const _geoPermState = (_readPermStore()['geolocation']) || 'unknown';
+  if (_geoPermState === 'denied') {
+    showResult('resultCard','rIcon','rTitle','rMsg','fail','🚫','Izin Lokasi Ditolak',
+      'Aktifkan izin lokasi di pengaturan browser atau Telegram, lalu coba lagi.');
     setBtnL('btnAbsen',false,'Coba Lagi'); return;
   }
   setBtnL('btnAbsen',true,'Mengambil GPS...');
@@ -6429,13 +6543,38 @@ function _applyLocPos(lat,lon){
 
 function _updateLocBadgeGPS(){
   if(!navigator.geolocation||_locPermDenied||_locWatchId!==null)return;
+
+  // ── Permissions API: cek state izin tanpa trigger prompt ──
+  const _permState = (_readPermStore()['geolocation']) || 'unknown';
+  if (_permState === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent='📍 Izin lokasi ditolak'; clb.className='clock-loc-badge unknown'; }
+    return;
+  }
+
+  // ── Coba pakai GPS cache terlebih dulu (TTL 2 menit, badge only) ──
+  const _cachedPos = _getCachedGPS();
+  if (_cachedPos) {
+    _applyLocPos(_cachedPos.lat, _cachedPos.lon);
+    // Tetap request fresh position di background (silent, tanpa blok UI)
+  }
+
+  // Jika cache hit DAN permission bukan 'prompt', skip re-request saat ini
+  if (_cachedPos && _permState === 'granted') return;
+
   _locWatchId=1; // tandai sudah dijalankan agar tidak dipanggil ulang
   navigator.geolocation.getCurrentPosition(
-    pos=>{ _applyLocPos(pos.coords.latitude,pos.coords.longitude); },
+    pos=>{
+      const { latitude, longitude } = pos.coords;
+      _setCachedGPS(latitude, longitude); // simpan ke cache
+      _applyLocPos(latitude, longitude);
+    },
     err=>{
       const clb=$('clockLocBadge');
       if(err&&err.code===1){
         _locPermDenied=true;
+        _writePermStore({ geolocation: 'denied' });
         if(clb){clb.textContent='📍 Izin lokasi ditolak';clb.className='clock-loc-badge unknown';}
       }
       // timeout/unavailable → badge tetap "Mendeteksi", tidak minta lagi
@@ -6446,6 +6585,7 @@ function _updateLocBadgeGPS(){
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
+initPermissions(); // pre-check & watch geolocation + camera permissions
 
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat

@@ -170,20 +170,6 @@
     .face-match-warn{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
     .face-match-skip{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
 
-    /* Baju / seragam check */
-    .baju-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;width:100%;max-width:320px;flex-shrink:0}
-    .baju-title{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
-    .baju-row{display:flex;align-items:center;gap:8px}
-    .baju-swatch{width:28px;height:28px;border-radius:7px;border:2px solid rgba(255,255,255,.15);flex-shrink:0;transition:all .3s}
-    .baju-info{flex:1}
-    .baju-color{font-size:11px;font-weight:700}
-    .baju-verdict{font-size:9px;margin-top:1px}
-    .baju-verdict.ok{color:var(--success)}
-    .baju-verdict.warn{color:var(--warning)}
-
-    /* Hari seragam info */
-    .seragam-info{font-size:9px;padding:5px 10px;border-radius:7px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);width:100%;max-width:320px;text-align:center;flex-shrink:0}
-
     /* Capture button */
     .btn-capture{width:100%;max-width:320px;padding:13px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;transition:opacity .2s}
     .btn-capture:disabled{opacity:.5;cursor:not-allowed}
@@ -770,10 +756,6 @@
         <canvas id="camCanvas"></canvas>
         <div class="face-guide"><div class="face-oval" id="faceOval"></div></div>
       </div>
-
-      <!-- Info seragam hari ini -->
-      <div class="seragam-info" id="seragamInfo" style="display:none">📋 —</div>
-
       <!-- Status deteksi wajah -->
       <div class="cam-status idle" id="camStatus" style="display:none">
         <div class="cam-status-icon" id="camStatusIcon">🔍</div>
@@ -817,17 +799,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Cek baju / seragam -->
-      <div class="baju-card" id="bajuCard" style="display:none">
-        <div class="baju-title">👔 Deteksi Seragam</div>
-        <div class="baju-row">
-          <div class="baju-swatch" id="bajuSwatch"></div>
-          <div class="baju-info">
-            <div class="baju-color" id="bajuColor">Mendeteksi...</div>
-            <div class="baju-verdict" id="bajuVerdict"></div>
-          </div>
-        </div>
       </div>
 
       <!-- Preview hasil foto -->
@@ -1355,106 +1326,7 @@
       </div>
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
-
-    <!-- ══ KELOLA JENIS SERAGAM ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>🎨 Kelola Jenis Seragam</span>
-        <button class="btn-sm-admin" onclick="loadSeragamTypeAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Tambah, edit, atau hapus jenis seragam. Jenis ini akan muncul sebagai pilihan saat mengatur jadwal seragam harian.</div>
-
-      <!-- Form tambah / edit -->
-      <div id="seragamTypeForm" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px;margin:10px 0">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:10px" id="seragamTypeFormTitle">➕ Tambah Jenis Seragam</div>
-        <input type="hidden" id="seragamTypeEditId" value="">
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🏷️ Nama / Label Seragam</label>
-          <input type="text" class="form-input" id="inputSeragamLabel" placeholder="cth: Batik Korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🔑 Kode Warna (huruf kecil, tanpa spasi)</label>
-          <input type="text" class="form-input" id="inputSeragamWarna" placeholder="cth: batik_korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:10px">
-          <label class="form-label">🎭 Emoji</label>
-          <input type="text" class="form-input" id="inputSeragamEmoji" placeholder="cth: 🟡" style="font-size:18px;width:80px"/>
-        </div>
-
-        <!-- HSL Range -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--white);margin-bottom:2px">🎨 Rentang Warna HSL untuk Deteksi Kamera</div>
-          <div style="font-size:9px;color:var(--muted);margin-bottom:10px">H = Hue (0–360°) · S = Saturasi (0–100%) · L = Kecerahan (0–100%)</div>
-
-          <!-- Preview warna live -->
-          <div id="hslPreviewBar" style="height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);margin-bottom:10px;background:#333;transition:background .3s;display:flex;align-items:center;justify-content:center">
-            <span id="hslPreviewLabel" style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7)">Preview warna akan muncul di sini</span>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label class="form-label" style="font-size:9px">H Min (0–360)</label>
-              <input type="number" class="form-input" id="inputHMin" min="0" max="360" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">H Max (0–360)</label>
-              <input type="number" class="form-input" id="inputHMax" min="0" max="360" placeholder="360" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Min (0–100)</label>
-              <input type="number" class="form-input" id="inputSMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Max (0–100)</label>
-              <input type="number" class="form-input" id="inputSMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Min (0–100)</label>
-              <input type="number" class="form-input" id="inputLMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Max (0–100)</label>
-              <input type="number" class="form-input" id="inputLMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6">
-            💡 <b>Contoh referensi:</b><br>
-            Batik Korpri Biru: H 200–240, S 30–100, L 20–70<br>
-            Coklat/Khaki: H 15–65, S 15–75, L 20–75<br>
-            Putih: H 0–360, S 0–20, L 68–100<br>
-            Kosongkan semua = Baju Bebas (tidak cek warna)
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px">
-          <button class="btn-admin" id="btnSeragamTypeSubmit" onclick="submitSeragamType()" style="flex:1;margin-bottom:0;padding:10px">
-            <div class="btn-inner"><span>💾</span><span id="btnSeragamTypeText">Simpan</span></div>
-          </button>
-          <button onclick="resetSeragamTypeForm()" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">✕ Batal</button>
-        </div>
-      </div>
-
-      <!-- Daftar jenis seragam -->
-      <div id="seragamTypeList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-      </div>
-      <div class="result-card" id="seragamTypeResult" style="margin-top:8px;display:none"><div class="r-icon" id="seragamTypeRIcon">✅</div><div class="r-title" id="seragamTypeRTitle">—</div><div class="r-msg" id="seragamTypeRMsg">—</div></div>
-    </div>
-
-    <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>👔 Pengaturan Seragam per Hari</span>
-        <button class="btn-sm-admin" onclick="renderSeragamAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Atur seragam wajib per hari kerja. Digunakan untuk deteksi otomatis di kamera saat absen.</div>
-      <div id="seragamAdminList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
-      <div class="result-card" id="seragamResult" style="margin-top:8px"><div class="r-icon" id="seragamRIcon">✅</div><div class="r-title" id="seragamRTitle">—</div><div class="r-msg" id="seragamRMsg">—</div></div>
-      <button class="btn-admin" id="btnSimpanSeragam" onclick="simpanSeragamAdmin()" style="margin-top:8px">
-        <div class="btn-inner"><span>💾</span><span id="btnSeragamText">Simpan Pengaturan Seragam</span></div>
-      </button>
-    </div>
+    
 
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
@@ -1605,7 +1477,7 @@
 /* ════ KONFIGURASI ════ */
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
 const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
-const isTest    = false;
+const isTest    = true;
 // ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
 let ADMIN_IDS = [];          // diisi oleh loadJamAbsen()
@@ -1647,11 +1519,6 @@ const P = {
   dokumenDel : isTest ? '/webhook-test/dokumen-delete'   : '/webhook/dokumen-delete',
   faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
   faceToggle  : isTest ? '/webhook-test/face-toggle'     : '/webhook/face-toggle',
-  seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
-  seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
-  seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
-  seragamTypeAdd : isTest ? '/webhook-test/seragam-type-add'  : '/webhook/seragam-type-add',
-  seragamTypeDel : isTest ? '/webhook-test/seragam-type-delete': '/webhook/seragam-type-delete',
   jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
   jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
   jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
@@ -1671,6 +1538,36 @@ async function apiFetch(path, opts={}) {
   }
   throw new Error('Semua server offline');
 }
+
+/* ════ CACHE & THROTTLE LAYER ════
+   Mencegah request berulang ke webhook dalam waktu singkat.
+   Setiap fungsi GET yang mahal punya TTL cache sendiri.
+   ════════════════════════════════ */
+const _cache = {};
+/**
+ * Jalankan fn() hanya jika cache kosong atau sudah kedaluwarsa.
+ * @param {string} key   - nama unik cache
+ * @param {number} ttlMs - masa berlaku cache (ms)
+ * @param {Function} fn  - async function yang mengembalikan data
+ */
+async function _withCache(key, ttlMs, fn) {
+  const now = Date.now();
+  const c = _cache[key];
+  if (c && now - c.ts < ttlMs) return c.data;   // masih fresh
+  if (c && c.promise) return c.promise;           // sedang inflight — join
+  const promise = fn().then(data => {
+    _cache[key] = { ts: Date.now(), data };
+    return data;
+  }).catch(e => {
+    // Hapus promise agar retry bisa jalan
+    if (_cache[key]?.promise === promise) delete _cache[key];
+    throw e;
+  });
+  _cache[key] = { ts: 0, data: null, promise };
+  return promise;
+}
+/** Invalidasi cache tertentu (pakai setelah mutation/write). */
+function _invalidateCache(key) { delete _cache[key]; }
 
 /* ════ DETEKSI DESKTOP ════ */
 function isDesktop() {
@@ -1732,8 +1629,8 @@ function switchTab(tab) {
     initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
     if (!adminLoaded) {
       adminLoaded = true;
-      loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin();
-      loadSeragamTypeAdmin(); loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadKonfirmasiAdmin(); loadLiburAdmin();
+      loadJamPeriodeAdmin(); loadAdminMgmt();
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
   }
@@ -1778,10 +1675,13 @@ function getJamForTanggal(tglStr){
   return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
 }
 
+const JAM_PERIODE_TTL = 10 * 60 * 1000; // 10 menit
+
 async function fetchJamPeriode(){
   try{
+    await _withCache('jamPeriode', JAM_PERIODE_TTL, async () => {
     const res = await apiFetch(P.jamPeriodeList, {method:'GET'});
-    if(!res.ok) return;
+    if(!res.ok) return jamPeriodeList;
     const json = await res.json();
     const list = json.data || json.list || (Array.isArray(json) ? json : []);
     jamPeriodeList = list.map(p=>({
@@ -1792,6 +1692,8 @@ async function fetchJamPeriode(){
       masuk : p.masuk || p.Masuk || '',
       pulang: p.pulang || p.Pulang || '',
     }));
+      return jamPeriodeList;
+    });
   }catch(_){}
 }
 
@@ -2123,7 +2025,14 @@ function getField(r, ...keys) {
   return '';
 }
 
-async function loadTodayHistory() {
+let _todayHistoryLastFetch = 0;
+const TODAY_HISTORY_TTL = 60 * 1000; // 60 detik
+
+async function loadTodayHistory(force = false) {
+  const now = Date.now();
+  if (!force && now - _todayHistoryLastFetch < TODAY_HISTORY_TTL) return;
+  _todayHistoryLastFetch = now;
+
   const el = $('todayList');
   el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
                   <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
@@ -2325,8 +2234,9 @@ let networkInfo = {
   checked     : false,
   error       : null
 };
+let _networkCheckedAt = 0; // timestamp terakhir cek jaringan
 
-async function cekJaringan() {
+async function cekJaringan(force = false) {
   const bar    = $('wifiBar');
   const icon   = $('wifiIcon');
   const status = $('wifiStatus');
@@ -2335,6 +2245,12 @@ async function cekJaringan() {
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   const netType = conn?.type || conn?.effectiveType || 'unknown';
   networkInfo.network_type = netType;
+
+  // ── Skip re-fetch jika sudah dicek dalam 5 menit terakhir (kecuali force) ──
+  const NETWORK_TTL = 5 * 60 * 1000; // 5 menit
+  if (!force && networkInfo.checked && (Date.now() - _networkCheckedAt) < NETWORK_TTL) {
+    return networkInfo; // gunakan hasil cache, tidak hit ipify lagi
+  }
 
   if (!WIFI_CHECK_ENABLED) {
     networkInfo.checked   = true;
@@ -2361,6 +2277,7 @@ async function cekJaringan() {
 
     networkInfo.ip_public = ip;
     networkInfo.checked   = true;
+    _networkCheckedAt     = Date.now();
     // is_kantor tidak bisa ditentukan frontend (butuh CIDR check di server)
     // Tampilkan IP saja — server yang akan menolak jika tidak sesuai ip_range
     networkInfo.is_kantor = null;
@@ -2375,8 +2292,9 @@ async function cekJaringan() {
     if ($('gpsNet')) $('gpsNet').textContent = `${ip}`;
 
   } catch(e) {
-    networkInfo.checked = true;
-    networkInfo.error   = e.message;
+    networkInfo.checked   = true;
+    networkInfo.error     = e.message;
+    _networkCheckedAt     = Date.now();
     bar.className   = 'wifi-bar unknown';
     icon.textContent = '❓';
     status.textContent = 'Jaringan Tidak Terdeteksi';
@@ -2396,146 +2314,13 @@ async function cekJaringan() {
    5. Lanjutkan GPS + kirim payload dengan foto
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Jadwal Seragam Harian ── */
-const JADWAL_SERAGAM = {
-  0: { nama: 'Minggu',  warna: [],                      label: 'Libur',                       emoji: '🏠' },
-  1: { nama: 'Senin',   warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  2: { nama: 'Selasa',  warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  3: { nama: 'Rabu',    warna: ['putih'],                label: 'Kemeja Putih',                emoji: '⬜' },
-  4: { nama: 'Kamis',   warna: ['tenun_sumba'],          label: 'Kain Tenun Sumba (Warna Cerah/Motif)',emoji: '🎨' },
-  5: { nama: 'Jumat',   warna: ['bebas'],                label: 'Baju Bebas',                  emoji: '👕' },
-  6: { nama: 'Sabtu',   warna: [],                      label: 'Libur',                       emoji: '🏠' },
-};
-
 // Helper: parse warna field (string CSV atau array) → selalu array bersih
-function _parseWarnaArray(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.filter(Boolean);
-  // String CSV dari Google Sheets: "coklat_khaki,putih"
-  return String(raw).split(',').map(s => s.trim()).filter(Boolean);
-}
-
-// Helper: build label + emoji dari array warna
-function _buildSeragamLabel(warnaArr) {
-  if (!warnaArr || !warnaArr.length) return { label: 'Libur', emoji: '🏠' };
-  const opts = warnaArr.map(w => SERAGAM_OPTIONS.find(o => o.warna === w)).filter(Boolean);
-  if (!opts.length) return { label: 'Libur', emoji: '🏠' };
-  return {
-    label: opts.map(o => o.label.split('(')[0].trim()).join(' / '),
-    emoji: opts.map(o => o.emoji).join('')
-  };
-}
-
-// Override dari server saat startup (dipanggil oleh loadSeragamPublik)
-function _applySeragamData(data) {
-  try {
-    Object.keys(data).forEach(k => {
-      const idx = parseInt(k);
-      if (JADWAL_SERAGAM[idx] && data[k]) {
-        if (data[k].warna !== undefined) {
-          JADWAL_SERAGAM[idx].warna = _parseWarnaArray(data[k].warna);
-          const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
-          JADWAL_SERAGAM[idx].label = built.label;
-          JADWAL_SERAGAM[idx].emoji = built.emoji;
-        }
-        // label & emoji di-rebuild otomatis dari warna array
-      }
-    });
-  } catch(_) {}
-}
-
-/* ── Rentang warna HSL per seragam ──
-   Format: { hMin,hMax, sMin,sMax, lMin,lMax }
-   coklat_khaki : H=20-45, S=20-65, L=25-65
-   putih        : S<15, L>75
-   tenun_sumba  : Warna cerah/jenuh (S>35) — Merah, Oranye, Kuning, Biru Tua, Hijau Tua, dll
-                  (Tidak ada satu warna pasti — cek saturasi tinggi + bukan putih/hitam/abu)
-*/
-function cekWarnaSeragam(r, g, b, hariIdx) {
-  // Konversi RGB → HSL
-  const r1=r/255, g1=g/255, b1=b/255;
-  const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1);
-  const l=(max+min)/2;
-  let h=0, s=0;
-  if(max!==min){
-    const d=max-min;
-    s=l>0.5?d/(2-max-min):d/(max+min);
-    switch(max){
-      case r1: h=((g1-b1)/d+(g1<b1?6:0))/6; break;
-      case g1: h=((b1-r1)/d+2)/6; break;
-      case b1: h=((r1-g1)/d+4)/6; break;
-    }
-  }
-  const H=Math.round(h*360), S=Math.round(s*100), L=Math.round(l*100);
-  const seragam = JADWAL_SERAGAM[hariIdx];
-
-  if (!seragam || !seragam.warna || !seragam.warna.length) {
-    return { verdict:'skip', nama_warna:'—', alasan:'Hari libur', H,S,L };
-  }
-
-  const nama_warna = getNamaWarna(H,S,L);
-
-  // Helper: cek satu warna terhadap HSL pixel
-  function _cekSatuWarna(warna) {
-    const opt = SERAGAM_OPTIONS.find(o => o.warna === warna);
-    // Deteksi dinamis dari HSL range server
-    if (opt && opt.hMin !== null && opt.hMin !== undefined && opt.hMin !== '') {
-      const hMin=Number(opt.hMin), hMax=Number(opt.hMax);
-      const sMin=Number(opt.sMin), sMax=Number(opt.sMax);
-      const lMin=Number(opt.lMin), lMax=Number(opt.lMax);
-      const hOk = hMin <= hMax ? (H>=hMin&&H<=hMax) : (H>=hMin||H<=hMax);
-      return hOk && S>=sMin && S<=sMax && L>=lMin && L<=lMax;
-    }
-    // Fallback bawaan
-    switch(warna) {
-      case 'coklat_khaki': return H>=15&&H<=65&&S>=15&&S<=75&&L>=20&&L<=75;
-      case 'putih':        return S<20&&L>=68;
-      case 'tenun_sumba':  return S>28&&L>15&&L<90;
-      case 'bebas':        return true;
-      default:             return true; // custom tanpa HSL = bebas
-    }
-  }
-
-  const warnaArr = seragam.warna; // selalu array
-  const labelsAktif = warnaArr.map(w => SERAGAM_OPTIONS.find(o=>o.warna===w)?.label || w).join(' / ');
-
-  // Jika ada 'bebas' di list → langsung ok
-  if (warnaArr.includes('bebas')) {
-    return { verdict:'ok', nama_warna, alasan:`✅ ${labelsAktif}`, H,S,L };
-  }
-
-  // Cek apakah pixel cocok SALAH SATU dari seragam yang diizinkan
-  const adaYangCocok = warnaArr.some(w => _cekSatuWarna(w));
-  const verdict = adaYangCocok ? 'ok' : 'warn';
-
-  // Temukan nama seragam yang cocok (untuk pesan sukses)
-  const namaCocok = warnaArr.find(w => _cekSatuWarna(w));
-  const labelCocok = namaCocok ? (SERAGAM_OPTIONS.find(o=>o.warna===namaCocok)?.label || namaCocok) : null;
-
-  return {
-    verdict,
-    nama_warna,
-    alasan: verdict==='ok'
-      ? `✅ Sesuai ${labelCocok}`
-      : `⚠️ Seharusnya ${labelsAktif} (terdeteksi: ${nama_warna})`,
-    H, S, L
-  };
-}
 
 
-function getNamaWarna(H,S,L) {
-  if(S<12)  return L>80?'Putih':L<25?'Hitam':'Abu-abu';
-  if(L<18)  return 'Hitam';
-  if(H<15||H>=345) return 'Merah';
-  if(H<45)  return S>50?'Oranye':'Coklat';
-  if(H<65)  return S>40?'Kuning':'Kuning Pucat';
-  if(H<150) return S>35?'Hijau':'Hijau Muda';
-  if(H<195) return 'Cyan/Tosca';
-  if(H<255) return 'Biru';
-  if(H<285) return 'Ungu';
-  if(H<345) return 'Merah Muda/Pink';
-  return 'Tidak Dikenal';
-}
+// Helper: build label + emoji dari array warna — dihapus (fitur seragam dinonaktifkan)
+
+
+
 
 /* ── State Kamera ── */
 let _camStream    = null;
@@ -2548,7 +2333,7 @@ let _faceHistory  = [];   // riwayat posisi hidung untuk deteksi geleng
 let _eyeHistory   = [];   // riwayat eye aspect ratio untuk deteksi kedip
 let _noseYHistory = [];   // riwayat posisi hidung vertikal untuk deteksi angguk
 let _livenessState = { faceOk:false, ch1:false, ch2:false };
-let _captureData  = null; // { dataUrl, faceOk, bajuVerdikt, livenessOk, faceMatchScore }
+let _captureData  = null; // { dataUrl, faceOk, livenessOk, faceMatchScore }
 let _absenCallbackAfterCam = null; // fungsi yang dipanggil setelah kamera selesai
 let _skipVerifikasi = false;
 
@@ -2821,23 +2606,15 @@ async function openCamOverlay(onDone) {
   $('camOverlay').classList.remove('hidden');
   $('modelLoading').style.display  = 'block';
   $('camVideoWrap').style.display  = 'none';
-  $('seragamInfo').style.display   = 'none';
   $('camStatus').style.display     = 'none';
   $('livenessCard').style.display  = 'none';
-  $('bajuCard').style.display      = 'none';
   $('faceRegCard').style.display   = 'none';
   $('camPreview').classList.remove('show');
   $('btnCapture').disabled         = true;
   delete $('btnCapture').dataset.enabled; // reset agar bisa diaktifkan kembali
   setCamStatus('idle','🔍','Memuat model AI...','Harap tunggu sebentar');
 
-  // Tampilkan info seragam hari ini
-  const hariIdx = nowWITA().getDay();
-  const s = JADWAL_SERAGAM[hariIdx];
-  const warnaArr = Array.isArray(s.warna) ? s.warna : _parseWarnaArray(s.warna);
-  const builtLabel = _buildSeragamLabel(warnaArr);
-  $('seragamInfo').textContent = `${builtLabel.emoji} Seragam hari ini: ${builtLabel.label}`;
-  $('seragamInfo').style.display = 'block';
+
 
   // Minta izin kamera & mulai stream
   try {
@@ -2859,7 +2636,6 @@ async function openCamOverlay(onDone) {
   $('camVideoWrap').style.display  = 'block';
   $('camStatus').style.display     = 'flex';
   $('livenessCard').style.display  = 'block';
-  $('bajuCard').style.display      = 'block';
   // Tampilkan face reg card hanya jika mode absen (bukan mode register)
   const isRegMode = typeof onDone === 'object' && onDone?.isRegister;
   if (!isRegMode && MY_ID) {
@@ -2974,9 +2750,6 @@ function startDetectLoop(model) {
 
     let predictions = [];
     try { predictions = await model.estimateFaces(vid, false); } catch(_) { return; }
-
-    const hariIdx = nowWITA().getDay();
-
     if (!predictions.length) {
       wrap.className='cam-video-wrap face-bad';
       setCamStatus('bad','😶','Wajah Tidak Terdeteksi','Hadapkan wajah ke kamera dalam oval');
@@ -3064,10 +2837,6 @@ function startDetectLoop(model) {
       setLivenessStep(2,'done');
       setCamStatus('ok','✅','Verifikasi Berhasil!','Wajah terdeteksi · Liveness OK · Siap foto');
     }
-
-    // ── Deteksi warna baju ──
-    detectBajuColor(vid, face, hariIdx);
-
     // Aktifkan tombol capture:
     // - Segera saat liveness SELESAI (ch1 + ch2 done) — kondisi normal
     // - Atau saat wajah terdeteksi minimal saja (faceOk) sebagai fallback
@@ -3116,41 +2885,7 @@ function detectAngguk(no, faceY, h, slot) {
 }
 
 /* ── Deteksi warna baju di area bawah wajah ── */
-function detectBajuColor(vid, face, hariIdx) {
-  const [x,y,x2,y2]=[face.topLeft[0],face.topLeft[1],face.bottomRight[0],face.bottomRight[1]];
-  const w=x2-x, fh=y2-y;
 
-  // Area sampling: strip bawah wajah melebar ke badan
-  const sampX = Math.max(0, x - w*0.3);
-  const sampY = y + fh*1.0; // tepat di bawah wajah (dada/baju)
-  const sampW = w*1.6;
-  const sampH = fh*0.5;
-
-  // Gambar region ke canvas sementara untuk sampling warna
-  const tmp = document.createElement('canvas');
-  tmp.width=Math.round(sampW); tmp.height=Math.round(sampH);
-  const tc = tmp.getContext('2d');
-  try {
-    tc.drawImage(vid, sampX, sampY, sampW, sampH, 0, 0, tmp.width, tmp.height);
-    const imgData = tc.getImageData(0,0,tmp.width,tmp.height).data;
-    // Hitung rata-rata RGB dari pixel (sampel setiap 4 pixel untuk performa)
-    let rT=0,gT=0,bT=0,n=0;
-    for(let i=0;i<imgData.length;i+=16){
-      rT+=imgData[i]; gT+=imgData[i+1]; bT+=imgData[i+2]; n++;
-    }
-    if(n>0){
-      const rA=Math.round(rT/n), gA=Math.round(gT/n), bA=Math.round(bT/n);
-      const result = cekWarnaSeragam(rA, gA, bA, hariIdx);
-
-      // Update UI baju
-      $('bajuSwatch').style.background = `rgb(${rA},${gA},${bA})`;
-      $('bajuColor').textContent = result.nama_warna || '—';
-      const vEl = $('bajuVerdict');
-      vEl.textContent = result.alasan;
-      vEl.className   = `baju-verdict ${result.verdict==='ok'?'ok':'warn'}`;
-    }
-  } catch(_) {}
-}
 
 /* ── Ambil foto (capture) ── */
 async function doCapture() {
@@ -3165,17 +2900,13 @@ async function doCapture() {
   ctx.drawImage(vid,0,0,cnv.width,cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
-  const hariIdx = nowWITA().getDay();
-  const bajuVerdikt = $('bajuVerdict').textContent || '—';
-  const bajuColor   = $('bajuColor').textContent   || '—';
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
   // Face recognition — bandingkan dengan data referensi
   const faceMatch = await matchFace(dataUrl);
 
-  _captureData = { dataUrl, faceOk, livenessOk, bajuVerdikt, bajuColor,
-                   hariIdx, seragam: JADWAL_SERAGAM[hariIdx]?.label||'—',
+  _captureData = { dataUrl, faceOk, livenessOk,
                    faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
 
   // Tampilkan preview
@@ -3187,14 +2918,13 @@ async function doCapture() {
     livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
     matchBadge
   ].join('');
-  $('camPreviewInfo').innerHTML = `${badges}<span style="color:var(--muted)">${bajuColor} · ${bajuVerdikt.replace(/[✅⚠️]/g,'').trim()}</span>`;
+  $('camPreviewInfo').innerHTML = `${badges}`;
   $('camPreview').classList.add('show');
 
   stopDetectLoop();
   stopCamStream();
   $('camVideoWrap').style.display='none';
   $('livenessCard').style.display='none';
-  $('bajuCard').style.display='none';
   $('faceRegCard').style.display='none';
 
   setCamStatus('ok','📸','Foto Berhasil Diambil','Melanjutkan proses absen...');
@@ -3253,6 +2983,7 @@ async function handleAbsen() {
 
   // ── Cek jaringan WiFi ──
   setBtnL('btnAbsen',true,'Memeriksa jaringan...');
+  // Hanya re-cek jika belum pernah dicek atau sudah > 5 menit (cekJaringan() handle throttling)
   await cekJaringan();
 
   // Validasi IP dilakukan di server (n8n) via CIDR range di sheet lokasiabsen
@@ -3449,9 +3180,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         foto_base64   : camResult.dataUrl || null,
         face_detected : camResult.faceOk  || false,
         liveness_ok   : camResult.livenessOk || false,
-        baju_warna    : camResult.bajuColor  || '—',
-        baju_verdict  : camResult.bajuVerdikt|| '—',
-        seragam_hari  : camResult.seragam    || '—',
         foto_dilewati : !camResult.faceOk && !camResult.livenessOk
       } : { foto_dilewati: true };
 
@@ -3483,18 +3211,17 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const fotoKet = camResult?.faceOk
           ? `\n📸 Wajah: ✅ Terdeteksi${camResult.livenessOk?' · Liveness ✅':' · Liveness ⚠️'}`
           : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi (tersimpan untuk admin)';
-        const bajuKet = camResult?.bajuVerdikt ? `\n👔 ${camResult.bajuVerdikt}` : '';
 
         const kode_tolak = d?.validasi?.kode_tolak || '';
 
         if(ok){
           showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Absen Berhasil!',
-            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}${bajuKet}`);
+            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}`);
           setBtnL('btnAbsen',false,'✅ Absen Tercatat');
           $('btnAbsen').disabled=true;
           logLoaded=false;
           autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
-          setTimeout(loadTodayHistory, 2000);
+          setTimeout(() => loadTodayHistory(true), 2000);
           if(tg)setTimeout(()=>tg.close(),3500);
         } else if (kode_tolak === 'SUDAH_ABSEN') {
           // Pendobelan — tampilkan info bukan error merah
@@ -3503,7 +3230,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           setBtnL('btnAbsen',false,'✅ Sudah Tercatat');
           $('btnAbsen').disabled=true;
           logLoaded=false;
-          setTimeout(loadTodayHistory, 1500);
+          setTimeout(() => loadTodayHistory(true), 1500);
         } else {
           showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','Absen Ditolak',ket);
           setBtnL('btnAbsen',false,'🔄 Coba Lagi');
@@ -3605,7 +3332,7 @@ async function handlePulangLuar() {
           $('btnPulangLuar').classList.remove('show');
           logLoaded = false;
           autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
-          setTimeout(loadTodayHistory, 2000);
+          setTimeout(() => loadTodayHistory(true), 2000);
           if (tg) setTimeout(() => tg.close(), 3500);
         } else {
           const errMsg = d?.validasi?.keterangan || d?.message || 'Absen ditolak server.';
@@ -5675,380 +5402,9 @@ function initJamAdminUI(){
   });
 }
 
-/* ════ ADMIN SERAGAM ════ */
-// SERAGAM_OPTIONS: dimuat ulang dari server via loadSeragamTypeAdmin()
-// Default bawaan dipakai jika server belum disetup
-let SERAGAM_OPTIONS = [
-  { id:'1', warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e',
-    hMin:15, hMax:65, sMin:15, sMax:75, lMin:20, lMax:75 },
-  { id:'2', warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0',
-    hMin:0,  hMax:360,sMin:0,  sMax:20, lMin:68, lMax:100 },
-  { id:'3', warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-  { id:'4', warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-  { id:'0', warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-];
 
-function _seragamPreviewFromWarna(warna) {
-  const MAP = {
-    coklat_khaki: '#c8a96e', putih: '#f0f0f0',
-    tenun_sumba: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
-    bebas: 'linear-gradient(135deg,#667eea,#764ba2)',
-  };
-  return MAP[warna] || 'linear-gradient(135deg,var(--gold),#9b6e1a)';
-}
 
-/* ── CRUD Jenis Seragam ── */
-async function loadSeragamTypeAdmin() {
-  const el = $('seragamTypeList');
-  if (!el) return;
-  el.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
-  try {
-    let rows = _seragamTypeRawCache;
-    if (!rows) {
-      // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
-      const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
-      if (!res.ok) throw 0;
-      const d = await res.json();
-      rows = d.data || d || [];
-      _seragamTypeRawCache = rows;
-    }
-    _applySeragamTypeRows(rows);
-    renderSeragamTypeList();
-    renderSeragamAdmin();
-  } catch(_) {
-    renderSeragamTypeList();
-  }
-}
 
-function renderSeragamTypeList() {
-  const el = $('seragamTypeList');
-  if (!el) return;
-  const items = SERAGAM_OPTIONS.filter(o => o.warna !== null); // tidak tampilkan "Libur" di list
-  if (!items.length) { el.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:10px">Belum ada jenis seragam. Tambah di atas.</div>'; return; }
-  el.innerHTML = items.map(o => {
-    const hslInfo = o.hMin !== null ? `H${o.hMin}–${o.hMax} S${o.sMin}–${o.sMax}% L${o.lMin}–${o.lMax}%` : 'Bebas (tidak cek warna)';
-    const hslBg  = o.hMin !== null
-      ? `linear-gradient(90deg,hsl(${o.hMin},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 0%,hsl(${Math.round((o.hMin+o.hMax)/2)},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 50%,hsl(${o.hMax},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 100%)`
-      : '#333';
-    return `
-    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px">
-      <span style="width:26px;height:26px;border-radius:7px;display:inline-block;flex-shrink:0;background:${hslBg};border:1px solid rgba(255,255,255,.15)"></span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:11px;font-weight:700;color:var(--white)">${o.emoji} ${o.label}</div>
-        <div style="font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">${o.warna} · ${hslInfo}</div>
-      </div>
-      <button onclick="editSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}','${o.emoji}',${o.hMin??'null'},${o.hMax??'null'},${o.sMin??'null'},${o.sMax??'null'},${o.lMin??'null'},${o.lMax??'null'})"
-        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.1);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️</button>
-      <button onclick="deleteSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}')"
-        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:var(--danger);font-size:9px;font-weight:700;cursor:pointer">🗑️</button>
-    </div>`;
-  }).join('');
-}
-
-function updateHslPreview() {
-  const hMin = parseInt($('inputHMin').value) || 0;
-  const hMax = parseInt($('inputHMax').value) || 360;
-  const sMin = parseInt($('inputSMin').value) || 0;
-  const sMax = parseInt($('inputSMax').value) || 100;
-  const lMin = parseInt($('inputLMin').value) || 0;
-  const lMax = parseInt($('inputLMax').value) || 100;
-  const bar   = $('hslPreviewBar');
-  const label = $('hslPreviewLabel');
-  if (!bar) return;
-  const hMid = Math.round((hMin + hMax) / 2);
-  const sMid = Math.round((sMin + sMax) / 2);
-  const lMid = Math.round((lMin + lMax) / 2);
-  const isEmpty = !$('inputHMin').value && !$('inputHMax').value;
-  if (isEmpty) {
-    bar.style.background = '#333';
-    label.textContent = 'Preview warna akan muncul di sini';
-    return;
-  }
-  bar.style.background = `linear-gradient(90deg,
-    hsl(${hMin},${sMid}%,${lMid}%) 0%,
-    hsl(${hMid},${sMid}%,${lMid}%) 50%,
-    hsl(${hMax},${sMid}%,${lMid}%) 100%)`;
-  label.textContent = `H ${hMin}–${hMax} · S ${sMin}–${sMax}% · L ${lMin}–${lMax}%`;
-}
-
-function resetSeragamTypeForm() {
-  $('seragamTypeFormTitle').textContent = '➕ Tambah Jenis Seragam';
-  $('seragamTypeEditId').value = '';
-  $('inputSeragamLabel').value = '';
-  $('inputSeragamWarna').value = '';
-  $('inputSeragamEmoji').value = '';
-  $('inputHMin').value = ''; $('inputHMax').value = '';
-  $('inputSMin').value = ''; $('inputSMax').value = '';
-  $('inputLMin').value = ''; $('inputLMax').value = '';
-  updateHslPreview();
-  $('btnSeragamTypeText').textContent = 'Simpan';
-  const r = $('seragamTypeResult'); if (r) r.style.display = 'none';
-}
-
-function editSeragamType(id, warna, label, emoji, hMin, hMax, sMin, sMax, lMin, lMax) {
-  $('seragamTypeFormTitle').textContent = '✏️ Edit Jenis Seragam';
-  $('seragamTypeEditId').value = id;
-  $('inputSeragamLabel').value = label;
-  $('inputSeragamWarna').value = warna;
-  $('inputSeragamEmoji').value = emoji;
-  $('inputHMin').value = hMin ?? ''; $('inputHMax').value = hMax ?? '';
-  $('inputSMin').value = sMin ?? ''; $('inputSMax').value = sMax ?? '';
-  $('inputLMin').value = lMin ?? ''; $('inputLMax').value = lMax ?? '';
-  updateHslPreview();
-  $('btnSeragamTypeText').textContent = 'Perbarui';
-  $('seragamTypeForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function submitSeragamType() {
-  const label = $('inputSeragamLabel').value.trim();
-  const warna = $('inputSeragamWarna').value.trim().toLowerCase().replace(/\s+/g,'_');
-  const emoji = $('inputSeragamEmoji').value.trim();
-  const editId = $('seragamTypeEditId').value.trim();
-  const hMin = $('inputHMin').value !== '' ? Number($('inputHMin').value) : null;
-  const hMax = $('inputHMax').value !== '' ? Number($('inputHMax').value) : null;
-  const sMin = $('inputSMin').value !== '' ? Number($('inputSMin').value) : null;
-  const sMax = $('inputSMax').value !== '' ? Number($('inputSMax').value) : null;
-  const lMin = $('inputLMin').value !== '' ? Number($('inputLMin').value) : null;
-  const lMax = $('inputLMax').value !== '' ? Number($('inputLMax').value) : null;
-  $('seragamTypeResult').style.display = 'none';
-
-  if (!label || !warna || !emoji) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Lengkapi Form','Label, kode warna, dan emoji wajib diisi.');
-    $('seragamTypeResult').style.display = 'flex'; return;
-  }
-  // Validasi: jika sebagian HSL diisi, semua harus diisi
-  const hslFilled = [hMin, hMax, sMin, sMax, lMin, lMax].filter(v => v !== null);
-  if (hslFilled.length > 0 && hslFilled.length < 6) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','HSL Tidak Lengkap','Isi semua 6 nilai HSL, atau kosongkan semua (baju bebas).');
-    $('seragamTypeResult').style.display = 'flex'; return;
-  }
-
-  const btn = $('btnSeragamTypeSubmit');
-  if (btn) btn.disabled = true;
-  try {
-    const payload = { id: editId || warna, warna, label, emoji, hMin, hMax, sMin, sMax, lMin, lMax, diubah_oleh: MY_ID };
-    const res = await apiFetch(P.seragamTypeAdd, { method: 'POST', body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅',
-      editId ? 'Seragam Diperbarui!' : 'Seragam Ditambahkan!',
-      `${emoji} ${label} berhasil ${editId ? 'diperbarui' : 'ditambahkan'}.`);
-    $('seragamTypeResult').style.display = 'flex';
-    resetSeragamTypeForm();
-    _seragamTypeRawCache = null; // invalidasi cache agar reload dari server
-    await loadSeragamTypeAdmin();
-  } catch(e) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal ke Server',
-      'Pastikan webhook seragam-type-add aktif di n8n.\n'+e.message);
-    $('seragamTypeResult').style.display = 'flex';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-async function deleteSeragamType(id, warna, label) {
-  if (!confirm(`Hapus jenis seragam "${label}"?\n\nPastikan tidak ada hari yang masih menggunakan jenis ini.`)) return;
-  try {
-    const res = await apiFetch(P.seragamTypeDel, { method: 'POST', body: JSON.stringify({ id, warna, diubah_oleh: MY_ID }) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅','Dihapus!',`${label} berhasil dihapus.`);
-    $('seragamTypeResult').style.display = 'flex';
-    _seragamTypeRawCache = null; // invalidasi cache
-    await loadSeragamTypeAdmin();
-  } catch(e) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal',
-      'Pastikan webhook seragam-type-delete aktif di n8n.\n'+e.message);
-    $('seragamTypeResult').style.display = 'flex';
-  }
-}
-
-function renderSeragamAdmin() {
-  const el = $('seragamAdminList');
-  if (!el) return;
-
-  // Hari kerja yang bisa dipilih (Senin-Jumat = 1-5, Sabtu = 6 opsional)
-  // Format: { idx, singkat, nama }
-  const HARI_KERJA = [
-    { idx:1, singkat:'Sen', nama:'Senin' },
-    { idx:2, singkat:'Sel', nama:'Selasa' },
-    { idx:3, singkat:'Rab', nama:'Rabu' },
-    { idx:4, singkat:'Kam', nama:'Kamis' },
-    { idx:5, singkat:'Jum', nama:'Jumat' },
-    { idx:6, singkat:'Sab', nama:'Sabtu' },
-  ];
-
-  // Tampilkan seragam bukan libur saja
-  const opts = SERAGAM_OPTIONS.filter(o => o.warna !== null);
-
-  let html = '';
-
-  // Baris hari libur info
-  html += `<div style="display:flex;gap:6px;align-items:center;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:10px;margin-bottom:4px">
-    <span style="font-size:14px">🏠</span>
-    <div>
-      <div style="font-size:10px;font-weight:700;color:var(--muted)">Minggu & Sabtu</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.3)">Hari libur — tidak ada pemeriksaan seragam</div>
-    </div>
-  </div>`;
-
-  opts.forEach(opt => {
-    const aktifHari = HARI_KERJA.filter(h => {
-      const w = JADWAL_SERAGAM[h.idx]?.warna;
-      const arr = Array.isArray(w) ? w : _parseWarnaArray(w);
-      return arr.includes(opt.warna);
-    });
-    const aktifIdxSet = new Set(aktifHari.map(h => h.idx));
-    const hslBg = opt.hMin !== null
-      ? `linear-gradient(90deg,hsl(${opt.hMin},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 0%,hsl(${Math.round((opt.hMin+opt.hMax)/2)},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 50%,hsl(${opt.hMax},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 100%)`
-      : opt.preview;
-    const hslInfo = opt.hMin !== null
-      ? `H${opt.hMin}–${opt.hMax} · S${opt.sMin}–${opt.sMax}% · L${opt.lMin}–${opt.lMax}%`
-      : 'Tidak cek warna (bebas)';
-
-    html += `
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:10px 12px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="width:32px;height:32px;border-radius:8px;flex-shrink:0;display:inline-block;background:${hslBg};border:1px solid rgba(255,255,255,.15)"></span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:700;color:var(--white)">${opt.emoji} ${opt.label}</div>
-          <div style="font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">${hslInfo}</div>
-        </div>
-      </div>
-      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-weight:600">📅 AKTIF PADA HARI:</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">
-        ${HARI_KERJA.map(h => {
-          const aktif = aktifIdxSet.has(h.idx);
-          return `<button type="button" onclick="toggleSeragamHari(${h.idx},'${opt.warna}')"
-            style="padding:5px 10px;border-radius:8px;border:1.5px solid ${aktif?'var(--gold)':'rgba(255,255,255,.12)'};background:${aktif?'rgba(201,168,76,.2)':'rgba(255,255,255,.03)'};cursor:pointer;font-size:10px;font-weight:${aktif?'700':'500'};color:${aktif?'var(--gold)':'rgba(255,255,255,.35)'};transition:all .15s;min-width:38px;text-align:center">
-            ${h.singkat}
-          </button>`;
-        }).join('')}
-      </div>
-    </div>`;
-  });
-
-  el.innerHTML = html;
-}
-
-// Toggle hari pada seragam tertentu (multi-select)
-function toggleSeragamHari(hariIdx, warna) {
-  const cur = JADWAL_SERAGAM[hariIdx];
-  if (!cur) return;
-
-  // Selalu normalisasi ke array terlebih dahulu
-  cur.warna = Array.isArray(cur.warna) ? cur.warna : _parseWarnaArray(cur.warna);
-
-  const idx = cur.warna.indexOf(warna);
-  if (idx >= 0) {
-    cur.warna.splice(idx, 1);
-  } else {
-    cur.warna.push(warna);
-  }
-
-  const built = _buildSeragamLabel(cur.warna);
-  cur.label = built.label;
-  cur.emoji = built.emoji;
-
-  renderSeragamAdmin();
-}
-
-// Tetap untuk kompatibilitas
-function patchSeragamHari(idx, warna, label, emoji) {
-  const realWarna = warna === 'null' ? null : warna;
-  JADWAL_SERAGAM[idx].warna = realWarna ? [realWarna] : [];
-  const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
-  JADWAL_SERAGAM[idx].label = built.label;
-  JADWAL_SERAGAM[idx].emoji = built.emoji;
-  renderSeragamAdmin();
-}
-
-async function simpanSeragamAdmin() {
-  const btn = $('btnSimpanSeragam');
-  if (btn) { btn.disabled=true; $('btnSeragamText').textContent='💾 Menyimpan...'; }
-  try {
-    const rows = Object.keys(JADWAL_SERAGAM).map(k => {
-      const d = JADWAL_SERAGAM[k];
-      const warnaArr = Array.isArray(d.warna) ? d.warna : _parseWarnaArray(d.warna);
-      const built = _buildSeragamLabel(warnaArr);
-      return {
-        hari_idx : parseInt(k),
-        nama_hari: d.nama,
-        warna    : warnaArr.join(','),   // CSV: "coklat_khaki,putih"
-        label    : built.label,
-        emoji    : built.emoji,
-      };
-    });
-    const res = await apiFetch(P.seragamSave, { method:'POST', body: JSON.stringify({ rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000) }) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','success','✅','Seragam Tersimpan!',
-      'Jadwal seragam disimpan ke Google Sheets dan berlaku untuk semua pegawai.');
-  } catch(e) {
-    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','warning','⚠️','Gagal ke Server',
-      'Pastikan workflow n8n seragam-save aktif.\n'+e.message);
-  } finally {
-    if (btn) { setTimeout(()=>{ btn.disabled=false; $('btnSeragamText').textContent='Simpan Pengaturan Seragam'; },2500); }
-  }
-}
-
-/* ── Cache jenis seragam dari server (cegah double-fetch dengan loadSeragamTypeAdmin) ── */
-let _seragamTypeRawCache = null;
-
-/* ── Helper: apply raw rows dari server ke SERAGAM_OPTIONS ── */
-function _applySeragamTypeRows(rows) {
-  if (!Array.isArray(rows) || !rows.length) return;
-  SERAGAM_OPTIONS = rows.map(r => ({
-    id: String(r.id || r.warna || ''),
-    warna: r.warna || null,
-    label: r.label,
-    emoji: r.emoji,
-    preview: _seragamPreviewFromWarna(r.warna),
-    hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-    hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-    sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-    sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-    lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-    lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-  }));
-  if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-    SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
-  }
-}
-
-async function loadSeragamPublik() {
-  // Paralelkan kedua request sekaligus — tidak tunggu satu selesai dulu
-  const [typeResult, schedResult] = await Promise.allSettled([
-    apiFetch(P.seragamTypeList, { method:'GET' }),
-    apiFetch(P.seragamGet,      { method:'GET' })
-  ]);
-
-  // Proses seragamTypeList
-  if (typeResult.status === 'fulfilled' && typeResult.value.ok) {
-    try {
-      const d = await typeResult.value.json();
-      const rows = d.data || d || [];
-      _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
-      _applySeragamTypeRows(rows);
-    } catch(_) {}
-  }
-
-  // Proses jadwal seragam per hari
-  if (schedResult.status === 'fulfilled' && schedResult.value.ok) {
-    try {
-      const d = await schedResult.value.json();
-      const rows = d.data || d || [];
-      if (Array.isArray(rows) && rows.length) {
-        const map = {};
-        rows.forEach(r => {
-          const idx = parseInt(r.hari_idx);
-          if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
-        });
-        _applySeragamData(map);
-      }
-    } catch(_) {}
-  }
-}
 
 
 /* ════════════════════════════════════════════════════════
@@ -6375,6 +5731,7 @@ async function tambahJamPeriode(){
     ['inPeriodeNama','inPeriodeDari','inPeriodeSampai','inPeriodeMasuk','inPeriodePulang'].forEach(id=>{const el=$(id);if(el)el.value='';});
     $('periodePreview').style.display='none';
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','success','✅','Periode Tersimpan!',`🌙 ${nama} (${dari} s.d. ${sampai}) berhasil ditambahkan.`);
+    _invalidateCache('jamPeriode'); // data baru — hapus cache
     await loadJamPeriodeAdmin();
   }catch{
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Menyimpan','Pastikan webhook jam-periode-add aktif di n8n.');
@@ -6389,6 +5746,7 @@ async function hapusJamPeriode(id, nama){
     const res = await apiFetch(P.jamPeriodeDel,{method:'POST',body:JSON.stringify({id})});
     if(!res.ok) throw 0;
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','success','🗑️','Periode Dihapus',`"${nama}" berhasil dihapus.`);
+    _invalidateCache('jamPeriode'); // data berubah — hapus cache
     await loadJamPeriodeAdmin();
   }catch{
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Hapus','Pastikan webhook jam-periode-delete aktif di n8n.');
@@ -6475,13 +5833,34 @@ async function simpanFaceToggle() {
 
 /* ════ AUTO INIT ════ */
 // Load lokasi dari server saat startup agar tab Absen langsung menampilkan lokasi
+// Cache di sessionStorage selama 1 sesi (tidak perlu re-fetch tiap render)
 async function loadLokasiPublik(){
   try{
+    // ── Coba ambil dari sessionStorage dulu (cache per-sesi) ──
+    try {
+      const cached = sessionStorage.getItem('_lokasiCache');
+      if (cached) {
+        const { list, ts } = JSON.parse(cached);
+        const AGE = Date.now() - ts;
+        if (AGE < 30 * 60 * 1000 && Array.isArray(list) && list.length) {
+          _applyLokasiData(list);
+          return;
+        }
+      }
+    } catch(_) {}
+
     const res=await apiFetch(P.lokasiList,{method:'GET'});
     if(!res.ok)throw 0;
     const json=await res.json();
     const list=Array.isArray(json)?json:(json.data||[]);
     if(!list.length)return;
+    // Simpan ke sessionStorage
+    try { sessionStorage.setItem('_lokasiCache', JSON.stringify({ list, ts: Date.now() })); } catch(_) {}
+    _applyLokasiData(list);
+  }catch(_){}
+}
+
+function _applyLokasiData(list) {
     const newLOK={};
     list.forEach(l=>{
       const nama=l.nama_lokasi||l.nama||'';
@@ -6501,7 +5880,6 @@ async function loadLokasiPublik(){
     }));
     updateClock(); // refresh lokasiList di tab Absen
     _updateLocBadgeGPS(); // update badge lokasi setelah koordinat tersedia
-  }catch(_){}
 }
 loadLokasiPublik();
 // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
@@ -6545,23 +5923,27 @@ function _updateLocBadgeGPS(){
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
-loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak
 
 /* ════ CUACA ════ */
+const WEATHER_TTL = 30 * 60 * 1000; // 30 menit
+
 async function loadWeather(){
+  // Gunakan cache — tidak perlu hit API cuaca lebih dari 1x per 30 menit
   const card=$('weatherCard');
   try{
+    const data = await _withCache('weather', WEATHER_TTL, async () => {
     // Open-Meteo API — gratis, no key, koordinat Waikabubak Sumba Barat
     const url='https://api.open-meteo.com/v1/forecast?latitude=-9.6333&longitude=119.3833' +
               '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m' +
               '&timezone=Asia%2FMakassar&wind_speed_unit=kmh';
     const res=await fetch(url);
     if(!res.ok) throw 0;
-    const d=await res.json();
-    const c=d.current;
+      return await res.json();
+    });
+    const c=data.current;
     const code=c.weather_code;
     const icon=_wxIcon(code), cond=_wxCond(code);
     const temp=Math.round(c.temperature_2m);

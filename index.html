@@ -170,20 +170,6 @@
     .face-match-warn{background:rgba(239,68,68,.12);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
     .face-match-skip{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)}
 
-    /* Baju / seragam check */
-    .baju-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;width:100%;max-width:320px;flex-shrink:0}
-    .baju-title{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
-    .baju-row{display:flex;align-items:center;gap:8px}
-    .baju-swatch{width:28px;height:28px;border-radius:7px;border:2px solid rgba(255,255,255,.15);flex-shrink:0;transition:all .3s}
-    .baju-info{flex:1}
-    .baju-color{font-size:11px;font-weight:700}
-    .baju-verdict{font-size:9px;margin-top:1px}
-    .baju-verdict.ok{color:var(--success)}
-    .baju-verdict.warn{color:var(--warning)}
-
-    /* Hari seragam info */
-    .seragam-info{font-size:9px;padding:5px 10px;border-radius:7px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);width:100%;max-width:320px;text-align:center;flex-shrink:0}
-
     /* Capture button */
     .btn-capture{width:100%;max-width:320px;padding:13px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:13px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;transition:opacity .2s}
     .btn-capture:disabled{opacity:.5;cursor:not-allowed}
@@ -770,10 +756,6 @@
         <canvas id="camCanvas"></canvas>
         <div class="face-guide"><div class="face-oval" id="faceOval"></div></div>
       </div>
-
-      <!-- Info seragam hari ini -->
-      <div class="seragam-info" id="seragamInfo" style="display:none">📋 —</div>
-
       <!-- Status deteksi wajah -->
       <div class="cam-status idle" id="camStatus" style="display:none">
         <div class="cam-status-icon" id="camStatusIcon">🔍</div>
@@ -817,17 +799,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Cek baju / seragam -->
-      <div class="baju-card" id="bajuCard" style="display:none">
-        <div class="baju-title">👔 Deteksi Seragam</div>
-        <div class="baju-row">
-          <div class="baju-swatch" id="bajuSwatch"></div>
-          <div class="baju-info">
-            <div class="baju-color" id="bajuColor">Mendeteksi...</div>
-            <div class="baju-verdict" id="bajuVerdict"></div>
-          </div>
-        </div>
       </div>
 
       <!-- Preview hasil foto -->
@@ -1145,7 +1116,7 @@
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:60%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:70%"></div><div class="shimmer sh-line" style="width:45%"></div></div></div>
     </div>
-    <div class="footer" style="margin-top:12px">Data dari Google Sheets via n8n</div>
+    <div class="footer" style="margin-top:12px">Data dari Supabase</div>
   </div>
 
   <!-- ══ TAB REKAP ══ -->
@@ -1355,106 +1326,7 @@
       </div>
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
-
-    <!-- ══ KELOLA JENIS SERAGAM ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>🎨 Kelola Jenis Seragam</span>
-        <button class="btn-sm-admin" onclick="loadSeragamTypeAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Tambah, edit, atau hapus jenis seragam. Jenis ini akan muncul sebagai pilihan saat mengatur jadwal seragam harian.</div>
-
-      <!-- Form tambah / edit -->
-      <div id="seragamTypeForm" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px;margin:10px 0">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:10px" id="seragamTypeFormTitle">➕ Tambah Jenis Seragam</div>
-        <input type="hidden" id="seragamTypeEditId" value="">
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🏷️ Nama / Label Seragam</label>
-          <input type="text" class="form-input" id="inputSeragamLabel" placeholder="cth: Batik Korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🔑 Kode Warna (huruf kecil, tanpa spasi)</label>
-          <input type="text" class="form-input" id="inputSeragamWarna" placeholder="cth: batik_korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:10px">
-          <label class="form-label">🎭 Emoji</label>
-          <input type="text" class="form-input" id="inputSeragamEmoji" placeholder="cth: 🟡" style="font-size:18px;width:80px"/>
-        </div>
-
-        <!-- HSL Range -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--white);margin-bottom:2px">🎨 Rentang Warna HSL untuk Deteksi Kamera</div>
-          <div style="font-size:9px;color:var(--muted);margin-bottom:10px">H = Hue (0–360°) · S = Saturasi (0–100%) · L = Kecerahan (0–100%)</div>
-
-          <!-- Preview warna live -->
-          <div id="hslPreviewBar" style="height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);margin-bottom:10px;background:#333;transition:background .3s;display:flex;align-items:center;justify-content:center">
-            <span id="hslPreviewLabel" style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7)">Preview warna akan muncul di sini</span>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label class="form-label" style="font-size:9px">H Min (0–360)</label>
-              <input type="number" class="form-input" id="inputHMin" min="0" max="360" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">H Max (0–360)</label>
-              <input type="number" class="form-input" id="inputHMax" min="0" max="360" placeholder="360" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Min (0–100)</label>
-              <input type="number" class="form-input" id="inputSMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Max (0–100)</label>
-              <input type="number" class="form-input" id="inputSMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Min (0–100)</label>
-              <input type="number" class="form-input" id="inputLMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Max (0–100)</label>
-              <input type="number" class="form-input" id="inputLMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6">
-            💡 <b>Contoh referensi:</b><br>
-            Batik Korpri Biru: H 200–240, S 30–100, L 20–70<br>
-            Coklat/Khaki: H 15–65, S 15–75, L 20–75<br>
-            Putih: H 0–360, S 0–20, L 68–100<br>
-            Kosongkan semua = Baju Bebas (tidak cek warna)
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px">
-          <button class="btn-admin" id="btnSeragamTypeSubmit" onclick="submitSeragamType()" style="flex:1;margin-bottom:0;padding:10px">
-            <div class="btn-inner"><span>💾</span><span id="btnSeragamTypeText">Simpan</span></div>
-          </button>
-          <button onclick="resetSeragamTypeForm()" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">✕ Batal</button>
-        </div>
-      </div>
-
-      <!-- Daftar jenis seragam -->
-      <div id="seragamTypeList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-      </div>
-      <div class="result-card" id="seragamTypeResult" style="margin-top:8px;display:none"><div class="r-icon" id="seragamTypeRIcon">✅</div><div class="r-title" id="seragamTypeRTitle">—</div><div class="r-msg" id="seragamTypeRMsg">—</div></div>
-    </div>
-
-    <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>👔 Pengaturan Seragam per Hari</span>
-        <button class="btn-sm-admin" onclick="renderSeragamAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Atur seragam wajib per hari kerja. Digunakan untuk deteksi otomatis di kamera saat absen.</div>
-      <div id="seragamAdminList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
-      <div class="result-card" id="seragamResult" style="margin-top:8px"><div class="r-icon" id="seragamRIcon">✅</div><div class="r-title" id="seragamRTitle">—</div><div class="r-msg" id="seragamRMsg">—</div></div>
-      <button class="btn-admin" id="btnSimpanSeragam" onclick="simpanSeragamAdmin()" style="margin-top:8px">
-        <div class="btn-inner"><span>💾</span><span id="btnSeragamText">Simpan Pengaturan Seragam</span></div>
-      </button>
-    </div>
+    
 
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
@@ -1603,74 +1475,99 @@
 
 <script>
 /* ════ KONFIGURASI ════ */
-const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
-const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
-const isTest    = false;
-// ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
-// Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
-let ADMIN_IDS = [];          // diisi oleh loadJamAbsen()
-let REKAP_CHAT_ID = null;    // diisi setelah ADMIN_IDS loaded
-
-/* ════ KONFIGURASI JARINGAN WIFI KANTOR ════
-   WAJIB DIISI: Daftar IP publik jaringan WiFi kantor.
-   Cara cek IP publik kantor: buka https://api.ipify.org dari jaringan WiFi kantor.
-   Bisa isi lebih dari satu IP jika ada beberapa koneksi internet kantor.
-   Jika WIFI_CHECK_ENABLED = false, cek jaringan dinonaktifkan (semua jaringan boleh).
-*/
-const WIFI_CHECK_ENABLED = true;
-// IP dicek server-side via ip_range di sheet lokasiabsen (support CIDR, e.g. 36.84.0.0/16)
-// Frontend hanya fetch IP publik untuk dikirim ke n8n — validasi dilakukan di n8n
-const WIFI_MODE = 'block';
-
-const P = {
-  absen      : isTest ? '/webhook-test/absen'          : '/webhook/absen',
-  ket        : isTest ? '/webhook-test/keterangan'     : '/webhook/keterangan',
-  log        : isTest ? '/webhook-test/log-absen'      : '/webhook/log-absen',
-  rekap      : isTest ? '/webhook-test/rekap-absen'    : '/webhook/rekap-absen',
-  userList   : isTest ? '/webhook-test/user-list'      : '/webhook/user-list',
-  updateStatus: isTest ? '/webhook-test/update-status' : '/webhook/update-status',
-  lokasiList : isTest ? '/webhook-test/lokasi-list'    : '/webhook/lokasi-list',
-  lokasiAdd  : isTest ? '/webhook-test/lokasi-add'     : '/webhook/lokasi-add',
-  lokasiDel  : isTest ? '/webhook-test/lokasi-delete'  : '/webhook/lokasi-delete',
-  lokasiUpdate: isTest ? '/webhook-test/lokasi-update' : '/webhook/lokasi-update',
-  dokumenList : isTest ? '/webhook-test/dokumen-list'  : '/webhook/dokumen-list',
-  jamAbsen    : isTest ? '/webhook-test/jam-absen'     : '/webhook/jam-absen',
-  kirimRekap : isTest ? '/webhook-test/kirim-rekap'    : '/webhook/kirim-rekap',
-  ketList    : isTest ? '/webhook-test/ket-list'        : '/webhook/ket-list',
-  ketEdit    : isTest ? '/webhook-test/ket-edit'        : '/webhook/ket-edit',
-  ketDelete  : isTest ? '/webhook-test/ket-delete'      : '/webhook/ket-delete',
-  ketApprove : isTest ? '/webhook-test/ket-approve'     : '/webhook/ket-approve',
-  liburList  : isTest ? '/webhook-test/libur-list'      : '/webhook/libur-list',
-  liburAdd   : isTest ? '/webhook-test/libur-add'       : '/webhook/libur-add',
-  liburDel   : isTest ? '/webhook-test/libur-delete'    : '/webhook/libur-delete',
-  dokumenAdd : isTest ? '/webhook-test/dokumen-add'      : '/webhook/dokumen-add',
-  dokumenDel : isTest ? '/webhook-test/dokumen-delete'   : '/webhook/dokumen-delete',
-  faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
-  faceToggle  : isTest ? '/webhook-test/face-toggle'     : '/webhook/face-toggle',
-  seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
-  seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
-  seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
-  seragamTypeAdd : isTest ? '/webhook-test/seragam-type-add'  : '/webhook/seragam-type-add',
-  seragamTypeDel : isTest ? '/webhook-test/seragam-type-delete': '/webhook/seragam-type-delete',
-  jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
-  jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
-  jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
-  adminAdd       : isTest ? '/webhook-test/admin-add'         : '/webhook/admin-add',
-  adminDel       : isTest ? '/webhook-test/admin-delete'      : '/webhook/admin-delete',
+/* ════ SUPABASE CONFIG ════ */
+const SB_URL = 'https://vdfdwfqbjdcjlmfcntge.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkZmR3ZnFiamRjamxtZmNudGdlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDI3NDQsImV4cCI6MjA4ODg3ODc0NH0.ecZqWzy3HB6F89dNNTt5QB3SG5Qo4piRFE2VrXqf6nY';
+const SB_HDR = {
+  'Content-Type'  : 'application/json',
+  'apikey'        : SB_KEY,
+  'Authorization' : 'Bearer ' + SB_KEY,
+  'Accept'        : 'application/json',
 };
 
-const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
-async function apiFetch(path, opts={}) {
-  for (const base of [SERVER_1, SERVER_2]) {
-    try {
-      const r = await fetch(base+path, {...opts, headers:HDR});
-      // Return response for both ok AND client errors (4xx) — let caller handle
-      if (r.ok || (r.status >= 400 && r.status < 500)) return r;
-      throw new Error(`HTTP ${r.status}`);
-    } catch(e) { console.warn(`[Fallback] ${base}:`, e.message) }
+// ADMIN_IDS dimuat dinamis dari tabel admin_list di Supabase
+let ADMIN_IDS = [];
+let REKAP_CHAT_ID = null;
+
+/* ════ KONFIGURASI JARINGAN WIFI KANTOR ════ */
+const WIFI_CHECK_ENABLED = true;
+const WIFI_MODE = 'block';
+
+/* ════ SUPABASE HELPER ════
+   sbFetch(table, opts) — wrapper PostgREST Supabase
+   opts: { method, select, filters, body, order, limit, single }
+   - filters: [ 'kolom=eq.nilai', 'kolom=gte.nilai', ... ]  (PostgREST syntax)
+   ════════════════════════════════════════════════════════ */
+async function sbFetch(table, opts = {}) {
+  const { method = 'GET', select, filters = [], body, order, limit, single = false, upsert = false } = opts;
+  // Nama tabel dengan spasi: Supabase pakai %20 di URL path
+  const tblEnc = encodeURIComponent(table);
+  let url = `${SB_URL}/rest/v1/${tblEnc}`;
+  const params = [];
+  if (select) params.push('select=' + encodeURIComponent(select));
+  filters.forEach(f => params.push(f));
+  if (order)  params.push('order=' + encodeURIComponent(order));
+  if (limit)  params.push('limit=' + limit);
+  if (params.length) url += '?' + params.join('&');
+
+  const headers = { ...SB_HDR };
+  if (single)                           headers['Accept']  = 'application/vnd.pgrst.object+json';
+  if (method === 'POST' && upsert)      headers['Prefer']  = 'resolution=merge-duplicates';
+  else if (method === 'POST')           headers['Prefer']  = 'return=representation';
+  else if (method === 'PATCH')          headers['Prefer']  = 'return=representation';
+  else if (method === 'DELETE')         headers['Prefer']  = 'return=representation';
+
+  const r = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!r.ok) {
+    const errText = await r.text().catch(() => '');
+    throw new Error(`Supabase ${method} ${table} → ${r.status}: ${errText}`);
   }
-  throw new Error('Semua server offline');
+  return r;
 }
+
+// apiFetch() dipertahankan sebagai alias sbFetch untuk kompatibilitas kirimRekap (Telegram bot)
+// Tetap butuh ngrok HANYA untuk kirimRekap (mengirim pesan Telegram via n8n)
+const SERVER_REKAP = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
+const HDR_REKAP    = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
+async function _rekapFetch(path, opts = {}) {
+  const r = await fetch(SERVER_REKAP + path, { ...opts, headers: HDR_REKAP });
+  if (r.ok || (r.status >= 400 && r.status < 500)) return r;
+  throw new Error('Server rekap offline');
+}
+
+/* ════ CACHE & THROTTLE LAYER ════
+   Mencegah request berulang ke webhook dalam waktu singkat.
+   Setiap fungsi GET yang mahal punya TTL cache sendiri.
+   ════════════════════════════════ */
+const _cache = {};
+/**
+ * Jalankan fn() hanya jika cache kosong atau sudah kedaluwarsa.
+ * @param {string} key   - nama unik cache
+ * @param {number} ttlMs - masa berlaku cache (ms)
+ * @param {Function} fn  - async function yang mengembalikan data
+ */
+async function _withCache(key, ttlMs, fn) {
+  const now = Date.now();
+  const c = _cache[key];
+  if (c && now - c.ts < ttlMs) return c.data;   // masih fresh
+  if (c && c.promise) return c.promise;           // sedang inflight — join
+  const promise = fn().then(data => {
+    _cache[key] = { ts: Date.now(), data };
+    return data;
+  }).catch(e => {
+    // Hapus promise agar retry bisa jalan
+    if (_cache[key]?.promise === promise) delete _cache[key];
+    throw e;
+  });
+  _cache[key] = { ts: 0, data: null, promise };
+  return promise;
+}
+/** Invalidasi cache tertentu (pakai setelah mutation/write). */
+function _invalidateCache(key) { delete _cache[key]; }
 
 /* ════ DETEKSI DESKTOP ════ */
 function isDesktop() {
@@ -1732,8 +1629,8 @@ function switchTab(tab) {
     initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
     if (!adminLoaded) {
       adminLoaded = true;
-      loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin();
-      loadSeragamTypeAdmin(); loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadKonfirmasiAdmin(); loadLiburAdmin();
+      loadJamPeriodeAdmin(); loadAdminMgmt();
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
   }
@@ -1778,20 +1675,23 @@ function getJamForTanggal(tglStr){
   return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
 }
 
+const JAM_PERIODE_TTL = 10 * 60 * 1000; // 10 menit
+
 async function fetchJamPeriode(){
   try{
-    const res = await apiFetch(P.jamPeriodeList, {method:'GET'});
-    if(!res.ok) return;
-    const json = await res.json();
-    const list = json.data || json.list || (Array.isArray(json) ? json : []);
-    jamPeriodeList = list.map(p=>({
-      id    : p.id || p.ID || '',
-      nama  : p.nama || p.Nama || '',
-      dari  : normToISO(p.dari || p.Dari || ''),
-      sampai: normToISO(p.sampai || p.Sampai || ''),
-      masuk : p.masuk || p.Masuk || '',
-      pulang: p.pulang || p.Pulang || '',
-    }));
+    await _withCache('jamPeriode', JAM_PERIODE_TTL, async () => {
+      const res = await sbFetch('jam_periode', { select: 'id,nama,dari,sampai,masuk,pulang', order: 'dari.asc' });
+      const list = await res.json();
+      jamPeriodeList = (Array.isArray(list) ? list : []).map(p=>({
+        id    : String(p.id || ''),
+        nama  : p.nama || '',
+        dari  : normToISO(p.dari || ''),
+        sampai: normToISO(p.sampai || ''),
+        masuk : p.masuk || '',
+        pulang: p.pulang || '',
+      }));
+      return jamPeriodeList;
+    });
   }catch(_){}
 }
 
@@ -1865,12 +1765,11 @@ let userProfile = null;
 async function loadUserProfile() {
   if (!MY_ID){ setUserFallback(); return; }
   try {
-    const res  = await apiFetch(`${P.userList}?user_id=${MY_ID}`,{method:'GET'});
-    if (!res.ok) throw 0;
-    const json = await res.json();
-    const d    = Array.isArray(json)?(json[0]||{}):(json.data||json);
-    if (d&&(d.nama||d.Nama)) {
-      userProfile={nama:d.nama||d.Nama||'',jabatan:d.jabatan||d.Jabatan||'',nip:d.nip||d.NIP||'',username:d.username||d.Username||tgUser.username||'',status:d.status||d.Status||'AKTIF'};
+    const res  = await sbFetch('user_list', { select: 'id,username,NIP,Jabatan,Status,tgl_pangkat,tgl_berkala,face_histogram,face_saved_at', filters: [`id=eq.${MY_ID}`] });
+    const rows = await res.json();
+    const d    = Array.isArray(rows) ? rows[0] : rows;
+    if (d && d.id) {
+      userProfile={ nama: d.username||'', jabatan: d.Jabatan||'', nip: d.NIP||'', username: d.username||tgUser.username||'', status: d.Status||'AKTIF', tgl_pangkat: d.tgl_pangkat||null, tgl_berkala: d.tgl_berkala||null, face_histogram: d.face_histogram||null, face_saved_at: d.face_saved_at||null };
       applyProfile();
     } else setUserFallback();
   } catch { setUserFallback(); }
@@ -1981,10 +1880,8 @@ async function loadDokumen(){
   if(!el)return;
   el.innerHTML=`<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>`;
   try{
-    const res=await apiFetch(`${P.dokumenList}?user_id=${MY_ID||''}`,{method:'GET'});
-    if(!res.ok)throw 0;
-    const json=await res.json();
-    const docs=Array.isArray(json)?json:(json.data||[]);
+    // Dokumen: belum ada tabel di Supabase — tampilkan pesan
+    const docs = [];
     dokumenLoaded=true;
     if(!docs.length){
       el.innerHTML=`<div class="dokumen-empty">📭 Belum ada dokumen tersimpan.<br><span style="font-size:9px;color:var(--muted)">Hubungi admin untuk menambahkan dokumen.</span></div>`;
@@ -2015,7 +1912,7 @@ async function loadDokumen(){
       </div>`;
     }).join('');
   }catch{
-    el.innerHTML=`<div class="dokumen-empty">🔌 Gagal memuat dokumen.<br><span style="font-size:9px">Pastikan webhook dokumen aktif di n8n.</span></div>`;
+    el.innerHTML=`<div class="dokumen-empty">🔌 Gagal memuat dokumen.<br><span style="font-size:9px">Pastikan koneksi Supabase dokumen aktif di n8n.</span></div>`;
   }
 }
 /* ════ DOKUMEN — TAMBAH & HAPUS ════ */
@@ -2079,7 +1976,8 @@ async function submitDokumen(){
       if(!nama||!link){showMsg('⚠️ Nama & link wajib diisi','#f59e0b');btn.disabled=false;btn.textContent='💾 Simpan Dokumen';return;}
       payload={user_id:MY_ID, nama_dokumen:nama, jenis:$('dokJenis2').value, link, mode:'link'};
     }
-    const res=await apiFetch(P.dokumenAdd,{method:'POST',body:JSON.stringify(payload)});
+    // TODO: Tambah tabel dokumen di Supabase
+    throw new Error('Fitur dokumen belum tersedia di Supabase');
     const d=await res.json();
     if(d.ok){
       $('dokProgressFill').style.width='100%';
@@ -2098,7 +1996,8 @@ async function hapusDokumen(id,nama){
   if(!confirm(`Hapus dokumen "${nama}"?
 File di Google Drive juga akan dihapus.`))return;
   try{
-    const res=await apiFetch(P.dokumenDel,{method:'POST',body:JSON.stringify({user_id:MY_ID,id})});
+    // TODO: Tambah tabel dokumen di Supabase
+    throw new Error('Fitur dokumen belum tersedia di Supabase');
     const d=await res.json();
     if(d.ok){dokumenLoaded=false;loadDokumen();}
     else alert('❌ '+(d.message||'Gagal menghapus'));
@@ -2123,29 +2022,30 @@ function getField(r, ...keys) {
   return '';
 }
 
-async function loadTodayHistory() {
+let _todayHistoryLastFetch = 0;
+const TODAY_HISTORY_TTL = 60 * 1000; // 60 detik
+
+async function loadTodayHistory(force = false) {
+  const now = Date.now();
+  if (!force && now - _todayHistoryLastFetch < TODAY_HISTORY_TTL) return;
+  _todayHistoryLastFetch = now;
+
   const el = $('todayList');
   el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
                   <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
   try {
     const todayStr = fmtD(nowWITA());
-    const res = await apiFetch(`${P.log}?user_id=${MY_ID||''}&tanggal=${todayStr}`, {method:'GET'});
-    if (!res.ok) throw 0;
+    const filters = [`Tanggal=eq.${todayStr}`];
+    if (MY_ID) filters.push(`ID=eq.${MY_ID}`);
+    const res = await sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters, order: 'Jam.asc' });
     const json = await res.json();
-    let rows = parseRows(json);
-    rows = rows.filter(r => {
-      const uid  = Number(getField(r, 'ID', 'id'));
-      const tgl  = getField(r, 'Tanggal', 'tanggal');
-      const byMe = MY_ID ? (uid === MY_ID) : true;
-      return byMe && tgl === todayStr;
-    });
-    rows.sort((a,b) => {
-      const ja = getField(a,'Jam','jam'), jb = getField(b,'Jam','jam');
-      return ja.localeCompare(jb);
-    });
+    const rows = (Array.isArray(json) ? json : []).map(r => ({
+      ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
+      'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+    }));
     renderTodayHistory(rows);
   } catch(e) {
-    el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
+    el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Cek koneksi Supabase.</div>`;
   }
 }
 function getTodayBadge(jenis) {
@@ -2204,8 +2104,8 @@ function renderTodayHistory(rows) {
   const GRP_MASUK  = ['MASUK', 'DI LUAR JAM MASUK'];
   const GRP_PULANG = ['PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR'];
 
-  const sudahMasuk  = rows.some(r => GRP_MASUK.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
-  const sudahPulang = rows.some(r => GRP_PULANG.includes((getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+  const sudahMasuk  = rows.some(r => GRP_MASUK.includes((getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
+  const sudahPulang = rows.some(r => GRP_PULANG.includes((getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim()));
 
   const isSkrgMasuk  = GRP_MASUK.includes(jenisSkrg);
   const isSkrgPulang = GRP_PULANG.includes(jenisSkrg);
@@ -2259,11 +2159,10 @@ async function autoUpdateStatusAktif() {
   } else {
     // Cache kosong — fetch sekali, tidak simpan ke ketStatusCache agar tidak mempengaruhi UI ket
     try {
-      const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
-      if (resKet.ok) {
-        const dKet = await resKet.json();
-        const ketRows = dKet.data || dKet.rows || [];
-        if (_checkKetRows(ketRows)) {
+      const resKet = await sbFetch('ket_temp', { select:'*', filters:[`telegram_id=eq.${MY_ID}`], order:'diajukan_at.desc', limit:20 });
+      const ketRows = await resKet.json();
+      {
+        if (_checkKetRows(Array.isArray(ketRows)?ketRows:[])) {
           console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
           return;
         }
@@ -2273,12 +2172,7 @@ async function autoUpdateStatusAktif() {
 
   // Update status ke AKTIF
   try {
-    await apiFetch(P.updateStatus, {method:'POST', body: JSON.stringify({
-      user_id    : MY_ID,
-      status_baru: 'AKTIF',
-      alasan     : 'Absen masuk otomatis',
-      timestamp  : Math.floor(Date.now()/1000)
-    })});
+    await sbFetch('user_list', { method:'PATCH', filters: [`id=eq.${MY_ID}`], body: { Status: 'AKTIF' } });
     if (userProfile) { userProfile.status = 'AKTIF'; applyProfile(); }
   } catch(_) {}
 }
@@ -2315,18 +2209,19 @@ function showGPS(lat,lon,acc,lokasi){
 }
 
 /* ════ DETEKSI JARINGAN / WIFI ════
-   Fetch IP publik → kirim ke n8n → n8n validasi via CIDR di sheet lokasiabsen.
+   Fetch IP publik — validasi jaringan di frontend via ip_range Supabase.
    Frontend hanya menampilkan status, tidak memblokir sendiri.
    ════════════════════════════════ */
 let networkInfo = {
   ip_public   : null,
-  is_kantor   : null,    // null = belum tahu (n8n yang menentukan)
+  is_kantor   : null,    // null = belum tahu (diperiksa frontend)
   network_type: null,
   checked     : false,
   error       : null
 };
+let _networkCheckedAt = 0; // timestamp terakhir cek jaringan
 
-async function cekJaringan() {
+async function cekJaringan(force = false) {
   const bar    = $('wifiBar');
   const icon   = $('wifiIcon');
   const status = $('wifiStatus');
@@ -2335,6 +2230,12 @@ async function cekJaringan() {
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   const netType = conn?.type || conn?.effectiveType || 'unknown';
   networkInfo.network_type = netType;
+
+  // ── Skip re-fetch jika sudah dicek dalam 5 menit terakhir (kecuali force) ──
+  const NETWORK_TTL = 5 * 60 * 1000; // 5 menit
+  if (!force && networkInfo.checked && (Date.now() - _networkCheckedAt) < NETWORK_TTL) {
+    return networkInfo; // gunakan hasil cache, tidak hit ipify lagi
+  }
 
   if (!WIFI_CHECK_ENABLED) {
     networkInfo.checked   = true;
@@ -2361,6 +2262,7 @@ async function cekJaringan() {
 
     networkInfo.ip_public = ip;
     networkInfo.checked   = true;
+    _networkCheckedAt     = Date.now();
     // is_kantor tidak bisa ditentukan frontend (butuh CIDR check di server)
     // Tampilkan IP saja — server yang akan menolak jika tidak sesuai ip_range
     networkInfo.is_kantor = null;
@@ -2375,8 +2277,9 @@ async function cekJaringan() {
     if ($('gpsNet')) $('gpsNet').textContent = `${ip}`;
 
   } catch(e) {
-    networkInfo.checked = true;
-    networkInfo.error   = e.message;
+    networkInfo.checked   = true;
+    networkInfo.error     = e.message;
+    _networkCheckedAt     = Date.now();
     bar.className   = 'wifi-bar unknown';
     icon.textContent = '❓';
     status.textContent = 'Jaringan Tidak Terdeteksi';
@@ -2396,146 +2299,13 @@ async function cekJaringan() {
    5. Lanjutkan GPS + kirim payload dengan foto
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Jadwal Seragam Harian ── */
-const JADWAL_SERAGAM = {
-  0: { nama: 'Minggu',  warna: [],                      label: 'Libur',                       emoji: '🏠' },
-  1: { nama: 'Senin',   warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  2: { nama: 'Selasa',  warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  3: { nama: 'Rabu',    warna: ['putih'],                label: 'Kemeja Putih',                emoji: '⬜' },
-  4: { nama: 'Kamis',   warna: ['tenun_sumba'],          label: 'Kain Tenun Sumba (Warna Cerah/Motif)',emoji: '🎨' },
-  5: { nama: 'Jumat',   warna: ['bebas'],                label: 'Baju Bebas',                  emoji: '👕' },
-  6: { nama: 'Sabtu',   warna: [],                      label: 'Libur',                       emoji: '🏠' },
-};
-
 // Helper: parse warna field (string CSV atau array) → selalu array bersih
-function _parseWarnaArray(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.filter(Boolean);
-  // String CSV dari Google Sheets: "coklat_khaki,putih"
-  return String(raw).split(',').map(s => s.trim()).filter(Boolean);
-}
-
-// Helper: build label + emoji dari array warna
-function _buildSeragamLabel(warnaArr) {
-  if (!warnaArr || !warnaArr.length) return { label: 'Libur', emoji: '🏠' };
-  const opts = warnaArr.map(w => SERAGAM_OPTIONS.find(o => o.warna === w)).filter(Boolean);
-  if (!opts.length) return { label: 'Libur', emoji: '🏠' };
-  return {
-    label: opts.map(o => o.label.split('(')[0].trim()).join(' / '),
-    emoji: opts.map(o => o.emoji).join('')
-  };
-}
-
-// Override dari server saat startup (dipanggil oleh loadSeragamPublik)
-function _applySeragamData(data) {
-  try {
-    Object.keys(data).forEach(k => {
-      const idx = parseInt(k);
-      if (JADWAL_SERAGAM[idx] && data[k]) {
-        if (data[k].warna !== undefined) {
-          JADWAL_SERAGAM[idx].warna = _parseWarnaArray(data[k].warna);
-          const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
-          JADWAL_SERAGAM[idx].label = built.label;
-          JADWAL_SERAGAM[idx].emoji = built.emoji;
-        }
-        // label & emoji di-rebuild otomatis dari warna array
-      }
-    });
-  } catch(_) {}
-}
-
-/* ── Rentang warna HSL per seragam ──
-   Format: { hMin,hMax, sMin,sMax, lMin,lMax }
-   coklat_khaki : H=20-45, S=20-65, L=25-65
-   putih        : S<15, L>75
-   tenun_sumba  : Warna cerah/jenuh (S>35) — Merah, Oranye, Kuning, Biru Tua, Hijau Tua, dll
-                  (Tidak ada satu warna pasti — cek saturasi tinggi + bukan putih/hitam/abu)
-*/
-function cekWarnaSeragam(r, g, b, hariIdx) {
-  // Konversi RGB → HSL
-  const r1=r/255, g1=g/255, b1=b/255;
-  const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1);
-  const l=(max+min)/2;
-  let h=0, s=0;
-  if(max!==min){
-    const d=max-min;
-    s=l>0.5?d/(2-max-min):d/(max+min);
-    switch(max){
-      case r1: h=((g1-b1)/d+(g1<b1?6:0))/6; break;
-      case g1: h=((b1-r1)/d+2)/6; break;
-      case b1: h=((r1-g1)/d+4)/6; break;
-    }
-  }
-  const H=Math.round(h*360), S=Math.round(s*100), L=Math.round(l*100);
-  const seragam = JADWAL_SERAGAM[hariIdx];
-
-  if (!seragam || !seragam.warna || !seragam.warna.length) {
-    return { verdict:'skip', nama_warna:'—', alasan:'Hari libur', H,S,L };
-  }
-
-  const nama_warna = getNamaWarna(H,S,L);
-
-  // Helper: cek satu warna terhadap HSL pixel
-  function _cekSatuWarna(warna) {
-    const opt = SERAGAM_OPTIONS.find(o => o.warna === warna);
-    // Deteksi dinamis dari HSL range server
-    if (opt && opt.hMin !== null && opt.hMin !== undefined && opt.hMin !== '') {
-      const hMin=Number(opt.hMin), hMax=Number(opt.hMax);
-      const sMin=Number(opt.sMin), sMax=Number(opt.sMax);
-      const lMin=Number(opt.lMin), lMax=Number(opt.lMax);
-      const hOk = hMin <= hMax ? (H>=hMin&&H<=hMax) : (H>=hMin||H<=hMax);
-      return hOk && S>=sMin && S<=sMax && L>=lMin && L<=lMax;
-    }
-    // Fallback bawaan
-    switch(warna) {
-      case 'coklat_khaki': return H>=15&&H<=65&&S>=15&&S<=75&&L>=20&&L<=75;
-      case 'putih':        return S<20&&L>=68;
-      case 'tenun_sumba':  return S>28&&L>15&&L<90;
-      case 'bebas':        return true;
-      default:             return true; // custom tanpa HSL = bebas
-    }
-  }
-
-  const warnaArr = seragam.warna; // selalu array
-  const labelsAktif = warnaArr.map(w => SERAGAM_OPTIONS.find(o=>o.warna===w)?.label || w).join(' / ');
-
-  // Jika ada 'bebas' di list → langsung ok
-  if (warnaArr.includes('bebas')) {
-    return { verdict:'ok', nama_warna, alasan:`✅ ${labelsAktif}`, H,S,L };
-  }
-
-  // Cek apakah pixel cocok SALAH SATU dari seragam yang diizinkan
-  const adaYangCocok = warnaArr.some(w => _cekSatuWarna(w));
-  const verdict = adaYangCocok ? 'ok' : 'warn';
-
-  // Temukan nama seragam yang cocok (untuk pesan sukses)
-  const namaCocok = warnaArr.find(w => _cekSatuWarna(w));
-  const labelCocok = namaCocok ? (SERAGAM_OPTIONS.find(o=>o.warna===namaCocok)?.label || namaCocok) : null;
-
-  return {
-    verdict,
-    nama_warna,
-    alasan: verdict==='ok'
-      ? `✅ Sesuai ${labelCocok}`
-      : `⚠️ Seharusnya ${labelsAktif} (terdeteksi: ${nama_warna})`,
-    H, S, L
-  };
-}
 
 
-function getNamaWarna(H,S,L) {
-  if(S<12)  return L>80?'Putih':L<25?'Hitam':'Abu-abu';
-  if(L<18)  return 'Hitam';
-  if(H<15||H>=345) return 'Merah';
-  if(H<45)  return S>50?'Oranye':'Coklat';
-  if(H<65)  return S>40?'Kuning':'Kuning Pucat';
-  if(H<150) return S>35?'Hijau':'Hijau Muda';
-  if(H<195) return 'Cyan/Tosca';
-  if(H<255) return 'Biru';
-  if(H<285) return 'Ungu';
-  if(H<345) return 'Merah Muda/Pink';
-  return 'Tidak Dikenal';
-}
+// Helper: build label + emoji dari array warna — dihapus (fitur seragam dinonaktifkan)
+
+
+
 
 /* ── State Kamera ── */
 let _camStream    = null;
@@ -2548,7 +2318,7 @@ let _faceHistory  = [];   // riwayat posisi hidung untuk deteksi geleng
 let _eyeHistory   = [];   // riwayat eye aspect ratio untuk deteksi kedip
 let _noseYHistory = [];   // riwayat posisi hidung vertikal untuk deteksi angguk
 let _livenessState = { faceOk:false, ch1:false, ch2:false };
-let _captureData  = null; // { dataUrl, faceOk, bajuVerdikt, livenessOk, faceMatchScore }
+let _captureData  = null; // { dataUrl, faceOk, livenessOk, faceMatchScore }
 let _absenCallbackAfterCam = null; // fungsi yang dipanggil setelah kamera selesai
 let _skipVerifikasi = false;
 
@@ -2629,10 +2399,11 @@ function _sendFaceHistogramToServer(dataUrl, savedAt) {
       }
       const total = hist.reduce((a,b)=>a+b,0)||1;
       const normalized = hist.map(v => v/total);
-      apiFetch(P.faceRegister, {
-        method: 'POST',
-        body: JSON.stringify({ user_id: uid, histogram: normalized, saved_at: savedAt })
-      }).catch(e => console.warn('Face register server error:', e));
+      sbFetch('user_list', {
+        method: 'PATCH',
+        filters: [`id=eq.${uid}`],
+        body: { face_histogram: JSON.stringify(normalized), face_saved_at: savedAt }
+      }).catch(e => console.warn('Face register Supabase error:', e));
     } catch(_) {}
   };
   img.onerror = function() {};
@@ -2821,23 +2592,15 @@ async function openCamOverlay(onDone) {
   $('camOverlay').classList.remove('hidden');
   $('modelLoading').style.display  = 'block';
   $('camVideoWrap').style.display  = 'none';
-  $('seragamInfo').style.display   = 'none';
   $('camStatus').style.display     = 'none';
   $('livenessCard').style.display  = 'none';
-  $('bajuCard').style.display      = 'none';
   $('faceRegCard').style.display   = 'none';
   $('camPreview').classList.remove('show');
   $('btnCapture').disabled         = true;
   delete $('btnCapture').dataset.enabled; // reset agar bisa diaktifkan kembali
   setCamStatus('idle','🔍','Memuat model AI...','Harap tunggu sebentar');
 
-  // Tampilkan info seragam hari ini
-  const hariIdx = nowWITA().getDay();
-  const s = JADWAL_SERAGAM[hariIdx];
-  const warnaArr = Array.isArray(s.warna) ? s.warna : _parseWarnaArray(s.warna);
-  const builtLabel = _buildSeragamLabel(warnaArr);
-  $('seragamInfo').textContent = `${builtLabel.emoji} Seragam hari ini: ${builtLabel.label}`;
-  $('seragamInfo').style.display = 'block';
+
 
   // Minta izin kamera & mulai stream
   try {
@@ -2859,7 +2622,6 @@ async function openCamOverlay(onDone) {
   $('camVideoWrap').style.display  = 'block';
   $('camStatus').style.display     = 'flex';
   $('livenessCard').style.display  = 'block';
-  $('bajuCard').style.display      = 'block';
   // Tampilkan face reg card hanya jika mode absen (bukan mode register)
   const isRegMode = typeof onDone === 'object' && onDone?.isRegister;
   if (!isRegMode && MY_ID) {
@@ -2974,9 +2736,6 @@ function startDetectLoop(model) {
 
     let predictions = [];
     try { predictions = await model.estimateFaces(vid, false); } catch(_) { return; }
-
-    const hariIdx = nowWITA().getDay();
-
     if (!predictions.length) {
       wrap.className='cam-video-wrap face-bad';
       setCamStatus('bad','😶','Wajah Tidak Terdeteksi','Hadapkan wajah ke kamera dalam oval');
@@ -3064,10 +2823,6 @@ function startDetectLoop(model) {
       setLivenessStep(2,'done');
       setCamStatus('ok','✅','Verifikasi Berhasil!','Wajah terdeteksi · Liveness OK · Siap foto');
     }
-
-    // ── Deteksi warna baju ──
-    detectBajuColor(vid, face, hariIdx);
-
     // Aktifkan tombol capture:
     // - Segera saat liveness SELESAI (ch1 + ch2 done) — kondisi normal
     // - Atau saat wajah terdeteksi minimal saja (faceOk) sebagai fallback
@@ -3116,41 +2871,7 @@ function detectAngguk(no, faceY, h, slot) {
 }
 
 /* ── Deteksi warna baju di area bawah wajah ── */
-function detectBajuColor(vid, face, hariIdx) {
-  const [x,y,x2,y2]=[face.topLeft[0],face.topLeft[1],face.bottomRight[0],face.bottomRight[1]];
-  const w=x2-x, fh=y2-y;
 
-  // Area sampling: strip bawah wajah melebar ke badan
-  const sampX = Math.max(0, x - w*0.3);
-  const sampY = y + fh*1.0; // tepat di bawah wajah (dada/baju)
-  const sampW = w*1.6;
-  const sampH = fh*0.5;
-
-  // Gambar region ke canvas sementara untuk sampling warna
-  const tmp = document.createElement('canvas');
-  tmp.width=Math.round(sampW); tmp.height=Math.round(sampH);
-  const tc = tmp.getContext('2d');
-  try {
-    tc.drawImage(vid, sampX, sampY, sampW, sampH, 0, 0, tmp.width, tmp.height);
-    const imgData = tc.getImageData(0,0,tmp.width,tmp.height).data;
-    // Hitung rata-rata RGB dari pixel (sampel setiap 4 pixel untuk performa)
-    let rT=0,gT=0,bT=0,n=0;
-    for(let i=0;i<imgData.length;i+=16){
-      rT+=imgData[i]; gT+=imgData[i+1]; bT+=imgData[i+2]; n++;
-    }
-    if(n>0){
-      const rA=Math.round(rT/n), gA=Math.round(gT/n), bA=Math.round(bT/n);
-      const result = cekWarnaSeragam(rA, gA, bA, hariIdx);
-
-      // Update UI baju
-      $('bajuSwatch').style.background = `rgb(${rA},${gA},${bA})`;
-      $('bajuColor').textContent = result.nama_warna || '—';
-      const vEl = $('bajuVerdict');
-      vEl.textContent = result.alasan;
-      vEl.className   = `baju-verdict ${result.verdict==='ok'?'ok':'warn'}`;
-    }
-  } catch(_) {}
-}
 
 /* ── Ambil foto (capture) ── */
 async function doCapture() {
@@ -3165,17 +2886,13 @@ async function doCapture() {
   ctx.drawImage(vid,0,0,cnv.width,cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
-  const hariIdx = nowWITA().getDay();
-  const bajuVerdikt = $('bajuVerdict').textContent || '—';
-  const bajuColor   = $('bajuColor').textContent   || '—';
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
   // Face recognition — bandingkan dengan data referensi
   const faceMatch = await matchFace(dataUrl);
 
-  _captureData = { dataUrl, faceOk, livenessOk, bajuVerdikt, bajuColor,
-                   hariIdx, seragam: JADWAL_SERAGAM[hariIdx]?.label||'—',
+  _captureData = { dataUrl, faceOk, livenessOk,
                    faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
 
   // Tampilkan preview
@@ -3187,14 +2904,13 @@ async function doCapture() {
     livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
     matchBadge
   ].join('');
-  $('camPreviewInfo').innerHTML = `${badges}<span style="color:var(--muted)">${bajuColor} · ${bajuVerdikt.replace(/[✅⚠️]/g,'').trim()}</span>`;
+  $('camPreviewInfo').innerHTML = `${badges}`;
   $('camPreview').classList.add('show');
 
   stopDetectLoop();
   stopCamStream();
   $('camVideoWrap').style.display='none';
   $('livenessCard').style.display='none';
-  $('bajuCard').style.display='none';
   $('faceRegCard').style.display='none';
 
   setCamStatus('ok','📸','Foto Berhasil Diambil','Melanjutkan proses absen...');
@@ -3253,6 +2969,7 @@ async function handleAbsen() {
 
   // ── Cek jaringan WiFi ──
   setBtnL('btnAbsen',true,'Memeriksa jaringan...');
+  // Hanya re-cek jika belum pernah dicek atau sudah > 5 menit (cekJaringan() handle throttling)
   await cekJaringan();
 
   // Validasi IP dilakukan di server (n8n) via CIDR range di sheet lokasiabsen
@@ -3425,12 +3142,12 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           : `Pola GPS mencurigakan (skor: ${_score}).\nPastikan Mock Location dinonaktifkan di Pengaturan Developer.`;
         showResult('resultCard','rIcon','rTitle','rMsg','fail','🚫','Fake GPS Terdeteksi', _reason);
         setBtnL('btnAbsen',false,'🔄 Coba Lagi');
-        try { apiFetch(P.absen, {method:'POST', body:JSON.stringify({
-          ...{user:{id:MY_ID,username:tgUser.username||''},
-              latitude,longitude,horizontal_accuracy:accuracy,
-              tanggal_iso:fmtD(nowWITA()),jam:'—'},
-          _fake_detected:true, _score, _flags, source:'telegram_miniapp', device:_ua
-        })}); } catch(_){}
+        // Log fake GPS ke Log Absensi
+        try { sbFetch('Log Absensi', { method:'POST', body: {
+          ID: MY_ID, Nama: userProfile?.nama||tgUser.first_name||'', NIP: userProfile?.nip||null,
+          Tanggal: fmtD(nowWITA()), Jam: '— FAKE GPS', 'Jenis Absen': 'FAKE GPS',
+          Lokasi: `Skor: ${_score}`, Ket: _flags.join(','), koordinat: `${latitude},${longitude}`
+        }}); } catch(_){}
         return;
       }
 
@@ -3449,9 +3166,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         foto_base64   : camResult.dataUrl || null,
         face_detected : camResult.faceOk  || false,
         liveness_ok   : camResult.livenessOk || false,
-        baju_warna    : camResult.bajuColor  || '—',
-        baju_verdict  : camResult.bajuVerdikt|| '—',
-        seragam_hari  : camResult.seragam    || '—',
         foto_dilewati : !camResult.faceOk && !camResult.livenessOk
       } : { foto_dilewati: true };
 
@@ -3472,44 +3186,60 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         _gps_elapsed_ms:_gpsElapsed,_detection_score:_score,_detection_flags:_flags,..._suspiciousPayload
       };
       try {
-        const res=await apiFetch(P.absen,{method:'POST',body:JSON.stringify(payload)});
-        let d={};try{d=await res.json()}catch(_){}
-        const ket=d?.validasi?.keterangan||d?.message||'Data absen diterima';
-        const lokNm=d?.validasi?.nama_lokasi||d?.lokasi||null;
-        const ok=d?.validasi?.is_valid!==false;
-        if(lokNm){$('gpsLokasi').textContent=lokNm;const clb=$('clockLocBadge');if(clb){clb.textContent='📍 '+lokNm;clb.className='clock-loc-badge';}}
+        // ── Validasi IP/lokasi secara frontend ──
+        const _todayStr = fmtD(nowWITA());
+        const _jenisAbsen = (() => {
+          const tot = nowWITA().getHours()*60 + nowWITA().getMinutes();
+          const _jH = getJamForTanggal(_todayStr);
+          const jm = toMenitStr(_jH.masuk) ?? JAM_MASUK_MENIT;
+          const jp = toMenitStr(_jH.pulang) ?? JAM_PULANG_MENIT;
+          if (tot <= jm) return 'MASUK';
+          if (tot < 720) return 'DI LUAR JAM MASUK';
+          if (tot < jp)  return 'DI LUAR JAM PULANG';
+          return 'PULANG';
+        })();
 
-        // Info foto di pesan sukses
-        const fotoKet = camResult?.faceOk
-          ? `\n📸 Wajah: ✅ Terdeteksi${camResult.livenessOk?' · Liveness ✅':' · Liveness ⚠️'}`
-          : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi (tersimpan untuk admin)';
-        const bajuKet = camResult?.bajuVerdikt ? `\n👔 ${camResult.bajuVerdikt}` : '';
+        // ── Cek duplikasi absen hari ini ──
+        const _existing = await sbFetch('log_absensi', { select: 'ID_Log,jenis_absen', filters:[`ID=eq.${MY_ID}`,`Tanggal=eq.${_todayStr}`,`jenis_absen=eq.${_jenisAbsen}`] });
+        const _existRows = await _existing.json();
+        if (Array.isArray(_existRows) && _existRows.length > 0) {
+          showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
+            `Anda sudah tercatat ${_jenisAbsen} hari ini. Tidak perlu absen ulang.`);
+          setBtnL('btnAbsen',false,'✅ Sudah Tercatat');
+          $('btnAbsen').disabled=true;
+          setTimeout(() => loadTodayHistory(true), 1000);
+        } else {
+          // ── Simpan ke Log Absensi Supabase ──
+          const _coord = `${latitude},${longitude}`;
+          const _ket   = payload.network_info?.is_kantor === false ? 'Di luar jaringan kantor' : '';
+          await sbFetch('Log Absensi', { method:'POST', body: {
+            ID      : MY_ID,
+            Nama    : userProfile?.nama || tgUser.first_name || '',
+            NIP     : userProfile?.nip  || null,
+            Tanggal : _todayStr,
+            Jam     : `${p2(nowWITA().getHours())}:${p2(nowWITA().getMinutes())}:${p2(nowWITA().getSeconds())} WITA`,
+            'Jenis Absen': _jenisAbsen,
+            Lokasi  : payload.network_info?.is_kantor !== false ? (window._lokasiCoords?.[0]?.nama || 'Kantor') : 'Di Luar Kantor',
+            Ket     : _ket,
+            koordinat: _coord
+          }});
 
-        const kode_tolak = d?.validasi?.kode_tolak || '';
+          const fotoKet = camResult?.faceOk
+            ? `\n📸 Wajah: ✅ Terdeteksi${camResult.livenessOk?' · Liveness ✅':' · Liveness ⚠️'}`
+            : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi';
 
-        if(ok){
           showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Absen Berhasil!',
-            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}${bajuKet}`);
+            `${_jenisAbsen}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}`);
           setBtnL('btnAbsen',false,'✅ Absen Tercatat');
           $('btnAbsen').disabled=true;
           logLoaded=false;
-          autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
-          setTimeout(loadTodayHistory, 2000);
-          if(tg)setTimeout(()=>tg.close(),3500);
-        } else if (kode_tolak === 'SUDAH_ABSEN') {
-          // Pendobelan — tampilkan info bukan error merah
-          showResult('resultCard','rIcon','rTitle','rMsg','warning','ℹ️','Sudah Absen',
-            `${ket}\n\nRiwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.`);
-          setBtnL('btnAbsen',false,'✅ Sudah Tercatat');
-          $('btnAbsen').disabled=true;
-          logLoaded=false;
-          setTimeout(loadTodayHistory, 1500);
-        } else {
-          showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','Absen Ditolak',ket);
-          setBtnL('btnAbsen',false,'🔄 Coba Lagi');
+          autoUpdateStatusAktif();
+          setTimeout(() => loadTodayHistory(true), 2000);
+          if(tg) setTimeout(()=>tg.close(),3500);
         }
-      } catch {
-        showResult('resultCard','rIcon','rTitle','rMsg','fail','🔌','Semua Server Offline','Pastikan n8n & ngrok berjalan.');
+      } catch(e) {
+        console.error('Absen error:', e);
+        showResult('resultCard','rIcon','rTitle','rMsg','fail','🔌','Gagal Menyimpan','Cek koneksi internet & Supabase.');
         setBtnL('btnAbsen',false,'🔄 Coba Lagi');
       }
     },
@@ -3551,7 +3281,7 @@ async function handlePulangLuar() {
   // ── Cek: pegawai harus sudah absen masuk hari ini ──
   const _todayRows = window._todayRows || [];
   const _sudahMasuk = _todayRows.some(r => {
-    const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const j = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     return j === 'MASUK' || j === 'DI LUAR JAM MASUK';
   });
   if (!_sudahMasuk) {
@@ -3593,29 +3323,31 @@ async function handlePulangLuar() {
         init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent
       };
       try {
-        const res = await apiFetch(P.absen, {method:'POST', body:JSON.stringify(payload)});
-        let d = {}; try { d = await res.json(); } catch(_) {}
-        const ok = d?.validasi?.is_valid !== false;
-        if (ok) {
-          showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Pulang Lapangan Tercatat!',
-            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-          $('btnPulangLuar').disabled = true;
-          $('btnAbsen').disabled = true;
-          $('pulangLuarForm').classList.remove('show');
-          $('btnPulangLuar').classList.remove('show');
-          logLoaded = false;
-          autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
-          setTimeout(loadTodayHistory, 2000);
-          if (tg) setTimeout(() => tg.close(), 3500);
-        } else {
-          const errMsg = d?.validasi?.keterangan || d?.message || 'Absen ditolak server.';
-          showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','Gagal',errMsg);
-          $('btnPulangLuar').disabled = false;
-          if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
-        }
-      } catch {
-        showResult('resultCard','rIcon','rTitle','rMsg','fail','🔌','Server Offline',
-          'Pastikan n8n & ngrok berjalan.');
+        await sbFetch('Log Absensi', { method:'POST', body: {
+          ID      : MY_ID,
+          Nama    : userProfile?.nama || tgUser.first_name || '',
+          NIP     : userProfile?.nip || null,
+          Tanggal : tanggalISO,
+          Jam     : jam,
+          'Jenis Absen': 'PULANG LUAR',
+          Lokasi  : 'Lapangan',
+          Ket     : ket,
+          koordinat: `${latitude},${longitude}`
+        }});
+        showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Pulang Lapangan Tercatat!',
+          `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        $('btnPulangLuar').disabled = true;
+        $('btnAbsen').disabled = true;
+        $('pulangLuarForm').classList.remove('show');
+        $('btnPulangLuar').classList.remove('show');
+        logLoaded = false;
+        autoUpdateStatusAktif();
+        setTimeout(() => loadTodayHistory(true), 2000);
+        if (tg) setTimeout(() => tg.close(), 3500);
+      } catch(e) {
+        console.error('Pulang luar error:', e);
+        showResult('resultCard','rIcon','rTitle','rMsg','fail','🔌','Gagal Menyimpan',
+          'Cek koneksi internet & Supabase.');
         $('btnPulangLuar').disabled = false;
         if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
       }
@@ -3738,14 +3470,17 @@ async function handleKet(){
     init_data:tg?.initData||'',timestamp:Math.floor(Date.now()/1000),source:'telegram_miniapp'
   };
   try{
-    const res=await apiFetch(P.ket,{method:'POST',body:JSON.stringify(payload)});
-    let d={};try{d=await res.json()}catch(_){}
-    // Tampilkan pesan sesuai jenis & status dari server
-    if(d.ok===false){
-      showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','⚠️','Gagal Mengajukan',d.message||'Terjadi kesalahan.');
-      setBtnL('btnKet',false,'📤 Kirim Keterangan');
-      return;
-    }
+    // Insert ke ket_temp Supabase
+    await sbFetch('ket_temp', { method:'POST', body: {
+      telegram_id   : MY_ID,
+      nama          : payload.user.nama_lengkap || payload.user.first_name,
+      nip           : payload.user.nip || null,
+      tanggal       : payload.tgl_mulai,
+      jenis         : payload.jenis,
+      keterangan    : payload.keterangan,
+      status        : ['SAKIT','TUGAS'].includes(payload.jenis) ? 'APPROVED' : 'PENDING',
+      diajukan_at   : new Date().toISOString()
+    }});
     const isAutoApprove=['SAKIT','TUGAS'].includes(selectedJenis);
     if(isAutoApprove){
       const label=selectedJenis==='TUGAS'?'Surat Tugas / DL':'Izin Sakit';
@@ -3790,10 +3525,8 @@ async function loadKetStatus(){
   if(btn) btn.disabled=true;
   el.innerHTML='<div class="shimmer" style="height:60px;border-radius:12px"></div><div class="shimmer" style="height:60px;border-radius:12px;margin-top:8px"></div>';
   try{
-    const res=await apiFetch(`${P.ketList}?user_id=${MY_ID||''}`,{method:'GET'});
-    if(!res.ok) throw 0;
-    const d=await res.json();
-    const rows=(d.data||d.rows||[]);
+    const res = await sbFetch('ket_temp', { select: '*', filters:[`telegram_id=eq.${MY_ID||0}`], order: 'diajukan_at.desc', limit: 50 });
+    const rows = await res.json();
     ketStatusCache=rows;
     ketStatusLoaded=true;
     renderKetStatusList(rows);
@@ -3810,16 +3543,17 @@ function renderKetStatusList(rows){
   }
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
   el.innerHTML=rows.slice(0,20).map((r,i)=>{
-    const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
-    const isPending=raw.includes('PENDING');
-    const isApproved=raw==='IZIN'||raw==='SAKIT'||raw==='TUGAS';
-    const isRejected=raw.includes('TOLAK')||raw.includes('REJECT');
-    const jenisBase=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','');
+    // Field mapping ket_temp Supabase
+    const jenisBase=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
+    const statusRaw=(r.status||'').toUpperCase();
+    const isPending  = statusRaw==='PENDING'   || jenisBase.includes('PENDING');
+    const isApproved = statusRaw==='APPROVED'  || statusRaw==='APPROVE';
+    const isRejected = statusRaw==='REJECTED'  || statusRaw==='REJECT' || jenisBase.includes('TOLAK');
     const emoji=JENIS_EMOJI[jenisBase]||'📝';
     const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':'ket-badge-rejected';
     const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':'❌ DITOLAK';
-    const tgl=r.Tanggal||r.tanggal||'—';
-    const ket=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+    const tgl=r.tanggal||r.Tanggal||'—';
+    const ket=(r.keterangan||r.Ket||'').replace(/\|.*$/,'').trim();
     const actions=isPending?`<div class="ket-action-row">
       <button class="ket-btn-edit" onclick="openKetEdit(${i})">✏️ Edit</button>
       <button class="ket-btn-del"  onclick="confirmKetDelete(${i})">🗑️ Hapus</button>
@@ -3841,18 +3575,18 @@ function renderKetStatusList(rows){
 function openKetEdit(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const raw=(r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
-  $('editKetRowNum').value=r.row_number||r.rowNumber||idx;
-  $('editKetOrigTglMulai').value=r.Tanggal||r.tanggal||'';
+  const raw=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').toUpperCase().replace(' PENDING','');
+  $('editKetRowNum').value=r.id||r.row_number||r.rowNumber||idx;
+  $('editKetOrigTglMulai').value=r.tanggal||r.Tanggal||'';
   // Set jenis pills
   ['IZIN','SAKIT','TUGAS'].forEach(j=>{
     const el=$('editJenisPill_'+j);
     if(el) el.classList.toggle('active', j===raw);
   });
   editSelectedJenis=raw||'IZIN';
-  $('editTglMulai').value=r['Tgl Mulai']||r.Tanggal||'';
-  $('editTglSelesai').value=r['Tgl Selesai']||r.Tanggal||'';
-  $('editKetText').value=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+  $('editTglMulai').value=r.tanggal||r['Tgl Mulai']||r.Tanggal||'';
+  $('editTglSelesai').value=r.tgl_selesai||r['Tgl Selesai']||r.tanggal||'';
+  $('editKetText').value=(r.keterangan||r.Ket||'').replace(/\|.*$/,'').trim();
   $('editKetResult').style.display='none';
   $('ketEditOverlay').classList.add('open');
 }
@@ -3877,20 +3611,12 @@ async function handleKetEdit(){
   const origTgl=$('editKetOrigTglMulai').value;
   setBtnL('btnSimpanEdit',true,'Menyimpan...');
   try{
-    const res=await apiFetch(P.ketEdit,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:rowNum, orig_tanggal:origTgl,
-      jenis:editSelectedJenis, tgl_mulai:tm, tgl_selesai:ts, keterangan:k,
-      timestamp:Math.floor(Date.now()/1000)
-    })});
-    let d={};try{d=await res.json()}catch(_){}
-    if(d.ok!==false){
-      showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','success','✅','Berhasil','Keterangan berhasil diperbarui.');
-      $('editKetResult').style.display='flex';
-      setTimeout(()=>{closeKetModalDirect();loadKetStatus();},1200);
-    } else {
-      showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','fail','❌','Gagal',d.message||'Terjadi kesalahan.');
-      $('editKetResult').style.display='flex';
-    }
+    await sbFetch('ket_temp', { method:'PATCH', filters:[`id=eq.${rowNum}`], body: {
+      jenis: editSelectedJenis, tanggal: tm, keterangan: k
+    }});
+    showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','success','✅','Berhasil','Keterangan berhasil diperbarui.');
+    $('editKetResult').style.display='flex';
+    setTimeout(()=>{closeKetModalDirect();loadKetStatus();},1200);
   }catch{
     showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','fail','🔌','Offline','Server tidak merespons.');
     $('editKetResult').style.display='flex';
@@ -3901,19 +3627,14 @@ async function handleKetEdit(){
 async function confirmKetDelete(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const tgl=r.Tanggal||'?';
-  const tglMulai=r['Tgl Mulai']||r.Tanggal||'?';
-  const tglSelesai=r['Tgl Selesai']||r.Tanggal||'?';
-  const jenis=(r['Jenis Absen']||'').replace(' PENDING','');
+  const tgl=r.tanggal||r.Tanggal||'?';
+  const tglMulai=r.tanggal||r['Tgl Mulai']||r.Tanggal||'?';
+  const tglSelesai=r.tgl_selesai||r['Tgl Selesai']||r.tanggal||'?';
+  const jenis=(r.jenis||r['Jenis Absen']||r.jenis_absen||'').replace(' PENDING','');
   if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
-    const res=await apiFetch(P.ketDelete,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:r.row_number||r.rowNumber,
-      tgl_mulai:tglMulai, tgl_selesai:tglSelesai, tanggal:tgl,
-      timestamp:Math.floor(Date.now()/1000)
-    })});
-    let d={};try{d=await res.json()}catch(_){}
-    if(d.ok===false){alert('Gagal: '+(d.message||'Terjadi kesalahan.'));return;}
+    const ketId = r.id || r.row_number || r.rowNumber;
+    await sbFetch('ket_temp', { method:'DELETE', filters:[`id=eq.${ketId}`] });
     loadKetStatus();
   }catch{alert('Gagal menghapus. Coba lagi.');}
 }
@@ -3925,20 +3646,20 @@ async function loadKonfirmasiAdmin(){
   if(!el) return;
   el.innerHTML='<div class="shimmer" style="height:80px;border-radius:12px"></div>';
   try{
-    const res=await apiFetch(`${P.ketList}?status=PENDING`,{method:'GET'});
-    if(!res.ok) throw 0;
-    const d=await res.json();
-    const rows=(d.data||d.rows||[]).filter(r=>{
-      const j=(r['Jenis Absen']||'').toUpperCase();
-      return j.includes('PENDING');
-    });
+    const res = await sbFetch('ket_temp', { select: '*', filters: [`status=eq.PENDING`], order: 'diajukan_at.asc' });
+    const d   = await res.json();
+    const rows = (Array.isArray(d)?d:[]).map(r => ({
+      ...r,
+      Nama: r.nama, NIP: r.nip, Tanggal: r.tanggal,
+      'Jenis Absen': r.jenis + ' PENDING', Ket: r.keterangan, row_number: r.id
+    }));
     if(!rows||rows.length===0){
       el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">✅ Tidak ada pengajuan yang menunggu konfirmasi.</div>';
       return;
     }
     const EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
     el.innerHTML=rows.map((r,i)=>{
-      const jenis=(r['Jenis Absen']||'').replace(' PENDING','').toUpperCase();
+      const jenis=(r['Jenis Absen']||r.jenis_absen||'').replace(' PENDING','').toUpperCase();
       const em=EMOJI[jenis]||'📝';
       const nama=r.Nama||'—';
       const nip=r.NIP||'—';
@@ -3963,12 +3684,9 @@ async function handleKonfirmasi(rowNum, action, jenis, tanggal){
   const konfirm=$('konfirmasiResult');
   if(konfirm) konfirm.style.display='none';
   try{
-    const res=await apiFetch(P.ketApprove,{method:'POST',body:JSON.stringify({
-      row_number:rowNum, action, jenis, tanggal,
-      admin_id:MY_ID, admin_ids:ADMIN_IDS, timestamp:Math.floor(Date.now()/1000)
-    })});
-    let d={};try{d=await res.json()}catch(_){}
-    if(d.ok!==false){
+    const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+    await sbFetch('ket_temp', { method:'PATCH', filters:[`id=eq.${rowNum}`], body: { status: newStatus, diproses_oleh: MY_ID, diproses_at: new Date().toISOString() } });
+    {
       // Hilangkan item dari DOM
       const el=document.getElementById('konfirm-'+rowNum);
       if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
@@ -3994,24 +3712,21 @@ async function loadLog(){
   $('rIcon2').outerHTML='<span class="spin-sm" id="rIcon2"></span>';
   $('logList').innerHTML=shimmerRows();
   try{
+    const filters = MY_ID ? [`ID=eq.${MY_ID}`] : [];
     const [res] = await Promise.all([
-      apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
+      sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters, order: 'Tanggal.desc,Jam.desc', limit: 500 }),
       fetchJamPeriode(),
-      window._jamAbsenReady   // pastikan JAM_MASUK_MENIT sudah ter-update sebelum render
+      window._jamAbsenReady
     ]);
-    if(!res.ok)throw 0;
-    const json=await res.json();
-    let rows = parseRows(json);
-    if (MY_ID) { rows = rows.filter(r => Number(getField(r,'ID','id')) === MY_ID); }
-    rows.sort((a,b)=>{
-      const ta=getField(a,'Tanggal','tanggal'), tb=getField(b,'Tanggal','tanggal');
-      if(ta!==tb) return tb.localeCompare(ta);
-      return getField(b,'Jam','jam').localeCompare(getField(a,'Jam','jam'));
-    });
+    const json = await res.json();
+    let rows = (Array.isArray(json) ? json : []).map(r => ({
+      ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
+      'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+    }));
     allLogs=rows;logLoaded=true;
     renderLog(allLogs);updateLogStats(allLogs);
   }catch(e){
-    $('logList').innerHTML=`<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data</div><div class="empty-sub">Pastikan n8n aktif lalu refresh</div></div>`;
+    $('logList').innerHTML=`<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data</div><div class="empty-sub">Cek koneksi Supabase lalu refresh</div></div>`;
   }
   finally{btn.disabled=false;const s=$('rIcon2');if(s)s.outerHTML='<span id="rIcon2">🔄</span>';}
 }
@@ -4059,12 +3774,12 @@ function renderLog(logs){
     const periodeNama = _jamTgl.nama; // null jika global
 
     // Pisahkan per jenis
-    const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
-    const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
-    const rIzin   = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('IZIN'));
-    const rSakit  = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('SAKIT'));
-    const rTugas  = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('TUGAS'));
-    const rAlpa   = rows.find(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase()==='TANPA BERITA');
+    const rMasuk  = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
+    const rPulang = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
+    const rIzin   = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('IZIN'));
+    const rSakit  = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('SAKIT'));
+    const rTugas  = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().includes('TUGAS'));
+    const rAlpa   = rows.find(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase()==='TANPA BERITA');
 
     const jamMasuk  = rMasuk  ? (getField(rMasuk, 'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
     const jamPulang = rPulang ? (getField(rPulang,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim() : null;
@@ -4163,7 +3878,7 @@ function renderLog(logs){
   }).join('');
 }
 function updateLogStats(l){
-  const c=k=>l.filter(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
+  const c=k=>l.filter(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
   const masukTotal  = c('MASUK') + c('DI LUAR JAM MASUK');
   const pulangTotal = c('PULANG') + c('DI LUAR JAM PULANG');
   $('stMasuk').textContent     = masukTotal  || '0';
@@ -4209,9 +3924,9 @@ function updateLogStats(l){
     const mMasukBatas  = toMnt(_jamTgl.masuk);
     const mPulangBatas = toMnt(_jamTgl.pulang);
 
-    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
-    const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
-    const rPulang = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
+    const jenisList = rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const rMasuk  = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
+    const rPulang = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG')||j.includes('LUAR PULANG');});
     const isKet   = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
 
     if(isKet){ hariHadir++; return; }
@@ -4251,11 +3966,11 @@ function updateLogStats(l){
     const _jamTgl2     = getJamForTanggal(tgl);
     const mMasukBatas2 = toMnt(_jamTgl2.masuk);
     const mPulangBatas2= toMnt(_jamTgl2.pulang);
-    const jenisList = rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const jenisList = rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const isKet = jenisList.some(j=>j==='IZIN'||j==='SAKIT'||j==='TUGAS');
     if(isKet){ hariDisiplin++; return; }
-    const rM = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK');});
-    const rP = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG');});
+    const rM = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK');});
+    const rP = rows.find(r=>{const j=(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='PULANG'||j==='PULANG LUAR'||j.includes('LUAR JAM PULANG');});
     if(!rM) return;
     const mM2 = toMnt((getField(rM,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim());
     const mP2 = rP ? toMnt((getField(rP,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim()) : null;
@@ -4296,7 +4011,7 @@ function filterLog(f,el){
   });
   const filtered=[];
   Object.entries(byDate).forEach(([tgl,rows])=>{
-    const jenis=rows.map(r=>(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
+    const jenis=rows.map(r=>(getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim());
     const adaMasuk   = jenis.some(j=>j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK'));
     const adaIzin    = jenis.some(j=>j.includes('IZIN'));
     const adaSakit   = jenis.some(j=>j.includes('SAKIT'));
@@ -4347,16 +4062,14 @@ function onDateRangeChange(){
 async function fetchUserListOrder() {
   if (userListOrder.length > 0) return userListOrder;
   try {
-    const res = await apiFetch(`${P.userList}`, {method:'GET'});
-    if (!res.ok) return [];
-    const json = await res.json();
-    const rows = parseRows(json);
-    userListOrder = rows.map((r,idx) => ({
-      id     : String(getField(r,'id','ID')||'').trim(),
-      nama   : getField(r,'nama','Nama','username','Username') || '',
-      jabatan: getField(r,'jabatan','Jabatan') || '',
-      nip    : getField(r,'nip','NIP') || '',
-      urutan : idx
+    const res = await sbFetch('user_list', { select: 'id,username,NIP,Jabatan,no', order: 'no.asc' });
+    const rows = await res.json();
+    userListOrder = (Array.isArray(rows)?rows:[]).map((r,idx) => ({
+      id     : String(r.id||'').trim(),
+      nama   : r.username || '',
+      jabatan: r.Jabatan  || '',
+      nip    : r.NIP      || '',
+      urutan : r.no ?? idx
     }));
     return userListOrder;
   } catch(e) { return []; }
@@ -4398,48 +4111,44 @@ async function loadRekap(){
       }
       const hariKerjaParam = _countHK(dari, sampai);
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t=>t>=dari&&t<=sampai)));
-      const res=await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`,{method:'GET'});
-      if(res.ok){
-        const json=await res.json();
-        const d=Array.isArray(json)?json[0]:json;
-        if(d?.pegawai?.length){ ringkasan=d.ringkasan||{};pegawai=d.pegawai;rekapOK=true; }
-      }
-    }catch(_){}
-
-    // ── Fallback frontend jika n8n gagal ──
-    if(!rekapOK){
-      let allRowsRaw = [], periodRowsRaw = [];
-      try {
-        const resAll = await apiFetch(`${P.log}`, {method:'GET'});
-        if (resAll.ok) allRowsRaw = parseRows(await resAll.json());
-      } catch(_) {}
-      periodRowsRaw = allRowsRaw.filter(r => {
-        const t = getField(r,'Tanggal','tanggal');
-        return t && t >= dari && t <= sampai;
-      });
+      // ── Rekap dihitung frontend dari Log Absensi Supabase ──
+      const _filterRekap = [`Tanggal=gte.${dari}`, `Tanggal=lte.${sampai}`];
+      const res = await sbFetch('log_absensi', { select: 'ID_Log,ID,Nama,NIP,Tanggal,Jam,jenis_absen,Lokasi,Ket,koordinat', filters: _filterRekap, order: 'Tanggal.asc,Jam.asc', limit: 5000 });
+      const _rekapRows = await res.json();
+      const periodRowsSB = (Array.isArray(_rekapRows)?_rekapRows:[]).map(r => ({
+        ID: r.ID, Nama: r.Nama, NIP: r.NIP, Tanggal: r.Tanggal, Jam: r.Jam,
+        'Jenis Absen': r.jenis_absen||r['Jenis Absen'], Lokasi: r.Lokasi, Ket: r.Ket
+      }));
       const _order = await orderPromise;
-      const computed = computeRekap(periodRowsRaw, allRowsRaw, _order);
+      const computed = computeRekap(periodRowsSB, periodRowsSB, _order);
       pegawai   = computed.pegawai;
       ringkasan = computed.ringkasan;
+      rekapOK   = true;
+    }catch(_){}
+
+    // ── Fallback jika Supabase gagal ──
+    if(!rekapOK){
+      pegawai   = [];
+      ringkasan = {};
     }
 
     // ── Untuk mode HARIAN: enrich jam masuk/pulang aktual dari log ──
-    // n8n Hitung Rekap tidak menyimpan jam aktual karena aggregate —
-    // kita ambil dari P.log lalu pasangkan ke masing-masing pegawai
+    // Enrich jam masuk/pulang aktual dari Log Absensi
     if(isHarianLoad && rekapOK){
       try{
         // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
         let logHarian = allLogs.filter(r => getField(r,'Tanggal','tanggal') === dari);
         if(!logHarian.length){
-          const rLog = await apiFetch(`${P.log}?tanggal=${dari}`, {method:'GET'});
-          if(rLog.ok){ const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r=>getField(r,'Tanggal','tanggal')===dari); }
+          const rLog = await sbFetch('log_absensi', { select: 'ID,Jam,jenis_absen,Tanggal', filters:[`Tanggal=eq.${dari}`] });
+          const jLog = await rLog.json();
+          logHarian = (Array.isArray(jLog)?jLog:[]).map(r=>({'ID':r.ID,'Jam':r.Jam,'Jenis Absen':r['Jenis Absen']||r.jenis_absen,'Tanggal':r.Tanggal})).filter(r=>r.Tanggal===dari);
         }
         // Bangun map: id → {jamMasuk, jamPulang}
         const jamMap={};
         logHarian.forEach(r=>{
           const id = String(getField(r,'ID','id')||'').trim();
           if(!id) return;
-          const j = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+          const j = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
           const jam = (getField(r,'Jam','jam')||'').replace(/\s*WITA\s*/i,'').trim();
           if(!jamMap[id]) jamMap[id]={jamMasuk:'-',jamPulang:'-'};
           if(j==='MASUK'||j==='DI LUAR JAM MASUK') jamMap[id].jamMasuk=jam||'-';
@@ -4486,7 +4195,7 @@ async function loadRekap(){
     renderRekap(pegawai);
   }catch(e){
     console.warn('loadRekap error:',e);
-    $('pegawaiList').innerHTML=`<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat rekap</div><div class="empty-sub">Pastikan webhook n8n aktif</div></div>`;
+    $('pegawaiList').innerHTML=`<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat rekap</div><div class="empty-sub">Pastikan koneksi Supabase Supabase aktif</div></div>`;
   }finally{
     btn.disabled=false;
     if(dlBtn)dlBtn.disabled=false;
@@ -4556,7 +4265,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const nama  = getField(r,'Nama','nama') || '—';
     const nip   = getField(r,'NIP','nip')   || '—';
     const tgl   = normToISO(getField(r,'Tanggal','tanggal') || '');
-    const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const jenis = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr= getField(r,'Jam','jam') || '';
     if(!map[id]) map[id]={id,nama,nip,jabatan:'',urutan:9999,
       masuk:0,pulang:0,pulang_luar:0,di_luar_masuk:0,di_luar_pulang:0,
@@ -4592,7 +4301,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
     const id = String(getField(r,'ID','id')||'').trim();
     if(!id || !map[id]) return; // only process existing employees
     const tglA  = normToISO(getField(r,'Tanggal','tanggal') || '');
-    const jenis = (getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
+    const jenis = (getField(r,'jenis_absen','Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();
     const jamStr = getField(r,'Jam','jam') || '';
     const jam = toMenit(jamStr);
     if(jenis==='MASUK') { map[id].all_masuk++; }
@@ -4969,7 +4678,7 @@ function renderRekap(pg){
 }
 
 /* ════ DOWNLOAD REKAP (Excel) ════ */
-/* ════ KIRIM REKAP KE TELEGRAM via n8n webhook ════ */
+/* ════ KIRIM REKAP KE TELEGRAM via n8n (tetap via ngrok) ════ */
 function showRekapToast(type, msg) {
   const el = $('rekapToast');
   if (!el) return;
@@ -5162,7 +4871,7 @@ async function downloadRekap() {
   };
 
   try {
-    const res = await apiFetch(P.kirimRekap, {method:'POST', body:JSON.stringify(payload)});
+    const res = await _rekapFetch('/webhook/kirim-rekap', {method:'POST', body:JSON.stringify(payload)});
     let d = {}; try { d = await res.json(); } catch(_) {}
     if (res.ok) {
       showRekapToast('success','✅ Rekap berhasil dikirim ke Telegram! Cek bot Anda.');
@@ -5171,7 +4880,7 @@ async function downloadRekap() {
     }
   } catch(e) {
     console.warn('kirimRekap error:', e);
-    showRekapToast('fail','🔌 Gagal mengirim. Pastikan n8n & bot Telegram aktif.');
+    showRekapToast('fail','🔌 Gagal mengirim. Pastikan ngrok & bot Telegram aktif.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '📤 Kirim';
@@ -5183,11 +4892,9 @@ async function downloadRekap() {
 // Fetch libur dari n8n untuk dipakai rekap
 async function fetchLiburForRekap(){
   try{
-    const res=await apiFetch(P.liburList,{method:'GET'});
-    if(!res.ok) return;
-    const d=await res.json();
-    const rows=d.data||d.rows||[];
-    hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    const res = await sbFetch('libur_nasional', { select: 'tanggal', order:'tanggal.asc' });
+    const rows = await res.json();
+    hariLiburSet=new Set((Array.isArray(rows)?rows:[]).map(r=>String(r.tanggal||'').trim()).filter(Boolean));
     liburLoaded=true;
   }catch(_){}
 }
@@ -5195,10 +4902,9 @@ async function fetchLiburForRekap(){
 // Fetch jam per pegawai dari user_list (kolom jam_masuk, jam_pulang)
 async function fetchJamPegawai(){
   try{
-    const res=await apiFetch(`${P.userList}`,{method:'GET'});
-    if(!res.ok) return;
-    const d=await res.json();
-    const rows=Array.isArray(d)?d:(d.data||d.rows||[]);
+    const res = await sbFetch('user_list', { select: 'id,username,NIP,Jabatan,Status' });
+    const d = await res.json();
+    const rows = Array.isArray(d) ? d : [];
     jamPegawaiMap={};
     rows.forEach(r=>{
       const id=String(r.id||r.ID||'').trim();
@@ -5255,9 +4961,8 @@ async function handleTambahLibur(){
   let ok=0,fail=0;
   for(const tgl of dates){
     try{
-      const res=await apiFetch(P.liburAdd,{method:'POST',body:JSON.stringify({tanggal:tgl,nama:nama||'Hari Libur',ditambahkan_oleh:MY_ID,admin_ids:ADMIN_IDS,timestamp:Math.floor(Date.now()/1000)})});
-      let d={};try{d=await res.json()}catch(_){}
-      if(d.ok!==false){ok++;hariLiburSet.add(tgl);}else fail++;
+      await sbFetch('libur_nasional', { method:'POST', upsert:true, body: { tanggal:tgl, nama:nama||'Hari Libur', ditambahkan_oleh:MY_ID, timestamp:String(Math.floor(Date.now()/1000)) } });
+      ok++; hariLiburSet.add(tgl);
     }catch{fail++;}
   }
   if(ok>0){
@@ -5279,12 +4984,9 @@ async function loadLiburAdmin(){
   if(!el) return;
   el.innerHTML='<div class="shimmer" style="height:38px;border-radius:10px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>';
   try{
-    const res=await apiFetch(P.liburList,{method:'GET'});
-    if(!res.ok) throw 0;
-    const d=await res.json();
-    const rows=(d.data||d.rows||[])
-      .filter(r=>String(r.tanggal||r.Tanggal||'').trim())
-      .sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
+    const resL = await sbFetch('libur_nasional', { select: 'tanggal,nama', order: 'tanggal.asc' });
+    const dL   = await resL.json();
+    const rows = (Array.isArray(dL) ? dL : []).filter(r => String(r.tanggal||'').trim());
     hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
     liburLoaded=true;
     const badge=$('liburTotalBadge');
@@ -5336,7 +5038,7 @@ async function loadLiburAdmin(){
 async function hapusLibur(tgl, rowNum){
   if(!confirm(`Hapus hari libur ${tgl}?`)) return;
   try{
-    const res=await apiFetch(P.liburDel,{method:'POST',body:JSON.stringify({tanggal:tgl,row_number:rowNum,timestamp:Math.floor(Date.now()/1000)})});
+    await sbFetch('libur_nasional', { method:'DELETE', filters:[`tanggal=eq.${tgl}`] });
     hariLiburSet.delete(tgl);
     loadLiburAdmin();
   }catch{alert('Gagal menghapus. Coba lagi.');}
@@ -5375,7 +5077,7 @@ async function handleTambahLokasi(){
   const hariStr = hariChecked.join(',');
   setBtnL('btnTambahLokasi',true,'Menyimpan...');
   try{
-    await apiFetch(P.lokasiAdd,{method:'POST',body:JSON.stringify({nama_lokasi:nama,latitude:selectedPin.lat,longitude:selectedPin.lng,radius,hari:hariStr,ip_range:ipRange,ditambahkan_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+    await sbFetch('lokasiabsen', { method:'POST', body: { Nama_Lokasi:nama, latitude:selectedPin.lat, longitude:selectedPin.lng, radius, hari:hariStr, ip_range:ipRange } });
     const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
     showResult('adminResult','adminRIcon','adminRTitle','adminRMsg','success','📌','Lokasi Tersimpan!',`${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
     setBtnL('btnTambahLokasi',false,'Simpan Lokasi ke Database');
@@ -5396,8 +5098,12 @@ async function loadLokasiAdmin(){
   el.innerHTML=`<div class="shimmer" style="height:38px;border-radius:10px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>`;
   let list=[];
   try{
-    const res=await apiFetch(P.lokasiList,{method:'GET'});if(!res.ok)throw 0;
-    const json=await res.json();list=Array.isArray(json)?json:(json.data||[]);
+    const resL = await sbFetch('lokasiabsen', { select: 'id,Nama_Lokasi,latitude,longitude,hari,radius,ip_range' });
+    const jsonL = await resL.json();
+    list = (Array.isArray(jsonL) ? jsonL : []).map(r => ({
+      id: r.id, nama_lokasi: r.Nama_Lokasi, nama: r.Nama_Lokasi,
+      latitude: r.latitude, longitude: r.longitude, hari: r.hari, radius: r.radius, ip_range: r.ip_range
+    }));
     if(!list.length){el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;
     }else{
       if(adminMap){list.forEach(l=>{const lat=parseFloat(l.latitude||l.lat||0),lng=parseFloat(l.longitude||l.lng||0);if(!lat||!lng)return;L.circle([lat,lng],{radius:l.radius||100,color:'#c9a84c',fillColor:'rgba(201,168,76,.1)',fillOpacity:1,weight:1}).addTo(adminMap).bindTooltip(l.nama_lokasi||l.nama||'Lokasi');});}
@@ -5491,7 +5197,7 @@ async function loadLokasiAdmin(){
 }
 async function hapusLokasi(id,nama){
   if(!confirm(`Hapus lokasi "${nama}"?`))return;
-  try{await apiFetch(`${P.lokasiDel}?id=${id}`,{method:'DELETE'});loadLokasiAdmin();}
+  try{ await sbFetch('lokasiabsen', { method:'DELETE', filters:[`id=eq.${id}`] }); loadLokasiAdmin();}
   catch{alert('Gagal menghapus. Coba lagi.');}
 }
 
@@ -5512,7 +5218,7 @@ async function simpanLokasiItem(id, nama, idx) {
   const lok     = jadwalLokData[idx];
   const hariStr = lok ? (lok.hari||[]).join(',') : '';
   try {
-    await apiFetch(P.lokasiUpdate,{method:'POST',body:JSON.stringify({id,nama_lokasi:nama,radius,hari:hariStr,ip_range})});
+    await sbFetch('lokasiabsen', { method:'PATCH', filters:[`id=eq.${id}`], body: { radius, hari: hariStr, ip_range } });
     if(lok) lok.radius=radius;
     Object.keys(LOK_DEF).forEach(k=>delete LOK_DEF[k]);
     jadwalLokData.forEach(l=>{(l.hari||[]).forEach(h=>{if(!LOK_DEF[h])LOK_DEF[h]=[];if(!LOK_DEF[h].includes(l.nama))LOK_DEF[h].push(l.nama);});});
@@ -5612,9 +5318,9 @@ async function simpanJadwal() {
   for (const lok of jadwalLokData) {
     const hariStr = (lok.hari || []).join(',');
     try {
-      await apiFetch(P.lokasiUpdate, {
-        method: 'POST',
-        body: JSON.stringify({ id: lok.id, nama_lokasi: lok.nama, hari: hariStr })
+      await sbFetch('lokasiabsen', {
+        method: 'PATCH', filters: [`id=eq.${lok.id}`],
+        body: { hari: hariStr }
       });
       berhasil++;
     } catch(_) { gagal++; }
@@ -5675,384 +5381,13 @@ function initJamAdminUI(){
   });
 }
 
-/* ════ ADMIN SERAGAM ════ */
-// SERAGAM_OPTIONS: dimuat ulang dari server via loadSeragamTypeAdmin()
-// Default bawaan dipakai jika server belum disetup
-let SERAGAM_OPTIONS = [
-  { id:'1', warna: 'coklat_khaki', label: 'Coklat / Khaki (Seragam ASN)', emoji: '🟤', preview: '#c8a96e',
-    hMin:15, hMax:65, sMin:15, sMax:75, lMin:20, lMax:75 },
-  { id:'2', warna: 'putih',        label: 'Kemeja Putih',                  emoji: '⬜', preview: '#f0f0f0',
-    hMin:0,  hMax:360,sMin:0,  sMax:20, lMin:68, lMax:100 },
-  { id:'3', warna: 'tenun_sumba',  label: 'Kain Tenun Sumba',              emoji: '🎨', preview: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-  { id:'4', warna: 'bebas',        label: 'Baju Bebas',                    emoji: '👕', preview: 'linear-gradient(135deg,#667eea,#764ba2)',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-  { id:'0', warna: null,           label: 'Libur (Tidak Cek)',             emoji: '🏠', preview: '#1a2540',
-    hMin:null, hMax:null, sMin:null, sMax:null, lMin:null, lMax:null },
-];
 
-function _seragamPreviewFromWarna(warna) {
-  const MAP = {
-    coklat_khaki: '#c8a96e', putih: '#f0f0f0',
-    tenun_sumba: 'linear-gradient(135deg,#e53935,#f39c12,#27ae60,#2980b9)',
-    bebas: 'linear-gradient(135deg,#667eea,#764ba2)',
-  };
-  return MAP[warna] || 'linear-gradient(135deg,var(--gold),#9b6e1a)';
-}
 
-/* ── CRUD Jenis Seragam ── */
-async function loadSeragamTypeAdmin() {
-  const el = $('seragamTypeList');
-  if (!el) return;
-  el.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
-  try {
-    let rows = _seragamTypeRawCache;
-    if (!rows) {
-      // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
-      const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
-      if (!res.ok) throw 0;
-      const d = await res.json();
-      rows = d.data || d || [];
-      _seragamTypeRawCache = rows;
-    }
-    _applySeragamTypeRows(rows);
-    renderSeragamTypeList();
-    renderSeragamAdmin();
-  } catch(_) {
-    renderSeragamTypeList();
-  }
-}
 
-function renderSeragamTypeList() {
-  const el = $('seragamTypeList');
-  if (!el) return;
-  const items = SERAGAM_OPTIONS.filter(o => o.warna !== null); // tidak tampilkan "Libur" di list
-  if (!items.length) { el.innerHTML = '<div style="font-size:10px;color:var(--muted);text-align:center;padding:10px">Belum ada jenis seragam. Tambah di atas.</div>'; return; }
-  el.innerHTML = items.map(o => {
-    const hslInfo = o.hMin !== null ? `H${o.hMin}–${o.hMax} S${o.sMin}–${o.sMax}% L${o.lMin}–${o.lMax}%` : 'Bebas (tidak cek warna)';
-    const hslBg  = o.hMin !== null
-      ? `linear-gradient(90deg,hsl(${o.hMin},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 0%,hsl(${Math.round((o.hMin+o.hMax)/2)},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 50%,hsl(${o.hMax},${Math.round((o.sMin+o.sMax)/2)}%,${Math.round((o.lMin+o.lMax)/2)}%) 100%)`
-      : '#333';
-    return `
-    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px 12px">
-      <span style="width:26px;height:26px;border-radius:7px;display:inline-block;flex-shrink:0;background:${hslBg};border:1px solid rgba(255,255,255,.15)"></span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:11px;font-weight:700;color:var(--white)">${o.emoji} ${o.label}</div>
-        <div style="font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">${o.warna} · ${hslInfo}</div>
-      </div>
-      <button onclick="editSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}','${o.emoji}',${o.hMin??'null'},${o.hMax??'null'},${o.sMin??'null'},${o.sMax??'null'},${o.lMin??'null'},${o.lMax??'null'})"
-        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.1);color:var(--gold);font-size:9px;font-weight:700;cursor:pointer">✏️</button>
-      <button onclick="deleteSeragamType('${o.id}','${o.warna}','${o.label.replace(/'/g,'&#39;')}')"
-        style="padding:4px 8px;border-radius:7px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:var(--danger);font-size:9px;font-weight:700;cursor:pointer">🗑️</button>
-    </div>`;
-  }).join('');
-}
-
-function updateHslPreview() {
-  const hMin = parseInt($('inputHMin').value) || 0;
-  const hMax = parseInt($('inputHMax').value) || 360;
-  const sMin = parseInt($('inputSMin').value) || 0;
-  const sMax = parseInt($('inputSMax').value) || 100;
-  const lMin = parseInt($('inputLMin').value) || 0;
-  const lMax = parseInt($('inputLMax').value) || 100;
-  const bar   = $('hslPreviewBar');
-  const label = $('hslPreviewLabel');
-  if (!bar) return;
-  const hMid = Math.round((hMin + hMax) / 2);
-  const sMid = Math.round((sMin + sMax) / 2);
-  const lMid = Math.round((lMin + lMax) / 2);
-  const isEmpty = !$('inputHMin').value && !$('inputHMax').value;
-  if (isEmpty) {
-    bar.style.background = '#333';
-    label.textContent = 'Preview warna akan muncul di sini';
-    return;
-  }
-  bar.style.background = `linear-gradient(90deg,
-    hsl(${hMin},${sMid}%,${lMid}%) 0%,
-    hsl(${hMid},${sMid}%,${lMid}%) 50%,
-    hsl(${hMax},${sMid}%,${lMid}%) 100%)`;
-  label.textContent = `H ${hMin}–${hMax} · S ${sMin}–${sMax}% · L ${lMin}–${lMax}%`;
-}
-
-function resetSeragamTypeForm() {
-  $('seragamTypeFormTitle').textContent = '➕ Tambah Jenis Seragam';
-  $('seragamTypeEditId').value = '';
-  $('inputSeragamLabel').value = '';
-  $('inputSeragamWarna').value = '';
-  $('inputSeragamEmoji').value = '';
-  $('inputHMin').value = ''; $('inputHMax').value = '';
-  $('inputSMin').value = ''; $('inputSMax').value = '';
-  $('inputLMin').value = ''; $('inputLMax').value = '';
-  updateHslPreview();
-  $('btnSeragamTypeText').textContent = 'Simpan';
-  const r = $('seragamTypeResult'); if (r) r.style.display = 'none';
-}
-
-function editSeragamType(id, warna, label, emoji, hMin, hMax, sMin, sMax, lMin, lMax) {
-  $('seragamTypeFormTitle').textContent = '✏️ Edit Jenis Seragam';
-  $('seragamTypeEditId').value = id;
-  $('inputSeragamLabel').value = label;
-  $('inputSeragamWarna').value = warna;
-  $('inputSeragamEmoji').value = emoji;
-  $('inputHMin').value = hMin ?? ''; $('inputHMax').value = hMax ?? '';
-  $('inputSMin').value = sMin ?? ''; $('inputSMax').value = sMax ?? '';
-  $('inputLMin').value = lMin ?? ''; $('inputLMax').value = lMax ?? '';
-  updateHslPreview();
-  $('btnSeragamTypeText').textContent = 'Perbarui';
-  $('seragamTypeForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function submitSeragamType() {
-  const label = $('inputSeragamLabel').value.trim();
-  const warna = $('inputSeragamWarna').value.trim().toLowerCase().replace(/\s+/g,'_');
-  const emoji = $('inputSeragamEmoji').value.trim();
-  const editId = $('seragamTypeEditId').value.trim();
-  const hMin = $('inputHMin').value !== '' ? Number($('inputHMin').value) : null;
-  const hMax = $('inputHMax').value !== '' ? Number($('inputHMax').value) : null;
-  const sMin = $('inputSMin').value !== '' ? Number($('inputSMin').value) : null;
-  const sMax = $('inputSMax').value !== '' ? Number($('inputSMax').value) : null;
-  const lMin = $('inputLMin').value !== '' ? Number($('inputLMin').value) : null;
-  const lMax = $('inputLMax').value !== '' ? Number($('inputLMax').value) : null;
-  $('seragamTypeResult').style.display = 'none';
-
-  if (!label || !warna || !emoji) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Lengkapi Form','Label, kode warna, dan emoji wajib diisi.');
-    $('seragamTypeResult').style.display = 'flex'; return;
-  }
-  // Validasi: jika sebagian HSL diisi, semua harus diisi
-  const hslFilled = [hMin, hMax, sMin, sMax, lMin, lMax].filter(v => v !== null);
-  if (hslFilled.length > 0 && hslFilled.length < 6) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','HSL Tidak Lengkap','Isi semua 6 nilai HSL, atau kosongkan semua (baju bebas).');
-    $('seragamTypeResult').style.display = 'flex'; return;
-  }
-
-  const btn = $('btnSeragamTypeSubmit');
-  if (btn) btn.disabled = true;
-  try {
-    const payload = { id: editId || warna, warna, label, emoji, hMin, hMax, sMin, sMax, lMin, lMax, diubah_oleh: MY_ID };
-    const res = await apiFetch(P.seragamTypeAdd, { method: 'POST', body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅',
-      editId ? 'Seragam Diperbarui!' : 'Seragam Ditambahkan!',
-      `${emoji} ${label} berhasil ${editId ? 'diperbarui' : 'ditambahkan'}.`);
-    $('seragamTypeResult').style.display = 'flex';
-    resetSeragamTypeForm();
-    _seragamTypeRawCache = null; // invalidasi cache agar reload dari server
-    await loadSeragamTypeAdmin();
-  } catch(e) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal ke Server',
-      'Pastikan webhook seragam-type-add aktif di n8n.\n'+e.message);
-    $('seragamTypeResult').style.display = 'flex';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-async function deleteSeragamType(id, warna, label) {
-  if (!confirm(`Hapus jenis seragam "${label}"?\n\nPastikan tidak ada hari yang masih menggunakan jenis ini.`)) return;
-  try {
-    const res = await apiFetch(P.seragamTypeDel, { method: 'POST', body: JSON.stringify({ id, warna, diubah_oleh: MY_ID }) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅','Dihapus!',`${label} berhasil dihapus.`);
-    $('seragamTypeResult').style.display = 'flex';
-    _seragamTypeRawCache = null; // invalidasi cache
-    await loadSeragamTypeAdmin();
-  } catch(e) {
-    showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal',
-      'Pastikan webhook seragam-type-delete aktif di n8n.\n'+e.message);
-    $('seragamTypeResult').style.display = 'flex';
-  }
-}
-
-function renderSeragamAdmin() {
-  const el = $('seragamAdminList');
-  if (!el) return;
-
-  // Hari kerja yang bisa dipilih (Senin-Jumat = 1-5, Sabtu = 6 opsional)
-  // Format: { idx, singkat, nama }
-  const HARI_KERJA = [
-    { idx:1, singkat:'Sen', nama:'Senin' },
-    { idx:2, singkat:'Sel', nama:'Selasa' },
-    { idx:3, singkat:'Rab', nama:'Rabu' },
-    { idx:4, singkat:'Kam', nama:'Kamis' },
-    { idx:5, singkat:'Jum', nama:'Jumat' },
-    { idx:6, singkat:'Sab', nama:'Sabtu' },
-  ];
-
-  // Tampilkan seragam bukan libur saja
-  const opts = SERAGAM_OPTIONS.filter(o => o.warna !== null);
-
-  let html = '';
-
-  // Baris hari libur info
-  html += `<div style="display:flex;gap:6px;align-items:center;padding:8px 10px;background:rgba(255,255,255,.02);border:1px dashed rgba(255,255,255,.08);border-radius:10px;margin-bottom:4px">
-    <span style="font-size:14px">🏠</span>
-    <div>
-      <div style="font-size:10px;font-weight:700;color:var(--muted)">Minggu & Sabtu</div>
-      <div style="font-size:9px;color:rgba(255,255,255,.3)">Hari libur — tidak ada pemeriksaan seragam</div>
-    </div>
-  </div>`;
-
-  opts.forEach(opt => {
-    const aktifHari = HARI_KERJA.filter(h => {
-      const w = JADWAL_SERAGAM[h.idx]?.warna;
-      const arr = Array.isArray(w) ? w : _parseWarnaArray(w);
-      return arr.includes(opt.warna);
-    });
-    const aktifIdxSet = new Set(aktifHari.map(h => h.idx));
-    const hslBg = opt.hMin !== null
-      ? `linear-gradient(90deg,hsl(${opt.hMin},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 0%,hsl(${Math.round((opt.hMin+opt.hMax)/2)},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 50%,hsl(${opt.hMax},${Math.round(((opt.sMin||0)+(opt.sMax||100))/2)}%,${Math.round(((opt.lMin||0)+(opt.lMax||100))/2)}%) 100%)`
-      : opt.preview;
-    const hslInfo = opt.hMin !== null
-      ? `H${opt.hMin}–${opt.hMax} · S${opt.sMin}–${opt.sMax}% · L${opt.lMin}–${opt.lMax}%`
-      : 'Tidak cek warna (bebas)';
-
-    html += `
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:10px 12px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="width:32px;height:32px;border-radius:8px;flex-shrink:0;display:inline-block;background:${hslBg};border:1px solid rgba(255,255,255,.15)"></span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;font-weight:700;color:var(--white)">${opt.emoji} ${opt.label}</div>
-          <div style="font-size:8.5px;color:var(--muted);font-family:'JetBrains Mono',monospace">${hslInfo}</div>
-        </div>
-      </div>
-      <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-weight:600">📅 AKTIF PADA HARI:</div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">
-        ${HARI_KERJA.map(h => {
-          const aktif = aktifIdxSet.has(h.idx);
-          return `<button type="button" onclick="toggleSeragamHari(${h.idx},'${opt.warna}')"
-            style="padding:5px 10px;border-radius:8px;border:1.5px solid ${aktif?'var(--gold)':'rgba(255,255,255,.12)'};background:${aktif?'rgba(201,168,76,.2)':'rgba(255,255,255,.03)'};cursor:pointer;font-size:10px;font-weight:${aktif?'700':'500'};color:${aktif?'var(--gold)':'rgba(255,255,255,.35)'};transition:all .15s;min-width:38px;text-align:center">
-            ${h.singkat}
-          </button>`;
-        }).join('')}
-      </div>
-    </div>`;
-  });
-
-  el.innerHTML = html;
-}
-
-// Toggle hari pada seragam tertentu (multi-select)
-function toggleSeragamHari(hariIdx, warna) {
-  const cur = JADWAL_SERAGAM[hariIdx];
-  if (!cur) return;
-
-  // Selalu normalisasi ke array terlebih dahulu
-  cur.warna = Array.isArray(cur.warna) ? cur.warna : _parseWarnaArray(cur.warna);
-
-  const idx = cur.warna.indexOf(warna);
-  if (idx >= 0) {
-    cur.warna.splice(idx, 1);
-  } else {
-    cur.warna.push(warna);
-  }
-
-  const built = _buildSeragamLabel(cur.warna);
-  cur.label = built.label;
-  cur.emoji = built.emoji;
-
-  renderSeragamAdmin();
-}
-
-// Tetap untuk kompatibilitas
-function patchSeragamHari(idx, warna, label, emoji) {
-  const realWarna = warna === 'null' ? null : warna;
-  JADWAL_SERAGAM[idx].warna = realWarna ? [realWarna] : [];
-  const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
-  JADWAL_SERAGAM[idx].label = built.label;
-  JADWAL_SERAGAM[idx].emoji = built.emoji;
-  renderSeragamAdmin();
-}
-
-async function simpanSeragamAdmin() {
-  const btn = $('btnSimpanSeragam');
-  if (btn) { btn.disabled=true; $('btnSeragamText').textContent='💾 Menyimpan...'; }
-  try {
-    const rows = Object.keys(JADWAL_SERAGAM).map(k => {
-      const d = JADWAL_SERAGAM[k];
-      const warnaArr = Array.isArray(d.warna) ? d.warna : _parseWarnaArray(d.warna);
-      const built = _buildSeragamLabel(warnaArr);
-      return {
-        hari_idx : parseInt(k),
-        nama_hari: d.nama,
-        warna    : warnaArr.join(','),   // CSV: "coklat_khaki,putih"
-        label    : built.label,
-        emoji    : built.emoji,
-      };
-    });
-    const res = await apiFetch(P.seragamSave, { method:'POST', body: JSON.stringify({ rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000) }) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','success','✅','Seragam Tersimpan!',
-      'Jadwal seragam disimpan ke Google Sheets dan berlaku untuk semua pegawai.');
-  } catch(e) {
-    showResult('seragamResult','seragamRIcon','seragamRTitle','seragamRMsg','warning','⚠️','Gagal ke Server',
-      'Pastikan workflow n8n seragam-save aktif.\n'+e.message);
-  } finally {
-    if (btn) { setTimeout(()=>{ btn.disabled=false; $('btnSeragamText').textContent='Simpan Pengaturan Seragam'; },2500); }
-  }
-}
-
-/* ── Cache jenis seragam dari server (cegah double-fetch dengan loadSeragamTypeAdmin) ── */
-let _seragamTypeRawCache = null;
-
-/* ── Helper: apply raw rows dari server ke SERAGAM_OPTIONS ── */
-function _applySeragamTypeRows(rows) {
-  if (!Array.isArray(rows) || !rows.length) return;
-  SERAGAM_OPTIONS = rows.map(r => ({
-    id: String(r.id || r.warna || ''),
-    warna: r.warna || null,
-    label: r.label,
-    emoji: r.emoji,
-    preview: _seragamPreviewFromWarna(r.warna),
-    hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-    hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-    sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-    sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-    lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-    lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-  }));
-  if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-    SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
-  }
-}
-
-async function loadSeragamPublik() {
-  // Paralelkan kedua request sekaligus — tidak tunggu satu selesai dulu
-  const [typeResult, schedResult] = await Promise.allSettled([
-    apiFetch(P.seragamTypeList, { method:'GET' }),
-    apiFetch(P.seragamGet,      { method:'GET' })
-  ]);
-
-  // Proses seragamTypeList
-  if (typeResult.status === 'fulfilled' && typeResult.value.ok) {
-    try {
-      const d = await typeResult.value.json();
-      const rows = d.data || d || [];
-      _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
-      _applySeragamTypeRows(rows);
-    } catch(_) {}
-  }
-
-  // Proses jadwal seragam per hari
-  if (schedResult.status === 'fulfilled' && schedResult.value.ok) {
-    try {
-      const d = await schedResult.value.json();
-      const rows = d.data || d || [];
-      if (Array.isArray(rows) && rows.length) {
-        const map = {};
-        rows.forEach(r => {
-          const idx = parseInt(r.hari_idx);
-          if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
-        });
-        _applySeragamData(map);
-      }
-    } catch(_) {}
-  }
-}
 
 
 /* ════════════════════════════════════════════════════════
-   MANAJEMEN ADMIN — baca/tulis sheet admin_list via n8n
+   MANAJEMEN ADMIN — baca/tulis tabel admin_list via Supabase
    Endpoint: gunakan user-list webhook untuk read,
              dan endpoint khusus admin-list untuk write
    ════════════════════════════════════════════════════════ */
@@ -6082,15 +5417,12 @@ async function loadAdminMgmt() {
     // Untuk tampilkan nama, fetch dari user-list
     let namaMap = {};
     try {
-      const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
-      if (ur.ok) {
-        const ud = await ur.json();
-        const users = Array.isArray(ud) ? ud : (ud.data || []);
-        users.forEach(u => {
-          const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
-          if (uid) namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
-        });
-      }
+      const ur = await sbFetch('user_list', { select: 'id,username' });
+      const users = await ur.json();
+      (Array.isArray(users)?users:[]).forEach(u => {
+        const uid = parseInt(u.id || 0);
+        if (uid) namaMap[uid] = u.username || u.nama || String(uid);
+      });
     } catch(_) {}
 
     el.innerHTML = ids.map(id => {
@@ -6128,16 +5460,8 @@ async function tambahAdmin() {
     return;
   }
   try {
-    const res = await apiFetch(P.adminAdd, { method: 'POST', body: JSON.stringify({
-      telegram_id: tgId, nama, role,
-      ditambahkan_oleh: MY_ID,
-      timestamp: Math.floor(Date.now() / 1000)
-    })});
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menambahkan admin.');
-      return;
-    }
+    await sbFetch('admin_list', { method:'POST', body: { telegram_id: tgId, nama, role } });
+    const data = {};
     ADMIN_IDS.push(tgId);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
     if (idInput)   idInput.value = '';
@@ -6160,14 +5484,7 @@ async function hapusAdmin(tgId, nama) {
   }
   if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
   try {
-    const res = await apiFetch(P.adminDel + '?telegram_id=' + tgId, { method: 'DELETE',
-      body: JSON.stringify({ ditambahkan_oleh: MY_ID })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menghapus admin.');
-      return;
-    }
+    await sbFetch('admin_list', { method:'DELETE', filters:[`telegram_id=eq.${tgId}`] });
     const idx = ADMIN_IDS.indexOf(tgId);
     if (idx > -1) ADMIN_IDS.splice(idx, 1);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
@@ -6185,19 +5502,27 @@ function _showAdminMgmtResult(type, icon, title, msg) {
   showResult('adminMgmtResult', 'adminMgmtRIcon', 'adminMgmtRTitle', 'adminMgmtRMsg', type, icon, title, msg);
 }
 
-/* ── Cache bersama endpoint jamAbsen — P.jamAbsen hanya dipanggil 1× ──
-   Baik loadJamAbsen() maupun loadAdminMgmt() memakai _getJamAbsen()
-   sehingga tidak ada double-request ke server Google Sheets.           */
-let _jamAbsenCache   = null;   // objek hasil JSON
-let _jamAbsenPromise = null;   // Promise aktif yang sedang berjalan
+/* ── Cache bersama jam_absen + admin_list dari Supabase ── */
+let _jamAbsenCache   = null;
+let _jamAbsenPromise = null;
 
 async function _getJamAbsen() {
   if (_jamAbsenCache)   return _jamAbsenCache;
   if (_jamAbsenPromise) return _jamAbsenPromise;
-  _jamAbsenPromise = apiFetch(P.jamAbsen, {method:'GET'})
-    .then(r  => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-    .then(d  => { _jamAbsenCache = d.data || d; return _jamAbsenCache; })
-    .catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
+  _jamAbsenPromise = (async () => {
+    // Fetch paralel: jam_absen + admin_list
+    const [rJam, rAdmin] = await Promise.all([
+      sbFetch('jam_absen', { select: 'key,masuk,pulang' }),
+      sbFetch('admin_list', { select: 'telegram_id,nama,role', order: 'telegram_id.asc' })
+    ]);
+    const jamRows   = await rJam.json();
+    const adminRows = await rAdmin.json();
+    // Cari row key='default'
+    const row = Array.isArray(jamRows) ? (jamRows.find(r => r.key === 'default') || jamRows[0] || {}) : {};
+    const adminIds = (Array.isArray(adminRows) ? adminRows : []).map(a => Number(a.telegram_id));
+    _jamAbsenCache = { masuk: row.masuk, pulang: row.pulang, admin_ids: adminIds };
+    return _jamAbsenCache;
+  })().catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
   return _jamAbsenPromise;
 }
 
@@ -6260,7 +5585,7 @@ async function simpanJamAbsen(){
   const btn=$('btnSimpanJam');
   if(btn){btn.disabled=true;$('btnJamText').textContent='💾 Menyimpan...';}
   try{
-    await apiFetch(P.jamAbsen,{method:'POST',body:JSON.stringify({masuk:inM.value,pulang:inP.value,diubah_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+    await sbFetch('jam_absen', { method:'POST', upsert:true, body: { key:'default', masuk:inM.value, pulang:inP.value, diubah_oleh:MY_ID, updated_at:new Date().toISOString() } });
     // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
     _jamAbsenCache = null; _jamAbsenPromise = null;
     JAM_MASUK_MENIT  = mMasuk;
@@ -6272,7 +5597,7 @@ async function simpanJamAbsen(){
       `Masuk ≤ ${inM.value} · Pulang ≥ ${inP.value}\nBerlaku langsung untuk semua pengguna.`);
   }catch{
     showResult('jamResult','jamRIcon','jamRTitle','jamRMsg','warning','⚠️','Gagal Menyimpan',
-      'Simpan lokal berhasil, tapi gagal ke server. Pastikan webhook jam-absen aktif di n8n.');
+      'Simpan lokal berhasil, tapi gagal ke server. Cek koneksi Supabase.');
     JAM_MASUK_MENIT  = mMasuk;
     JAM_PULANG_MENIT = mPulang;
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:inM.value,pulang:inP.value})); }catch(_){}
@@ -6366,18 +5691,16 @@ async function tambahJamPeriode(){
   const btn=$('btnTambahPeriode');
   if(btn){ btn.disabled=true; $('btnTambahPeriodeTxt').textContent='Menyimpan...'; }
   try{
-    const res = await apiFetch(P.jamPeriodeAdd,{method:'POST',body:JSON.stringify({
-      nama, dari, sampai, masuk, pulang, ditambahkan_oleh: MY_ID,
-      timestamp: new Date().toISOString()
-    })});
-    if(!res.ok) throw 0;
+    const newId = 'p_' + Date.now();
+    await sbFetch('jam_periode', { method:'POST', body: { id: newId, nama, dari, sampai, masuk, pulang, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now()/1000) } });
     // Reset form
     ['inPeriodeNama','inPeriodeDari','inPeriodeSampai','inPeriodeMasuk','inPeriodePulang'].forEach(id=>{const el=$(id);if(el)el.value='';});
     $('periodePreview').style.display='none';
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','success','✅','Periode Tersimpan!',`🌙 ${nama} (${dari} s.d. ${sampai}) berhasil ditambahkan.`);
+    _invalidateCache('jamPeriode'); // data baru — hapus cache
     await loadJamPeriodeAdmin();
   }catch{
-    showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Menyimpan','Pastikan webhook jam-periode-add aktif di n8n.');
+    showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Menyimpan','Cek koneksi Supabase.');
   }finally{
     if(btn){ setTimeout(()=>{ btn.disabled=false; $('btnTambahPeriodeTxt').textContent='Simpan Periode'; },2500); }
   }
@@ -6386,12 +5709,12 @@ async function tambahJamPeriode(){
 async function hapusJamPeriode(id, nama){
   if(!confirm(`Hapus periode "${nama}"?`)) return;
   try{
-    const res = await apiFetch(P.jamPeriodeDel,{method:'POST',body:JSON.stringify({id})});
-    if(!res.ok) throw 0;
+    await sbFetch('jam_periode', { method:'DELETE', filters: [`id=eq.${id}`] });
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','success','🗑️','Periode Dihapus',`"${nama}" berhasil dihapus.`);
+    _invalidateCache('jamPeriode'); // data berubah — hapus cache
     await loadJamPeriodeAdmin();
   }catch{
-    showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Hapus','Pastikan webhook jam-periode-delete aktif di n8n.');
+    showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Hapus','Pastikan koneksi Supabase aktif.');
   }
 }
 
@@ -6421,10 +5744,10 @@ function _applyFaceToggleUI(enabled) {
 
 async function loadFaceToggle() {
   try {
-    const res = await apiFetch(P.faceToggle, { method:'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    FACE_RECOGNITION_ENABLED = d.enabled !== false;
+    const res = await sbFetch('pengaturan', { select: 'value', filters: [`key=eq.face_recognition`] });
+    const rows = await res.json();
+    const d    = Array.isArray(rows) ? rows[0] : rows;
+    FACE_RECOGNITION_ENABLED = (d?.value ?? '1') !== '0';
   } catch {
     // fallback localStorage
     try {
@@ -6452,7 +5775,7 @@ async function simpanFaceToggle() {
   const rc = $('faceToggleResult');
   if (rc) rc.style.display = 'flex';
   try {
-    await apiFetch(P.faceToggle, { method:'POST', body: JSON.stringify({ enabled, admin_id: MY_ID, admin_ids: ADMIN_IDS }) });
+    await sbFetch('pengaturan', { method:'POST', upsert:true, body: { key:'face_recognition', value: enabled ? '1' : '0' } });
     FACE_RECOGNITION_ENABLED = enabled;
     try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch(_){}
     _applyFaceToggleUI(enabled);
@@ -6467,7 +5790,7 @@ async function simpanFaceToggle() {
     FACE_RECOGNITION_ENABLED = enabled;
     try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch(_){}
     showResult('faceToggleResult','faceToggleRIcon','faceToggleRTitle','faceToggleRMsg','warning','⚠️','Tersimpan Lokal',
-      'Berhasil disimpan di perangkat ini, tapi gagal ke server. Pastikan webhook face-toggle aktif di n8n.');
+      'Berhasil disimpan di perangkat ini, tapi gagal ke server Supabase.');
   } finally {
     if (btn) { setTimeout(()=>{ btn.disabled=false; $('btnFaceToggleText').textContent='Simpan Pengaturan Face Recognition'; }, 2500); }
   }
@@ -6475,13 +5798,36 @@ async function simpanFaceToggle() {
 
 /* ════ AUTO INIT ════ */
 // Load lokasi dari server saat startup agar tab Absen langsung menampilkan lokasi
+// Cache di sessionStorage selama 1 sesi (tidak perlu re-fetch tiap render)
 async function loadLokasiPublik(){
   try{
-    const res=await apiFetch(P.lokasiList,{method:'GET'});
-    if(!res.ok)throw 0;
-    const json=await res.json();
-    const list=Array.isArray(json)?json:(json.data||[]);
+    // ── Coba ambil dari sessionStorage dulu (cache per-sesi) ──
+    try {
+      const cached = sessionStorage.getItem('_lokasiCache');
+      if (cached) {
+        const { list, ts } = JSON.parse(cached);
+        const AGE = Date.now() - ts;
+        if (AGE < 30 * 60 * 1000 && Array.isArray(list) && list.length) {
+          _applyLokasiData(list);
+          return;
+        }
+      }
+    } catch(_) {}
+
+    const res = await sbFetch('lokasiabsen', { select: 'id,Nama_Lokasi,latitude,longitude,hari,radius,ip_range' });
+    const json = await res.json();
+    const list = (Array.isArray(json) ? json : []).map(r => ({
+      id: r.id, nama_lokasi: r.Nama_Lokasi, latitude: r.latitude, longitude: r.longitude,
+      hari: r.hari, radius: r.radius, ip_range: r.ip_range
+    }));
     if(!list.length)return;
+    // Simpan ke sessionStorage
+    try { sessionStorage.setItem('_lokasiCache', JSON.stringify({ list, ts: Date.now() })); } catch(_) {}
+    _applyLokasiData(list);
+  }catch(_){}
+}
+
+function _applyLokasiData(list) {
     const newLOK={};
     list.forEach(l=>{
       const nama=l.nama_lokasi||l.nama||'';
@@ -6501,7 +5847,6 @@ async function loadLokasiPublik(){
     }));
     updateClock(); // refresh lokasiList di tab Absen
     _updateLocBadgeGPS(); // update badge lokasi setelah koordinat tersedia
-  }catch(_){}
 }
 loadLokasiPublik();
 // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
@@ -6545,23 +5890,27 @@ function _updateLocBadgeGPS(){
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
-loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak
 
 /* ════ CUACA ════ */
+const WEATHER_TTL = 30 * 60 * 1000; // 30 menit
+
 async function loadWeather(){
+  // Gunakan cache — tidak perlu hit API cuaca lebih dari 1x per 30 menit
   const card=$('weatherCard');
   try{
+    const data = await _withCache('weather', WEATHER_TTL, async () => {
     // Open-Meteo API — gratis, no key, koordinat Waikabubak Sumba Barat
     const url='https://api.open-meteo.com/v1/forecast?latitude=-9.6333&longitude=119.3833' +
               '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m' +
               '&timezone=Asia%2FMakassar&wind_speed_unit=kmh';
     const res=await fetch(url);
     if(!res.ok) throw 0;
-    const d=await res.json();
-    const c=d.current;
+      return await res.json();
+    });
+    const c=data.current;
     const code=c.weather_code;
     const icon=_wxIcon(code), cond=_wxCond(code);
     const temp=Math.round(c.temperature_2m);

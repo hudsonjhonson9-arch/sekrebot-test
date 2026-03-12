@@ -2239,31 +2239,37 @@ function renderTodayHistory(rows) {
 async function autoUpdateStatusAktif() {
   // Hanya update jika status pegawai bukan AKTIF
   const statusSaatIni = (userProfile?.status||'AKTIF').toUpperCase();
-  if (statusSaatIni === 'AKTIF') return; // sudah aktif, skip
+  if (statusSaatIni === 'AKTIF') return;
 
-  // Cek apakah ada keterangan aktif hari ini (IZIN/SAKIT/TUGAS yang disetujui)
-  // Jika ada, jangan ubah status — hormati keterangan yang disetujui admin
   const todayStr = fmtD(nowWITA());
-  try {
-    const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
-    if (resKet.ok) {
-      const dKet = await resKet.json();
-      const ketRows = dKet.data || dKet.rows || [];
-      const adaKetAktif = ketRows.some(r => {
-        const st  = (r.status || r.Status || '').toUpperCase();
-        const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
-        const tglS= r.tgl_selesai || r.tanggal || '';
-        // Keterangan DISETUJUI yang mencakup hari ini
-        const disetujui = st === 'DISETUJUI' || st === 'APPROVED';
-        const mencakupHariIni = tgl <= todayStr && todayStr <= tglS;
-        return disetujui && mencakupHariIni;
-      });
-      if (adaKetAktif) {
-        console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
-        return;
-      }
+
+  // Gunakan ketStatusCache jika sudah terisi — hindari request tambahan ke server
+  const _checkKetRows = (rows) => rows.some(r => {
+    const st  = (r.status || r.Status || '').toUpperCase();
+    const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
+    const tglS= r.tgl_selesai || r.tanggal || '';
+    return (st === 'DISETUJUI' || st === 'APPROVED') && tgl <= todayStr && todayStr <= tglS;
+  });
+
+  if (ketStatusCache.length > 0) {
+    if (_checkKetRows(ketStatusCache)) {
+      console.log('autoUpdateStatusAktif: ada keterangan aktif (cache), skip update status');
+      return;
     }
-  } catch(_) {}
+  } else {
+    // Cache kosong — fetch sekali, tidak simpan ke ketStatusCache agar tidak mempengaruhi UI ket
+    try {
+      const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
+      if (resKet.ok) {
+        const dKet = await resKet.json();
+        const ketRows = dKet.data || dKet.rows || [];
+        if (_checkKetRows(ketRows)) {
+          console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
+          return;
+        }
+      }
+    } catch(_) {}
+  }
 
   // Update status ke AKTIF
   try {
@@ -2273,11 +2279,7 @@ async function autoUpdateStatusAktif() {
       alasan     : 'Absen masuk otomatis',
       timestamp  : Math.floor(Date.now()/1000)
     })});
-    // Update lokal
-    if (userProfile) {
-      userProfile.status = 'AKTIF';
-      applyProfile();
-    }
+    if (userProfile) { userProfile.status = 'AKTIF'; applyProfile(); }
   } catch(_) {}
 }
 function setBtnL(id, loading, txt) {
@@ -5704,34 +5706,20 @@ async function loadSeragamTypeAdmin() {
   if (!el) return;
   el.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
   try {
-    const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const rows = d.data || d || [];
-    if (Array.isArray(rows) && rows.length) {
-      // Update SERAGAM_OPTIONS dari server — sertakan HSL
-      SERAGAM_OPTIONS = rows.map(r => ({
-        id: String(r.id || r.warna || ''),
-        warna: r.warna || null,
-        label: r.label,
-        emoji: r.emoji,
-        preview: _seragamPreviewFromWarna(r.warna),
-        hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-        hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-        sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-        sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-        lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-        lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-      }));
-      // Pastikan "Libur" selalu ada
-      if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-        SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540' });
-      }
+    let rows = _seragamTypeRawCache;
+    if (!rows) {
+      // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
+      const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
+      if (!res.ok) throw 0;
+      const d = await res.json();
+      rows = d.data || d || [];
+      _seragamTypeRawCache = rows;
     }
+    _applySeragamTypeRows(rows);
     renderSeragamTypeList();
-    renderSeragamAdmin(); // refresh pilihan seragam per hari
+    renderSeragamAdmin();
   } catch(_) {
-    renderSeragamTypeList(); // tampilkan default
+    renderSeragamTypeList();
   }
 }
 
@@ -5849,6 +5837,7 @@ async function submitSeragamType() {
       `${emoji} ${label} berhasil ${editId ? 'diperbarui' : 'ditambahkan'}.`);
     $('seragamTypeResult').style.display = 'flex';
     resetSeragamTypeForm();
+    _seragamTypeRawCache = null; // invalidasi cache agar reload dari server
     await loadSeragamTypeAdmin();
   } catch(e) {
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal ke Server',
@@ -5866,6 +5855,7 @@ async function deleteSeragamType(id, warna, label) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅','Dihapus!',`${label} berhasil dihapus.`);
     $('seragamTypeResult').style.display = 'flex';
+    _seragamTypeRawCache = null; // invalidasi cache
     await loadSeragamTypeAdmin();
   } catch(e) {
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal',
@@ -6002,47 +5992,62 @@ async function simpanSeragamAdmin() {
   }
 }
 
+/* ── Cache jenis seragam dari server (cegah double-fetch dengan loadSeragamTypeAdmin) ── */
+let _seragamTypeRawCache = null;
+
+/* ── Helper: apply raw rows dari server ke SERAGAM_OPTIONS ── */
+function _applySeragamTypeRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return;
+  SERAGAM_OPTIONS = rows.map(r => ({
+    id: String(r.id || r.warna || ''),
+    warna: r.warna || null,
+    label: r.label,
+    emoji: r.emoji,
+    preview: _seragamPreviewFromWarna(r.warna),
+    hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
+    hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
+    sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
+    sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
+    lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
+    lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
+  }));
+  if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
+    SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
+  }
+}
+
 async function loadSeragamPublik() {
-  // Load jenis seragam dari server agar SERAGAM_OPTIONS selalu up-to-date
-  try {
-    const res = await apiFetch(P.seragamTypeList, { method:'GET' });
-    if (res.ok) {
-      const d = await res.json();
+  // Paralelkan kedua request sekaligus — tidak tunggu satu selesai dulu
+  const [typeResult, schedResult] = await Promise.allSettled([
+    apiFetch(P.seragamTypeList, { method:'GET' }),
+    apiFetch(P.seragamGet,      { method:'GET' })
+  ]);
+
+  // Proses seragamTypeList
+  if (typeResult.status === 'fulfilled' && typeResult.value.ok) {
+    try {
+      const d = await typeResult.value.json();
+      const rows = d.data || d || [];
+      _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
+      _applySeragamTypeRows(rows);
+    } catch(_) {}
+  }
+
+  // Proses jadwal seragam per hari
+  if (schedResult.status === 'fulfilled' && schedResult.value.ok) {
+    try {
+      const d = await schedResult.value.json();
       const rows = d.data || d || [];
       if (Array.isArray(rows) && rows.length) {
-        SERAGAM_OPTIONS = rows.map(r => ({
-          id: String(r.id || r.warna || ''),
-          warna: r.warna || null,
-          label: r.label,
-          emoji: r.emoji,
-          preview: _seragamPreviewFromWarna(r.warna),
-          hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-          hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-          sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-          sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-          lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-          lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-        }));
-        if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-          SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
-        }
+        const map = {};
+        rows.forEach(r => {
+          const idx = parseInt(r.hari_idx);
+          if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
+        });
+        _applySeragamData(map);
       }
-    }
-  } catch(_) {}
-  // Load jadwal seragam per hari
-  try {
-    const res = await apiFetch(P.seragamGet, { method:'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const rows = d.data || d || [];
-    if (!Array.isArray(rows) || !rows.length) return;
-    const map = {};
-    rows.forEach(r => {
-      const idx = parseInt(r.hari_idx);
-      if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
-    });
-    _applySeragamData(map);
-  } catch(_) {}
+    } catch(_) {}
+  }
 }
 
 
@@ -6057,13 +6062,11 @@ async function loadAdminMgmt() {
   if (!el) return;
   el.innerHTML = `<div class="shimmer" style="height:38px;border-radius:10px"></div>`;
   try {
-    // Re-fetch admin list langsung dari endpoint jam-absen (sudah include admin_ids)
-    const res = await apiFetch(P.jamAbsen, { method: 'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const ids = (d.data || d || {}).admin_ids || [];
+    // Gunakan cache dari loadJamAbsen() — tidak perlu fetch ulang ke server
+    const jam = _jamAbsenCache || await _getJamAbsen();
+    const ids = (jam || {}).admin_ids || [];
 
-    // Update global ADMIN_IDS
+    // Update global ADMIN_IDS jika perlu
     if (ids.length) {
       ADMIN_IDS.length = 0;
       ids.forEach(id => ADMIN_IDS.push(id));
@@ -6182,12 +6185,25 @@ function _showAdminMgmtResult(type, icon, title, msg) {
   showResult('adminMgmtResult', 'adminMgmtRIcon', 'adminMgmtRTitle', 'adminMgmtRMsg', type, icon, title, msg);
 }
 
+/* ── Cache bersama endpoint jamAbsen — P.jamAbsen hanya dipanggil 1× ──
+   Baik loadJamAbsen() maupun loadAdminMgmt() memakai _getJamAbsen()
+   sehingga tidak ada double-request ke server Google Sheets.           */
+let _jamAbsenCache   = null;   // objek hasil JSON
+let _jamAbsenPromise = null;   // Promise aktif yang sedang berjalan
+
+async function _getJamAbsen() {
+  if (_jamAbsenCache)   return _jamAbsenCache;
+  if (_jamAbsenPromise) return _jamAbsenPromise;
+  _jamAbsenPromise = apiFetch(P.jamAbsen, {method:'GET'})
+    .then(r  => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    .then(d  => { _jamAbsenCache = d.data || d; return _jamAbsenCache; })
+    .catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
+  return _jamAbsenPromise;
+}
+
 async function loadJamAbsen(){
   try{
-    const res=await apiFetch(P.jamAbsen,{method:'GET'});
-    if(!res.ok)throw 0;
-    const d=await res.json();
-    const jam=d.data||d||{};
+    const jam = await _getJamAbsen();
     if(jam.masuk)  { const m=toMenitStr(jam.masuk);  if(m!==null) JAM_MASUK_MENIT=m; }
     if(jam.pulang) { const m=toMenitStr(jam.pulang); if(m!==null) JAM_PULANG_MENIT=m; }
 
@@ -6196,10 +6212,8 @@ async function loadJamAbsen(){
       ADMIN_IDS.length = 0;
       jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
     }
-    // Re-evaluasi IS_ADMIN setelah ADMIN_IDS dimuat
     IS_ADMIN = ADMIN_IDS.includes(MY_ID);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID || null;
-    // Tampilkan/sembunyikan tab Admin sesuai hasil
     _applyAdminUI();
 
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:menitToStr(JAM_MASUK_MENIT),pulang:menitToStr(JAM_PULANG_MENIT)})); }catch(_){}
@@ -6247,6 +6261,8 @@ async function simpanJamAbsen(){
   if(btn){btn.disabled=true;$('btnJamText').textContent='💾 Menyimpan...';}
   try{
     await apiFetch(P.jamAbsen,{method:'POST',body:JSON.stringify({masuk:inM.value,pulang:inP.value,diubah_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+    // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
+    _jamAbsenCache = null; _jamAbsenPromise = null;
     JAM_MASUK_MENIT  = mMasuk;
     JAM_PULANG_MENIT = mPulang;
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:inM.value,pulang:inP.value})); }catch(_){}

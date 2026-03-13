@@ -1515,7 +1515,7 @@
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
 const SERVER_2  = 'https://mindcloud.my.id';
 //const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
-const isTest    = true;
+const isTest    = false;
 // ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
 let ADMIN_IDS = [];          // diisi oleh loadJamAbsen()
@@ -3872,23 +3872,26 @@ function renderKetStatusList(rows){
   }
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
   el.innerHTML=rows.slice(0,20).map((r,i)=>{
-    const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
-    const isPending=raw.includes('PENDING');
-    const isApproved=raw==='IZIN'||raw==='SAKIT'||raw==='TUGAS';
-    const isRejected=raw.includes('TOLAK')||raw.includes('REJECT');
-    const jenisBase=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','');
-    const emoji=JENIS_EMOJI[jenisBase]||'📝';
-    const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':'ket-badge-rejected';
-    const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':'❌ DITOLAK';
-    const tgl=r.Tanggal||r.tanggal||'—';
-    const ket=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
-    const actions=isPending?`<div class="ket-action-row">
+    // Schema baru Supabase: id_ket, user_id, nama, nip, tanggal, jam, jenis, keterangan, status
+    const jenis    = (r.jenis || r['Jenis Absen'] || r.jenis_absen || '').trim().toUpperCase()
+                       .replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','').replace(' DISETUJUI','');
+    const status   = (r.status || r.Status || '').trim().toUpperCase();
+    const isPending  = status === 'PENDING'   || (!status && (r.jenis||'').toUpperCase().includes('PENDING'));
+    const isApproved = status === 'DISETUJUI' || status === 'APPROVED';
+    const isRejected = status === 'DITOLAK'   || status === 'REJECTED';
+    const emoji    = JENIS_EMOJI[jenis] || '📝';
+    const badgeClass = isPending ? 'ket-badge-pending' : isApproved ? 'ket-badge-approved' : 'ket-badge-rejected';
+    const badgeLabel = isPending ? '⏳ PENDING' : isApproved ? '✅ DISETUJUI' : '❌ DITOLAK';
+    const tgl  = r.tanggal || r.Tanggal || '—';
+    const ket  = (r.keterangan || r.Ket || r.ket || '').replace(/\|.*$/, '').trim();
+    const idKet = r.id_ket || r.ID_Ket || r.row_number || i;
+    const actions = isPending ? `<div class="ket-action-row">
       <button class="ket-btn-edit" onclick="openKetEdit(${i})">✏️ Edit</button>
       <button class="ket-btn-del"  onclick="confirmKetDelete(${i})">🗑️ Hapus</button>
-    </div>`:'';
-    return`<div class="ket-item">
+    </div>` : '';
+    return `<div class="ket-item">
       <div class="ket-item-left">
-        <div class="ket-item-jenis">${emoji} ${jenisBase}</div>
+        <div class="ket-item-jenis">${emoji} ${jenis||'—'}</div>
         <div class="ket-item-tgl">📅 ${tgl}</div>
         <div class="ket-item-ket">${ket||'—'}</div>
       </div>
@@ -3903,18 +3906,22 @@ function renderKetStatusList(rows){
 function openKetEdit(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const raw=(r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
-  $('editKetRowNum').value=r.row_number||r.rowNumber||idx;
-  $('editKetOrigTglMulai').value=r.Tanggal||r.tanggal||'';
+  // Schema baru: jenis (bukan 'Jenis Absen'), id_ket (bukan row_number)
+  const raw = (r.jenis || r['Jenis Absen'] || '').toUpperCase()
+                .replace(' PENDING','').replace(' DITOLAK','').replace(' DISETUJUI','').trim();
+  const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
+  $('editKetRowNum').value = idKet;
+  $('editKetOrigTglMulai').value = r.tanggal || r.Tanggal || '';
   // Set jenis pills
   ['IZIN','SAKIT','TUGAS'].forEach(j=>{
     const el=$('editJenisPill_'+j);
     if(el) el.classList.toggle('active', j===raw);
   });
-  editSelectedJenis=raw||'IZIN';
-  $('editTglMulai').value=r['Tgl Mulai']||r.Tanggal||'';
-  $('editTglSelesai').value=r['Tgl Selesai']||r.Tanggal||'';
-  $('editKetText').value=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+  editSelectedJenis = raw || 'IZIN';
+  // Schema baru tidak punya tgl_mulai/tgl_selesai terpisah — pakai tanggal
+  $('editTglMulai').value   = r.tanggal || r['Tgl Mulai'] || r.Tanggal || '';
+  $('editTglSelesai').value = r.tanggal || r['Tgl Selesai'] || r.Tanggal || '';
+  $('editKetText').value = (r.keterangan || r.Ket || r.ket || '').replace(/\|.*$/,'').trim();
   $('editKetResult').style.display='none';
   $('ketEditOverlay').classList.add('open');
 }
@@ -3935,12 +3942,12 @@ function setEditJenis(j,el){
 async function handleKetEdit(){
   const tm=$('editTglMulai').value, ts=$('editTglSelesai').value, k=$('editKetText').value.trim();
   if(!tm||!ts||!k){showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','warning','⚠️','Lengkapi Form','Semua field wajib diisi.');$('editKetResult').style.display='flex';return;}
-  const rowNum=$('editKetRowNum').value;
-  const origTgl=$('editKetOrigTglMulai').value;
+  const idKet  = $('editKetRowNum').value;  // id_ket dari schema baru
+  const origTgl = $('editKetOrigTglMulai').value;
   setBtnL('btnSimpanEdit',true,'Menyimpan...');
   try{
     const res=await apiFetch(P.ketEdit,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:rowNum, orig_tanggal:origTgl,
+      user_id:MY_ID, id_ket:idKet, orig_tanggal:origTgl,
       jenis:editSelectedJenis, tgl_mulai:tm, tgl_selesai:ts, keterangan:k,
       timestamp:Math.floor(Date.now()/1000)
     })});
@@ -3963,15 +3970,15 @@ async function handleKetEdit(){
 async function confirmKetDelete(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const tgl=r.Tanggal||'?';
-  const tglMulai=r['Tgl Mulai']||r.Tanggal||'?';
-  const tglSelesai=r['Tgl Selesai']||r.Tanggal||'?';
-  const jenis=(r['Jenis Absen']||'').replace(' PENDING','');
-  if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
+  // Schema baru: id_ket, tanggal (satu field), jenis, keterangan
+  const idKet    = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
+  const tgl      = r.tanggal || r.Tanggal || '?';
+  const jenis    = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING','').trim();
+  if(!confirm(`Hapus pengajuan ${jenis}\n${tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
     const res=await apiFetch(P.ketDelete,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:r.row_number||r.rowNumber,
-      tgl_mulai:tglMulai, tgl_selesai:tglSelesai, tanggal:tgl,
+      user_id:MY_ID, id_ket:idKet,
+      tgl_mulai:tgl, tgl_selesai:tgl, tanggal:tgl,
       timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
@@ -3990,9 +3997,11 @@ async function loadKonfirmasiAdmin(){
     const res=await apiFetch(`${P.ketList}?status=PENDING`,{method:'GET'});
     if(!res.ok) throw 0;
     const d=await res.json();
+    // Schema baru: filter by status === 'PENDING'
     const rows=(d.data||d.rows||[]).filter(r=>{
-      const j=(r['Jenis Absen']||'').toUpperCase();
-      return j.includes('PENDING');
+      const st = (r.status || r.Status || '').toUpperCase();
+      const j  = (r.jenis  || r['Jenis Absen'] || '').toUpperCase();
+      return st === 'PENDING' || j.includes('PENDING');
     });
     if(!rows||rows.length===0){
       el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">✅ Tidak ada pengajuan yang menunggu konfirmasi.</div>';
@@ -4000,19 +4009,21 @@ async function loadKonfirmasiAdmin(){
     }
     const EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
     el.innerHTML=rows.map((r,i)=>{
-      const jenis=(r['Jenis Absen']||'').replace(' PENDING','').toUpperCase();
-      const em=EMOJI[jenis]||'📝';
-      const nama=r.Nama||'—';
-      const nip=r.NIP||'—';
-      const tgl=r.Tanggal||'—';
-      const ket=(r.Ket||'').replace(/\|.*$/,'').trim();
-      const rn=r.row_number||r.rowNumber||i;
-      return`<div class="konfirm-item" id="konfirm-${rn}">
+      // Schema baru: id_ket, nama, nip, tanggal, jenis, keterangan, status
+      const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || i;
+      const jenis = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING','').toUpperCase();
+      const em    = EMOJI[jenis] || '📝';
+      const nama  = r.nama  || r.Nama  || '—';
+      const nip   = r.nip   || r.NIP   || '—';
+      const tgl   = r.tanggal || r.Tanggal || '—';
+      const ket   = (r.keterangan || r.Ket || '').replace(/\|.*$/,'').trim();
+      const idKetEsc = String(idKet).replace(/'/g,"\'");
+      return `<div class="konfirm-item" id="konfirm-${idKet}">
         <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(${jenis})</span></div>
         <div class="konfirm-detail">🪪 ${nip} · 📅 ${tgl}<br>📝 ${ket||'—'}</div>
         <div class="konfirm-actions">
-          <button class="konfirm-btn-ok"  onclick="handleKonfirmasi(${rn},'APPROVE','${jenis}','${tgl}')">✅ Setujui</button>
-          <button class="konfirm-btn-no"  onclick="handleKonfirmasi(${rn},'REJECT','${jenis}','${tgl}')">❌ Tolak</button>
+          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tgl}')">✅ Setujui</button>
+          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tgl}')">❌ Tolak</button>
         </div>
       </div>`;
     }).join('');
@@ -4021,18 +4032,18 @@ async function loadKonfirmasiAdmin(){
   }
 }
 
-async function handleKonfirmasi(rowNum, action, jenis, tanggal){
+async function handleKonfirmasi(idKet, action, jenis, tanggal){
   const konfirm=$('konfirmasiResult');
   if(konfirm) konfirm.style.display='none';
   try{
     const res=await apiFetch(P.ketApprove,{method:'POST',body:JSON.stringify({
-      row_number:rowNum, action, jenis, tanggal,
+      id_ket:idKet, action, jenis, tanggal,
       admin_id:MY_ID, admin_ids:ADMIN_IDS, timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
     if(d.ok!==false){
       // Hilangkan item dari DOM
-      const el=document.getElementById('konfirm-'+rowNum);
+      const el=document.getElementById('konfirm-'+idKet);
       if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
       if(konfirm){
         showResult('konfirmasiResult','konfirmasiRIcon','konfirmasiRTitle','konfirmasiRMsg',

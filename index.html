@@ -832,6 +832,26 @@
     </div>
   </div>
 
+  <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
+  <div id="faceRequiredModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(5,12,30,.97);flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:360px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:24px 20px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🧠</div>
+      <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:8px">Daftarkan Wajah Anda</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+        Sistem absensi memerlukan data wajah Anda untuk verifikasi identitas.<br>
+        <span style="color:var(--gold);font-weight:700">Wajib didaftarkan sebelum bisa absen.</span>
+      </div>
+      <div id="faceRequiredStatus" style="font-size:10px;color:var(--muted);margin-bottom:16px;min-height:16px"></div>
+      <button onclick="daftarWajahPaksa()" id="btnDaftarWajahPaksa"
+        style="width:100%;padding:14px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>📷</span><span id="btnDaftarWajahTxt">Daftarkan Wajah Sekarang</span>
+      </button>
+      <div style="font-size:9px;color:var(--muted);margin-top:12px;opacity:.6">
+        Data wajah disimpan aman di server dan hanya digunakan untuk verifikasi absensi.
+      </div>
+    </div>
+  </div>
+
   <!-- ══ TAB KETERANGAN ══ -->
   <div class="panel" id="panel-ket">
     <div class="user-card" style="margin-bottom:12px">
@@ -1452,6 +1472,18 @@
       <div class="result-card" id="periodeResult" style="margin-top:8px"><div class="r-icon" id="periodeRIcon">✅</div><div class="r-title" id="periodeRTitle">—</div><div class="r-msg" id="periodeRMsg">—</div></div>
     </div>
 
+    <!-- ══ STATUS WAJAH PEGAWAI ══ -->
+    <div class="card" style="margin-top:10px" id="faceStatusAdminCard">
+      <div class="card-title">
+        <span>🧠 Status Wajah Pegawai</span>
+        <button class="btn-sm-admin" onclick="loadFaceStatusAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">Pantau pegawai yang sudah &amp; belum mendaftarkan wajah. Klik tombol reset untuk hapus data wajah pegawai.</div>
+      <div id="faceStatusAdminList" style="margin-top:8px">
+        <div class="shimmer" style="height:38px;border-radius:10px"></div>
+      </div>
+    </div>
+
     <!-- ══ PENGATURAN FACE RECOGNITION ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">📸 Pengaturan Face Recognition</div>
@@ -1613,6 +1645,7 @@ function switchTab(tab) {
       adminLoaded = true;
       loadKonfirmasiAdmin(); loadLiburAdmin();
       loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadFaceStatusAdmin(); // muat status wajah semua pegawai
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
   }
@@ -2950,11 +2983,12 @@ function closeCamOverlay() {
   stopDetectLoop();
   stopCamStream();
   $('camOverlay').classList.add('hidden');
-  // Reset tombol agar bisa absen lagi jika user batalkan
   setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-  // Batalkan absen jika belum capture (hanya notif, tidak panggil callback)
+  // Panggil onCancel jika ada (misal: modal paksa wajah perlu muncul kembali)
+  const cb = _absenCallbackAfterCam;
   _absenCallbackAfterCam = null;
   _captureData = null;
+  if (cb && typeof cb === 'object' && typeof cb.onCancel === 'function') cb.onCancel();
 }
 
 function stopCamStream() {
@@ -3278,6 +3312,17 @@ async function handleAbsen() {
     // Face recognition dinonaktifkan admin — langsung absen tanpa kamera
     await _doAbsenWithGPS(initData, isTgX, null);
     setBtnL('btnAbsen',false,'Kirim Lokasi & Absen');
+    return;
+  }
+
+  // Cek apakah pegawai sudah daftar wajah
+  const _faceRef = getFaceRef();
+  if (!_faceRef || !_faceRef.dataUrl) {
+    setBtnL('btnAbsen',false,'Kirim Lokasi & Absen');
+    showResult('resultCard','rIcon','rTitle','rMsg','warning','🧠','Wajah Belum Didaftarkan',
+      'Daftarkan wajah Anda terlebih dahulu melalui tab Profil atau tunggu layar pendaftaran muncul.');
+    // Paksa tampilkan modal daftar wajah
+    setTimeout(_showFaceRequiredModal, 500);
     return;
   }
 
@@ -6604,8 +6649,165 @@ function _updateLocBadgeGPS(){
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
 loadFaceToggle(); // load face recognition setting
-loadFaceFromServer(); // sinkronisasi data wajah dari database server
+// Sinkronisasi data wajah dari server, lalu cek apakah perlu paksa daftar
+loadFaceFromServer().then(() => _cekWajibFace());
 initPermissions(); // pre-check & watch geolocation + camera permissions
+
+/* ============================================================
+   WAJIB DAFTAR WAJAH
+   ============================================================ */
+
+async function _cekWajibFace() {
+  await new Promise(r => setTimeout(r, 1200));
+  if (!MY_ID) return;
+  if (!FACE_RECOGNITION_ENABLED) return;
+  const ref = getFaceRef();
+  if (ref && ref.dataUrl) return;
+  _showFaceRequiredModal();
+}
+
+function _showFaceRequiredModal() {
+  const modal = $('faceRequiredModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+}
+
+function _hideFaceRequiredModal() {
+  const modal = $('faceRequiredModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+async function daftarWajahPaksa() {
+  const btn = $('btnDaftarWajahPaksa');
+  const txt = $('btnDaftarWajahTxt');
+  const status = $('faceRequiredStatus');
+  if (btn) btn.disabled = true;
+  if (txt) txt.textContent = 'Membuka kamera...';
+
+  openCamOverlay({ isRegister: true, onDone: async (cap) => {
+    if (!cap || !cap.dataUrl) {
+      if (btn) btn.disabled = false;
+      if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+      if (status) status.textContent = 'Foto tidak berhasil diambil, coba lagi.';
+      return;
+    }
+    if (status) { status.textContent = 'Menyimpan data wajah...'; status.style.color = 'var(--muted)'; }
+    const ok = saveFaceRef(cap.dataUrl);
+    if (ok) {
+      if (status) { status.textContent = 'Wajah berhasil didaftarkan!'; status.style.color = 'var(--success)'; }
+      updateFaceRegUI();
+      updateProfilFaceUI();
+      await new Promise(r => setTimeout(r, 1200));
+      _hideFaceRequiredModal();
+    } else {
+      if (status) { status.textContent = 'Gagal menyimpan. Coba lagi.'; status.style.color = 'var(--danger)'; }
+      if (btn) btn.disabled = false;
+      if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+    }
+  }, onCancel: () => {
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+    if (status) { status.textContent = 'Pendaftaran dibatalkan. Wajah wajib didaftarkan untuk absen.'; status.style.color = 'var(--warning)'; }
+    setTimeout(_showFaceRequiredModal, 500);
+  }});
+}
+
+/* ============================================================
+   ADMIN: STATUS WAJAH PEGAWAI
+   ============================================================ */
+
+async function loadFaceStatusAdmin() {
+  const list = $('faceStatusAdminList');
+  if (!list) return;
+  list.innerHTML = '<div class="shimmer" style="height:38px;border-radius:10px;margin-bottom:6px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-bottom:6px"></div><div class="shimmer" style="height:38px;border-radius:10px"></div>';
+  try {
+    const res = await apiFetch(P.userList, { method: 'GET' });
+    if (!res.ok) throw 0;
+    const json = await res.json();
+    const pegawai = Array.isArray(json) ? json : (json.data || []);
+    if (!pegawai.length) {
+      list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Tidak ada data pegawai</div>';
+      return;
+    }
+    const sudah = pegawai.filter(p => p.face_photo || p.face_histogram);
+    const belum = pegawai.filter(p => !p.face_photo && !p.face_histogram);
+    const total = pegawai.length;
+    const pct   = total > 0 ? Math.round(sudah.length / total * 100) : 0;
+    const barColor = pct === 100 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+
+    let html = `
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:10px;font-weight:700;color:var(--white)">Progress Pendaftaran</span>
+          <span style="font-size:11px;font-weight:800;color:${barColor}">${sudah.length}/${total} (${pct}%)</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <span style="font-size:9px;color:var(--success)">Sudah: ${sudah.length}</span>
+          <span style="font-size:9px;color:var(--danger)">Belum: ${belum.length}</span>
+        </div>
+      </div>`;
+
+    if (belum.length) {
+      html += `<div style="font-size:9px;font-weight:800;color:var(--danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Belum Daftar (${belum.length})</div>`;
+      belum.forEach(p => {
+        const nama = p.Nama || p.nama || '?';
+        const uid  = String(p.id || p.ID || '');
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;margin-bottom:6px">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">?</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+            <div style="font-size:9px;color:var(--muted)">ID: ${uid} · Belum daftar wajah</div>
+          </div>
+          <span style="font-size:9px;padding:2px 8px;border-radius:6px;background:rgba(239,68,68,.15);color:var(--danger);font-weight:700;flex-shrink:0">Belum</span>
+        </div>`;
+      });
+    }
+
+    if (sudah.length) {
+      html += `<div style="font-size:9px;font-weight:800;color:var(--success);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Sudah Daftar (${sudah.length})</div>`;
+      sudah.forEach(p => {
+        const nama    = p.Nama || p.nama || '?';
+        const uid     = String(p.id || p.ID || '');
+        const savedAt = p.face_saved_at || null;
+        let tgl = '?';
+        if (savedAt) { try { const d=new Date(savedAt); tgl=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; } catch(_){} }
+        const thumb = p.face_photo || null;
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
+          <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:#000">
+            ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px">?</div>'}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+            <div style="font-size:9px;color:var(--muted)">Didaftarkan: ${tgl}</div>
+          </div>
+          <button onclick="resetFacePegawai('${uid}','${nama}')"
+            style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">Reset</button>
+        </div>`;
+      });
+    }
+    list.innerHTML = html;
+  } catch(_) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Gagal memuat. Pastikan n8n aktif.</div>';
+  }
+}
+
+async function resetFacePegawai(uid, nama) {
+  if (!confirm('Reset data wajah ' + nama + '?\nPegawai akan dipaksa daftar ulang saat buka app.')) return;
+  try {
+    const res = await apiFetch(P.faceRegister, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: uid, foto_base64: '', histogram: [], saved_at: '', _reset: true })
+    });
+    if (res && res.ok) {
+      alert('Data wajah ' + nama + ' berhasil direset.');
+      loadFaceStatusAdmin();
+    } else { alert('Gagal reset. Coba lagi.'); }
+  } catch(_) { alert('Gagal terhubung ke server.'); }
+}
 
 loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat

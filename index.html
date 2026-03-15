@@ -1459,7 +1459,8 @@
         </div>
         <!-- Preview -->
         <div id="periodePreview" style="display:none;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:8px 10px;font-size:9.5px;line-height:1.8;margin-bottom:10px;color:var(--white)"></div>
-        <button class="btn-admin" onclick="tambahJamPeriode()" id="btnTambahPeriode">
+        <button onclick="debugCekPeriode()" style="width:100%;padding:8px;margin-bottom:8px;border-radius:10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#a78bfa;font-size:10px;font-weight:700;cursor:pointer">🔍 Cek Tanggal → Periode/Global</button>
+          <button class="btn-admin" onclick="tambahJamPeriode()" id="btnTambahPeriode">
           <div class="btn-inner"><span>💾</span><span id="btnTambahPeriodeTxt">Simpan Periode</span></div>
         </button>
       </div>
@@ -1737,6 +1738,12 @@ async function fetchJamPeriode(){
       return true;
     });
   }catch(_){}
+  // Debug: log periode yang berhasil dimuat (bisa dilihat di Console browser)
+  if (jamPeriodeList.length) {
+    console.log('[JamPeriode] Loaded', jamPeriodeList.length, 'periode:', jamPeriodeList.map(p => `${p.nama}: ${p.dari}→${p.sampai} (masuk:${p.masuk}, pulang:${p.pulang})`));
+  } else {
+    console.log('[JamPeriode] Kosong / tidak ada periode aktif');
+  }
 }
 
 // Load dari localStorage jika admin pernah simpan
@@ -6295,6 +6302,10 @@ async function _getJamAbsen() {
     .catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
   return _jamAbsenPromise;
 }
+function _resetJamAbsenCache() {
+  _jamAbsenCache   = null;
+  _jamAbsenPromise = null;
+}
 
 async function loadJamAbsen(){
   try{
@@ -6412,6 +6423,17 @@ async function loadJamPeriodeAdmin(){
   }catch{
     list.innerHTML='<div style="text-align:center;padding:14px;color:var(--danger);font-size:11px">❌ Gagal memuat periode</div>';
   }
+}
+
+// Debug: cek tanggal apakah masuk periode atau tidak
+function debugCekPeriode() {
+  const tgl = prompt('Masukkan tanggal (YYYY-MM-DD):');
+  if (!tgl) return;
+  const hasil = getJamForTanggal(tgl);
+  const msg = hasil.nama
+    ? `✅ ${tgl} → PERIODE: "${hasil.nama}"\nMasuk  : ${hasil.masuk}\nPulang : ${hasil.pulang}`
+    : `🔵 ${tgl} → JAM GLOBAL\nMasuk  : ${hasil.masuk}\nPulang : ${hasil.pulang}`;
+  alert(msg);
 }
 
 function renderPeriodeAdminList(){

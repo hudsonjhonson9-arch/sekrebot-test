@@ -4229,7 +4229,7 @@ function renderLog(logs){
             : `<div style="font-size:18px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${jamMasuk?jamMasuk.slice(0,5):'—:—'}</div>
                <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:2px">${masukLabel}</div>`
           }
-          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}</div>
+          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}${periodeNama ? "" : " (Global)"}</div>
         </div>
         <div style="background:${isKet?masukBg:'rgba(96,165,250,.06)'};border:1px solid ${isKet?masukColor+'44':'rgba(96,165,250,.2)'};border-radius:9px;padding:7px 9px">
           <div style="font-size:7.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">🔵 Jam Pulang</div>
@@ -4239,7 +4239,7 @@ function renderLog(logs){
             : `<div style="font-size:18px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${jamPulang?jamPulang.slice(0,5):'—:—'}</div>
                <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:2px">${pulangIcon} ${pulangLabel}</div>`
           }
-          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}</div>
+          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}${periodeNama ? "" : " (Global)"}</div>
         </div>
       </div>
       <!-- Footer: lokasi + ket -->
@@ -6424,19 +6424,26 @@ function renderPeriodeAdminList(){
   const todayStr = fmtD(nowWITA());
   const fmtTgl = s=>{ try{ const d=new Date(s+'T00:00:00'); return isNaN(d)?s:d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }catch{return s;} };
   list.innerHTML = jamPeriodeList.map(p=>{
-    const aktif = todayStr>=p.dari && todayStr<=p.sampai;
-    return `<div style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,${aktif?'.4':'.15'});border-radius:10px;padding:10px 12px;margin-bottom:7px;position:relative">
-      ${aktif?'<div style="position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:#a78bfa;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:5px;padding:2px 6px">● Aktif Sekarang</div>':''}
-      <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:4px;padding-right:80px">🌙 ${p.nama}</div>
-      <div style="font-size:9.5px;color:var(--muted);margin-bottom:6px">📅 ${fmtTgl(p.dari)} s.d. ${fmtTgl(p.sampai)}</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <span style="font-size:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:3px 8px;color:var(--success)">🟢 Masuk ≤ ${p.masuk}</span>
-        <span style="font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:3px 8px;color:var(--info)">🔵 Pulang ≥ ${p.pulang}</span>
+    const aktif   = todayStr >= p.dari && todayStr <= p.sampai;
+    const expired = todayStr > p.sampai;
+    const belumMulai = todayStr < p.dari;
+    const statusLabel = aktif ? '● Aktif' : expired ? '✕ Expired' : '○ Belum Mulai';
+    const statusColor = aktif ? '#a78bfa' : expired ? 'var(--danger)' : 'var(--muted)';
+    const borderAlpha = aktif ? '.4' : expired ? '.2' : '.15';
+    const bgAlpha     = aktif ? '.07' : expired ? '.03' : '.04';
+    return `<div style="background:rgba(167,139,250,${bgAlpha});border:1px solid rgba(167,139,250,${borderAlpha});border-radius:10px;padding:10px 12px;margin-bottom:7px;position:relative;${expired?'opacity:.6':''}">
+      <div style="position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:${statusColor};background:rgba(0,0,0,.2);border-radius:5px;padding:2px 6px">${statusLabel}</div>
+      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px;padding-right:70px">${p.nama}</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:6px">📅 ${fmtTgl(p.dari)} — ${fmtTgl(p.sampai)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="font-size:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:2px 8px;color:var(--success)">🟢 Masuk ≤ ${p.masuk}</span>
+        <span style="font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:6px;padding:2px 8px;color:#60a5fa">🔵 Pulang ≥ ${p.pulang}</span>
+        ${expired ? `<button onclick="hapusPeriodeAdmin('${p.id}')" style="font-size:8px;padding:2px 8px;border-radius:6px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);cursor:pointer;font-weight:700;margin-left:auto">🗑️ Hapus</button>` : ''}
       </div>
-      <button onclick="hapusJamPeriode('${p.id}','${p.nama}')" style="font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--danger);cursor:pointer;font-weight:700">🗑️ Hapus</button>
     </div>`;
   }).join('');
 }
+
 
 async function tambahJamPeriode(){
   const nama   = ($('inPeriodeNama')?.value||'').trim();
@@ -6476,6 +6483,13 @@ async function tambahJamPeriode(){
   }finally{
     if(btn){ setTimeout(()=>{ btn.disabled=false; $('btnTambahPeriodeTxt').textContent='Simpan Periode'; },2500); }
   }
+}
+
+// Alias untuk tombol hapus dari daftar periode (expired)
+function hapusPeriodeAdmin(id) {
+  const p = jamPeriodeList.find(x => String(x.id) === String(id));
+  const nama = p ? p.nama : id;
+  hapusJamPeriode(id, nama);
 }
 
 async function hapusJamPeriode(id, nama){

@@ -3994,14 +3994,13 @@ async function loadKonfirmasiAdmin(){
   if(!el) return;
   el.innerHTML='<div class="shimmer" style="height:80px;border-radius:12px"></div>';
   try{
-    const res=await apiFetch(`${P.ketList}?status=PENDING`,{method:'GET'});
+    // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
+    const res=await apiFetch(`${P.ketList}?is_admin=true&status=PENDING`,{method:'GET'});
     if(!res.ok) throw 0;
     const d=await res.json();
-    // Schema baru: filter by status === 'PENDING'
     const rows=(d.data||d.rows||[]).filter(r=>{
-      const st = (r.status || r.Status || '').toUpperCase();
-      const j  = (r.jenis  || r['Jenis Absen'] || '').toUpperCase();
-      return st === 'PENDING' || j.includes('PENDING');
+      const st=(r.status||r.Status||'').toUpperCase();
+      return st==='PENDING';
     });
     if(!rows||rows.length===0){
       el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">✅ Tidak ada pengajuan yang menunggu konfirmasi.</div>';
@@ -4009,24 +4008,30 @@ async function loadKonfirmasiAdmin(){
     }
     const EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
     el.innerHTML=rows.map((r,i)=>{
-      // Schema baru: id_ket, nama, nip, tanggal, jenis, keterangan, status
-      const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || i;
-      const jenis = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING','').toUpperCase();
-      const em    = EMOJI[jenis] || '📝';
-      const nama  = r.nama  || r.Nama  || '—';
-      const nip   = r.nip   || r.NIP   || '—';
-      const tgl   = r.tanggal || r.Tanggal || '—';
-      const ket   = (r.keterangan || r.Ket || '').replace(/\|.*$/,'').trim();
-      const idKetEsc = String(idKet).replace(/'/g,"\'");
+      // id_ket = ID_Ket baris pertama pengajuan ini (sudah digrouping oleh n8n)
+      const idKet = r.id_ket || r.ID_Ket || '';
+      if (!idKet) return ''; // skip jika tidak ada id_ket
+      const jenis = (r.jenis||'').toUpperCase();
+      const em    = EMOJI[jenis]||'📝';
+      const nama  = r.nama||'—';
+      const nip   = r.nip||'—';
+      // Tampilkan range tanggal jika multi-hari
+      const tglMulai   = r.tgl_mulai   || r.tanggal || '—';
+      const tglSelesai = r.tgl_selesai || r.tanggal || tglMulai;
+      const durasi     = r.durasi || 1;
+      const tglLabel   = tglMulai===tglSelesai ? tglMulai : `${tglMulai} s.d. ${tglSelesai} (${durasi} hari)`;
+      const ket   = (r.keterangan||'').trim();
+      const idKetEsc = idKet.replace(/'/g,"\'");
       return `<div class="konfirm-item" id="konfirm-${idKet}">
-        <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(${jenis})</span></div>
-        <div class="konfirm-detail">🪪 ${nip} · 📅 ${tgl}<br>📝 ${ket||'—'}</div>
+        <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(IZIN)</span></div>
+        <div class="konfirm-detail">🪪 ${nip} · 📅 ${tglLabel}<br>📝 ${ket||'—'}</div>
+        <div style="font-size:8px;color:var(--muted);font-family:monospace;margin:3px 0 6px;opacity:.6">${idKet}</div>
         <div class="konfirm-actions">
-          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tgl}')">✅ Setujui</button>
-          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tgl}')">❌ Tolak</button>
+          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tglMulai}')">✅ Setujui</button>
+          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tglMulai}')">❌ Tolak</button>
         </div>
       </div>`;
-    }).join('');
+    }).filter(Boolean).join('');
   }catch{
     el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Gagal memuat. Tekan 🔄 untuk coba lagi.</div>';
   }
@@ -6659,9 +6664,10 @@ function _updateLocBadgeGPS(){
 }
 
 window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
-loadFaceToggle(); // load face recognition setting
-// Sinkronisasi data wajah dari server, lalu cek apakah perlu paksa daftar
-loadFaceFromServer().then(() => _cekWajibFace());
+// Tunggu keduanya selesai sebelum cek wajib daftar
+// Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
+// masih default true padahal admin sudah matikan → modal paksa muncul keliru
+Promise.all([loadFaceToggle(), loadFaceFromServer()]).then(() => _cekWajibFace());
 initPermissions(); // pre-check & watch geolocation + camera permissions
 
 /* ============================================================

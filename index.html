@@ -6685,7 +6685,7 @@ async function _cekWajibFace() {
     return;
   }
   const ref = getFaceRef();
-  if (ref && ref.dataUrl) return;
+  if (ref && ref.dataUrl && ref.dataUrl !== '') return;
   _showFaceRequiredModal();
 }
 
@@ -6766,8 +6766,16 @@ async function loadFaceStatusAdmin() {
     const getUid  = p => String(p.id || p.ID || '');
     const getNip  = p => p.NIP  || p.nip  || '';
 
-    const sudah = pegawai.filter(p => p.face_photo || p.face_histogram);
-    const belum = pegawai.filter(p => !p.face_photo && !p.face_histogram);
+    // hasFace: face_histogram tidak null, tidak '', dan tidak '[]' (hasil reset)
+    const hasFace = p => {
+      const hist  = p.face_histogram;
+      const photo = p.face_photo;
+      const validHist  = hist  && hist  !== '[]' && hist  !== '';
+      const validPhoto = photo && photo !== '';
+      return validHist || validPhoto;
+    };
+    const sudah = pegawai.filter(p => hasFace(p));
+    const belum = pegawai.filter(p => !hasFace(p));
     const total = pegawai.length;
     const pct   = total > 0 ? Math.round(sudah.length / total * 100) : 0;
     const barColor = pct === 100 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';

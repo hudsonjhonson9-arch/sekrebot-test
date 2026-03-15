@@ -6512,6 +6512,8 @@ function _applyFaceToggleUI(enabled) {
     label.textContent   = '🔴 Face Recognition Nonaktif';
     desc.textContent    = 'Absen tanpa verifikasi wajah (hanya GPS)';
   }
+  // Sinkronisasi UI profil dengan status toggle
+  if (typeof updateProfilFaceUI === 'function') updateProfilFaceUI();
 }
 
 async function loadFaceToggle() {
@@ -6677,7 +6679,11 @@ initPermissions(); // pre-check & watch geolocation + camera permissions
 async function _cekWajibFace() {
   await new Promise(r => setTimeout(r, 1200));
   if (!MY_ID) return;
-  if (!FACE_RECOGNITION_ENABLED) return;
+  // Toggle OFF → sembunyikan modal paksa (tidak perlu daftar wajah untuk absen)
+  if (!FACE_RECOGNITION_ENABLED) {
+    _hideFaceRequiredModal();
+    return;
+  }
   const ref = getFaceRef();
   if (ref && ref.dataUrl) return;
   _showFaceRequiredModal();
@@ -6742,11 +6748,24 @@ async function loadFaceStatusAdmin() {
     const res = await apiFetch(P.userList, { method: 'GET' });
     if (!res.ok) throw 0;
     const json = await res.json();
-    const pegawai = Array.isArray(json) ? json : (json.data || []);
+
+    // Response format: { ok, data: [...], total } — ambil dari data
+    const pegawai = Array.isArray(json)
+      ? json
+      : Array.isArray(json.data)
+        ? json.data
+        : [];
+
     if (!pegawai.length) {
       list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Tidak ada data pegawai</div>';
       return;
     }
+
+    // Helper ambil nama — Supabase pakai "Nama" (kapital)
+    const getNama = p => p.Nama || p.nama || p.username || p.Username || '—';
+    const getUid  = p => String(p.id || p.ID || '');
+    const getNip  = p => p.NIP  || p.nip  || '';
+
     const sudah = pegawai.filter(p => p.face_photo || p.face_histogram);
     const belum = pegawai.filter(p => !p.face_photo && !p.face_histogram);
     const total = pegawai.length;
@@ -6763,21 +6782,22 @@ async function loadFaceStatusAdmin() {
           <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px"></div>
         </div>
         <div style="display:flex;gap:12px;margin-top:6px">
-          <span style="font-size:9px;color:var(--success)">Sudah: ${sudah.length}</span>
-          <span style="font-size:9px;color:var(--danger)">Belum: ${belum.length}</span>
+          <span style="font-size:9px;color:var(--success)">✅ Sudah: ${sudah.length}</span>
+          <span style="font-size:9px;color:var(--danger)">❌ Belum: ${belum.length}</span>
         </div>
       </div>`;
 
     if (belum.length) {
       html += `<div style="font-size:9px;font-weight:800;color:var(--danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Belum Daftar (${belum.length})</div>`;
       belum.forEach(p => {
-        const nama = p.Nama || p.nama || '?';
-        const uid  = String(p.id || p.ID || '');
+        const nama = getNama(p);
+        const uid  = getUid(p);
+        const nip  = getNip(p);
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;margin-bottom:6px">
-          <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">?</div>
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
-            <div style="font-size:9px;color:var(--muted)">ID: ${uid} · Belum daftar wajah</div>
+            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: '+nip+' · ' : ''}Belum daftar wajah</div>
           </div>
           <span style="font-size:9px;padding:2px 8px;border-radius:6px;background:rgba(239,68,68,.15);color:var(--danger);font-weight:700;flex-shrink:0">Belum</span>
         </div>`;
@@ -6787,30 +6807,40 @@ async function loadFaceStatusAdmin() {
     if (sudah.length) {
       html += `<div style="font-size:9px;font-weight:800;color:var(--success);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Sudah Daftar (${sudah.length})</div>`;
       sudah.forEach(p => {
-        const nama    = p.Nama || p.nama || '?';
-        const uid     = String(p.id || p.ID || '');
+        const nama    = getNama(p);
+        const uid     = getUid(p);
+        const nip     = getNip(p);
         const savedAt = p.face_saved_at || null;
         let tgl = '?';
-        if (savedAt) { try { const d=new Date(savedAt); tgl=`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; } catch(_){} }
+        if (savedAt && savedAt !== '') {
+          try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; } catch(_){}
+        }
         const thumb = p.face_photo || null;
         html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
-          <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:#000">
-            ${thumb ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:14px">?</div>'}
+          <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:rgba(0,0,0,.3)">
+            ${thumb
+              ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:16px">👤</div>`
+            }
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
-            <div style="font-size:9px;color:var(--muted)">Didaftarkan: ${tgl}</div>
+            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: '+nip+' · ' : ''}Terdaftar: ${tgl}</div>
           </div>
-          <button onclick="resetFacePegawai('${uid}','${nama}')"
-            style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">Reset</button>
+          <button onclick="resetFacePegawai('${uid}','${nama.replace(/'/g,"\'")}')"
+            style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">
+            🗑️ Reset
+          </button>
         </div>`;
       });
     }
+
     list.innerHTML = html;
-  } catch(_) {
+  } catch(e) {
     list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Gagal memuat. Pastikan n8n aktif.</div>';
   }
 }
+
 
 async function resetFacePegawai(uid, nama) {
   if (!confirm('Reset data wajah ' + nama + '?\nPegawai akan dipaksa daftar ulang saat buka app.')) return;

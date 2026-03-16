@@ -3295,8 +3295,6 @@ async function doCapture() {
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
-  const isSimple = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
-
   // Face recognition — skip if simple mode
   const faceMatch = isSimple ? { score: -1, label: '', cls: '' } : await matchFace(dataUrl);
 

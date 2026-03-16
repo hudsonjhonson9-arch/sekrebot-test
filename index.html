@@ -125,6 +125,11 @@
     .cam-video-wrap.face-bad{border-color:var(--danger);box-shadow:0 0 16px rgba(239,68,68,.25)}
     #camVideo{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
     #camCanvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}
+    
+    /* Variant Document (isSimple) */
+    .cam-video-wrap.doc-mode { aspect-ratio: unset; min-height: 400px; max-width:100%; }
+    .cam-video-wrap.doc-mode #camVideo { transform: none; object-fit: contain; }
+    .cam-video-wrap.doc-mode #camCanvas { transform: none; }
 
     /* Face guide oval */
     .face-guide{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
@@ -2954,6 +2959,14 @@ async function openCamOverlay(onDone) {
   delete $('btnCapture').dataset.enabled; // reset agar bisa diaktifkan kembali
   setCamStatus('idle','🔍','Memuat model AI...','Harap tunggu sebentar');
 
+  const btnFlash = $('camFlashBtn');
+  btnFlash.style.display = 'none';
+  btnFlash.style.background = 'rgba(255,255,255,.15)';
+  btnFlash.style.borderColor = 'rgba(255,255,255,.3)';
+  btnFlash.style.color = '#fff';
+  window._camVideoTrack = null;
+  _isFlashOn = false;
+
   // Minta izin kamera & mulai stream
   try {
     // ── Pre-check permission kamera via Permissions API ──
@@ -2983,11 +2996,10 @@ async function openCamOverlay(onDone) {
     window._camVideoTrack = _camStream.getVideoTracks()[0];
     
     // Tampilkan tombol flash jika menggunakan kamera belakang (environment)
-    // getCapabilities().torch sangat buggy di Android Chrome, lebih baik selalu tampilkan
     if (fMode === 'environment') {
-      $('camFlashBtn').style.display = 'flex';
+      btnFlash.style.display = 'flex';
     } else {
-      $('camFlashBtn').style.display = 'none';
+      btnFlash.style.display = 'none';
     }
     
   } catch(e) {
@@ -3007,10 +3019,12 @@ async function openCamOverlay(onDone) {
   if (!isSimpleOverlay) {
     $('camHeaderTitle').textContent = '📷 Verifikasi Wajah';
     $('faceGuideWrap').style.display = 'flex';
+    $('camVideoWrap').classList.remove('doc-mode');
     model = await loadBlazeFace();
   } else {
     $('camHeaderTitle').textContent = '📄 Foto Dokumen / Bukti';
     $('faceGuideWrap').style.display = 'none';
+    $('camVideoWrap').classList.add('doc-mode');
   }
   
   $('modelLoading').style.display  = 'none';
@@ -3054,27 +3068,28 @@ async function openCamOverlay(onDone) {
 let _isFlashOn = false;
 async function toggleFlash() {
   if (!window._camVideoTrack) return;
+  const btn = $('camFlashBtn');
   try {
     _isFlashOn = !_isFlashOn;
-    await window._camVideoTrack.applyConstraints({
-      advanced: [{ torch: _isFlashOn }]
-    });
-    const btn = $('camFlashBtn');
+    
+    // Check if it's already supported or blindly apply
+    const constraints = { advanced: [{ torch: _isFlashOn }] };
+    await window._camVideoTrack.applyConstraints(constraints);
+    
     if (_isFlashOn) {
       btn.style.background = 'rgba(255,193,7,.8)';
       btn.style.borderColor = '#ffc107';
-      btn.style.color = '#fff';
+      btn.style.color = '#222';
     } else {
       btn.style.background = 'rgba(255,255,255,.15)';
       btn.style.borderColor = 'rgba(255,255,255,.3)';
       btn.style.color = '#fff';
     }
   } catch(e) {
-    console.warn('Flash tidak didukung atau terhalang:', e);
+    console.warn('Flash tidak didukung atau di-lock OS:', e);
     // Revert state if failed
     _isFlashOn = !_isFlashOn;
-    // Tampilkan feedback error singkat
-    const btn = $('camFlashBtn');
+    // Tampilkan feedback error singkat (kedip merah)
     btn.style.background = 'rgba(239,68,68,.8)';
     setTimeout(() => {
       btn.style.background = 'rgba(255,255,255,.15)';
@@ -3083,6 +3098,10 @@ async function toggleFlash() {
 }
 
 function closeCamOverlay() {
+  if (window._camVideoTrack && _isFlashOn) {
+    // Matikan flash sebelum stream diputus jika menyala
+    window._camVideoTrack.applyConstraints({advanced: [{torch: false}]}).catch(()=>{});
+  }
   _isFlashOn = false; // Reset flash state
   stopDetectLoop();
   stopCamStream();

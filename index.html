@@ -1652,7 +1652,10 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', T[i]===tab));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const el = $('panel-'+tab); if(el) el.classList.add('active');
-  if (tab==='absen'  && !networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
+  if (tab==='absen') {
+    updateClock(); // refresh notif & batas jam periode segera
+    if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
+  }
   if (tab==='ket'    && !ketStatusLoaded)  loadKetStatus();
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
@@ -2091,7 +2094,10 @@ function getField(r, ...keys) {
   return '';
 }
 
+let _todayLoading = false;
 async function loadTodayHistory() {
+  if (_todayLoading) return; // cegah concurrent double-fetch
+  _todayLoading = true;
   const el = $('todayList');
   el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
                   <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
@@ -2114,6 +2120,8 @@ async function loadTodayHistory() {
     renderTodayHistory(rows);
   } catch(e) {
     el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
+  } finally {
+    _todayLoading = false;
   }
 }
 function getTodayBadge(jenis) {
@@ -6746,11 +6754,18 @@ function _updateLocBadgeGPS(){
   );
 }
 
-window._jamAbsenReady = loadJamAbsen().then(() => {
+// Load semua data dasar secara paralel
+window._jamAbsenReady = Promise.all([
+  loadJamAbsen(),      // jam global + admin list
+  fetchJamPeriode(),   // periode khusus → langsung tersedia di tab Absen
+  loadTodayHistory(),  // riwayat hari ini
+]).then(() => {
+  // Update clock setelah semua jam siap (agar notif periode langsung benar)
+  updateClock();
   // Sembunyikan splash screen setelah data dasar siap
   const splash = document.getElementById('appSplash');
   if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
-}); // load jam absen dari server/localStorage
+});
 // Tunggu keduanya selesai sebelum cek wajib daftar
 // Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
 // masih default true padahal admin sudah matikan → modal paksa muncul keliru
@@ -6949,7 +6964,6 @@ async function resetFacePegawai(uid, nama) {
   } catch(_) { alert('Gagal terhubung ke server.'); }
 }
 
-loadTodayHistory();
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak
 

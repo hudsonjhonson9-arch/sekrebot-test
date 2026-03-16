@@ -2681,7 +2681,7 @@ async function getFaceDescriptor(input) {
   try {
     const detection = await faceapi
       .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-      .withFaceLandmarks()
+      .withFaceLandmarks(true)
       .withFaceDescriptor();
     if (!detection) return null;
     return detection.descriptor; // Float32Array[128]
@@ -2884,7 +2884,7 @@ function updateProfilFaceUI() {
 
 /* ── Muat face-api.js (sekali saja, lazy load) ── */
 const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
-const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@pateketrunal/face-api-models';
+const FACE_API_MODELS = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 let _faceApiLoaded = false;
 
 async function _loadFaceApiScript() {
@@ -3086,7 +3086,7 @@ function startDetectLoop(model) {
     let detection = null;
     try {
       detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
-        .withFaceLandmarks();
+        .withFaceLandmarks(true);
     } catch(_) { return; }
 
     if (!detection) {
@@ -3438,24 +3438,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
 
-      // ── Double GPS Sampling (silent — user tidak melihat proses ini) ──
-      let _doubleSample = null;
-      try {
-        _doubleSample = await new Promise((resolve) => {
-          const _t0 = Date.now();
-          setTimeout(() => {
-            navigator.geolocation.getCurrentPosition(
-              (pos2) => resolve({
-                lat: pos2.coords.latitude, lng: pos2.coords.longitude,
-                acc: pos2.coords.accuracy, elapsed: Date.now() - _t0,
-                altitude: pos2.coords.altitude
-              }),
-              () => resolve(null),
-              {enableHighAccuracy:true, timeout:3000, maximumAge:0}
-            );
-          }, 800);
-        });
-      } catch(_) {}
 
       // GPS Fingerprint — data tambahan untuk deteksi fake GPS di server
       // Ambil lokasi sebelumnya dari localStorage untuk cek teleport
@@ -3490,8 +3472,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         prev_lat        : prevLocData.lat  || null,
         prev_lng        : prevLocData.lng  || null,
         prev_timestamp  : prevLocData.ts   || null,
-        // v3: Double sampling + motion data
-        double_sample   : _doubleSample,
+        // v3: motion data
         motion_data     : _motionData,
       };
 
@@ -3595,23 +3576,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         _score += 15; _flags.push('HEADING_INVALID_' + _heading);
       }
 
-      // ── Layer 11: Double GPS Sampling — jitter analysis ───
-      // GPS asli: ada micro-drift (5-50m). Fake GPS: koordinat identik sempurna
-      if (_doubleSample) {
-        const _dLat = Math.abs(latitude - _doubleSample.lat);
-        const _dLng = Math.abs(longitude - _doubleSample.lng);
-        const _driftM = Math.sqrt(_dLat*_dLat + _dLng*_dLng) * 111320; // deg→meter approx
-        if (_dLat === 0 && _dLng === 0) {
-          // Koordinat identik persis = sangat mencurigakan (GPS asli selalu ada micro-drift)
-          _score += 15; _flags.push('DOUBLE_SAMPLE_ZERO_DRIFT');
-        } else if (_driftM < 0.001) {
-          _score += 10; _flags.push('DOUBLE_SAMPLE_NEGLIGIBLE_DRIFT_' + _driftM.toFixed(4) + 'm');
-        }
-        // Accuracy juga identik persis = lebih mencurigakan
-        if (_doubleSample.acc === accuracy && Number.isInteger(accuracy)) {
-          _score += 5; _flags.push('DOUBLE_SAMPLE_SAME_ACC_' + accuracy + 'm');
-        }
-      }
 
       // ── Layer 12: DeviceMotion cross-check (anti-emulator) ─
       // HP asli selalu ada micro-vibration dari accelerometer

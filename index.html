@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Absensi BAPPERIDA</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <!-- TF.js loaded on-demand saat kamera dibuka -->
+  <!-- BlazeFace loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <style>
     :root{
       --navy:#0a1628;--gold:#c9a84c;--gold-dim:rgba(201,168,76,.15);
@@ -634,6 +635,22 @@
   </style>
 </head>
 <body>
+<style>
+  #appSplash{position:fixed;inset:0;z-index:99999;background:#050c1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
+  #appSplash.hide{opacity:0;pointer-events:none}
+  .splash-logo{font-size:36px}
+  .splash-title{font-size:14px;font-weight:700;color:#c9a84c;letter-spacing:.05em}
+  .splash-sub{font-size:10px;color:rgba(255,255,255,.4)}
+  .splash-bar{width:140px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+  .splash-progress{height:100%;width:0;background:#c9a84c;border-radius:2px;animation:splashLoad 1.2s ease forwards}
+  @keyframes splashLoad{0%{width:0}60%{width:70%}90%{width:90%}100%{width:100%}}
+</style>
+<div id="appSplash">
+  <div class="splash-logo">🏛️</div>
+  <div class="splash-title">BAPPERIDA Sumba Barat</div>
+  <div class="splash-sub">Memuat aplikasi absensi...</div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
 <div class="app">
   <!-- Header -->
   <div class="header">
@@ -2884,7 +2901,26 @@ function updateProfilFaceUI() {
 }
 
 /* ── Muat model BlazeFace (sekali saja) ── */
+async function _loadTFScripts() {
+  // Load TF.js + BlazeFace secara dinamis hanya saat dibutuhkan
+  if (window.tf && window.blazeface) return; // sudah ada
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
 async function loadBlazeFace() {
+  // Load TF.js + BlazeFace jika belum ada (lazy load)
+  try { await _loadTFScripts(); } catch(_) { return null; }
   if (_blazeModel) return _blazeModel;
   if (_modelLoading) {
     // Tunggu sampai selesai
@@ -6710,7 +6746,11 @@ function _updateLocBadgeGPS(){
   );
 }
 
-window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
+window._jamAbsenReady = loadJamAbsen().then(() => {
+  // Sembunyikan splash screen setelah data dasar siap
+  const splash = document.getElementById('appSplash');
+  if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
+}); // load jam absen dari server/localStorage
 // Tunggu keduanya selesai sebelum cek wajib daftar
 // Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
 // masih default true padahal admin sudah matikan → modal paksa muncul keliru

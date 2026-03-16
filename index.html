@@ -894,9 +894,8 @@
       <div class="form-group">
         <label class="form-label">📸 Bukti (Foto/Dokumen)</label>
         <input type="file" id="inputGaleri"  accept="image/*,.pdf"    style="display:none" onchange="handleBukti(event,'galeri')"/>
-        <input type="file" id="inputKamera"  accept="image/*"         capture="user" style="display:none" onchange="handleBukti(event,'kamera')"/>
         <div class="bukti-btn-row">
-          <button type="button" class="bukti-btn" id="btnKamera" onclick="$('inputKamera').click()">
+          <button type="button" class="bukti-btn" id="btnKamera" onclick="ambilFotoKeterangan()">
             <span class="bukti-btn-icon">📷</span>
             <span id="lblKamera">Ambil Foto</span>
           </button>
@@ -2960,8 +2959,14 @@ async function openCamOverlay(onDone) {
       $('modelLoading').textContent = '❌ Izin kamera ditolak. Buka pengaturan browser/Telegram dan aktifkan izin kamera.';
       return;
     }
+
+    let fMode = 'user';
+    if (typeof onDone === 'object' && onDone !== null && onDone.facingMode) {
+      fMode = onDone.facingMode;
+    }
+
     _camStream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }, audio:false
+      video:{ facingMode: fMode, width:{ideal:640}, height:{ideal:480} }, audio:false
     });
     // Permission berhasil → update cache
     _writePermStore({ camera: 'granted' });
@@ -2985,19 +2990,28 @@ async function openCamOverlay(onDone) {
   $('camStatus').style.display     = 'flex';
   $('livenessCard').style.display  = 'block';
   // Tampilkan face reg card hanya jika mode absen (bukan mode register)
-  const isRegMode = typeof onDone === 'object' && onDone?.isRegister;
-  if (!isRegMode && MY_ID) {
+  const isRegMode = typeof onDone === 'object' && onDone !== null && onDone.isRegister;
+  const isSimpleOverlay = typeof onDone === 'object' && onDone !== null && onDone.isSimple;
+
+  if (!isRegMode && !isSimpleOverlay && MY_ID) {
     updateFaceRegUI();
     $('faceRegCard').style.display = 'block';
   }
 
-  if (!model) {
-    setCamStatus('warn','⚠️','Model AI gagal dimuat','Foto tetap bisa diambil — verifikasi manual');
+  if (!model || isSimpleOverlay) {
+    if (isSimpleOverlay) {
+      setCamStatus('ok','📷','Ambil Foto','Posisikan dokumen atau bukti dengan jelas');
+    } else {
+      setCamStatus('warn','⚠️','Model AI gagal dimuat','Foto tetap bisa diambil — verifikasi manual');
+    }
     $('btnCapture').disabled = false;
-    $('btnCaptureSkip').style.display = 'block';
-    startSimpleCapture();
+    $('btnCaptureSkip').style.display = isSimpleOverlay ? 'none' : 'block';
+    $('btnCapture').textContent = isSimpleOverlay ? '📸 Ambil Foto Bukti' : '📸 Ambil Foto & Lanjutkan Absen';
+    startSimpleCapture(isSimpleOverlay);
     return;
   }
+  
+  $('btnCapture').textContent = '📸 Ambil Foto & Lanjutkan Absen';
 
   // Sesuaikan ukuran canvas dengan video
   const vid = $('camVideo');
@@ -3268,29 +3282,40 @@ async function doCapture() {
   cnv.width  = vid.videoWidth  || 640;
   cnv.height = vid.videoHeight || 480;
   const ctx = cnv.getContext('2d');
-  // Mirror seperti preview (selfie)
-  ctx.translate(cnv.width,0); ctx.scale(-1,1);
+  
+  const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
+  const isEnvCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.facingMode === 'environment';
+
+  if (!isEnvCap) {
+    // Mirror seperti preview (selfie)
+    ctx.translate(cnv.width,0); ctx.scale(-1,1);
+  }
   ctx.drawImage(vid,0,0,cnv.width,cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
-  // Face recognition — bandingkan dengan data referensi
-  const faceMatch = await matchFace(dataUrl);
+  // Face recognition — skip if simple mode
+  const faceMatch = isSimpleCap ? { score: -1, label: '', cls: '' } : await matchFace(dataUrl);
 
   _captureData = { dataUrl, faceOk, livenessOk,
                    faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
 
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;
-  const matchBadge = faceMatch.score >= 0
-    ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
-  const badges = [
-    faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
-    livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
-    matchBadge
-  ].join('');
+  let badges = '';
+  if (!isSimpleCap) {
+    const matchBadge = faceMatch.score >= 0
+      ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
+    badges = [
+      faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
+      livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
+      matchBadge
+    ].join('');
+  } else {
+    badges = '<span class="cam-preview-badge cpb-ok">✅ Foto Diambil</span>';
+  }
   $('camPreviewInfo').innerHTML = badges;
   $('camPreview').classList.add('show');
 
@@ -3319,10 +3344,14 @@ async function skipVerifikasi() {
   await doCapture();
 }
 
-function startSimpleCapture() {
-  // Fallback jika model gagal muat — langsung aktifkan tombol capture
+function startSimpleCapture(isSimpleMode) {
+  // Fallback jika model gagal muat atau isSimple mode
   $('btnCapture').disabled=false;
-  setCamStatus('warn','📷','Kamera Siap','Model AI tidak tersedia — foto manual');
+  if (isSimpleMode) {
+    setCamStatus('ok','📷','Kamera Siap','Posisikan dokumen/bukti secara jelas lalu tekan Ambil Foto');
+  } else {
+    setCamStatus('warn','📷','Kamera Siap','Model AI tidak tersedia — foto manual');
+  }
 }
 
 /* ── Helper UI ── */
@@ -3950,7 +3979,41 @@ function clearBukti() {
   $('buktiNamaText').textContent = '—';
   document.querySelectorAll('.bukti-btn').forEach(b => b.classList.remove('has-file'));
   $('lblKamera').textContent = 'Ambil Foto'; $('lblGaleri').textContent = 'Pilih File';
-  $('inputKamera').value = ''; $('inputGaleri').value = '';
+  if ($('inputKamera')) $('inputKamera').value = ''; 
+  $('inputGaleri').value = '';
+}
+
+function ambilFotoKeterangan() {
+  $('lblKamera').textContent = 'Membuka kamera...';
+  openCamOverlay({
+    isSimple: true,
+    facingMode: 'environment', // gunakan kamera belakang untuk foto bukti
+    onDone: async (cap) => {
+      if (!cap || !cap.dataUrl) {
+        $('lblKamera').textContent = 'Ambil Foto';
+        return;
+      }
+      const b64 = cap.dataUrl.split(',')[1];
+      window.fileBase64 = b64;
+      window.fileMime = 'image/jpeg';
+      window.fileOrigName = 'Kamera_' + Math.floor(Date.now()/1000) + '.jpg';
+      
+      const preview = $('buktiPreview'), img = $('buktiImg');
+      preview.classList.add('show');
+      img.src = cap.dataUrl;
+      img.style.display = 'block';
+      $('buktiNamaText').textContent = window.fileOrigName;
+      
+      $('btnKamera').classList.add('has-file');
+      $('btnGaleri').classList.remove('has-file');
+      
+      const sizeMB = (atob(b64).length / 1024 / 1024).toFixed(1);
+      $('lblKamera').textContent = `Foto Tersimpan (${sizeMB}MB)`;
+    },
+    onCancel: () => {
+      $('lblKamera').textContent = 'Ambil Foto';
+    }
+  });
 }
 async function handleKet(){
   const tm=$('tglMulai').value, ts=$('tglSelesai').value, k=$('ketText').value.trim();

@@ -2983,15 +2983,20 @@ async function openCamOverlay(onDone) {
     return;
   }
 
-  // Muat BlazeFace model
-  const model = await loadBlazeFace();
+  // Muat BlazeFace model (skip jika isSimpleOverlay)
+  const isRegMode = typeof onDone === 'object' && onDone !== null && onDone.isRegister;
+  const isSimpleOverlay = typeof onDone === 'object' && onDone !== null && onDone.isSimple;
+
+  let model = null;
+  if (!isSimpleOverlay) {
+    model = await loadBlazeFace();
+  }
+  
   $('modelLoading').style.display  = 'none';
   $('camVideoWrap').style.display  = 'block';
   $('camStatus').style.display     = 'flex';
-  $('livenessCard').style.display  = 'block';
+  $('livenessCard').style.display  = isSimpleOverlay ? 'none' : 'block';
   // Tampilkan face reg card hanya jika mode absen (bukan mode register)
-  const isRegMode = typeof onDone === 'object' && onDone !== null && onDone.isRegister;
-  const isSimpleOverlay = typeof onDone === 'object' && onDone !== null && onDone.isSimple;
 
   if (!isRegMode && !isSimpleOverlay && MY_ID) {
     updateFaceRegUI();

@@ -3298,11 +3298,22 @@ async function doCapture() {
   ctx.drawImage(vid,0,0,cnv.width,cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
+
+  if (isSimpleCap) {
+    // Mode Dokumen/Generik
+    _captureData = { dataUrl, faceOk: true, livenessOk: true, faceMatchScore: 1, faceMatchLabel: 'Dokumen' };
+    $('camPreviewImg').src = dataUrl;
+    $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
+    $('camPreview').classList.add('show');
+    return;
+  }
+
+  // ==== MODE ABSEN (Dgn AI Wajah & Liveness) ====
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
-  // Face recognition — skip if simple mode
-  const faceMatch = isSimpleCap ? { score: -1, label: '', cls: '' } : await matchFace(dataUrl);
+  // Face recognition — bandingkan dengan data referensi
+  const faceMatch = await matchFace(dataUrl);
 
   _captureData = { dataUrl, faceOk, livenessOk,
                    faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
@@ -3310,17 +3321,14 @@ async function doCapture() {
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;
   let badges = '';
-  if (!isSimpleCap) {
-    const matchBadge = faceMatch.score >= 0
-      ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
-    badges = [
-      faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
-      livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
-      matchBadge
-    ].join('');
-  } else {
-    badges = '<span class="cam-preview-badge cpb-ok">✅ Foto Diambil</span>';
-  }
+  const matchBadge = faceMatch.score >= 0
+    ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
+  badges = [
+    faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
+    livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
+    matchBadge
+  ].join('');
+  
   $('camPreviewInfo').innerHTML = badges;
   $('camPreview').classList.add('show');
 

@@ -2980,21 +2980,15 @@ async function openCamOverlay(onDone) {
     await vid.play();
     
     // Simpan track video ke window agar bisa diakses untuk flash
-    // Cek kapabilitas flash HANYA SETELAH stream berjalan 100%
     window._camVideoTrack = _camStream.getVideoTracks()[0];
-    try {
-      // Tunggu sedikit agar kapabilitas terisi (Chrome Android bug)
-      setTimeout(() => {
-        try {
-          const capabilities = window._camVideoTrack.getCapabilities();
-          if (capabilities.torch) {
-            $('camFlashBtn').style.display = 'flex';
-          } else {
-            $('camFlashBtn').style.display = 'none';
-          }
-        } catch(e) { $('camFlashBtn').style.display = 'none'; }
-      }, 500);
-    } catch(e) { console.warn(e); $('camFlashBtn').style.display = 'none'; }
+    
+    // Tampilkan tombol flash jika menggunakan kamera belakang (environment)
+    // getCapabilities().torch sangat buggy di Android Chrome, lebih baik selalu tampilkan
+    if (fMode === 'environment') {
+      $('camFlashBtn').style.display = 'flex';
+    } else {
+      $('camFlashBtn').style.display = 'none';
+    }
     
   } catch(e) {
     // Catat status denied ke cache jika user menolak
@@ -3077,6 +3071,14 @@ async function toggleFlash() {
     }
   } catch(e) {
     console.warn('Flash tidak didukung atau terhalang:', e);
+    // Revert state if failed
+    _isFlashOn = !_isFlashOn;
+    // Tampilkan feedback error singkat
+    const btn = $('camFlashBtn');
+    btn.style.background = 'rgba(239,68,68,.8)';
+    setTimeout(() => {
+      btn.style.background = 'rgba(255,255,255,.15)';
+    }, 800);
   }
 }
 
@@ -3357,16 +3359,20 @@ async function doCapture() {
     $('camPreviewImg').src = dataUrl;
     $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
     $('camPreview').classList.add('show');
-    // Langsung jalankan callback untuk mode dokumen
-    if (typeof _absenCallbackAfterCam === 'function') {
-      // old signature
-      _absenCallbackAfterCam(_captureData);
-      closeCamOverlay();
-    } else if (_absenCallbackAfterCam && typeof _absenCallbackAfterCam.onDone === 'function') {
-      // object signature
-      _absenCallbackAfterCam.onDone(_captureData);
-      closeCamOverlay();
-    }
+    const cb = _absenCallbackAfterCam;
+    
+    // Tutup UI kamera terlebih dahulu HANYA JIKA ITU DARI TAB KETERANGAN 
+    // agar layar tidak nyangkut saat memproses callback
+    setTimeout(() => {
+        closeCamOverlay();
+        try {
+          if (typeof cb === 'function') {
+            cb(_captureData);
+          } else if (cb && typeof cb.onDone === 'function') {
+            cb.onDone(_captureData);
+          }
+        } catch(err) { console.error('Callback error:', err); }
+    }, 150);
     
     return;
   }

@@ -1142,7 +1142,7 @@
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:60%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:70%"></div><div class="shimmer sh-line" style="width:45%"></div></div></div>
     </div>
-    <div class="footer" style="margin-top:12px">Data dari Google Sheets via n8n</div>
+    <div class="footer" style="margin-top:12px">Data dari Supabase via n8n</div>
   </div>
 
   <!-- ══ TAB REKAP ══ -->
@@ -3290,8 +3290,15 @@ function setLivenessStep(idx, state) {
 }
 
 /* ════ HANDLE ABSEN ════ */
+// Anti double-submit: track timestamp terakhir klik absen
+let _lastAbsenClick = 0;
+
 async function handleAbsen() {
   if ($('btnAbsen').disabled) return;
+  // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
+  const now = Date.now();
+  if (now - _lastAbsenClick < 3000) return;
+  _lastAbsenClick = now;
   if (isDesktop()) {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','🖥️','Perangkat Tidak Didukung','Absensi hanya dapat dilakukan dari smartphone.\nGunakan Telegram di HP Anda.');
     return;
@@ -4079,10 +4086,12 @@ async function loadLog(){
   $('rIcon2').outerHTML='<span class="spin-sm" id="rIcon2"></span>';
   $('logList').innerHTML=shimmerRows();
   try{
+    // Reset cache jam agar selalu dapat data terbaru dari server
+    _resetJamAbsenCache();
     const [res] = await Promise.all([
       apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
       fetchJamPeriode(),
-      window._jamAbsenReady,
+      loadJamAbsen(),        // reload jam global dari server (bukan cache)
       liburLoaded ? Promise.resolve() : fetchLiburForRekap()
     ]);
     if(!res.ok)throw 0;

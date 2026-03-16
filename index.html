@@ -767,9 +767,12 @@
   <div class="cam-overlay hidden" id="camOverlay">
     <div class="cam-header">
       <div>
-        <div class="cam-title">📷 Verifikasi Wajah</div>
+        <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
       </div>
-      <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+      <div style="display:flex; gap:10px;">
+        <button class="cam-close" id="camFlashBtn" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;" onclick="toggleFlash()" title="Nyalakan/Matikan Flash">⚡</button>
+        <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+      </div>
     </div>
     <div class="cam-body" id="camBody">
 
@@ -784,7 +787,7 @@
       <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
         <video id="camVideo" autoplay playsinline muted></video>
         <canvas id="camCanvas"></canvas>
-        <div class="face-guide"><div class="face-oval" id="faceOval"></div></div>
+        <div class="face-guide" id="faceGuideWrap"><div class="face-oval" id="faceOval"></div></div>
       </div>
 
       <!-- Status deteksi wajah -->
@@ -2968,6 +2971,19 @@ async function openCamOverlay(onDone) {
     _camStream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode: fMode, width:{ideal:640}, height:{ideal:480} }, audio:false
     });
+    // Simpan track video ke window agar bisa diakses untuk flash
+    window._camVideoTrack = _camStream.getVideoTracks()[0];
+    
+    // Cek kapabilitas flash, jika mendukung tampilkan tombol
+    try {
+      const capabilities = window._camVideoTrack.getCapabilities();
+      if (capabilities.torch) {
+        $('camFlashBtn').style.display = 'flex';
+      } else {
+        $('camFlashBtn').style.display = 'none';
+      }
+    } catch(e) { $('camFlashBtn').style.display = 'none'; }
+
     // Permission berhasil → update cache
     _writePermStore({ camera: 'granted' });
     const vid = $('camVideo');
@@ -2989,7 +3005,12 @@ async function openCamOverlay(onDone) {
 
   let model = null;
   if (!isSimpleOverlay) {
+    $('camHeaderTitle').textContent = '📷 Verifikasi Wajah';
+    $('faceGuideWrap').style.display = 'flex';
     model = await loadBlazeFace();
+  } else {
+    $('camHeaderTitle').textContent = '📄 Foto Dokumen / Bukti';
+    $('faceGuideWrap').style.display = 'none';
   }
   
   $('modelLoading').style.display  = 'none';
@@ -3029,7 +3050,32 @@ async function openCamOverlay(onDone) {
   startDetectLoop(model);
 }
 
+// Fitur Toggle Flash (Torch)
+let _isFlashOn = false;
+async function toggleFlash() {
+  if (!window._camVideoTrack) return;
+  try {
+    _isFlashOn = !_isFlashOn;
+    await window._camVideoTrack.applyConstraints({
+      advanced: [{ torch: _isFlashOn }]
+    });
+    const btn = $('camFlashBtn');
+    if (_isFlashOn) {
+      btn.style.background = 'rgba(255,193,7,.8)';
+      btn.style.borderColor = '#ffc107';
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'rgba(255,255,255,.15)';
+      btn.style.borderColor = 'rgba(255,255,255,.3)';
+      btn.style.color = '#fff';
+    }
+  } catch(e) {
+    console.warn('Flash tidak didukung atau terhalang:', e);
+  }
+}
+
 function closeCamOverlay() {
+  _isFlashOn = false; // Reset flash state
   stopDetectLoop();
   stopCamStream();
   $('camOverlay').classList.add('hidden');

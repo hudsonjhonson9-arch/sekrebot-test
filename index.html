@@ -3415,6 +3415,20 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
       // GPS Fingerprint — data tambahan untuk deteksi fake GPS di server
+      // Ambil lokasi sebelumnya dari localStorage untuk cek teleport
+      let prevLocData = {};
+      try {
+        const prevRaw = localStorage.getItem('_prev_loc_bapperida');
+        if (prevRaw) prevLocData = JSON.parse(prevRaw);
+      } catch(_) {}
+      // Simpan lokasi saat ini untuk request berikutnya
+      try {
+        localStorage.setItem('_prev_loc_bapperida', JSON.stringify({
+          lat: _coords.latitude, lng: _coords.longitude,
+          ts: Math.floor(Date.now()/1000)
+        }));
+      } catch(_) {}
+
       const gps_fingerprint = {
         has_altitude    : _coords.altitude          !== null && _coords.altitude          !== undefined,
         has_altitude_acc: _coords.altitudeAccuracy  !== null && _coords.altitudeAccuracy  !== undefined,
@@ -3424,9 +3438,14 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         altitude_acc    : _coords.altitudeAccuracy  ?? null,
         speed           : _coords.speed             ?? null,
         heading         : _coords.heading           ?? null,
-        gps_timestamp   : position.timestamp        ?? null,
-        system_timestamp: Date.now(),
-        elapsed_ms      : _gpsElapsed
+        gps_timestamp   : position.timestamp ? Math.floor(position.timestamp / 1000) : null,
+        system_timestamp: Math.floor(Date.now() / 1000),
+        elapsed_ms      : _gpsElapsed,
+        // Tambahan anti-fake
+        provider        : _coords.altitudeAccuracy !== null ? 'fused' : 'network',
+        prev_lat        : prevLocData.lat  || null,
+        prev_lng        : prevLocData.lng  || null,
+        prev_timestamp  : prevLocData.ts   || null,
       };
 
       /* ══════════════════════════════════════════════════════

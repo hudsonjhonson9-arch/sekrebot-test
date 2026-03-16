@@ -2971,10 +2971,17 @@ async function openCamOverlay(onDone) {
     _camStream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode: fMode, width:{ideal:640}, height:{ideal:480} }, audio:false
     });
-    // Simpan track video ke window agar bisa diakses untuk flash
-    window._camVideoTrack = _camStream.getVideoTracks()[0];
+
+    // Permission berhasil → update cache
+    _writePermStore({ camera: 'granted' });
+    const vid = $('camVideo');
+    vid.srcObject = _camStream;
+    await new Promise(r => { vid.onloadedmetadata=r; });
+    await vid.play();
     
-    // Cek kapabilitas flash, jika mendukung tampilkan tombol
+    // Simpan track video ke window agar bisa diakses untuk flash
+    // Cek kapabilitas flash HANYA SETELAH stream berjalan 100%
+    window._camVideoTrack = _camStream.getVideoTracks()[0];
     try {
       const capabilities = window._camVideoTrack.getCapabilities();
       if (capabilities.torch) {
@@ -2983,13 +2990,7 @@ async function openCamOverlay(onDone) {
         $('camFlashBtn').style.display = 'none';
       }
     } catch(e) { $('camFlashBtn').style.display = 'none'; }
-
-    // Permission berhasil → update cache
-    _writePermStore({ camera: 'granted' });
-    const vid = $('camVideo');
-    vid.srcObject = _camStream;
-    await new Promise(r => { vid.onloadedmetadata=r; });
-    await vid.play();
+    
   } catch(e) {
     // Catat status denied ke cache jika user menolak
     if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {

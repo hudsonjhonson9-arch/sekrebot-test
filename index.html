@@ -3305,6 +3305,16 @@ async function doCapture() {
     $('camPreviewImg').src = dataUrl;
     $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
     $('camPreview').classList.add('show');
+    
+    // Langsung jalankan callback untuk mode dokumen
+    if (typeof _absenCallbackAfterCam === 'function') {
+      // old signature
+      _absenCallbackAfterCam(_captureData);
+    } else if (_absenCallbackAfterCam && typeof _absenCallbackAfterCam.onDone === 'function') {
+      // object signature
+      _absenCallbackAfterCam.onDone(_captureData);
+    }
+    
     return;
   }
 

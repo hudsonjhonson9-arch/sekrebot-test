@@ -3438,10 +3438,9 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
 
-      // ── Double GPS Sampling (ambil ulang setelah 1.5 detik) ──
+      // ── Double GPS Sampling (silent — user tidak melihat proses ini) ──
       let _doubleSample = null;
       try {
-        setBtnL('btnAbsen',true,'Verifikasi GPS...');
         _doubleSample = await new Promise((resolve) => {
           const _t0 = Date.now();
           setTimeout(() => {
@@ -3452,9 +3451,9 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
                 altitude: pos2.coords.altitude
               }),
               () => resolve(null),
-              {enableHighAccuracy:true, timeout:5000, maximumAge:0}
+              {enableHighAccuracy:true, timeout:3000, maximumAge:0}
             );
-          }, 1500);
+          }, 800);
         });
       } catch(_) {}
 

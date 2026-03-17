@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Absensi BAPPERIDA</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <!-- face-api.js loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <style>
     :root{
       --navy:#0a1628;--gold:#c9a84c;--gold-dim:rgba(201,168,76,.15);
@@ -125,6 +125,11 @@
     .cam-video-wrap.face-bad{border-color:var(--danger);box-shadow:0 0 16px rgba(239,68,68,.25)}
     #camVideo{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
     #camCanvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}
+    
+    /* Variant Document (isSimple) */
+    .cam-video-wrap.doc-mode { aspect-ratio: unset; min-height: 400px; max-width:100%; }
+    .cam-video-wrap.doc-mode #camVideo { transform: none; object-fit: contain; }
+    .cam-video-wrap.doc-mode #camCanvas { transform: none; }
 
     /* Face guide oval */
     .face-guide{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
@@ -634,6 +639,22 @@
   </style>
 </head>
 <body>
+<style>
+  #appSplash{position:fixed;inset:0;z-index:99999;background:#050c1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
+  #appSplash.hide{opacity:0;pointer-events:none}
+  .splash-logo{font-size:36px}
+  .splash-title{font-size:14px;font-weight:700;color:#c9a84c;letter-spacing:.05em}
+  .splash-sub{font-size:10px;color:rgba(255,255,255,.4)}
+  .splash-bar{width:140px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+  .splash-progress{height:100%;width:0;background:#c9a84c;border-radius:2px;animation:splashLoad 1.2s ease forwards}
+  @keyframes splashLoad{0%{width:0}60%{width:70%}90%{width:90%}100%{width:100%}}
+</style>
+<div id="appSplash">
+  <div class="splash-logo">🏛️</div>
+  <div class="splash-title">BAPPERIDA Sumba Barat</div>
+  <div class="splash-sub">Memuat aplikasi absensi...</div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
 <div class="app">
   <!-- Header -->
   <div class="header">
@@ -751,9 +772,12 @@
   <div class="cam-overlay hidden" id="camOverlay">
     <div class="cam-header">
       <div>
-        <div class="cam-title">📷 Verifikasi Wajah & Seragam</div>
+        <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
       </div>
-      <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+      <div style="display:flex; gap:10px;">
+        <button class="cam-close" id="camFlashBtn" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;" onclick="toggleFlash()" title="Nyalakan/Matikan Flash">⚡</button>
+        <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+      </div>
     </div>
     <div class="cam-body" id="camBody">
 
@@ -768,11 +792,8 @@
       <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
         <video id="camVideo" autoplay playsinline muted></video>
         <canvas id="camCanvas"></canvas>
-        <div class="face-guide"><div class="face-oval" id="faceOval"></div></div>
+        <div class="face-guide" id="faceGuideWrap"><div class="face-oval" id="faceOval"></div></div>
       </div>
-
-      <!-- Info seragam hari ini -->
-      <div class="seragam-info" id="seragamInfo" style="display:none">📋 —</div>
 
       <!-- Status deteksi wajah -->
       <div class="cam-status idle" id="camStatus" style="display:none">
@@ -818,18 +839,6 @@
         </div>
       </div>
 
-      <!-- Cek baju / seragam -->
-      <div class="baju-card" id="bajuCard" style="display:none">
-        <div class="baju-title">👔 Deteksi Seragam</div>
-        <div class="baju-row">
-          <div class="baju-swatch" id="bajuSwatch"></div>
-          <div class="baju-info">
-            <div class="baju-color" id="bajuColor">Mendeteksi...</div>
-            <div class="baju-verdict" id="bajuVerdict"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- Preview hasil foto -->
       <div class="cam-preview" id="camPreview">
         <img id="camPreviewImg" src="" alt="Foto Absen">
@@ -844,6 +853,26 @@
         ⏩ Lewati Verifikasi (tetap foto tersimpan)
       </button>
 
+    </div>
+  </div>
+
+  <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
+  <div id="faceRequiredModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(5,12,30,.97);flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:360px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:24px 20px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🧠</div>
+      <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:8px">Daftarkan Wajah Anda</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+        Sistem absensi memerlukan data wajah Anda untuk verifikasi identitas.<br>
+        <span style="color:var(--gold);font-weight:700">Wajib didaftarkan sebelum bisa absen.</span>
+      </div>
+      <div id="faceRequiredStatus" style="font-size:10px;color:var(--muted);margin-bottom:16px;min-height:16px"></div>
+      <button onclick="daftarWajahPaksa()" id="btnDaftarWajahPaksa"
+        style="width:100%;padding:14px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span>📷</span><span id="btnDaftarWajahTxt">Daftarkan Wajah Sekarang</span>
+      </button>
+      <div style="font-size:9px;color:var(--muted);margin-top:12px;opacity:.6">
+        Data wajah disimpan aman di server dan hanya digunakan untuk verifikasi absensi.
+      </div>
     </div>
   </div>
 
@@ -873,14 +902,13 @@
       <div class="form-group">
         <label class="form-label">📸 Bukti (Foto/Dokumen)</label>
         <input type="file" id="inputGaleri"  accept="image/*,.pdf"    style="display:none" onchange="handleBukti(event,'galeri')"/>
-        <input type="file" id="inputKamera"  accept="image/*"         capture="environment" style="display:none" onchange="handleBukti(event,'kamera')"/>
         <div class="bukti-btn-row">
-          <button type="button" class="bukti-btn" id="btnKamera" onclick="$('inputKamera').click()">
+          <button type="button" class="bukti-btn" id="btnKamera" onclick="ambilFotoKeterangan()">
             <span class="bukti-btn-icon">📷</span>
             <span id="lblKamera">Ambil Foto</span>
           </button>
           <button type="button" class="bukti-btn" id="btnGaleri" onclick="$('inputGaleri').click()">
-            <span class="bukti-btn-icon">🖼️</span>
+            <span class="bukti-btn-icon">📂</span>
             <span id="lblGaleri">Pilih File</span>
           </button>
         </div>
@@ -979,20 +1007,11 @@
         <button onclick="registerFaceFromPreview()" style="background:linear-gradient(135deg,rgba(201,168,76,.2),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.4);color:var(--gold);border-radius:10px;padding:7px 12px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap" id="btnProfilRegFace">📷 Daftarkan</button>
       </div>
       <div id="profilFaceNote" style="font-size:9px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">
-        💡 Data wajah disimpan di perangkat Anda. Setiap absen, sistem akan mencocokkan wajah secara otomatis.
+        💡 Data wajah disimpan di server. Setiap absen, sistem akan mencocokkan wajah secara otomatis.
       </div>
     </div>
 
-    <!-- ══ STATISTIK ABSEN BULAN INI ══ -->
-    <div class="profil-section-title">📊 Statistik Absen</div>
-    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
-      <div class="stat-card s-masuk">     <div class="stat-num" id="stMasuk"     >—</div><div class="stat-lbl">✅ Masuk</div></div>
-      <div class="stat-card s-pulang">    <div class="stat-num" id="stPulang"    >—</div><div class="stat-lbl">🔵 Pulang</div></div>
-      <div class="stat-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)"><div class="stat-num" id="stPulangLuar" style="color:#f59e0b">—</div><div class="stat-lbl">🏃 Lap.</div></div>
-      <div class="stat-card s-izin">      <div class="stat-num" id="stIzin"     >—</div><div class="stat-lbl">🙏 Izin</div></div>
-      <div class="stat-card s-sakit">     <div class="stat-num" id="stSakit"    >—</div><div class="stat-lbl">🤒 Sakit</div></div>
-      <div class="stat-card" style="background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3)"><div class="stat-num" id="stTugas" style="color:#8b5cf6">—</div><div class="stat-lbl">💼 Tugas</div></div>
-    </div>
+
 
     <!-- ══ DOKUMEN KEPEGAWAIAN ══ -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -1087,6 +1106,7 @@
       <button class="filter-chip" onclick="filterLog('TUGAS', this)">💼 Tugas</button>
       <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
       <button class="filter-chip" onclick="filterLog('ALPA',  this)">❌ Alpa</button>
+      <button class="filter-chip" onclick="filterLog('LIBUR', this)">🎉 Libur</button>
     </div>
     <!-- ══ AKUMULASI WAKTU ══ -->
     <div id="akumulasiBox" style="display:none;margin-bottom:10px">
@@ -1145,7 +1165,7 @@
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:60%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:70%"></div><div class="shimmer sh-line" style="width:45%"></div></div></div>
     </div>
-    <div class="footer" style="margin-top:12px">Data dari Google Sheets via n8n</div>
+    <div class="footer" style="margin-top:12px">Data dari Supabase via n8n</div>
   </div>
 
   <!-- ══ TAB REKAP ══ -->
@@ -1356,106 +1376,6 @@
       <div class="result-card" id="liburResult" style="display:none"><div class="r-icon" id="liburRIcon">✅</div><div class="r-title" id="liburRTitle">—</div><div class="r-msg" id="liburRMsg">—</div></div>
     </div>
 
-    <!-- ══ KELOLA JENIS SERAGAM ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>🎨 Kelola Jenis Seragam</span>
-        <button class="btn-sm-admin" onclick="loadSeragamTypeAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Tambah, edit, atau hapus jenis seragam. Jenis ini akan muncul sebagai pilihan saat mengatur jadwal seragam harian.</div>
-
-      <!-- Form tambah / edit -->
-      <div id="seragamTypeForm" style="background:rgba(255,255,255,.03);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px;margin:10px 0">
-        <div style="font-size:10px;font-weight:700;color:var(--gold);margin-bottom:10px" id="seragamTypeFormTitle">➕ Tambah Jenis Seragam</div>
-        <input type="hidden" id="seragamTypeEditId" value="">
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🏷️ Nama / Label Seragam</label>
-          <input type="text" class="form-input" id="inputSeragamLabel" placeholder="cth: Batik Korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:8px">
-          <label class="form-label">🔑 Kode Warna (huruf kecil, tanpa spasi)</label>
-          <input type="text" class="form-input" id="inputSeragamWarna" placeholder="cth: batik_korpri"/>
-        </div>
-        <div class="form-group" style="margin-bottom:10px">
-          <label class="form-label">🎭 Emoji</label>
-          <input type="text" class="form-input" id="inputSeragamEmoji" placeholder="cth: 🟡" style="font-size:18px;width:80px"/>
-        </div>
-
-        <!-- HSL Range -->
-        <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;margin-bottom:10px">
-          <div style="font-size:10px;font-weight:700;color:var(--white);margin-bottom:2px">🎨 Rentang Warna HSL untuk Deteksi Kamera</div>
-          <div style="font-size:9px;color:var(--muted);margin-bottom:10px">H = Hue (0–360°) · S = Saturasi (0–100%) · L = Kecerahan (0–100%)</div>
-
-          <!-- Preview warna live -->
-          <div id="hslPreviewBar" style="height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.1);margin-bottom:10px;background:#333;transition:background .3s;display:flex;align-items:center;justify-content:center">
-            <span id="hslPreviewLabel" style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7)">Preview warna akan muncul di sini</span>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label class="form-label" style="font-size:9px">H Min (0–360)</label>
-              <input type="number" class="form-input" id="inputHMin" min="0" max="360" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">H Max (0–360)</label>
-              <input type="number" class="form-input" id="inputHMax" min="0" max="360" placeholder="360" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Min (0–100)</label>
-              <input type="number" class="form-input" id="inputSMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">S Max (0–100)</label>
-              <input type="number" class="form-input" id="inputSMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Min (0–100)</label>
-              <input type="number" class="form-input" id="inputLMin" min="0" max="100" placeholder="0" oninput="updateHslPreview()"/>
-            </div>
-            <div>
-              <label class="form-label" style="font-size:9px">L Max (0–100)</label>
-              <input type="number" class="form-input" id="inputLMax" min="0" max="100" placeholder="100" oninput="updateHslPreview()"/>
-            </div>
-          </div>
-          <div style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.6">
-            💡 <b>Contoh referensi:</b><br>
-            Batik Korpri Biru: H 200–240, S 30–100, L 20–70<br>
-            Coklat/Khaki: H 15–65, S 15–75, L 20–75<br>
-            Putih: H 0–360, S 0–20, L 68–100<br>
-            Kosongkan semua = Baju Bebas (tidak cek warna)
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px">
-          <button class="btn-admin" id="btnSeragamTypeSubmit" onclick="submitSeragamType()" style="flex:1;margin-bottom:0;padding:10px">
-            <div class="btn-inner"><span>💾</span><span id="btnSeragamTypeText">Simpan</span></div>
-          </button>
-          <button onclick="resetSeragamTypeForm()" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">✕ Batal</button>
-        </div>
-      </div>
-
-      <!-- Daftar jenis seragam -->
-      <div id="seragamTypeList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-      </div>
-      <div class="result-card" id="seragamTypeResult" style="margin-top:8px;display:none"><div class="r-icon" id="seragamTypeRIcon">✅</div><div class="r-title" id="seragamTypeRTitle">—</div><div class="r-msg" id="seragamTypeRMsg">—</div></div>
-    </div>
-
-    <!-- ══ PENGATURAN SERAGAM PER HARI ══ -->
-    <div class="card" style="margin-top:10px">
-      <div class="card-title">
-        <span>👔 Pengaturan Seragam per Hari</span>
-        <button class="btn-sm-admin" onclick="renderSeragamAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Atur seragam wajib per hari kerja. Digunakan untuk deteksi otomatis di kamera saat absen.</div>
-      <div id="seragamAdminList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
-      <div class="result-card" id="seragamResult" style="margin-top:8px"><div class="r-icon" id="seragamRIcon">✅</div><div class="r-title" id="seragamRTitle">—</div><div class="r-msg" id="seragamRMsg">—</div></div>
-      <button class="btn-admin" id="btnSimpanSeragam" onclick="simpanSeragamAdmin()" style="margin-top:8px">
-        <div class="btn-inner"><span>💾</span><span id="btnSeragamText">Simpan Pengaturan Seragam</span></div>
-      </button>
-    </div>
-
     <!-- ══ PENGATURAN JAM ABSEN ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">⏰ Pengaturan Jam Absen</div>
@@ -1562,7 +1482,8 @@
         </div>
         <!-- Preview -->
         <div id="periodePreview" style="display:none;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:8px 10px;font-size:9.5px;line-height:1.8;margin-bottom:10px;color:var(--white)"></div>
-        <button class="btn-admin" onclick="tambahJamPeriode()" id="btnTambahPeriode">
+        <button onclick="debugCekPeriode()" style="width:100%;padding:8px;margin-bottom:8px;border-radius:10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#a78bfa;font-size:10px;font-weight:700;cursor:pointer">🔍 Cek Tanggal → Periode/Global</button>
+          <button class="btn-admin" onclick="tambahJamPeriode()" id="btnTambahPeriode">
           <div class="btn-inner"><span>💾</span><span id="btnTambahPeriodeTxt">Simpan Periode</span></div>
         </button>
       </div>
@@ -1573,6 +1494,18 @@
         <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">⏳ Memuat...</div>
       </div>
       <div class="result-card" id="periodeResult" style="margin-top:8px"><div class="r-icon" id="periodeRIcon">✅</div><div class="r-title" id="periodeRTitle">—</div><div class="r-msg" id="periodeRMsg">—</div></div>
+    </div>
+
+    <!-- ══ STATUS WAJAH PEGAWAI ══ -->
+    <div class="card" style="margin-top:10px" id="faceStatusAdminCard">
+      <div class="card-title">
+        <span>🧠 Status Wajah Pegawai</span>
+        <button class="btn-sm-admin" onclick="loadFaceStatusAdmin()">🔄</button>
+      </div>
+      <div class="radius-note">Pantau pegawai yang sudah &amp; belum mendaftarkan wajah. Klik tombol reset untuk hapus data wajah pegawai.</div>
+      <div id="faceStatusAdminList" style="margin-top:8px">
+        <div class="shimmer" style="height:38px;border-radius:10px"></div>
+      </div>
     </div>
 
     <!-- ══ PENGATURAN FACE RECOGNITION ══ -->
@@ -1604,7 +1537,8 @@
 <script>
 /* ════ KONFIGURASI ════ */
 const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
-const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
+const SERVER_2  = 'https://mindcloud.my.id';
+//const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
 const isTest    = false;
 // ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
@@ -1646,6 +1580,7 @@ const P = {
   dokumenAdd : isTest ? '/webhook-test/dokumen-add'      : '/webhook/dokumen-add',
   dokumenDel : isTest ? '/webhook-test/dokumen-delete'   : '/webhook/dokumen-delete',
   faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
+  faceGet     : isTest ? '/webhook-test/face-get'        : '/webhook/face-get',
   faceToggle  : isTest ? '/webhook-test/face-toggle'     : '/webhook/face-toggle',
   seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
   seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
@@ -1723,7 +1658,10 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', T[i]===tab));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   const el = $('panel-'+tab); if(el) el.classList.add('active');
-  if (tab==='absen'  && !networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
+  if (tab==='absen') {
+    updateClock(); // refresh notif & batas jam periode segera
+    if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
+  }
   if (tab==='ket'    && !ketStatusLoaded)  loadKetStatus();
   if (tab==='profil'  && !logLoaded)    loadLog();
   if (tab==='profil'  && !dokumenLoaded) loadDokumen();
@@ -1732,8 +1670,9 @@ function switchTab(tab) {
     initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
     if (!adminLoaded) {
       adminLoaded = true;
-      loadKonfirmasiAdmin(); loadLiburAdmin(); renderSeragamAdmin();
-      loadSeragamTypeAdmin(); loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadKonfirmasiAdmin(); loadLiburAdmin();
+      loadJamPeriodeAdmin(); loadAdminMgmt();
+      loadFaceStatusAdmin(); // muat status wajah semua pegawai
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
   }
@@ -1752,29 +1691,50 @@ let jamPeriodeList = []; // [{id, nama, dari:'YYYY-MM-DD', sampai:'YYYY-MM-DD', 
 function normToISO(tgl){
   if(!tgl) return '';
   const s = String(tgl).trim();
-  // Konversi DD/MM/YYYY → YYYY-MM-DD
+  // DD/MM/YYYY → YYYY-MM-DD
   const dm = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if(dm) return `${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
-  // Strip time component dari datetime: "YYYY-MM-DDTHH:MM..." atau "YYYY-MM-DD HH:MM..."
+  // DD-MM-YYYY → YYYY-MM-DD  (pisah dash, bukan YYYY-MM-DD)
+  const dd = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if(dd) return `${dd[3]}-${dd[2].padStart(2,'0')}-${dd[1].padStart(2,'0')}`;
+  // Strip time component: "YYYY-MM-DDTHH:MM..." atau "YYYY-MM-DD HH:MM..."
   const dt = s.match(/^(\d{4}-\d{2}-\d{2})[T ].*$/);
   if(dt) return dt[1];
-  return s; // sudah ISO date
+  // Sudah ISO date (YYYY-MM-DD) — validasi format ketat
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return ''; // format tidak dikenal → kembalikan kosong agar tidak lolos guard
 }
+
+// Regex untuk validasi tanggal ISO final setelah normalisasi
+const _ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function getJamForTanggal(tglStr){
   // Prioritas: 1) Periode khusus aktif di tanggal tsb → 2) Global default
   const t = normToISO(tglStr);
-  if(!t || t.length < 10) return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
+  if(!t || !_ISO_RE.test(t)) return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
+
+  // Konversi ke timestamp numerik untuk perbandingan yang akurat (hindari string comparison bug)
+  const tMs = new Date(t + 'T00:00:00').getTime();
+  if(isNaN(tMs)) return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
+
   const periode = jamPeriodeList.find(p => {
-    const dari   = normToISO(p.dari);
-    const sampai = normToISO(p.sampai);
-    // Guard: skip periode dengan dari/sampai kosong atau tidak valid (mencegah match semua tanggal)
-    if(!dari || !sampai || dari.length < 10 || sampai.length < 10) return false;
-    return t >= dari && t <= sampai;
+    // Normalisasi ulang untuk jaga-jaga jika data dari server belum ter-normalisasi
+    const dari   = _ISO_RE.test(p.dari)   ? p.dari   : normToISO(p.dari   || '');
+    const sampai = _ISO_RE.test(p.sampai) ? p.sampai : normToISO(p.sampai || '');
+    // Guard ketat: wajib format YYYY-MM-DD valid & tidak kosong
+    if(!dari || !sampai || !_ISO_RE.test(dari) || !_ISO_RE.test(sampai)) return false;
+    // Gunakan perbandingan numerik (timestamp) agar tidak ada bug string comparison
+    const dariMs   = new Date(dari   + 'T00:00:00').getTime();
+    const sampaiMs = new Date(sampai + 'T00:00:00').getTime();
+    if(isNaN(dariMs) || isNaN(sampaiMs)) return false;
+    // Tanggal harus benar-benar di DALAM range [dari, sampai] (inklusif)
+    return tMs >= dariMs && tMs <= sampaiMs;
   });
+
   if(periode && periode.masuk && periode.pulang){
     return { masuk: periode.masuk, pulang: periode.pulang, nama: periode.nama };
   }
+  // Tidak ada periode yang cocok → gunakan jam global
   return { masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT), nama: null };
 }
 
@@ -1785,14 +1745,31 @@ async function fetchJamPeriode(){
     const json = await res.json();
     const list = json.data || json.list || (Array.isArray(json) ? json : []);
     jamPeriodeList = list.map(p=>({
-      id    : p.id || p.ID || '',
-      nama  : p.nama || p.Nama || '',
-      dari  : normToISO(p.dari || p.Dari || ''),
-      sampai: normToISO(p.sampai || p.Sampai || ''),
-      masuk : p.masuk || p.Masuk || '',
-      pulang: p.pulang || p.Pulang || '',
-    }));
+      id    : p.id    || p.ID    || p.Id    || '',
+      nama  : p.nama  || p.Nama  || p.name  || p.Name  || '',
+      dari  : normToISO(p.dari   || p.Dari   || p.dari_tanggal   || p.start_date || p.startDate || ''),
+      sampai: normToISO(p.sampai || p.Sampai || p.sampai_tanggal || p.end_date   || p.endDate   || ''),
+      masuk : (p.masuk  || p.Masuk  || p.jam_masuk  || p.jamMasuk  || '').toString().trim(),
+      pulang: (p.pulang || p.Pulang || p.jam_pulang || p.jamPulang || '').toString().trim(),
+    })).filter(p => {
+      // Filter ketat: dari & sampai wajib valid ISO, masuk & pulang wajib ada & format HH:MM
+      if(!_ISO_RE.test(p.dari) || !_ISO_RE.test(p.sampai)) return false;
+      if(!p.masuk || !p.pulang) return false;
+      // Validasi format waktu HH:MM (dengan toleransi H:MM)
+      if(!/^\d{1,2}:\d{2}$/.test(p.masuk) || !/^\d{1,2}:\d{2}$/.test(p.pulang)) return false;
+      // Pastikan dari <= sampai (periode tidak terbalik)
+      const dariMs   = new Date(p.dari   + 'T00:00:00').getTime();
+      const sampaiMs = new Date(p.sampai + 'T00:00:00').getTime();
+      if(isNaN(dariMs) || isNaN(sampaiMs) || dariMs > sampaiMs) return false;
+      return true;
+    });
   }catch(_){}
+  // Debug: log periode yang berhasil dimuat (bisa dilihat di Console browser)
+  if (jamPeriodeList.length) {
+    console.log('[JamPeriode] Loaded', jamPeriodeList.length, 'periode:', jamPeriodeList.map(p => `${p.nama}: ${p.dari}→${p.sampai} (masuk:${p.masuk}, pulang:${p.pulang})`));
+  } else {
+    console.log('[JamPeriode] Kosong / tidak ada periode aktif');
+  }
 }
 
 // Load dari localStorage jika admin pernah simpan
@@ -2123,7 +2100,10 @@ function getField(r, ...keys) {
   return '';
 }
 
+let _todayLoading = false;
 async function loadTodayHistory() {
+  if (_todayLoading) return; // cegah concurrent double-fetch
+  _todayLoading = true;
   const el = $('todayList');
   el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
                   <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
@@ -2146,6 +2126,8 @@ async function loadTodayHistory() {
     renderTodayHistory(rows);
   } catch(e) {
     el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
+  } finally {
+    _todayLoading = false;
   }
 }
 function getTodayBadge(jenis) {
@@ -2239,31 +2221,37 @@ function renderTodayHistory(rows) {
 async function autoUpdateStatusAktif() {
   // Hanya update jika status pegawai bukan AKTIF
   const statusSaatIni = (userProfile?.status||'AKTIF').toUpperCase();
-  if (statusSaatIni === 'AKTIF') return; // sudah aktif, skip
+  if (statusSaatIni === 'AKTIF') return;
 
-  // Cek apakah ada keterangan aktif hari ini (IZIN/SAKIT/TUGAS yang disetujui)
-  // Jika ada, jangan ubah status — hormati keterangan yang disetujui admin
   const todayStr = fmtD(nowWITA());
-  try {
-    const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
-    if (resKet.ok) {
-      const dKet = await resKet.json();
-      const ketRows = dKet.data || dKet.rows || [];
-      const adaKetAktif = ketRows.some(r => {
-        const st  = (r.status || r.Status || '').toUpperCase();
-        const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
-        const tglS= r.tgl_selesai || r.tanggal || '';
-        // Keterangan DISETUJUI yang mencakup hari ini
-        const disetujui = st === 'DISETUJUI' || st === 'APPROVED';
-        const mencakupHariIni = tgl <= todayStr && todayStr <= tglS;
-        return disetujui && mencakupHariIni;
-      });
-      if (adaKetAktif) {
-        console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
-        return;
-      }
+
+  // Gunakan ketStatusCache jika sudah terisi — hindari request tambahan ke server
+  const _checkKetRows = (rows) => rows.some(r => {
+    const st  = (r.status || r.Status || '').toUpperCase();
+    const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
+    const tglS= r.tgl_selesai || r.tanggal || '';
+    return (st === 'DISETUJUI' || st === 'APPROVED') && tgl <= todayStr && todayStr <= tglS;
+  });
+
+  if (ketStatusCache.length > 0) {
+    if (_checkKetRows(ketStatusCache)) {
+      console.log('autoUpdateStatusAktif: ada keterangan aktif (cache), skip update status');
+      return;
     }
-  } catch(_) {}
+  } else {
+    // Cache kosong — fetch sekali, tidak simpan ke ketStatusCache agar tidak mempengaruhi UI ket
+    try {
+      const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, {method:'GET'});
+      if (resKet.ok) {
+        const dKet = await resKet.json();
+        const ketRows = dKet.data || dKet.rows || [];
+        if (_checkKetRows(ketRows)) {
+          console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
+          return;
+        }
+      }
+    } catch(_) {}
+  }
 
   // Update status ke AKTIF
   try {
@@ -2273,11 +2261,7 @@ async function autoUpdateStatusAktif() {
       alasan     : 'Absen masuk otomatis',
       timestamp  : Math.floor(Date.now()/1000)
     })});
-    // Update lokal
-    if (userProfile) {
-      userProfile.status = 'AKTIF';
-      applyProfile();
-    }
+    if (userProfile) { userProfile.status = 'AKTIF'; applyProfile(); }
   } catch(_) {}
 }
 function setBtnL(id, loading, txt) {
@@ -2316,6 +2300,95 @@ function showGPS(lat,lon,acc,lokasi){
    Fetch IP publik → kirim ke n8n → n8n validasi via CIDR di sheet lokasiabsen.
    Frontend hanya menampilkan status, tidak memblokir sendiri.
    ════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   PERMISSIONS API + localStorage CACHE MODULE  v1.0
+   ─────────────────────────────────────────────────────────────
+   • _queryPermission(name)   → query Permissions API + watch
+   • initPermissions()        → pre-check geo & camera on startup
+   • IP cache  (TTL 5 menit)  → _IP_CACHE_KEY
+   • GPS cache (TTL 2 menit)  → _GPS_CACHE_KEY (badge only)
+   ═══════════════════════════════════════════════════════════════ */
+const _PERM_STORE_KEY  = 'bapperida_perm_v1';
+const _IP_CACHE_KEY    = 'bapperida_ip_v1';
+const _GPS_CACHE_KEY   = 'bapperida_gps_v1';
+const _IP_TTL_MS       = 5 * 60 * 1000;   // 5 menit
+const _GPS_TTL_MS      = 2 * 60 * 1000;   // 2 menit
+
+/* ── localStorage helpers ── */
+function _lsGet(key) {
+  try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+}
+function _lsSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+/* ── Baca/tulis permission state ke localStorage ── */
+function _readPermStore()        { return _lsGet(_PERM_STORE_KEY) || {}; }
+function _writePermStore(patch)  { _lsSet(_PERM_STORE_KEY, { ..._readPermStore(), ...patch, _ts: Date.now() }); }
+
+/* ── Query Permissions API dengan watch perubahan ── */
+async function _queryPermission(name) {
+  try {
+    if (!navigator.permissions) return 'unknown';
+    const status = await navigator.permissions.query({ name });
+    _writePermStore({ [name]: status.state });
+    status.onchange = () => {
+      _writePermStore({ [name]: status.state });
+      if (name === 'geolocation') _onGeoPerm(status.state);
+      if (name === 'camera')      _onCamPerm(status.state);
+    };
+    return status.state; // 'granted' | 'denied' | 'prompt'
+  } catch { return 'unknown'; }
+}
+
+/* ── Reaksi perubahan izin geolocation ── */
+function _onGeoPerm(state) {
+  if (state === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent = '📍 Izin lokasi ditolak'; clb.className = 'clock-loc-badge unknown'; }
+  } else if (state === 'granted') {
+    _locPermDenied = false;
+    _updateLocBadgeGPS();
+  }
+}
+
+/* ── Reaksi perubahan izin kamera ── */
+function _onCamPerm(state) { /* state sudah tersimpan, cukup untuk guard di openCamOverlay */ }
+
+/* ── IP cache helpers ── */
+function _getCachedIP() {
+  const c = _lsGet(_IP_CACHE_KEY);
+  if (c && c.ip && (Date.now() - c.ts) < _IP_TTL_MS) return c.ip;
+  return null;
+}
+function _setCachedIP(ip) { _lsSet(_IP_CACHE_KEY, { ip, ts: Date.now() }); }
+
+/* ── GPS cache helpers (hanya untuk badge, bukan absen) ── */
+function _getCachedGPS() {
+  const c = _lsGet(_GPS_CACHE_KEY);
+  if (c && (Date.now() - c.ts) < _GPS_TTL_MS) return c;
+  return null;
+}
+function _setCachedGPS(lat, lon) { _lsSet(_GPS_CACHE_KEY, { lat, lon, ts: Date.now() }); }
+
+/* ── Init Permissions — panggil 1x saat startup ── */
+let _permInitDone = false;
+async function initPermissions() {
+  if (_permInitDone) return;
+  _permInitDone = true;
+  const [geoState, camState] = await Promise.all([
+    _queryPermission('geolocation'),
+    _queryPermission('camera')
+  ]);
+  if (geoState === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent = '📍 Izin lokasi ditolak'; clb.className = 'clock-loc-badge unknown'; }
+  }
+  return { geolocation: geoState, camera: camState };
+}
+
 let networkInfo = {
   ip_public   : null,
   is_kantor   : null,    // null = belum tahu (n8n yang menentukan)
@@ -2350,12 +2423,17 @@ async function cekJaringan() {
   detail.textContent = 'Mengambil IP publik...';
 
   try {
-    const ctrl = new AbortController();
-    const tid  = setTimeout(() => ctrl.abort(), 5000);
-    const res  = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
-    clearTimeout(tid);
-    const data = await res.json();
-    const ip   = data.ip || '';
+    // ── Coba pakai IP yang sudah di-cache (TTL 5 menit) ──
+    let ip = _getCachedIP();
+    if (!ip) {
+      const ctrl = new AbortController();
+      const tid  = setTimeout(() => ctrl.abort(), 5000);
+      const res  = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal });
+      clearTimeout(tid);
+      const data = await res.json();
+      ip = data.ip || '';
+      if (ip) _setCachedIP(ip); // simpan ke cache
+    }
 
     networkInfo.ip_public = ip;
     networkInfo.checked   = true;
@@ -2546,7 +2624,7 @@ let _faceHistory  = [];   // riwayat posisi hidung untuk deteksi geleng
 let _eyeHistory   = [];   // riwayat eye aspect ratio untuk deteksi kedip
 let _noseYHistory = [];   // riwayat posisi hidung vertikal untuk deteksi angguk
 let _livenessState = { faceOk:false, ch1:false, ch2:false };
-let _captureData  = null; // { dataUrl, faceOk, bajuVerdikt, livenessOk, faceMatchScore }
+let _captureData  = null; // { dataUrl, faceOk, livenessOk, faceMatchScore }
 let _absenCallbackAfterCam = null; // fungsi yang dipanggil setelah kamera selesai
 let _skipVerifikasi = false;
 
@@ -2576,144 +2654,170 @@ function buildLivenessStepsUI(challenges) {
   wrap.innerHTML = step0 + stepCh;
 }
 
-// ── Face Recognition helpers (localStorage-based) ──
-const FACE_STORE_KEY = 'face_ref_bapperida';
-let FACE_RECOGNITION_ENABLED = true; // default aktif, diupdate dari server
+// ── Face Recognition helpers (face-api.js descriptor-based) ──
+const FACE_STORE_KEY = 'face_ref_bapperida_v2';  // v2: descriptor-based
+const FACE_STORE_KEY_OLD = 'face_ref_bapperida'; // v1 histogram (for cleanup)
+let FACE_RECOGNITION_ENABLED = true; // default aktif, diupdate dari server via admin toggle
 
 function getFaceRef() {
   try {
+    if (window._faceRefCache && window._faceRefCache[String(MY_ID||'')]) {
+      return window._faceRefCache[String(MY_ID||'')];
+    }
     const raw = localStorage.getItem(FACE_STORE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    // data = { [user_id]: { dataUrl, histogram, savedAt } }
     return data[String(MY_ID||'')] || null;
   } catch(_) { return null; }
 }
 
-function saveFaceRef(dataUrl) {
+function _writeFaceRefLocal(uid, faceData) {
   try {
     const raw = localStorage.getItem(FACE_STORE_KEY);
     const data = raw ? JSON.parse(raw) : {};
-    const hist = buildColorHistogram(dataUrl);
-    const savedAt = new Date().toISOString();
-    data[String(MY_ID||'')] = { dataUrl, histogram: hist, savedAt };
+    data[uid] = faceData;
     localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
-    // Kirim histogram ke server (n8n) — gunakan helper async agar gambar sudah terload
-    _sendFaceHistogramToServer(dataUrl, savedAt);
+  } catch(_) {}
+  if (!window._faceRefCache) window._faceRefCache = {};
+  window._faceRefCache[uid] = faceData;
+}
+
+// ── Extract 128-d face descriptor from video/canvas element ──
+async function getFaceDescriptor(input) {
+  if (!window.faceapi) return null;
+  try {
+    const detection = await faceapi
+      .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+      .withFaceLandmarks(true)
+      .withFaceDescriptor();
+    if (!detection) return null;
+    return detection.descriptor; // Float32Array[128]
+  } catch(e) { console.warn('getFaceDescriptor error:', e); return null; }
+}
+
+// ── Extract descriptor from a dataUrl image ──
+async function getDescriptorFromDataUrl(dataUrl) {
+  return new Promise(async (resolve) => {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = async () => {
+        const cnv = document.createElement('canvas');
+        cnv.width = img.width; cnv.height = img.height;
+        const ctx = cnv.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const desc = await getFaceDescriptor(cnv);
+        resolve(desc);
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    } catch(_) { resolve(null); }
+  });
+}
+
+async function saveFaceRef(dataUrl) {
+  try {
+    const uid = String(MY_ID||'');
+    const savedAt = new Date().toISOString();
+    // Extract face descriptor
+    const descriptor = await getDescriptorFromDataUrl(dataUrl);
+    const descriptorArray = descriptor ? Array.from(descriptor) : null;
+    const faceData = { dataUrl, descriptor: descriptorArray, savedAt };
+    _writeFaceRefLocal(uid, faceData);
+    _sendFaceToServer(dataUrl, savedAt, descriptorArray);
     return true;
   } catch(_) { return false; }
 }
 
-// Helper: kirim histogram ke n8n dengan menunggu gambar benar-benar terload (img.onload)
-// Diperlukan karena drawImage() pada buildColorHistogram dipanggil sync tanpa menunggu load,
-// sehingga pada browser mobile histogram bisa null/kosong. Fungsi ini menjamin data valid.
-function _sendFaceHistogramToServer(dataUrl, savedAt) {
+function _sendFaceToServer(dataUrl, savedAt, descriptorArray) {
   const uid = String(MY_ID||'');
-  if (!uid || uid === 'null') return;
-  const img = new Image();
-  img.onload = function() {
-    try {
-      const bins = 32;
-      const cnv = document.createElement('canvas');
-      cnv.width = 64; cnv.height = 64;
-      const ctx = cnv.getContext('2d');
-      ctx.drawImage(img, 0, 0, 64, 64);
-      const d = ctx.getImageData(0, 0, 64, 64).data;
-      const hist = new Array(bins).fill(0);
-      const step = 256 / bins;
-      for (let i = 0; i < d.length; i += 4) {
-        const gray = Math.round(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]);
-        hist[Math.min(bins-1, Math.floor(gray/step))]++;
-      }
-      const total = hist.reduce((a,b)=>a+b,0)||1;
-      const normalized = hist.map(v => v/total);
-      apiFetch(P.faceRegister, {
-        method: 'POST',
-        body: JSON.stringify({ user_id: uid, histogram: normalized, saved_at: savedAt })
-      }).catch(e => console.warn('Face register server error:', e));
-    } catch(_) {}
-  };
-  img.onerror = function() {};
-  img.src = dataUrl;
-}
-
-function buildColorHistogram(dataUrl, bins=32) {
-  // Buat histogram warna 32-bin dari gambar (grayscale) untuk perbandingan cepat
-  try {
-    const cnv = document.createElement('canvas');
-    cnv.width = 64; cnv.height = 64;
-    const ctx = cnv.getContext('2d');
-    const img = new Image();
-    img.src = dataUrl;
-    ctx.drawImage(img, 0, 0, 64, 64);
-    const d = ctx.getImageData(0, 0, 64, 64).data;
-    const hist = new Array(bins).fill(0);
-    const step = 256 / bins;
-    for (let i = 0; i < d.length; i += 4) {
-      const gray = Math.round(0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]);
-      hist[Math.min(bins-1, Math.floor(gray/step))]++;
+  if (!uid || uid === 'null' || uid === '') return;
+  apiFetch(P.faceRegister, {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id       : uid,
+      foto_base64   : dataUrl,
+      face_descriptor: descriptorArray,  // 128-d face embedding
+      histogram     : null,              // deprecated, kept for backward compat
+      saved_at      : savedAt
+    })
+  }).then(async res => {
+    if (res && res.ok) {
+      try {
+        const json = await res.json();
+        if (json && json.dataUrl) {
+          _writeFaceRefLocal(uid, { dataUrl: json.dataUrl, descriptor: descriptorArray, savedAt });
+        }
+      } catch(_) {}
     }
-    const total = hist.reduce((a,b)=>a+b,0)||1;
-    return hist.map(v => v/total); // normalisasi
-  } catch(_) { return null; }
+  }).catch(e => console.warn('Face register server error:', e));
 }
 
-function compareFaceHistogram(hist1, hist2) {
-  // Bhattacharyya coefficient: 0 = tidak mirip, 1 = identik
-  if (!hist1 || !hist2 || hist1.length !== hist2.length) return 0;
-  let bc = 0;
-  for (let i = 0; i < hist1.length; i++) bc += Math.sqrt(hist1[i] * hist2[i]);
-  return Math.round(bc * 100); // 0-100
+async function loadFaceFromServer() {
+  const uid = String(MY_ID||'');
+  if (!uid || uid === 'null' || uid === '') return;
+  try {
+    const res = await apiFetch(`${P.faceGet}?user_id=${uid}`, { method: 'GET' });
+    if (!res || !res.ok) return;
+    const json = await res.json();
+    const dataUrl    = json.dataUrl || json.foto_base64 || null;
+    const descriptor = json.face_descriptor || json.descriptor || null;
+    const savedAt    = json.saved_at || json.savedAt || new Date().toISOString();
+    if (dataUrl) {
+      _writeFaceRefLocal(uid, { dataUrl, descriptor, savedAt });
+      updateProfilFaceUI();
+      updateFaceRegUI();
+    }
+  } catch(_) {}
 }
 
-function compareFacePixel(dataUrl1, dataUrl2) {
-  // Perbandingan pixel-level: crop area wajah (tengah 50%) lalu hitung similarity
-  return new Promise(resolve => {
-    try {
-      const SIZE = 48;
-      const cnv1 = document.createElement('canvas'), cnv2 = document.createElement('canvas');
-      cnv1.width = cnv2.width = SIZE; cnv1.height = cnv2.height = SIZE;
-      const ctx1 = cnv1.getContext('2d'), ctx2 = cnv2.getContext('2d');
-      let loaded = 0;
-      const img1 = new Image(), img2 = new Image();
-      const check = () => {
-        if (++loaded < 2) return;
-        try {
-          // Crop bagian wajah (25%-75% center)
-          const W = img1.width, H = img1.height;
-          ctx1.drawImage(img1, W*0.25, H*0.05, W*0.5, H*0.6, 0, 0, SIZE, SIZE);
-          ctx2.drawImage(img2, img2.width*0.25, img2.height*0.05, img2.width*0.5, img2.height*0.6, 0, 0, SIZE, SIZE);
-          const d1 = ctx1.getImageData(0,0,SIZE,SIZE).data;
-          const d2 = ctx2.getImageData(0,0,SIZE,SIZE).data;
-          let diff = 0;
-          for (let i = 0; i < d1.length; i += 4) {
-            const g1 = (d1[i]+d1[i+1]+d1[i+2])/3;
-            const g2 = (d2[i]+d2[i+1]+d2[i+2])/3;
-            diff += Math.abs(g1 - g2);
-          }
-          const maxDiff = (SIZE*SIZE) * 255;
-          resolve(Math.round((1 - diff/maxDiff) * 100));
-        } catch(_) { resolve(0); }
-      };
-      img1.onload = check; img2.onload = check;
-      img1.onerror = () => resolve(0); img2.onerror = () => resolve(0);
-      img1.src = dataUrl1; img2.src = dataUrl2;
-    } catch(_) { resolve(0); }
-  });
+// ── Euclidean distance between two 128-d descriptors ──
+function euclideanDistance(desc1, desc2) {
+  if (!desc1 || !desc2 || desc1.length !== desc2.length) return 999;
+  let sum = 0;
+  for (let i = 0; i < desc1.length; i++) {
+    const d = desc1[i] - desc2[i];
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
 }
 
 async function matchFace(capturedDataUrl) {
   const ref = getFaceRef();
   if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip' };
-  // Kombinasi histogram + pixel similarity
-  const hist1 = ref.histogram || buildColorHistogram(ref.dataUrl);
-  const hist2 = buildColorHistogram(capturedDataUrl);
-  const histScore = compareFaceHistogram(hist1, hist2);
-  const pixScore  = await compareFacePixel(ref.dataUrl, capturedDataUrl);
-  const score = Math.round(histScore * 0.4 + pixScore * 0.6);
-  if (score >= 72) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok' };
-  if (score >= 55) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn' };
-  return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn' };
+
+  // Prefer descriptor-based matching (face-api.js)
+  let refDesc = ref.descriptor;
+  const capturedDesc = await getDescriptorFromDataUrl(capturedDataUrl);
+
+  if (refDesc && capturedDesc) {
+    // If refDesc is a plain array, it's already correct
+    const dist = euclideanDistance(refDesc, Array.from(capturedDesc));
+    // Distance thresholds: ≤0.45 = excellent match, ≤0.55 = good, ≤0.65 = marginal, >0.65 = no match
+    const score = Math.max(0, Math.round((1 - dist / 1.0) * 100)); // 0-100 scale
+    if (dist <= 0.45) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', distance: dist };
+    if (dist <= 0.55) return { score, label: `✅ Cocok ${score}%`, cls: 'face-match-ok', distance: dist };
+    if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', distance: dist };
+    return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', distance: dist };
+  }
+
+  // Fallback: ref has no descriptor (old registration) → re-extract from saved image
+  if (!refDesc && ref.dataUrl && capturedDesc) {
+    const reExtracted = await getDescriptorFromDataUrl(ref.dataUrl);
+    if (reExtracted) {
+      refDesc = Array.from(reExtracted);
+      // Save re-extracted descriptor for future use
+      _writeFaceRefLocal(String(MY_ID||''), { ...ref, descriptor: refDesc });
+      const dist = euclideanDistance(refDesc, Array.from(capturedDesc));
+      const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
+      if (dist <= 0.55) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', distance: dist };
+      if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', distance: dist };
+      return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', distance: dist };
+    }
+  }
+
+  // Can't compare — model might not have loaded
+  return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn' };
 }
 
 function updateFaceRegUI() {
@@ -2722,35 +2826,35 @@ function updateFaceRegUI() {
   const thumb = $('faceRegThumb'), thumbEmpty = $('faceRegThumbEmpty');
   const status = $('faceRegStatus'), sub = $('faceRegSub');
   const btn = $('btnRegisterFace');
+  const hasDescriptor = ref && ref.descriptor && ref.descriptor.length === 128;
   if (ref) {
     if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
     else { thumb.style.display = 'none'; }
     if (thumbEmpty) thumbEmpty.style.display = 'none';
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    status.textContent = '✅ Data Wajah Tersimpan';
-    status.style.color = 'var(--success)';
-    sub.textContent = `Didaftarkan: ${tgl}`;
-    btn.textContent = '🔄 Perbarui';
+    status.textContent = hasDescriptor ? '✅ Data Wajah AI Tersimpan' : '⚠️ Perlu Didaftarkan Ulang';
+    status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+    sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI aktif` : `Format lama — daftarkan ulang untuk AI`;
+    btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
   } else {
     thumb.style.display = 'none';
     if (thumbEmpty) thumbEmpty.style.display = 'flex';
     status.textContent = 'Belum ada data wajah';
     status.style.color = 'var(--muted)';
-    sub.textContent = 'Daftarkan wajah untuk pengenalan otomatis';
+    sub.textContent = 'Daftarkan wajah untuk pengenalan AI otomatis';
     btn.textContent = '📷 Daftarkan';
   }
 }
 
 function registerFaceFromPreview() {
-  // Buka kamera khusus pendaftaran wajah
-  openCamOverlay({ onDone: (cap) => {
+  openCamOverlay({ onDone: async (cap) => {
     if (!cap?.dataUrl) return;
-    const ok = saveFaceRef(cap.dataUrl);
+    const ok = await saveFaceRef(cap.dataUrl);
     if (ok) {
       updateFaceRegUI();
       updateProfilFaceUI();
-      setCamStatus('ok','🧠','Data Wajah Tersimpan!','Wajah Anda berhasil didaftarkan');
+      setCamStatus('ok','🧠','Data Wajah AI Tersimpan!','Wajah Anda berhasil didaftarkan dengan Face AI');
     }
   }, onCancel: ()=>{}, isRegister: true });
 }
@@ -2763,43 +2867,71 @@ function updateProfilFaceUI() {
   const sub    = $('profilFaceSub');
   const btn    = $('btnProfilRegFace');
   if (!status) return;
+  const hasDescriptor = ref && ref.descriptor && ref.descriptor.length === 128;
   if (ref) {
     if (thumb) { if(ref.dataUrl){thumb.src=ref.dataUrl;thumb.style.display='block';}else{thumb.style.display='none';} }
     if (empty) empty.style.display = 'none';
     const d = new Date(ref.savedAt);
     const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
-    status.textContent = '✅ Data Wajah Tersimpan';
-    status.style.color = 'var(--success)';
-    if (sub) sub.textContent = `Didaftarkan: ${tgl} · Aktif untuk pengenalan absen`;
-    if (btn) btn.textContent = '🔄 Perbarui';
+    status.textContent = hasDescriptor ? '✅ Data Wajah AI Tersimpan' : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
+    status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+    if (sub) sub.textContent = hasDescriptor
+      ? `Didaftarkan: ${tgl} · Face AI aktif untuk pengenalan absen`
+      : `Daftarkan ulang untuk mengaktifkan AI Face Recognition`;
+    if (btn) btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
   } else {
     if (thumb) thumb.style.display = 'none';
     if (empty) empty.style.display = 'flex';
     status.textContent = 'Belum ada data wajah';
     status.style.color = 'var(--muted)';
-    if (sub) sub.textContent = 'Daftarkan wajah Anda untuk pengenalan otomatis saat absen';
+    if (sub) sub.textContent = 'Daftarkan wajah Anda untuk pengenalan AI otomatis saat absen';
     if (btn) btn.textContent = '📷 Daftarkan';
   }
 }
 
-/* ── Muat model BlazeFace (sekali saja) ── */
-async function loadBlazeFace() {
-  if (_blazeModel) return _blazeModel;
+/* ── Muat face-api.js (sekali saja, lazy load) ── */
+const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+const FACE_API_MODELS = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+let _faceApiLoaded = false;
+
+async function _loadFaceApiScript() {
+  if (window.faceapi) { _faceApiLoaded = true; return; }
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = FACE_API_CDN;
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function loadFaceApiModels() {
+  if (_faceApiLoaded && _blazeModel) return _blazeModel;
   if (_modelLoading) {
-    // Tunggu sampai selesai
     while(_modelLoading) await new Promise(r=>setTimeout(r,200));
     return _blazeModel;
   }
   _modelLoading = true;
   try {
-    _blazeModel = await blazeface.load({ maxFaces:1, scoreThreshold:0.75 });
+    await _loadFaceApiScript();
+    // Load 3 models: tinyFaceDetector + faceLandmark68 + faceRecognition
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODELS),
+      faceapi.nets.faceLandmark68TinyNet.loadFromUri(FACE_API_MODELS),
+      faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS),
+    ]);
+    _faceApiLoaded = true;
+    _blazeModel = true; // flag: model loaded
+    console.log('[FaceAPI] Models loaded successfully');
   } catch(e) {
-    console.error('BlazeFace load error:', e);
+    console.error('face-api.js load error:', e);
     _blazeModel = null;
   }
   _modelLoading = false;
   return _blazeModel;
 }
+
+// Alias for backward compatibility
+const loadBlazeFace = loadFaceApiModels;
 
 /* ── Buka overlay kamera ── */
 async function openCamOverlay(onDone) {
@@ -2819,59 +2951,107 @@ async function openCamOverlay(onDone) {
   $('camOverlay').classList.remove('hidden');
   $('modelLoading').style.display  = 'block';
   $('camVideoWrap').style.display  = 'none';
-  $('seragamInfo').style.display   = 'none';
   $('camStatus').style.display     = 'none';
   $('livenessCard').style.display  = 'none';
-  $('bajuCard').style.display      = 'none';
   $('faceRegCard').style.display   = 'none';
   $('camPreview').classList.remove('show');
   $('btnCapture').disabled         = true;
   delete $('btnCapture').dataset.enabled; // reset agar bisa diaktifkan kembali
   setCamStatus('idle','🔍','Memuat model AI...','Harap tunggu sebentar');
 
-  // Tampilkan info seragam hari ini
-  const hariIdx = nowWITA().getDay();
-  const s = JADWAL_SERAGAM[hariIdx];
-  const warnaArr = Array.isArray(s.warna) ? s.warna : _parseWarnaArray(s.warna);
-  const builtLabel = _buildSeragamLabel(warnaArr);
-  $('seragamInfo').textContent = `${builtLabel.emoji} Seragam hari ini: ${builtLabel.label}`;
-  $('seragamInfo').style.display = 'block';
+  const btnFlash = $('camFlashBtn');
+  btnFlash.style.display = 'none';
+  btnFlash.style.background = 'rgba(255,255,255,.15)';
+  btnFlash.style.borderColor = 'rgba(255,255,255,.3)';
+  btnFlash.style.color = '#fff';
+  window._camVideoTrack = null;
+  _isFlashOn = false;
 
   // Minta izin kamera & mulai stream
   try {
+    // ── Pre-check permission kamera via Permissions API ──
+    const _camPermState = (_readPermStore()['camera']) || 'unknown';
+    if (_camPermState === 'denied') {
+      $('modelLoading').textContent = '❌ Izin kamera ditolak. Buka pengaturan browser/Telegram dan aktifkan izin kamera.';
+      return;
+    }
+
+    let fMode = 'user';
+    if (typeof onDone === 'object' && onDone !== null && onDone.facingMode) {
+      fMode = onDone.facingMode;
+    }
+
     _camStream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:'user', width:{ideal:640}, height:{ideal:480} }, audio:false
+      video:{ facingMode: fMode, width:{ideal:640}, height:{ideal:480} }, audio:false
     });
+
+    // Permission berhasil → update cache
+    _writePermStore({ camera: 'granted' });
     const vid = $('camVideo');
     vid.srcObject = _camStream;
     await new Promise(r => { vid.onloadedmetadata=r; });
     await vid.play();
+    
+    // Simpan track video ke window agar bisa diakses untuk flash
+    window._camVideoTrack = _camStream.getVideoTracks()[0];
+    
+    // Tampilkan tombol flash jika menggunakan kamera belakang (environment)
+    if (fMode === 'environment') {
+      btnFlash.style.display = 'flex';
+    } else {
+      btnFlash.style.display = 'none';
+    }
+    
   } catch(e) {
+    // Catat status denied ke cache jika user menolak
+    if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {
+      _writePermStore({ camera: 'denied' });
+    }
     $('modelLoading').textContent = '❌ Izin kamera ditolak. Berikan izin kamera dan coba lagi.';
     return;
   }
 
-  // Muat BlazeFace model
-  const model = await loadBlazeFace();
+  // Muat BlazeFace model (skip jika isSimpleOverlay)
+  const isRegMode = typeof onDone === 'object' && onDone !== null && onDone.isRegister;
+  const isSimpleOverlay = typeof onDone === 'object' && onDone !== null && onDone.isSimple;
+
+  let model = null;
+  if (!isSimpleOverlay) {
+    $('camHeaderTitle').textContent = '📷 Verifikasi Wajah';
+    $('faceGuideWrap').style.display = 'flex';
+    $('camVideoWrap').classList.remove('doc-mode');
+    model = await loadBlazeFace();
+  } else {
+    $('camHeaderTitle').textContent = '📄 Foto Dokumen / Bukti';
+    $('faceGuideWrap').style.display = 'none';
+    $('camVideoWrap').classList.add('doc-mode');
+  }
+  
   $('modelLoading').style.display  = 'none';
   $('camVideoWrap').style.display  = 'block';
   $('camStatus').style.display     = 'flex';
-  $('livenessCard').style.display  = 'block';
-  $('bajuCard').style.display      = 'block';
+  $('livenessCard').style.display  = isSimpleOverlay ? 'none' : 'block';
   // Tampilkan face reg card hanya jika mode absen (bukan mode register)
-  const isRegMode = typeof onDone === 'object' && onDone?.isRegister;
-  if (!isRegMode && MY_ID) {
+
+  if (!isRegMode && !isSimpleOverlay && MY_ID) {
     updateFaceRegUI();
     $('faceRegCard').style.display = 'block';
   }
 
-  if (!model) {
-    setCamStatus('warn','⚠️','Model AI gagal dimuat','Foto tetap bisa diambil — verifikasi manual');
+  if (!model || isSimpleOverlay) {
+    if (isSimpleOverlay) {
+      setCamStatus('ok','📷','Ambil Foto','Posisikan dokumen atau bukti dengan jelas');
+    } else {
+      setCamStatus('warn','⚠️','Model AI gagal dimuat','Foto tetap bisa diambil — verifikasi manual');
+    }
     $('btnCapture').disabled = false;
-    $('btnCaptureSkip').style.display = 'block';
-    startSimpleCapture();
+    $('btnCaptureSkip').style.display = isSimpleOverlay ? 'none' : 'block';
+    $('btnCapture').textContent = isSimpleOverlay ? '📸 Ambil Foto Bukti' : '📸 Ambil Foto & Lanjutkan Absen';
+    startSimpleCapture(isSimpleOverlay);
     return;
   }
+  
+  $('btnCapture').textContent = '📸 Ambil Foto & Lanjutkan Absen';
 
   // Sesuaikan ukuran canvas dengan video
   const vid = $('camVideo');
@@ -2884,15 +3064,54 @@ async function openCamOverlay(onDone) {
   startDetectLoop(model);
 }
 
+// Fitur Toggle Flash (Torch)
+let _isFlashOn = false;
+async function toggleFlash() {
+  if (!window._camVideoTrack) return;
+  const btn = $('camFlashBtn');
+  try {
+    _isFlashOn = !_isFlashOn;
+    
+    // Check if it's already supported or blindly apply
+    const constraints = { advanced: [{ torch: _isFlashOn }] };
+    await window._camVideoTrack.applyConstraints(constraints);
+    
+    if (_isFlashOn) {
+      btn.style.background = 'rgba(255,193,7,.8)';
+      btn.style.borderColor = '#ffc107';
+      btn.style.color = '#222';
+    } else {
+      btn.style.background = 'rgba(255,255,255,.15)';
+      btn.style.borderColor = 'rgba(255,255,255,.3)';
+      btn.style.color = '#fff';
+    }
+  } catch(e) {
+    console.warn('Flash tidak didukung atau di-lock OS:', e);
+    // Revert state if failed
+    _isFlashOn = !_isFlashOn;
+    // Tampilkan feedback error singkat (kedip merah)
+    btn.style.background = 'rgba(239,68,68,.8)';
+    setTimeout(() => {
+      btn.style.background = 'rgba(255,255,255,.15)';
+    }, 800);
+  }
+}
+
 function closeCamOverlay() {
+  if (window._camVideoTrack && _isFlashOn) {
+    // Matikan flash sebelum stream diputus jika menyala
+    window._camVideoTrack.applyConstraints({advanced: [{torch: false}]}).catch(()=>{});
+  }
+  _isFlashOn = false; // Reset flash state
   stopDetectLoop();
   stopCamStream();
   $('camOverlay').classList.add('hidden');
-  // Reset tombol agar bisa absen lagi jika user batalkan
   setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-  // Batalkan absen jika belum capture (hanya notif, tidak panggil callback)
+  // Panggil onCancel jika ada (misal: modal paksa wajah perlu muncul kembali)
+  const cb = _absenCallbackAfterCam;
   _absenCallbackAfterCam = null;
   _captureData = null;
+  if (cb && typeof cb === 'object' && typeof cb.onCancel === 'function') cb.onCancel();
 }
 
 function stopCamStream() {
@@ -2924,39 +3143,25 @@ function startDetectLoop(model) {
     }
   }, 15000);
 
-  // ── Live Face Match: tampilkan skor kecocokan histogram setiap 2 detik ──
+  // ── Live Face Match: descriptor-based real-time matching every 3 seconds ──
   const _ref = getFaceRef();
-  if (_ref) {
-    _liveMatchTimer = setInterval(() => {
+  if (_ref && _ref.descriptor && _faceApiLoaded) {
+    _liveMatchTimer = setInterval(async () => {
       try {
         const lVid = $('camVideo');
         if (!lVid || lVid.readyState < 2) return;
-        const lCnv = document.createElement('canvas');
-        lCnv.width = 64; lCnv.height = 64;
-        const lCtx = lCnv.getContext('2d');
-        lCtx.drawImage(lVid, 0, 0, 64, 64);
-        const lD = lCtx.getImageData(0, 0, 64, 64).data;
-        const bins = 32, step = 256 / bins;
-        const hist2 = new Array(bins).fill(0);
-        for (let i = 0; i < lD.length; i += 4) {
-          const g = Math.round(0.299*lD[i] + 0.587*lD[i+1] + 0.114*lD[i+2]);
-          hist2[Math.min(bins-1, Math.floor(g/step))]++;
-        }
-        const tot = hist2.reduce((a,b)=>a+b,0)||1;
-        const normH = hist2.map(v=>v/tot);
-        const hist1 = _ref.histogram;
-        if (!hist1 || hist1.length !== normH.length) return;
-        let bc = 0;
-        for (let i = 0; i < hist1.length; i++) bc += Math.sqrt(hist1[i] * normH[i]);
-        const score = Math.round(bc * 100);
+        const liveDesc = await getFaceDescriptor(lVid);
+        if (!liveDesc) return;
+        const dist = euclideanDistance(_ref.descriptor, Array.from(liveDesc));
+        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
         const sub = $('faceRegSub');
         if (sub) {
-          if (score >= 65) sub.textContent = `🟢 Wajah cocok ${score}% · Siap absen`;
-          else if (score >= 45) sub.textContent = `🟡 Kemiripan ${score}% · Posisikan wajah lebih dekat`;
+          if (dist <= 0.55) sub.textContent = `🟢 Wajah cocok ${score}% · Siap absen`;
+          else if (dist <= 0.70) sub.textContent = `🟡 Kemiripan ${score}% · Posisikan wajah lebih dekat`;
           else sub.textContent = `🔴 Belum cocok ${score}% · Pastikan pencahayaan cukup`;
         }
       } catch(_) {}
-    }, 2000);
+    }, 3000);
   }
 
   async function loop(ts) {
@@ -2970,12 +3175,13 @@ function startDetectLoop(model) {
     }
     ctx.clearRect(0,0,cnv.width,cnv.height);
 
-    let predictions = [];
-    try { predictions = await model.estimateFaces(vid, false); } catch(_) { return; }
+    let detection = null;
+    try {
+      detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+        .withFaceLandmarks(true);
+    } catch(_) { return; }
 
-    const hariIdx = nowWITA().getDay();
-
-    if (!predictions.length) {
+    if (!detection) {
       wrap.className='cam-video-wrap face-bad';
       setCamStatus('bad','😶','Wajah Tidak Terdeteksi','Hadapkan wajah ke kamera dalam oval');
       setLivenessStep(0,''); setLivenessStep(1,''); setLivenessStep(2,'');
@@ -2984,27 +3190,53 @@ function startDetectLoop(model) {
       return;
     }
 
-    const face = predictions[0];
-    const [x,y,x2,y2] = [face.topLeft[0],face.topLeft[1],face.bottomRight[0],face.bottomRight[1]];
-    const w=x2-x, h=y2-y;
+    const box = detection.detection.box;
+    const x = box.x, y = box.y, w = box.width, h = box.height;
     const allDone = _livenessState.ch1 && _livenessState.ch2;
+
+    // Anti-photo: wajah harus >= 15% area frame
+    const faceAreaRatio = (w * h) / (cnv.width * cnv.height);
+    if (faceAreaRatio < 0.05) {
+      wrap.className='cam-video-wrap face-bad';
+      setCamStatus('bad','🔍','Wajah Terlalu Kecil','Dekatkan wajah ke kamera');
+      return;
+    }
 
     // Gambar kotak wajah
     ctx.strokeStyle = allDone ? '#22c55e' : '#c9a84c';
     ctx.lineWidth   = 2;
     ctx.strokeRect(x,y,w,h);
 
-    const landmarks = face.landmarks;
-    if (landmarks && landmarks.length >= 4) {
-      const re = landmarks[0]; // right eye
-      const le = landmarks[1]; // left eye
-      const no = landmarks[2]; // nose
+    // face-api.js 68-point landmarks
+    const lm = detection.landmarks;
+    const positions = lm.positions; // array of {x,y} with 68 points
+
+    if (positions && positions.length >= 68) {
+      // 68-point landmark mapping:
+      // Right eye: points 36-41, Left eye: points 42-47, Nose tip: point 30
+      const reCenter = { x: (positions[36].x + positions[39].x) / 2, y: (positions[36].y + positions[39].y) / 2 };
+      const leCenter = { x: (positions[42].x + positions[45].x) / 2, y: (positions[42].y + positions[45].y) / 2 };
+      const no = [positions[30].x, positions[30].y];  // nose tip
+      const re = [reCenter.x, reCenter.y];
+      const le = [leCenter.x, leCenter.y];
+
+      // Eye Aspect Ratio (EAR) for more accurate blink detection
+      // EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
+      const earRight = (
+        Math.hypot(positions[37].x-positions[41].x, positions[37].y-positions[41].y) +
+        Math.hypot(positions[38].x-positions[40].x, positions[38].y-positions[40].y)
+      ) / (2 * Math.hypot(positions[36].x-positions[39].x, positions[36].y-positions[39].y) + 0.001);
+      const earLeft = (
+        Math.hypot(positions[43].x-positions[47].x, positions[43].y-positions[47].y) +
+        Math.hypot(positions[44].x-positions[46].x, positions[44].y-positions[46].y)
+      ) / (2 * Math.hypot(positions[42].x-positions[45].x, positions[42].y-positions[45].y) + 0.001);
+      const avgEAR = (earRight + earLeft) / 2;
 
       // ── Proses tantangan 1 ──
       if (!_livenessState.ch1) {
         const ch = _activeChallenges[0];
         if (ch.id === 'kedip') {
-          detectKedip(re, le, no, h, 1);
+          detectKedipEAR(avgEAR, 1);
         } else if (ch.id === 'geleng') {
           detectGeleng(no, x, w, 1);
         } else if (ch.id === 'angguk') {
@@ -3015,7 +3247,7 @@ function startDetectLoop(model) {
       if (_livenessState.ch1 && !_livenessState.ch2) {
         const ch = _activeChallenges[1];
         if (ch.id === 'kedip') {
-          detectKedip(re, le, no, h, 2);
+          detectKedipEAR(avgEAR, 2);
         } else if (ch.id === 'geleng') {
           detectGeleng(no, x, w, 2);
         } else if (ch.id === 'angguk') {
@@ -3023,7 +3255,7 @@ function startDetectLoop(model) {
         }
       }
 
-      // ── Geleng: selalu kumpulkan history untuk kedua kemungkinan ──
+      // ── Geleng: selalu kumpulkan history ──
       const noseX = no[0];
       const faceCenter = x + w/2;
       const relPosX = (noseX - faceCenter) / w;
@@ -3036,12 +3268,9 @@ function startDetectLoop(model) {
       if (_noseYHistory.length > 40) _noseYHistory.shift();
       _noseYHistory.push(relPosY);
 
-      // ── Kedip: kumpulkan eye history ──
-      const eyeToNoseR = Math.abs(no[1]-re[1]);
-      const eyeToNoseL = Math.abs(no[1]-le[1]);
-      const eyeRatio   = (eyeToNoseR+eyeToNoseL)/(2*h);
+      // ── Kedip: kumpulkan EAR history ──
       if (_eyeHistory.length > 25) _eyeHistory.shift();
-      _eyeHistory.push(eyeRatio);
+      _eyeHistory.push(avgEAR);
     }
 
     _livenessState.faceOk = true;
@@ -3063,9 +3292,6 @@ function startDetectLoop(model) {
       setCamStatus('ok','✅','Verifikasi Berhasil!','Wajah terdeteksi · Liveness OK · Siap foto');
     }
 
-    // ── Deteksi warna baju ──
-    detectBajuColor(vid, face, hariIdx);
-
     // Aktifkan tombol capture:
     // - Segera saat liveness SELESAI (ch1 + ch2 done) — kondisi normal
     // - Atau saat wajah terdeteksi minimal saja (faceOk) sebagai fallback
@@ -3084,6 +3310,19 @@ function startDetectLoop(model) {
 }
 
 // ── Detektor individual tantangan ──
+// EAR-based blink detection (more accurate with 68-point landmarks)
+function detectKedipEAR(ear, slot) {
+  if (_eyeHistory.length < 8) return;
+  const recent = _eyeHistory.slice(-8);
+  const mn = Math.min(...recent);
+  const mx = Math.max(...recent);
+  // EAR drops below 0.21 during blink, normal ~0.25-0.35
+  if (mx - mn > 0.06 && mn < 0.22) {
+    if (slot === 1) { _livenessState.ch1 = true; setLivenessStep(1,'done'); _eyeHistory=[]; }
+    else            { _livenessState.ch2 = true; setLivenessStep(2,'done'); }
+  }
+}
+// Legacy blink detection (kept as fallback)
 function detectKedip(re, le, no, h, slot) {
   if (_eyeHistory.length < 10) return;
   const mn = Math.min(..._eyeHistory.slice(-10));
@@ -3113,43 +3352,6 @@ function detectAngguk(no, faceY, h, slot) {
   }
 }
 
-/* ── Deteksi warna baju di area bawah wajah ── */
-function detectBajuColor(vid, face, hariIdx) {
-  const [x,y,x2,y2]=[face.topLeft[0],face.topLeft[1],face.bottomRight[0],face.bottomRight[1]];
-  const w=x2-x, fh=y2-y;
-
-  // Area sampling: strip bawah wajah melebar ke badan
-  const sampX = Math.max(0, x - w*0.3);
-  const sampY = y + fh*1.0; // tepat di bawah wajah (dada/baju)
-  const sampW = w*1.6;
-  const sampH = fh*0.5;
-
-  // Gambar region ke canvas sementara untuk sampling warna
-  const tmp = document.createElement('canvas');
-  tmp.width=Math.round(sampW); tmp.height=Math.round(sampH);
-  const tc = tmp.getContext('2d');
-  try {
-    tc.drawImage(vid, sampX, sampY, sampW, sampH, 0, 0, tmp.width, tmp.height);
-    const imgData = tc.getImageData(0,0,tmp.width,tmp.height).data;
-    // Hitung rata-rata RGB dari pixel (sampel setiap 4 pixel untuk performa)
-    let rT=0,gT=0,bT=0,n=0;
-    for(let i=0;i<imgData.length;i+=16){
-      rT+=imgData[i]; gT+=imgData[i+1]; bT+=imgData[i+2]; n++;
-    }
-    if(n>0){
-      const rA=Math.round(rT/n), gA=Math.round(gT/n), bA=Math.round(bT/n);
-      const result = cekWarnaSeragam(rA, gA, bA, hariIdx);
-
-      // Update UI baju
-      $('bajuSwatch').style.background = `rgb(${rA},${gA},${bA})`;
-      $('bajuColor').textContent = result.nama_warna || '—';
-      const vEl = $('bajuVerdict');
-      vEl.textContent = result.alasan;
-      vEl.className   = `baju-verdict ${result.verdict==='ok'?'ok':'warn'}`;
-    }
-  } catch(_) {}
-}
-
 /* ── Ambil foto (capture) ── */
 async function doCapture() {
   $('btnCapture').disabled = true;
@@ -3158,41 +3360,70 @@ async function doCapture() {
   cnv.width  = vid.videoWidth  || 640;
   cnv.height = vid.videoHeight || 480;
   const ctx = cnv.getContext('2d');
-  // Mirror seperti preview (selfie)
-  ctx.translate(cnv.width,0); ctx.scale(-1,1);
+  
+  const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
+  const isEnvCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.facingMode === 'environment';
+
+  if (!isEnvCap) {
+    // Mirror seperti preview (selfie)
+    ctx.translate(cnv.width,0); ctx.scale(-1,1);
+  }
   ctx.drawImage(vid,0,0,cnv.width,cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
-  const hariIdx = nowWITA().getDay();
-  const bajuVerdikt = $('bajuVerdict').textContent || '—';
-  const bajuColor   = $('bajuColor').textContent   || '—';
+
+  if (isSimpleCap) {
+    // Mode Dokumen/Generik
+    _captureData = { dataUrl, faceOk: true, livenessOk: true, faceMatchScore: 1, faceMatchLabel: 'Dokumen' };
+    $('camPreviewImg').src = dataUrl;
+    $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
+    $('camPreview').classList.add('show');
+    const cb = _absenCallbackAfterCam;
+    
+    // Tutup UI kamera terlebih dahulu HANYA JIKA ITU DARI TAB KETERANGAN 
+    // agar layar tidak nyangkut saat memproses callback
+    setTimeout(() => {
+        closeCamOverlay();
+        try {
+          if (typeof cb === 'function') {
+            cb(_captureData);
+          } else if (cb && typeof cb.onDone === 'function') {
+            cb.onDone(_captureData);
+          }
+        } catch(err) { console.error('Callback error:', err); }
+    }, 150);
+    
+    return;
+  }
+
+  // ==== MODE ABSEN (Dgn AI Wajah & Liveness) ====
   const livenessOk  = _livenessState.ch1 && _livenessState.ch2;
   const faceOk      = _livenessState.faceOk;
 
   // Face recognition — bandingkan dengan data referensi
   const faceMatch = await matchFace(dataUrl);
 
-  _captureData = { dataUrl, faceOk, livenessOk, bajuVerdikt, bajuColor,
-                   hariIdx, seragam: JADWAL_SERAGAM[hariIdx]?.label||'—',
+  _captureData = { dataUrl, faceOk, livenessOk,
                    faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
 
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;
+  let badges = '';
   const matchBadge = faceMatch.score >= 0
     ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
-  const badges = [
+  badges = [
     faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
     livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
     matchBadge
   ].join('');
-  $('camPreviewInfo').innerHTML = `${badges}<span style="color:var(--muted)">${bajuColor} · ${bajuVerdikt.replace(/[✅⚠️]/g,'').trim()}</span>`;
+  
+  $('camPreviewInfo').innerHTML = badges;
   $('camPreview').classList.add('show');
 
   stopDetectLoop();
   stopCamStream();
   $('camVideoWrap').style.display='none';
   $('livenessCard').style.display='none';
-  $('bajuCard').style.display='none';
   $('faceRegCard').style.display='none';
 
   setCamStatus('ok','📸','Foto Berhasil Diambil','Melanjutkan proses absen...');
@@ -3214,10 +3445,14 @@ async function skipVerifikasi() {
   await doCapture();
 }
 
-function startSimpleCapture() {
-  // Fallback jika model gagal muat — langsung aktifkan tombol capture
+function startSimpleCapture(isSimpleMode) {
+  // Fallback jika model gagal muat atau isSimple mode
   $('btnCapture').disabled=false;
-  setCamStatus('warn','📷','Kamera Siap','Model AI tidak tersedia — foto manual');
+  if (isSimpleMode) {
+    setCamStatus('ok','📷','Kamera Siap','Posisikan dokumen/bukti secara jelas lalu tekan Ambil Foto');
+  } else {
+    setCamStatus('warn','📷','Kamera Siap','Model AI tidak tersedia — foto manual');
+  }
 }
 
 /* ── Helper UI ── */
@@ -3234,8 +3469,15 @@ function setLivenessStep(idx, state) {
 }
 
 /* ════ HANDLE ABSEN ════ */
+// Anti double-submit: track timestamp terakhir klik absen
+let _lastAbsenClick = 0;
+
 async function handleAbsen() {
   if ($('btnAbsen').disabled) return;
+  // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
+  const now = Date.now();
+  if (now - _lastAbsenClick < 3000) return;
+  _lastAbsenClick = now;
   if (isDesktop()) {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','🖥️','Perangkat Tidak Didukung','Absensi hanya dapat dilakukan dari smartphone.\nGunakan Telegram di HP Anda.');
     return;
@@ -3266,6 +3508,17 @@ async function handleAbsen() {
     return;
   }
 
+  // Cek apakah pegawai sudah daftar wajah
+  const _faceRef = getFaceRef();
+  if (!_faceRef || !_faceRef.dataUrl) {
+    setBtnL('btnAbsen',false,'Kirim Lokasi & Absen');
+    showResult('resultCard','rIcon','rTitle','rMsg','warning','🧠','Wajah Belum Didaftarkan',
+      'Daftarkan wajah Anda terlebih dahulu melalui tab Profil atau tunggu layar pendaftaran muncul.');
+    // Paksa tampilkan modal daftar wajah
+    setTimeout(_showFaceRequiredModal, 500);
+    return;
+  }
+
   openCamOverlay(async (camResult) => {
     // Dipanggil setelah foto diambil (atau dilewati)
     await _doAbsenWithGPS(initData, isTgX, camResult);
@@ -3281,6 +3534,32 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
     showResult('resultCard','rIcon','rTitle','rMsg','fail','❌','GPS Tidak Tersedia','Buka di Telegram versi terbaru.');
     setBtnL('btnAbsen',false,'Coba Lagi'); return;
   }
+
+  // ── Pre-check permission geolocation (Permissions API, tanpa trigger prompt) ──
+  const _geoPermState = (_readPermStore()['geolocation']) || 'unknown';
+  if (_geoPermState === 'denied') {
+    showResult('resultCard','rIcon','rTitle','rMsg','fail','🚫','Izin Lokasi Ditolak',
+      'Aktifkan izin lokasi di pengaturan browser atau Telegram, lalu coba lagi.');
+    setBtnL('btnAbsen',false,'Coba Lagi'); return;
+  }
+
+  // ── Collect DeviceMotion data (anti-emulator) ──────────────
+  let _motionData = { accel_samples: [], gyro_available: false, orientation_available: false };
+  try {
+    const _motionSamples = [];
+    const _motionHandler = (e) => {
+      const a = e.accelerationIncludingGravity || {};
+      _motionSamples.push({ x: a.x||0, y: a.y||0, z: a.z||0, t: Date.now() });
+    };
+    window.addEventListener('devicemotion', _motionHandler);
+    // Kumpulkan data selama 1.5 detik
+    await new Promise(r => setTimeout(r, 1500));
+    window.removeEventListener('devicemotion', _motionHandler);
+    _motionData.accel_samples = _motionSamples.slice(-10); // 10 sample terakhir
+    _motionData.gyro_available = !!window.DeviceOrientationEvent;
+    _motionData.orientation_available = 'DeviceOrientationEvent' in window;
+  } catch(_) {}
+
   setBtnL('btnAbsen',true,'Mengambil GPS...');
   const _gpsT0 = Date.now(); // catat waktu mulai sebelum acquire
   navigator.geolocation.getCurrentPosition(
@@ -3288,7 +3567,24 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const {latitude,longitude,accuracy} = position.coords;
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
+
+
       // GPS Fingerprint — data tambahan untuk deteksi fake GPS di server
+      // Ambil lokasi sebelumnya dari localStorage untuk cek teleport
+      let prevLocData = {};
+      try {
+        const prevRaw = localStorage.getItem('_prev_loc_bapperida');
+        if (prevRaw) prevLocData = JSON.parse(prevRaw);
+      } catch(_) {}
+      // Simpan lokasi saat ini untuk request berikutnya
+      try {
+        localStorage.setItem('_prev_loc_bapperida', JSON.stringify({
+          lat: _coords.latitude, lng: _coords.longitude,
+          acc: accuracy,
+          ts: Math.floor(Date.now()/1000)
+        }));
+      } catch(_) {}
+
       const gps_fingerprint = {
         has_altitude    : _coords.altitude          !== null && _coords.altitude          !== undefined,
         has_altitude_acc: _coords.altitudeAccuracy  !== null && _coords.altitudeAccuracy  !== undefined,
@@ -3298,13 +3594,20 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         altitude_acc    : _coords.altitudeAccuracy  ?? null,
         speed           : _coords.speed             ?? null,
         heading         : _coords.heading           ?? null,
-        gps_timestamp   : position.timestamp        ?? null,
-        system_timestamp: Date.now(),
-        elapsed_ms      : _gpsElapsed
+        gps_timestamp   : position.timestamp ? Math.floor(position.timestamp / 1000) : null,
+        system_timestamp: Math.floor(Date.now() / 1000),
+        elapsed_ms      : _gpsElapsed,
+        // Tambahan anti-fake
+        provider        : _coords.altitudeAccuracy !== null ? 'fused' : 'network',
+        prev_lat        : prevLocData.lat  || null,
+        prev_lng        : prevLocData.lng  || null,
+        prev_timestamp  : prevLocData.ts   || null,
+        // v3: motion data
+        motion_data     : _motionData,
       };
 
       /* ══════════════════════════════════════════════════════
-         MULTI-LAYER FAKE GPS DETECTION v2
+         MULTI-LAYER FAKE GPS DETECTION v3
          Skor 0–100: ≥50 → tolak, 30–49 → suspicious/warning
          ══════════════════════════════════════════════════════ */
       const _ua     = navigator.userAgent;
@@ -3325,8 +3628,9 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       const _suspiciousAccList = [1, 2, 3, 5];
       if (_isIntAcc && _suspiciousAccList.includes(accuracy)) { _score += 15; _flags.push('ACCURACY_SUSPICIOUS_LOW'); }
 
-      // ── Layer 3: Acquisition speed ────────────────────────
-      if (_gpsElapsed < 100) { _score += 10; _flags.push('VERY_INSTANT_FIX_' + _gpsElapsed + 'ms'); }
+      // ── Layer 3: Acquisition speed (threshold ditingkatkan) ─
+      if (_gpsElapsed < 50) { _score += 15; _flags.push('ULTRA_INSTANT_FIX_' + _gpsElapsed + 'ms'); }
+      else if (_gpsElapsed < 100) { _score += 10; _flags.push('VERY_INSTANT_FIX_' + _gpsElapsed + 'ms'); }
 
       // ── Layer 4: Akurasi out-of-range ─────────────────────
       if (accuracy <= 0) {
@@ -3348,19 +3652,15 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       if (_latDec >= 7 && (_latStr.endsWith('00') || _lonStr.endsWith('00'))) { _score += 10; _flags.push('COORD_TRAILING_ZEROS'); }
 
       // ── Layer 6: Altitude check ───────────────────────────
-      // Fake GPS sering tidak mensimulasikan altitude secara natural
       const _alt    = _coords.altitude;
       const _altAcc = _coords.altitudeAccuracy;
       const _hasAlt = _alt !== null && _alt !== undefined;
       if (!_hasAlt) {
-        // Tidak ada altitude = indikasi mock (GPS asli Android hampir selalu ada altitude)
         _score += 12; _flags.push('NO_ALTITUDE');
       } else {
-        // Altitude bulat sempurna (tepat 0, 10, 100, dll) = mock tidak randomize
         if (Number.isInteger(_alt) && Math.abs(_alt % 10) === 0) {
           _score += 8; _flags.push('ALTITUDE_ROUNDED_' + _alt + 'm');
         }
-        // Ada altitude tapi tidak ada altitudeAccuracy = ganjil
         if (_altAcc === null || _altAcc === undefined) {
           _score += 6; _flags.push('ALT_NO_ACCURACY');
         }
@@ -3369,28 +3669,22 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       // ── Layer 7: Speed anomaly ────────────────────────────
       const _speed    = _coords.speed;
       const _hasSpeed = _speed !== null && _speed !== undefined;
-      // Kecepatan tepat 0.0 (bukan null) saat pertama acquire = mock menetapkan 0
       if (_hasSpeed && _speed === 0 && _gpsElapsed < 500) {
         _score += 5; _flags.push('SPEED_EXACTLY_ZERO_INSTANT');
       }
-      // Kecepatan > 100 km/h (28 m/s) saat absen = tidak wajar
       if (_hasSpeed && _speed > 28) {
         _score += 20; _flags.push('SPEED_TOO_HIGH_' + Math.round(_speed * 3.6) + 'kmh');
       }
 
       // ── Layer 8: GPS Timestamp vs system time ─────────────
-      // Lokasi palsu dari mock app sering punya timestamp tidak sync dengan jam sistem
       const _gpsTsAge = Date.now() - position.timestamp;
       if (_gpsTsAge < 0) {
-        // Timestamp dari masa depan = jelas tidak valid
         _score += 30; _flags.push('GPS_TIMESTAMP_FUTURE');
       } else if (_gpsTsAge > 30000) {
-        // Timestamp lokasi > 30 detik dari sekarang = lokasi basi/stale
         _score += 15; _flags.push('GPS_TIMESTAMP_STALE_' + Math.round(_gpsTsAge/1000) + 's');
       }
 
       // ── Layer 9: Konstansi accuracy lintas sesi ───────────
-      // Fake GPS sering memberikan nilai accuracy yang sama persis setiap kali
       try {
         const _accHist = JSON.parse(sessionStorage.getItem('_gps_acc_hist')||'[]');
         _accHist.push({ acc: accuracy, ts: Date.now() });
@@ -3406,12 +3700,93 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       } catch(_) {}
 
       // ── Layer 10: Heading check ───────────────────────────
-      // Fake GPS jarang mengisi heading secara natural
       const _heading    = _coords.heading;
       const _hasHeading = _heading !== null && _heading !== undefined;
       if (_hasHeading && (isNaN(_heading) || _heading < 0 || _heading > 360)) {
         _score += 15; _flags.push('HEADING_INVALID_' + _heading);
       }
+
+
+      // ── Layer 12: DeviceMotion cross-check (anti-emulator) ─
+      // HP asli selalu ada micro-vibration dari accelerometer
+      if (_motionData.accel_samples.length > 0) {
+        const _samples = _motionData.accel_samples;
+        const _allZero = _samples.every(s => s.x === 0 && s.y === 0 && s.z === 0);
+        if (_allZero) {
+          _score += 10; _flags.push('MOTION_ALL_ZERO');
+        } else {
+          // Cek variance accelerometer — emulator sering memberikan nilai constant
+          const _xVals = _samples.map(s => s.x);
+          const _xMean = _xVals.reduce((a,b) => a+b, 0) / _xVals.length;
+          const _xVar  = _xVals.reduce((a,v) => a + (v-_xMean)**2, 0) / _xVals.length;
+          if (_xVar < 0.0001 && _samples.length >= 5) {
+            _score += 8; _flags.push('MOTION_NO_VARIANCE_' + _xVar.toFixed(6));
+          }
+        }
+      } else if (!_motionData.gyro_available) {
+        // Tidak ada motion sensor sama sekali = kemungkinan emulator
+        _score += 5; _flags.push('NO_MOTION_SENSOR');
+      }
+
+      // ── Layer 13: Teleport speed calculation ──────────────
+      // Hitung kecepatan perpindahan dari posisi sebelumnya
+      if (prevLocData.lat && prevLocData.lng && prevLocData.ts) {
+        const _pLat = prevLocData.lat, _pLng = prevLocData.lng, _pTs = prevLocData.ts;
+        const _nowTs = Math.floor(Date.now()/1000);
+        const _dtSec = _nowTs - _pTs;
+        if (_dtSec > 0 && _dtSec < 86400) { // dalam 24 jam terakhir
+          // Haversine distance
+          const _R = 6371000;
+          const _dLatR = (latitude - _pLat) * Math.PI / 180;
+          const _dLngR = (longitude - _pLng) * Math.PI / 180;
+          const _a = Math.sin(_dLatR/2)**2 + Math.cos(_pLat*Math.PI/180) * Math.cos(latitude*Math.PI/180) * Math.sin(_dLngR/2)**2;
+          const _distM = _R * 2 * Math.atan2(Math.sqrt(_a), Math.sqrt(1-_a));
+          const _speedKmh = (_distM / _dtSec) * 3.6;
+          gps_fingerprint.teleport_dist_m  = Math.round(_distM);
+          gps_fingerprint.teleport_speed_kmh = Math.round(_speedKmh);
+          if (_speedKmh > 200) {
+            _score += 25; _flags.push('TELEPORT_' + Math.round(_speedKmh) + 'kmh_' + Math.round(_distM) + 'm');
+          } else if (_speedKmh > 120) {
+            _score += 10; _flags.push('HIGH_SPEED_' + Math.round(_speedKmh) + 'kmh');
+          }
+        }
+      }
+
+      // ── Layer 14: Cross-session accuracy via localStorage ─
+      // Cek pola accuracy yang terlalu konsisten antar hari
+      try {
+        const _lsAccKey = '_gps_acc_history_ls';
+        const _lsAccHist = JSON.parse(localStorage.getItem(_lsAccKey)||'[]');
+        _lsAccHist.push({ acc: accuracy, ts: Date.now() });
+        // Simpan max 10 entry terakhir
+        while (_lsAccHist.length > 10) _lsAccHist.shift();
+        localStorage.setItem(_lsAccKey, JSON.stringify(_lsAccHist));
+        if (_lsAccHist.length >= 5) {
+          const _allSameLS = _lsAccHist.every(h => h.acc === accuracy);
+          const _allIntLS  = _lsAccHist.every(h => Number.isInteger(h.acc));
+          if (_allSameLS && _allIntLS) {
+            _score += 8; _flags.push('ACC_CONSTANT_CROSS_SESSION_x' + _lsAccHist.length);
+          }
+        }
+      } catch(_) {}
+
+      // ── Layer 15: Coordinate jitter analysis ──────────────
+      // GPS asli: koordinat berubah sedikit setiap kali (micro-jitter)
+      // Fake GPS: sering memberikan koordinat yang stabil sempurna
+      try {
+        const _jitterKey = '_gps_jitter_hist';
+        const _jitterHist = JSON.parse(sessionStorage.getItem(_jitterKey)||'[]');
+        _jitterHist.push({ lat: latitude, lng: longitude, ts: Date.now() });
+        if (_jitterHist.length > 5) _jitterHist.shift();
+        sessionStorage.setItem(_jitterKey, JSON.stringify(_jitterHist));
+        if (_jitterHist.length >= 3) {
+          const _allSameLat = _jitterHist.every(h => h.lat === latitude);
+          const _allSameLng = _jitterHist.every(h => h.lng === longitude);
+          if (_allSameLat && _allSameLng) {
+            _score += 15; _flags.push('COORD_NO_JITTER_x' + _jitterHist.length);
+          }
+        }
+      } catch(_) {}
 
       // ── Evaluasi skor ─────────────────────────────────────
       const _isFake       = _score >= 50;
@@ -3447,9 +3822,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         foto_base64   : camResult.dataUrl || null,
         face_detected : camResult.faceOk  || false,
         liveness_ok   : camResult.livenessOk || false,
-        baju_warna    : camResult.bajuColor  || '—',
-        baju_verdict  : camResult.bajuVerdikt|| '—',
-        seragam_hari  : camResult.seragam    || '—',
         foto_dilewati : !camResult.faceOk && !camResult.livenessOk
       } : { foto_dilewati: true };
 
@@ -3481,13 +3853,12 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const fotoKet = camResult?.faceOk
           ? `\n📸 Wajah: ✅ Terdeteksi${camResult.livenessOk?' · Liveness ✅':' · Liveness ⚠️'}`
           : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi (tersimpan untuk admin)';
-        const bajuKet = camResult?.bajuVerdikt ? `\n👔 ${camResult.bajuVerdikt}` : '';
 
         const kode_tolak = d?.validasi?.kode_tolak || '';
 
         if(ok){
           showResult('resultCard','rIcon','rTitle','rMsg','success','✅','Absen Berhasil!',
-            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}${bajuKet}`);
+            `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}`);
           setBtnL('btnAbsen',false,'✅ Absen Tercatat');
           $('btnAbsen').disabled=true;
           logLoaded=false;
@@ -3709,7 +4080,41 @@ function clearBukti() {
   $('buktiNamaText').textContent = '—';
   document.querySelectorAll('.bukti-btn').forEach(b => b.classList.remove('has-file'));
   $('lblKamera').textContent = 'Ambil Foto'; $('lblGaleri').textContent = 'Pilih File';
-  $('inputKamera').value = ''; $('inputGaleri').value = '';
+  if ($('inputKamera')) $('inputKamera').value = ''; 
+  $('inputGaleri').value = '';
+}
+
+function ambilFotoKeterangan() {
+  $('lblKamera').textContent = 'Membuka kamera...';
+  openCamOverlay({
+    isSimple: true,
+    facingMode: 'environment', // gunakan kamera belakang untuk foto bukti
+    onDone: async (cap) => {
+      if (!cap || !cap.dataUrl) {
+        $('lblKamera').textContent = 'Ambil Foto';
+        return;
+      }
+      const b64 = cap.dataUrl.split(',')[1];
+      window.fileBase64 = b64;
+      window.fileMime = 'image/jpeg';
+      window.fileOrigName = 'Kamera_' + Math.floor(Date.now()/1000) + '.jpg';
+      
+      const preview = $('buktiPreview'), img = $('buktiImg');
+      preview.classList.add('show');
+      img.src = cap.dataUrl;
+      img.style.display = 'block';
+      $('buktiNamaText').textContent = window.fileOrigName;
+      
+      $('btnKamera').classList.add('has-file');
+      $('btnGaleri').classList.remove('has-file');
+      
+      const sizeMB = (atob(b64).length / 1024 / 1024).toFixed(1);
+      $('lblKamera').textContent = `Foto Tersimpan (${sizeMB}MB)`;
+    },
+    onCancel: () => {
+      $('lblKamera').textContent = 'Ambil Foto';
+    }
+  });
 }
 async function handleKet(){
   const tm=$('tglMulai').value, ts=$('tglSelesai').value, k=$('ketText').value.trim();
@@ -3808,23 +4213,26 @@ function renderKetStatusList(rows){
   }
   const JENIS_EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
   el.innerHTML=rows.slice(0,20).map((r,i)=>{
-    const raw=(r['Jenis Absen']||r.jenis_absen||'').trim().toUpperCase();
-    const isPending=raw.includes('PENDING');
-    const isApproved=raw==='IZIN'||raw==='SAKIT'||raw==='TUGAS';
-    const isRejected=raw.includes('TOLAK')||raw.includes('REJECT');
-    const jenisBase=raw.replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','');
-    const emoji=JENIS_EMOJI[jenisBase]||'📝';
-    const badgeClass=isPending?'ket-badge-pending':isApproved?'ket-badge-approved':'ket-badge-rejected';
-    const badgeLabel=isPending?'⏳ PENDING':isApproved?'✅ DISETUJUI':'❌ DITOLAK';
-    const tgl=r.Tanggal||r.tanggal||'—';
-    const ket=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
-    const actions=isPending?`<div class="ket-action-row">
+    // Schema baru Supabase: id_ket, user_id, nama, nip, tanggal, jam, jenis, keterangan, status
+    const jenis    = (r.jenis || r['Jenis Absen'] || r.jenis_absen || '').trim().toUpperCase()
+                       .replace(' PENDING','').replace(' DITOLAK','').replace(' TOLAK','').replace(' DISETUJUI','');
+    const status   = (r.status || r.Status || '').trim().toUpperCase();
+    const isPending  = status === 'PENDING'   || (!status && (r.jenis||'').toUpperCase().includes('PENDING'));
+    const isApproved = status === 'DISETUJUI' || status === 'APPROVED';
+    const isRejected = status === 'DITOLAK'   || status === 'REJECTED';
+    const emoji    = JENIS_EMOJI[jenis] || '📝';
+    const badgeClass = isPending ? 'ket-badge-pending' : isApproved ? 'ket-badge-approved' : 'ket-badge-rejected';
+    const badgeLabel = isPending ? '⏳ PENDING' : isApproved ? '✅ DISETUJUI' : '❌ DITOLAK';
+    const tgl  = r.tanggal || r.Tanggal || '—';
+    const ket  = (r.keterangan || r.Ket || r.ket || '').replace(/\|.*$/, '').trim();
+    const idKet = r.id_ket || r.ID_Ket || r.row_number || i;
+    const actions = isPending ? `<div class="ket-action-row">
       <button class="ket-btn-edit" onclick="openKetEdit(${i})">✏️ Edit</button>
       <button class="ket-btn-del"  onclick="confirmKetDelete(${i})">🗑️ Hapus</button>
-    </div>`:'';
-    return`<div class="ket-item">
+    </div>` : '';
+    return `<div class="ket-item">
       <div class="ket-item-left">
-        <div class="ket-item-jenis">${emoji} ${jenisBase}</div>
+        <div class="ket-item-jenis">${emoji} ${jenis||'—'}</div>
         <div class="ket-item-tgl">📅 ${tgl}</div>
         <div class="ket-item-ket">${ket||'—'}</div>
       </div>
@@ -3839,18 +4247,22 @@ function renderKetStatusList(rows){
 function openKetEdit(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const raw=(r['Jenis Absen']||'').toUpperCase().replace(' PENDING','');
-  $('editKetRowNum').value=r.row_number||r.rowNumber||idx;
-  $('editKetOrigTglMulai').value=r.Tanggal||r.tanggal||'';
+  // Schema baru: jenis (bukan 'Jenis Absen'), id_ket (bukan row_number)
+  const raw = (r.jenis || r['Jenis Absen'] || '').toUpperCase()
+                .replace(' PENDING','').replace(' DITOLAK','').replace(' DISETUJUI','').trim();
+  const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
+  $('editKetRowNum').value = idKet;
+  $('editKetOrigTglMulai').value = r.tanggal || r.Tanggal || '';
   // Set jenis pills
   ['IZIN','SAKIT','TUGAS'].forEach(j=>{
     const el=$('editJenisPill_'+j);
     if(el) el.classList.toggle('active', j===raw);
   });
-  editSelectedJenis=raw||'IZIN';
-  $('editTglMulai').value=r['Tgl Mulai']||r.Tanggal||'';
-  $('editTglSelesai').value=r['Tgl Selesai']||r.Tanggal||'';
-  $('editKetText').value=(r.Ket||r.ket||'').replace(/\|.*$/,'').trim();
+  editSelectedJenis = raw || 'IZIN';
+  // Schema baru tidak punya tgl_mulai/tgl_selesai terpisah — pakai tanggal
+  $('editTglMulai').value   = r.tanggal || r['Tgl Mulai'] || r.Tanggal || '';
+  $('editTglSelesai').value = r.tanggal || r['Tgl Selesai'] || r.Tanggal || '';
+  $('editKetText').value = (r.keterangan || r.Ket || r.ket || '').replace(/\|.*$/,'').trim();
   $('editKetResult').style.display='none';
   $('ketEditOverlay').classList.add('open');
 }
@@ -3871,12 +4283,12 @@ function setEditJenis(j,el){
 async function handleKetEdit(){
   const tm=$('editTglMulai').value, ts=$('editTglSelesai').value, k=$('editKetText').value.trim();
   if(!tm||!ts||!k){showResult('editKetResult','editKetRIcon','editKetRTitle','editKetRMsg','warning','⚠️','Lengkapi Form','Semua field wajib diisi.');$('editKetResult').style.display='flex';return;}
-  const rowNum=$('editKetRowNum').value;
-  const origTgl=$('editKetOrigTglMulai').value;
+  const idKet  = $('editKetRowNum').value;  // id_ket dari schema baru
+  const origTgl = $('editKetOrigTglMulai').value;
   setBtnL('btnSimpanEdit',true,'Menyimpan...');
   try{
     const res=await apiFetch(P.ketEdit,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:rowNum, orig_tanggal:origTgl,
+      user_id:MY_ID, id_ket:idKet, orig_tanggal:origTgl,
       jenis:editSelectedJenis, tgl_mulai:tm, tgl_selesai:ts, keterangan:k,
       timestamp:Math.floor(Date.now()/1000)
     })});
@@ -3899,15 +4311,15 @@ async function handleKetEdit(){
 async function confirmKetDelete(idx){
   const r=ketStatusCache[idx];
   if(!r) return;
-  const tgl=r.Tanggal||'?';
-  const tglMulai=r['Tgl Mulai']||r.Tanggal||'?';
-  const tglSelesai=r['Tgl Selesai']||r.Tanggal||'?';
-  const jenis=(r['Jenis Absen']||'').replace(' PENDING','');
-  if(!confirm(`Hapus pengajuan ${jenis}\n${tglMulai !== tglSelesai ? tglMulai+' s.d. '+tglSelesai : tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
+  // Schema baru: id_ket, tanggal (satu field), jenis, keterangan
+  const idKet    = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
+  const tgl      = r.tanggal || r.Tanggal || '?';
+  const jenis    = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING','').trim();
+  if(!confirm(`Hapus pengajuan ${jenis}\n${tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
   try{
     const res=await apiFetch(P.ketDelete,{method:'POST',body:JSON.stringify({
-      user_id:MY_ID, row_number:r.row_number||r.rowNumber,
-      tgl_mulai:tglMulai, tgl_selesai:tglSelesai, tanggal:tgl,
+      user_id:MY_ID, id_ket:idKet,
+      tgl_mulai:tgl, tgl_selesai:tgl, tanggal:tgl,
       timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
@@ -3923,12 +4335,13 @@ async function loadKonfirmasiAdmin(){
   if(!el) return;
   el.innerHTML='<div class="shimmer" style="height:80px;border-radius:12px"></div>';
   try{
-    const res=await apiFetch(`${P.ketList}?status=PENDING`,{method:'GET'});
+    // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
+    const res=await apiFetch(`${P.ketList}?is_admin=true&status=PENDING`,{method:'GET'});
     if(!res.ok) throw 0;
     const d=await res.json();
     const rows=(d.data||d.rows||[]).filter(r=>{
-      const j=(r['Jenis Absen']||'').toUpperCase();
-      return j.includes('PENDING');
+      const st=(r.status||r.Status||'').toUpperCase();
+      return st==='PENDING';
     });
     if(!rows||rows.length===0){
       el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">✅ Tidak ada pengajuan yang menunggu konfirmasi.</div>';
@@ -3936,39 +4349,47 @@ async function loadKonfirmasiAdmin(){
     }
     const EMOJI={'IZIN':'🙏','SAKIT':'🤒','TUGAS':'💼'};
     el.innerHTML=rows.map((r,i)=>{
-      const jenis=(r['Jenis Absen']||'').replace(' PENDING','').toUpperCase();
-      const em=EMOJI[jenis]||'📝';
-      const nama=r.Nama||'—';
-      const nip=r.NIP||'—';
-      const tgl=r.Tanggal||'—';
-      const ket=(r.Ket||'').replace(/\|.*$/,'').trim();
-      const rn=r.row_number||r.rowNumber||i;
-      return`<div class="konfirm-item" id="konfirm-${rn}">
-        <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(${jenis})</span></div>
-        <div class="konfirm-detail">🪪 ${nip} · 📅 ${tgl}<br>📝 ${ket||'—'}</div>
+      // id_ket = ID_Ket baris pertama pengajuan ini (sudah digrouping oleh n8n)
+      const idKet = r.id_ket || r.ID_Ket || '';
+      if (!idKet) return ''; // skip jika tidak ada id_ket
+      const jenis = (r.jenis||'').toUpperCase();
+      const em    = EMOJI[jenis]||'📝';
+      const nama  = r.nama||'—';
+      const nip   = r.nip||'—';
+      // Tampilkan range tanggal jika multi-hari
+      const tglMulai   = r.tgl_mulai   || r.tanggal || '—';
+      const tglSelesai = r.tgl_selesai || r.tanggal || tglMulai;
+      const durasi     = r.durasi || 1;
+      const tglLabel   = tglMulai===tglSelesai ? tglMulai : `${tglMulai} s.d. ${tglSelesai} (${durasi} hari)`;
+      const ket   = (r.keterangan||'').trim();
+      const idKetEsc = idKet.replace(/'/g,"\'");
+      return `<div class="konfirm-item" id="konfirm-${idKet}">
+        <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(IZIN)</span></div>
+        <div class="konfirm-detail">🪪 ${nip} · 📅 ${tglLabel}<br>📝 ${ket||'—'}</div>
+        <div style="font-size:8px;color:var(--muted);font-family:monospace;margin:3px 0 6px;opacity:.6">${idKet}</div>
         <div class="konfirm-actions">
-          <button class="konfirm-btn-ok"  onclick="handleKonfirmasi(${rn},'APPROVE','${jenis}','${tgl}')">✅ Setujui</button>
-          <button class="konfirm-btn-no"  onclick="handleKonfirmasi(${rn},'REJECT','${jenis}','${tgl}')">❌ Tolak</button>
+          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tglMulai}')">✅ Setujui</button>
+          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tglMulai}')">❌ Tolak</button>
         </div>
       </div>`;
-    }).join('');
+    }).filter(Boolean).join('');
   }catch{
     el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Gagal memuat. Tekan 🔄 untuk coba lagi.</div>';
   }
 }
 
-async function handleKonfirmasi(rowNum, action, jenis, tanggal){
+async function handleKonfirmasi(idKet, action, jenis, tanggal){
   const konfirm=$('konfirmasiResult');
   if(konfirm) konfirm.style.display='none';
   try{
     const res=await apiFetch(P.ketApprove,{method:'POST',body:JSON.stringify({
-      row_number:rowNum, action, jenis, tanggal,
+      id_ket:idKet, action, jenis, tanggal,
       admin_id:MY_ID, admin_ids:ADMIN_IDS, timestamp:Math.floor(Date.now()/1000)
     })});
     let d={};try{d=await res.json()}catch(_){}
     if(d.ok!==false){
       // Hilangkan item dari DOM
-      const el=document.getElementById('konfirm-'+rowNum);
+      const el=document.getElementById('konfirm-'+idKet);
       if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
       if(konfirm){
         showResult('konfirmasiResult','konfirmasiRIcon','konfirmasiRTitle','konfirmasiRMsg',
@@ -3992,10 +4413,13 @@ async function loadLog(){
   $('rIcon2').outerHTML='<span class="spin-sm" id="rIcon2"></span>';
   $('logList').innerHTML=shimmerRows();
   try{
+    // Reset cache jam agar selalu dapat data terbaru dari server
+    _resetJamAbsenCache();
     const [res] = await Promise.all([
       apiFetch(`${P.log}?user_id=${MY_ID||''}`,{method:'GET'}),
       fetchJamPeriode(),
-      window._jamAbsenReady   // pastikan JAM_MASUK_MENIT sudah ter-update sebelum render
+      loadJamAbsen(),        // reload jam global dari server (bukan cache)
+      liburLoaded ? Promise.resolve() : fetchLiburForRekap()
     ]);
     if(!res.ok)throw 0;
     const json=await res.json();
@@ -4055,6 +4479,16 @@ function renderLog(logs){
     const mMasukBatas = toMenit(jmBatas);
     const mPulangBatas= toMenit(jpBatas);
     const periodeNama = _jamTgl.nama; // null jika global
+
+    // ── Deteksi hari libur & akhir pekan ──
+    let _dayIdx = -1;
+    try { _dayIdx = new Date(tgl+'T00:00:00').getDay(); } catch(_) {}
+    const isWeekend        = _dayIdx === 0 || _dayIdx === 6;
+    const isLiburNasional  = hariLiburSet.has(tgl);
+    const isLibur          = isWeekend || isLiburNasional;
+    const namaLibur        = isLiburNasional ? (hariLiburMap[tgl] || 'Hari Libur')
+                           : isWeekend       ? (_dayIdx === 0 ? 'Minggu' : 'Sabtu')
+                           : null;
 
     // Pisahkan per jenis
     const rMasuk  = rows.find(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase();return j==='MASUK'||j.includes('LUAR JAM MASUK')||j.includes('LUAR MASUK');});
@@ -4124,6 +4558,7 @@ function renderLog(logs){
         <div>
           <div style="font-size:10px;font-weight:800;color:var(--white)">${tglLabel}</div>
           ${periodeNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeNama}</div>` : ''}
+          ${isLibur ? `<div style="font-size:8px;font-weight:700;color:${isLiburNasional?'#f87171':'var(--muted)'};margin-top:2px;background:${isLiburNasional?'rgba(239,68,68,.10)':'rgba(255,255,255,.05)'};border:1px solid ${isLiburNasional?'rgba(239,68,68,.25)':'rgba(255,255,255,.1)'};border-radius:5px;padding:1px 6px;display:inline-block">${isLiburNasional?'🎉':'📅'} ${namaLibur}</div>` : ''}
         </div>
         <div style="font-size:16px">${masukIcon}</div>
       </div>
@@ -4137,7 +4572,7 @@ function renderLog(logs){
             : `<div style="font-size:18px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${jamMasuk?jamMasuk.slice(0,5):'—:—'}</div>
                <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:2px">${masukLabel}</div>`
           }
-          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}</div>
+          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}${periodeNama ? "" : " (Global)"}</div>
         </div>
         <div style="background:${isKet?masukBg:'rgba(96,165,250,.06)'};border:1px solid ${isKet?masukColor+'44':'rgba(96,165,250,.2)'};border-radius:9px;padding:7px 9px">
           <div style="font-size:7.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">🔵 Jam Pulang</div>
@@ -4147,7 +4582,7 @@ function renderLog(logs){
             : `<div style="font-size:18px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${jamPulang?jamPulang.slice(0,5):'—:—'}</div>
                <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:2px">${pulangIcon} ${pulangLabel}</div>`
           }
-          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}</div>
+          <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}${periodeNama ? "" : " (Global)"}</div>
         </div>
       </div>
       <!-- Footer: lokasi + ket -->
@@ -4161,15 +4596,7 @@ function renderLog(logs){
   }).join('');
 }
 function updateLogStats(l){
-  const c=k=>l.filter(r=>{const j=(getField(r,'Jenis Absen','jenis','Jenis')||'').toUpperCase().trim();return j===k;}).length;
-  const masukTotal  = c('MASUK') + c('DI LUAR JAM MASUK');
-  const pulangTotal = c('PULANG') + c('DI LUAR JAM PULANG');
-  $('stMasuk').textContent     = masukTotal  || '0';
-  $('stPulang').textContent    = pulangTotal || '0';
-  $('stPulangLuar').textContent= c('PULANG LUAR') || '0';
-  $('stIzin').textContent      = c('IZIN')   || '0';
-  $('stSakit').textContent     = c('SAKIT')  || '0';
-  $('stTugas').textContent     = c('TUGAS')  || '0';
+  // ── Statistik sederhana dihapus (sudah ada di Akumulasi) ──
 
   // ══ AKUMULASI WAKTU ══
   const toMnt = s => {
@@ -4308,6 +4735,11 @@ function filterLog(f,el){
     if(f==='TUGAS'    && adaTugas)  filtered.push(...rows);
     if(f==='PULANG LUAR'&&adaLapangan) filtered.push(...rows);
     if(f==='ALPA'     && adaAlpa)   filtered.push(...rows);
+    if(f==='LIBUR') {
+      let _di=-1; try{_di=new Date(tgl+'T00:00:00').getDay();}catch(_){}
+      const adaLibur = hariLiburSet.has(tgl) || _di===0 || _di===6;
+      if(adaLibur) filtered.push(...rows);
+    }
   });
   renderLog(filtered);
 }
@@ -4316,6 +4748,7 @@ function filterLog(f,el){
 let rekapLoaded = false;
 // Global state: hari libur & jam per pegawai
 let hariLiburSet = new Set(); // Set of 'YYYY-MM-DD' strings
+let hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
 let jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
 let liburLoaded = false;
 let userListOrder = [];
@@ -5185,7 +5618,12 @@ async function fetchLiburForRekap(){
     if(!res.ok) return;
     const d=await res.json();
     const rows=d.data||d.rows||[];
-    hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{
+      const tgl=String(r.tanggal||r.Tanggal||'').trim();
+      if(tgl) hariLiburMap[tgl]=r.nama||r.Nama||r.keterangan||r.Keterangan||'Hari Libur';
+    });
+    hariLiburSet=new Set(Object.keys(hariLiburMap));
     liburLoaded=true;
   }catch(_){}
 }
@@ -5283,7 +5721,9 @@ async function loadLiburAdmin(){
     const rows=(d.data||d.rows||[])
       .filter(r=>String(r.tanggal||r.Tanggal||'').trim())
       .sort((a,b)=>(a.tanggal||'').localeCompare(b.tanggal||''));
-    hariLiburSet=new Set(rows.map(r=>String(r.tanggal||r.Tanggal||'').trim()).filter(Boolean));
+    hariLiburMap={};
+    rows.forEach(r=>{ const t=String(r.tanggal||r.Tanggal||'').trim(); if(t) hariLiburMap[t]=r.nama||r.Nama||r.keterangan||r.Keterangan||'Hari Libur'; });
+    hariLiburSet=new Set(Object.keys(hariLiburMap));
     liburLoaded=true;
     const badge=$('liburTotalBadge');
     if(badge){badge.textContent=rows.length;badge.style.display=rows.length?'inline-block':'none';}
@@ -5704,34 +6144,20 @@ async function loadSeragamTypeAdmin() {
   if (!el) return;
   el.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
   try {
-    const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const rows = d.data || d || [];
-    if (Array.isArray(rows) && rows.length) {
-      // Update SERAGAM_OPTIONS dari server — sertakan HSL
-      SERAGAM_OPTIONS = rows.map(r => ({
-        id: String(r.id || r.warna || ''),
-        warna: r.warna || null,
-        label: r.label,
-        emoji: r.emoji,
-        preview: _seragamPreviewFromWarna(r.warna),
-        hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-        hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-        sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-        sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-        lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-        lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-      }));
-      // Pastikan "Libur" selalu ada
-      if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-        SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540' });
-      }
+    let rows = _seragamTypeRawCache;
+    if (!rows) {
+      // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
+      const res = await apiFetch(P.seragamTypeList, { method: 'GET' });
+      if (!res.ok) throw 0;
+      const d = await res.json();
+      rows = d.data || d || [];
+      _seragamTypeRawCache = rows;
     }
+    _applySeragamTypeRows(rows);
     renderSeragamTypeList();
-    renderSeragamAdmin(); // refresh pilihan seragam per hari
+    renderSeragamAdmin();
   } catch(_) {
-    renderSeragamTypeList(); // tampilkan default
+    renderSeragamTypeList();
   }
 }
 
@@ -5849,6 +6275,7 @@ async function submitSeragamType() {
       `${emoji} ${label} berhasil ${editId ? 'diperbarui' : 'ditambahkan'}.`);
     $('seragamTypeResult').style.display = 'flex';
     resetSeragamTypeForm();
+    _seragamTypeRawCache = null; // invalidasi cache agar reload dari server
     await loadSeragamTypeAdmin();
   } catch(e) {
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal ke Server',
@@ -5866,6 +6293,7 @@ async function deleteSeragamType(id, warna, label) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','success','✅','Dihapus!',`${label} berhasil dihapus.`);
     $('seragamTypeResult').style.display = 'flex';
+    _seragamTypeRawCache = null; // invalidasi cache
     await loadSeragamTypeAdmin();
   } catch(e) {
     showResult('seragamTypeResult','seragamTypeRIcon','seragamTypeRTitle','seragamTypeRMsg','warning','⚠️','Gagal',
@@ -6002,47 +6430,62 @@ async function simpanSeragamAdmin() {
   }
 }
 
+/* ── Cache jenis seragam dari server (cegah double-fetch dengan loadSeragamTypeAdmin) ── */
+let _seragamTypeRawCache = null;
+
+/* ── Helper: apply raw rows dari server ke SERAGAM_OPTIONS ── */
+function _applySeragamTypeRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) return;
+  SERAGAM_OPTIONS = rows.map(r => ({
+    id: String(r.id || r.warna || ''),
+    warna: r.warna || null,
+    label: r.label,
+    emoji: r.emoji,
+    preview: _seragamPreviewFromWarna(r.warna),
+    hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
+    hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
+    sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
+    sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
+    lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
+    lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
+  }));
+  if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
+    SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
+  }
+}
+
 async function loadSeragamPublik() {
-  // Load jenis seragam dari server agar SERAGAM_OPTIONS selalu up-to-date
-  try {
-    const res = await apiFetch(P.seragamTypeList, { method:'GET' });
-    if (res.ok) {
-      const d = await res.json();
+  // Paralelkan kedua request sekaligus — tidak tunggu satu selesai dulu
+  const [typeResult, schedResult] = await Promise.allSettled([
+    apiFetch(P.seragamTypeList, { method:'GET' }),
+    apiFetch(P.seragamGet,      { method:'GET' })
+  ]);
+
+  // Proses seragamTypeList
+  if (typeResult.status === 'fulfilled' && typeResult.value.ok) {
+    try {
+      const d = await typeResult.value.json();
+      const rows = d.data || d || [];
+      _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
+      _applySeragamTypeRows(rows);
+    } catch(_) {}
+  }
+
+  // Proses jadwal seragam per hari
+  if (schedResult.status === 'fulfilled' && schedResult.value.ok) {
+    try {
+      const d = await schedResult.value.json();
       const rows = d.data || d || [];
       if (Array.isArray(rows) && rows.length) {
-        SERAGAM_OPTIONS = rows.map(r => ({
-          id: String(r.id || r.warna || ''),
-          warna: r.warna || null,
-          label: r.label,
-          emoji: r.emoji,
-          preview: _seragamPreviewFromWarna(r.warna),
-          hMin: r.hMin !== '' && r.hMin !== null && r.hMin !== undefined ? Number(r.hMin) : null,
-          hMax: r.hMax !== '' && r.hMax !== null && r.hMax !== undefined ? Number(r.hMax) : null,
-          sMin: r.sMin !== '' && r.sMin !== null && r.sMin !== undefined ? Number(r.sMin) : null,
-          sMax: r.sMax !== '' && r.sMax !== null && r.sMax !== undefined ? Number(r.sMax) : null,
-          lMin: r.lMin !== '' && r.lMin !== null && r.lMin !== undefined ? Number(r.lMin) : null,
-          lMax: r.lMax !== '' && r.lMax !== null && r.lMax !== undefined ? Number(r.lMax) : null,
-        }));
-        if (!SERAGAM_OPTIONS.find(o => o.warna === null)) {
-          SERAGAM_OPTIONS.push({ id:'0', warna: null, label: 'Libur (Tidak Cek)', emoji: '🏠', preview: '#1a2540', hMin:null,hMax:null,sMin:null,sMax:null,lMin:null,lMax:null });
-        }
+        const map = {};
+        rows.forEach(r => {
+          const idx = parseInt(r.hari_idx);
+          if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
+        });
+        _applySeragamData(map);
       }
-    }
-  } catch(_) {}
-  // Load jadwal seragam per hari
-  try {
-    const res = await apiFetch(P.seragamGet, { method:'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const rows = d.data || d || [];
-    if (!Array.isArray(rows) || !rows.length) return;
-    const map = {};
-    rows.forEach(r => {
-      const idx = parseInt(r.hari_idx);
-      if (!isNaN(idx)) map[idx] = { warna: r.warna||null, label: r.label, emoji: r.emoji };
-    });
-    _applySeragamData(map);
-  } catch(_) {}
+    } catch(_) {}
+  }
 }
 
 
@@ -6057,13 +6500,11 @@ async function loadAdminMgmt() {
   if (!el) return;
   el.innerHTML = `<div class="shimmer" style="height:38px;border-radius:10px"></div>`;
   try {
-    // Re-fetch admin list langsung dari endpoint jam-absen (sudah include admin_ids)
-    const res = await apiFetch(P.jamAbsen, { method: 'GET' });
-    if (!res.ok) throw 0;
-    const d = await res.json();
-    const ids = (d.data || d || {}).admin_ids || [];
+    // Gunakan cache dari loadJamAbsen() — tidak perlu fetch ulang ke server
+    const jam = _jamAbsenCache || await _getJamAbsen();
+    const ids = (jam || {}).admin_ids || [];
 
-    // Update global ADMIN_IDS
+    // Update global ADMIN_IDS jika perlu
     if (ids.length) {
       ADMIN_IDS.length = 0;
       ids.forEach(id => ADMIN_IDS.push(id));
@@ -6182,12 +6623,29 @@ function _showAdminMgmtResult(type, icon, title, msg) {
   showResult('adminMgmtResult', 'adminMgmtRIcon', 'adminMgmtRTitle', 'adminMgmtRMsg', type, icon, title, msg);
 }
 
+/* ── Cache bersama endpoint jamAbsen — P.jamAbsen hanya dipanggil 1× ──
+   Baik loadJamAbsen() maupun loadAdminMgmt() memakai _getJamAbsen()
+   sehingga tidak ada double-request ke server Google Sheets.           */
+let _jamAbsenCache   = null;   // objek hasil JSON
+let _jamAbsenPromise = null;   // Promise aktif yang sedang berjalan
+
+async function _getJamAbsen() {
+  if (_jamAbsenCache)   return _jamAbsenCache;
+  if (_jamAbsenPromise) return _jamAbsenPromise;
+  _jamAbsenPromise = apiFetch(P.jamAbsen, {method:'GET'})
+    .then(r  => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+    .then(d  => { _jamAbsenCache = d.data || d; return _jamAbsenCache; })
+    .catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
+  return _jamAbsenPromise;
+}
+function _resetJamAbsenCache() {
+  _jamAbsenCache   = null;
+  _jamAbsenPromise = null;
+}
+
 async function loadJamAbsen(){
   try{
-    const res=await apiFetch(P.jamAbsen,{method:'GET'});
-    if(!res.ok)throw 0;
-    const d=await res.json();
-    const jam=d.data||d||{};
+    const jam = await _getJamAbsen();
     if(jam.masuk)  { const m=toMenitStr(jam.masuk);  if(m!==null) JAM_MASUK_MENIT=m; }
     if(jam.pulang) { const m=toMenitStr(jam.pulang); if(m!==null) JAM_PULANG_MENIT=m; }
 
@@ -6196,10 +6654,8 @@ async function loadJamAbsen(){
       ADMIN_IDS.length = 0;
       jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
     }
-    // Re-evaluasi IS_ADMIN setelah ADMIN_IDS dimuat
     IS_ADMIN = ADMIN_IDS.includes(MY_ID);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID || null;
-    // Tampilkan/sembunyikan tab Admin sesuai hasil
     _applyAdminUI();
 
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:menitToStr(JAM_MASUK_MENIT),pulang:menitToStr(JAM_PULANG_MENIT)})); }catch(_){}
@@ -6247,6 +6703,8 @@ async function simpanJamAbsen(){
   if(btn){btn.disabled=true;$('btnJamText').textContent='💾 Menyimpan...';}
   try{
     await apiFetch(P.jamAbsen,{method:'POST',body:JSON.stringify({masuk:inM.value,pulang:inP.value,diubah_oleh:MY_ID,timestamp:Math.floor(Date.now()/1000)})});
+    // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
+    _jamAbsenCache = null; _jamAbsenPromise = null;
     JAM_MASUK_MENIT  = mMasuk;
     JAM_PULANG_MENIT = mPulang;
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:inM.value,pulang:inP.value})); }catch(_){}
@@ -6303,6 +6761,17 @@ async function loadJamPeriodeAdmin(){
   }
 }
 
+// Debug: cek tanggal apakah masuk periode atau tidak
+function debugCekPeriode() {
+  const tgl = prompt('Masukkan tanggal (YYYY-MM-DD):');
+  if (!tgl) return;
+  const hasil = getJamForTanggal(tgl);
+  const msg = hasil.nama
+    ? `✅ ${tgl} → PERIODE: "${hasil.nama}"\nMasuk  : ${hasil.masuk}\nPulang : ${hasil.pulang}`
+    : `🔵 ${tgl} → JAM GLOBAL\nMasuk  : ${hasil.masuk}\nPulang : ${hasil.pulang}`;
+  alert(msg);
+}
+
 function renderPeriodeAdminList(){
   const list=$('periodeAdminList');
   if(!list) return;
@@ -6313,19 +6782,26 @@ function renderPeriodeAdminList(){
   const todayStr = fmtD(nowWITA());
   const fmtTgl = s=>{ try{ const d=new Date(s+'T00:00:00'); return isNaN(d)?s:d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); }catch{return s;} };
   list.innerHTML = jamPeriodeList.map(p=>{
-    const aktif = todayStr>=p.dari && todayStr<=p.sampai;
-    return `<div style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,${aktif?'.4':'.15'});border-radius:10px;padding:10px 12px;margin-bottom:7px;position:relative">
-      ${aktif?'<div style="position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:#a78bfa;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:5px;padding:2px 6px">● Aktif Sekarang</div>':''}
-      <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:4px;padding-right:80px">🌙 ${p.nama}</div>
-      <div style="font-size:9.5px;color:var(--muted);margin-bottom:6px">📅 ${fmtTgl(p.dari)} s.d. ${fmtTgl(p.sampai)}</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <span style="font-size:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:3px 8px;color:var(--success)">🟢 Masuk ≤ ${p.masuk}</span>
-        <span style="font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:3px 8px;color:var(--info)">🔵 Pulang ≥ ${p.pulang}</span>
+    const aktif   = todayStr >= p.dari && todayStr <= p.sampai;
+    const expired = todayStr > p.sampai;
+    const belumMulai = todayStr < p.dari;
+    const statusLabel = aktif ? '● Aktif' : expired ? '✕ Expired' : '○ Belum Mulai';
+    const statusColor = aktif ? '#a78bfa' : expired ? 'var(--danger)' : 'var(--muted)';
+    const borderAlpha = aktif ? '.4' : expired ? '.2' : '.15';
+    const bgAlpha     = aktif ? '.07' : expired ? '.03' : '.04';
+    return `<div style="background:rgba(167,139,250,${bgAlpha});border:1px solid rgba(167,139,250,${borderAlpha});border-radius:10px;padding:10px 12px;margin-bottom:7px;position:relative;${expired?'opacity:.6':''}">
+      <div style="position:absolute;top:8px;right:10px;font-size:8px;font-weight:700;color:${statusColor};background:rgba(0,0,0,.2);border-radius:5px;padding:2px 6px">${statusLabel}</div>
+      <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:4px;padding-right:70px">${p.nama}</div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:6px">📅 ${fmtTgl(p.dari)} — ${fmtTgl(p.sampai)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="font-size:9px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:2px 8px;color:var(--success)">🟢 Masuk ≤ ${p.masuk}</span>
+        <span style="font-size:9px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);border-radius:6px;padding:2px 8px;color:#60a5fa">🔵 Pulang ≥ ${p.pulang}</span>
+        ${expired ? `<button onclick="hapusPeriodeAdmin('${p.id}')" style="font-size:8px;padding:2px 8px;border-radius:6px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);cursor:pointer;font-weight:700;margin-left:auto">🗑️ Hapus</button>` : ''}
       </div>
-      <button onclick="hapusJamPeriode('${p.id}','${p.nama}')" style="font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.08);color:var(--danger);cursor:pointer;font-weight:700">🗑️ Hapus</button>
     </div>`;
   }).join('');
 }
+
 
 async function tambahJamPeriode(){
   const nama   = ($('inPeriodeNama')?.value||'').trim();
@@ -6367,6 +6843,13 @@ async function tambahJamPeriode(){
   }
 }
 
+// Alias untuk tombol hapus dari daftar periode (expired)
+function hapusPeriodeAdmin(id) {
+  const p = jamPeriodeList.find(x => String(x.id) === String(id));
+  const nama = p ? p.nama : id;
+  hapusJamPeriode(id, nama);
+}
+
 async function hapusJamPeriode(id, nama){
   if(!confirm(`Hapus periode "${nama}"?`)) return;
   try{
@@ -6401,6 +6884,8 @@ function _applyFaceToggleUI(enabled) {
     label.textContent   = '🔴 Face Recognition Nonaktif';
     desc.textContent    = 'Absen tanpa verifikasi wajah (hanya GPS)';
   }
+  // Sinkronisasi UI profil dengan status toggle
+  if (typeof updateProfilFaceUI === 'function') updateProfilFaceUI();
 }
 
 async function loadFaceToggle() {
@@ -6512,13 +6997,38 @@ function _applyLocPos(lat,lon){
 
 function _updateLocBadgeGPS(){
   if(!navigator.geolocation||_locPermDenied||_locWatchId!==null)return;
+
+  // ── Permissions API: cek state izin tanpa trigger prompt ──
+  const _permState = (_readPermStore()['geolocation']) || 'unknown';
+  if (_permState === 'denied') {
+    _locPermDenied = true;
+    const clb = $('clockLocBadge');
+    if (clb) { clb.textContent='📍 Izin lokasi ditolak'; clb.className='clock-loc-badge unknown'; }
+    return;
+  }
+
+  // ── Coba pakai GPS cache terlebih dulu (TTL 2 menit, badge only) ──
+  const _cachedPos = _getCachedGPS();
+  if (_cachedPos) {
+    _applyLocPos(_cachedPos.lat, _cachedPos.lon);
+    // Tetap request fresh position di background (silent, tanpa blok UI)
+  }
+
+  // Jika cache hit DAN permission bukan 'prompt', skip re-request saat ini
+  if (_cachedPos && _permState === 'granted') return;
+
   _locWatchId=1; // tandai sudah dijalankan agar tidak dipanggil ulang
   navigator.geolocation.getCurrentPosition(
-    pos=>{ _applyLocPos(pos.coords.latitude,pos.coords.longitude); },
+    pos=>{
+      const { latitude, longitude } = pos.coords;
+      _setCachedGPS(latitude, longitude); // simpan ke cache
+      _applyLocPos(latitude, longitude);
+    },
     err=>{
       const clb=$('clockLocBadge');
       if(err&&err.code===1){
         _locPermDenied=true;
+        _writePermStore({ geolocation: 'denied' });
         if(clb){clb.textContent='📍 Izin lokasi ditolak';clb.className='clock-loc-badge unknown';}
       }
       // timeout/unavailable → badge tetap "Mendeteksi", tidak minta lagi
@@ -6527,10 +7037,216 @@ function _updateLocBadgeGPS(){
   );
 }
 
-window._jamAbsenReady = loadJamAbsen(); // load jam absen dari server/localStorage
-loadFaceToggle(); // load face recognition setting
-loadSeragamPublik(); // load jadwal seragam dari Google Sheets via n8n
-loadTodayHistory();
+// Load semua data dasar secara paralel
+window._jamAbsenReady = Promise.all([
+  loadJamAbsen(),      // jam global + admin list
+  fetchJamPeriode(),   // periode khusus → langsung tersedia di tab Absen
+  loadTodayHistory(),  // riwayat hari ini
+]).then(() => {
+  // Update clock setelah semua jam siap (agar notif periode langsung benar)
+  updateClock();
+  // Sembunyikan splash screen setelah data dasar siap
+  const splash = document.getElementById('appSplash');
+  if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
+});
+// Tunggu keduanya selesai sebelum cek wajib daftar
+// Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
+// masih default true padahal admin sudah matikan → modal paksa muncul keliru
+Promise.all([loadFaceToggle(), loadFaceFromServer()]).then(() => _cekWajibFace());
+initPermissions(); // pre-check & watch geolocation + camera permissions
+
+/* ============================================================
+   WAJIB DAFTAR WAJAH
+   ============================================================ */
+
+async function _cekWajibFace() {
+  await new Promise(r => setTimeout(r, 1200));
+  if (!MY_ID) return;
+  // Toggle OFF → sembunyikan modal paksa (tidak perlu daftar wajah untuk absen)
+  if (!FACE_RECOGNITION_ENABLED) {
+    _hideFaceRequiredModal();
+    return;
+  }
+  const ref = getFaceRef();
+  if (ref && ref.dataUrl && ref.dataUrl !== '') return;
+  _showFaceRequiredModal();
+}
+
+function _showFaceRequiredModal() {
+  const modal = $('faceRequiredModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+}
+
+function _hideFaceRequiredModal() {
+  const modal = $('faceRequiredModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+async function daftarWajahPaksa() {
+  const btn = $('btnDaftarWajahPaksa');
+  const txt = $('btnDaftarWajahTxt');
+  const status = $('faceRequiredStatus');
+  if (btn) btn.disabled = true;
+  if (txt) txt.textContent = 'Membuka kamera...';
+
+  openCamOverlay({ isRegister: true, onDone: async (cap) => {
+    if (!cap || !cap.dataUrl) {
+      if (btn) btn.disabled = false;
+      if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+      if (status) status.textContent = 'Foto tidak berhasil diambil, coba lagi.';
+      return;
+    }
+    if (status) { status.textContent = 'Menyimpan data wajah...'; status.style.color = 'var(--muted)'; }
+    const ok = saveFaceRef(cap.dataUrl);
+    if (ok) {
+      if (status) { status.textContent = 'Wajah berhasil didaftarkan!'; status.style.color = 'var(--success)'; }
+      updateFaceRegUI();
+      updateProfilFaceUI();
+      await new Promise(r => setTimeout(r, 1200));
+      _hideFaceRequiredModal();
+    } else {
+      if (status) { status.textContent = 'Gagal menyimpan. Coba lagi.'; status.style.color = 'var(--danger)'; }
+      if (btn) btn.disabled = false;
+      if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+    }
+  }, onCancel: () => {
+    if (btn) btn.disabled = false;
+    if (txt) txt.textContent = 'Daftarkan Wajah Sekarang';
+    if (status) { status.textContent = 'Pendaftaran dibatalkan. Wajah wajib didaftarkan untuk absen.'; status.style.color = 'var(--warning)'; }
+    setTimeout(_showFaceRequiredModal, 500);
+  }});
+}
+
+/* ============================================================
+   ADMIN: STATUS WAJAH PEGAWAI
+   ============================================================ */
+
+async function loadFaceStatusAdmin() {
+  const list = $('faceStatusAdminList');
+  if (!list) return;
+  list.innerHTML = '<div class="shimmer" style="height:38px;border-radius:10px;margin-bottom:6px"></div><div class="shimmer" style="height:38px;border-radius:10px;margin-bottom:6px"></div><div class="shimmer" style="height:38px;border-radius:10px"></div>';
+  try {
+    const res = await apiFetch(P.userList, { method: 'GET' });
+    if (!res.ok) throw 0;
+    const json = await res.json();
+
+    // Response format: { ok, data: [...], total } — ambil dari data
+    const pegawai = Array.isArray(json)
+      ? json
+      : Array.isArray(json.data)
+        ? json.data
+        : [];
+
+    if (!pegawai.length) {
+      list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Tidak ada data pegawai</div>';
+      return;
+    }
+
+    // Helper ambil nama — Supabase pakai "Nama" (kapital)
+    const getNama = p => p.Nama || p.nama || p.username || p.Username || '—';
+    const getUid  = p => String(p.id || p.ID || '');
+    const getNip  = p => p.NIP  || p.nip  || '';
+
+    // hasFace: face_histogram tidak null, tidak '', dan tidak '[]' (hasil reset)
+    const hasFace = p => {
+      const hist  = p.face_histogram;
+      const photo = p.face_photo;
+      const validHist  = hist  && hist  !== '[]' && hist  !== '';
+      const validPhoto = photo && photo !== '';
+      return validHist || validPhoto;
+    };
+    const sudah = pegawai.filter(p => hasFace(p));
+    const belum = pegawai.filter(p => !hasFace(p));
+    const total = pegawai.length;
+    const pct   = total > 0 ? Math.round(sudah.length / total * 100) : 0;
+    const barColor = pct === 100 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+
+    let html = `
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:10px;font-weight:700;color:var(--white)">Progress Pendaftaran</span>
+          <span style="font-size:11px;font-weight:800;color:${barColor}">${sudah.length}/${total} (${pct}%)</span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <span style="font-size:9px;color:var(--success)">✅ Sudah: ${sudah.length}</span>
+          <span style="font-size:9px;color:var(--danger)">❌ Belum: ${belum.length}</span>
+        </div>
+      </div>`;
+
+    if (belum.length) {
+      html += `<div style="font-size:9px;font-weight:800;color:var(--danger);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Belum Daftar (${belum.length})</div>`;
+      belum.forEach(p => {
+        const nama = getNama(p);
+        const uid  = getUid(p);
+        const nip  = getNip(p);
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;margin-bottom:6px">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: '+nip+' · ' : ''}Belum daftar wajah</div>
+          </div>
+          <span style="font-size:9px;padding:2px 8px;border-radius:6px;background:rgba(239,68,68,.15);color:var(--danger);font-weight:700;flex-shrink:0">Belum</span>
+        </div>`;
+      });
+    }
+
+    if (sudah.length) {
+      html += `<div style="font-size:9px;font-weight:800;color:var(--success);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Sudah Daftar (${sudah.length})</div>`;
+      sudah.forEach(p => {
+        const nama    = getNama(p);
+        const uid     = getUid(p);
+        const nip     = getNip(p);
+        const savedAt = p.face_saved_at || null;
+        let tgl = '?';
+        if (savedAt && savedAt !== '') {
+          try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`; } catch(_){}
+        }
+        const thumb = p.face_photo || null;
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
+          <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:rgba(0,0,0,.3)">
+            ${thumb
+              ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover">`
+              : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:16px">👤</div>`
+            }
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: '+nip+' · ' : ''}Terdaftar: ${tgl}</div>
+          </div>
+          <button onclick="resetFacePegawai('${uid}','${nama.replace(/'/g,"\'")}')"
+            style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">
+            🗑️ Reset
+          </button>
+        </div>`;
+      });
+    }
+
+    list.innerHTML = html;
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Gagal memuat. Pastikan n8n aktif.</div>';
+  }
+}
+
+
+async function resetFacePegawai(uid, nama) {
+  if (!confirm('Reset data wajah ' + nama + '?\nPegawai akan dipaksa daftar ulang saat buka app.')) return;
+  try {
+    const res = await apiFetch(P.faceRegister, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: uid, foto_base64: '', histogram: [], saved_at: '', _reset: true })
+    });
+    if (res && res.ok) {
+      alert('Data wajah ' + nama + ' berhasil direset.');
+      loadFaceStatusAdmin();
+    } else { alert('Gagal reset. Coba lagi.'); }
+  } catch(_) { alert('Gagal terhubung ke server.'); }
+}
+
 cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
 loadWeather();  // muat cuaca Waikabubak
 

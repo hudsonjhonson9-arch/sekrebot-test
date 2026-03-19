@@ -844,9 +844,7 @@
       <button class="btn-capture" id="btnCapture" onclick="doCapture()" disabled>
         📸 Ambil Foto & Lanjutkan Absen
       </button>
-      <button class="btn-capture-skip" id="btnCaptureSkip" onclick="skipVerifikasi()">
-        ⏩ Lewati Verifikasi (tetap foto tersimpan)
-      </button>
+
 
     </div>
   </div>
@@ -867,6 +865,20 @@
       </button>
       <div style="font-size:9px;color:var(--muted);margin-top:12px;opacity:.6">
         Data wajah disimpan aman di server dan hanya digunakan untuk verifikasi absensi.
+      </div>
+    </div>
+  </div>
+
+  <!-- Fix #7: Modal Konfirmasi Absen (preview sebelum submit) -->
+  <div id="absenConfirmModal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(5,12,30,.85);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;padding-bottom:24px">
+    <div style="width:100%;max-width:420px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px 20px 16px 16px;padding:20px;animation:slideInBottom .25s ease">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;letter-spacing:.08em;margin-bottom:16px">KONFIRMASI ABSEN</div>
+      <!-- Preview info -->
+      <div id="absenConfirmContent" style="margin-bottom:18px"></div>
+      <!-- Tombol aksi -->
+      <div style="display:flex;gap:10px">
+        <button onclick="_confirmAbsenBatal()" style="flex:1;padding:13px;border-radius:13px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);font-size:13px;font-weight:700;cursor:pointer">&#10005; Batal</button>
+        <button onclick="_confirmAbsenLanjut()" id="btnConfirmLanjut" style="flex:2;padding:13px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:13px;font-weight:800;cursor:pointer">&#9989; Ya, Absen Sekarang</button>
       </div>
     </div>
   </div>
@@ -1531,9 +1543,8 @@
 
 <script>
 /* ════ KONFIGURASI ════ */
-const SERVER_1  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev';
-const SERVER_2  = 'https://mindcloud.my.id';
-//const SERVER_2  = 'https://unannunciable-nongerundive-elsa.ngrok-free.dev';
+const SERVER_1  = 'https://mindcloud.my.id';           // server utama (permanen)
+const SERVER_2  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev'; // fallback/dev
 const isTest    = false;
 // ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
@@ -2608,7 +2619,28 @@ function getNamaWarna(H,S,L) {
   return 'Tidak Dikenal';
 }
 
-/* ── State Kamera ── */
+// Fix #10: Sampling multi-piksel area dada (grid 5×5) untuk deteksi warna seragam
+// Lebih tahan terhadap bayangan/highlight daripada 1 piksel tengah
+function sampleChestColor(canvas, ctx) {
+  const w = canvas.width, h = canvas.height;
+  // Area sampling: horizontal tengah (±20%), vertikal 55-75% dari atas (area dada)
+  const cx = Math.floor(w * 0.5);
+  const cy = Math.floor(h * 0.65);
+  const step = Math.max(4, Math.floor(w * 0.04)); // step ~4% lebar, min 4px
+  let rSum = 0, gSum = 0, bSum = 0, count = 0;
+  for (let dx = -2; dx <= 2; dx++) {
+    for (let dy = -2; dy <= 2; dy++) {
+      const px = cx + dx * step;
+      const py = cy + dy * step;
+      if (px < 1 || px >= w - 1 || py < 1 || py >= h - 1) continue;
+      const d = ctx.getImageData(px, py, 1, 1).data;
+      rSum += d[0]; gSum += d[1]; bSum += d[2]; count++;
+    }
+  }
+  if (!count) return [128, 128, 128]; // fallback abu-abu
+  return [Math.round(rSum / count), Math.round(gSum / count), Math.round(bSum / count)];
+}
+
 let _camStream    = null;
 let _blazeModel   = null;
 let _modelLoading = false;
@@ -2959,7 +2991,8 @@ async function openCamOverlay(onDone) {
     // ── Pre-check permission kamera via Permissions API ──
     const _camPermState = (_readPermStore()['camera']) || 'unknown';
     if (_camPermState === 'denied') {
-      $('modelLoading').textContent = '❌ Izin kamera ditolak. Buka pengaturan browser/Telegram dan aktifkan izin kamera.';
+      // Fix #8: card interaktif saat permission sudah denied di cache
+      $('modelLoading').innerHTML = `<div style="text-align:center;padding:10px"><div style="font-size:28px;margin-bottom:8px">🚫</div><div style="font-size:12px;font-weight:700;color:var(--danger);margin-bottom:6px">Izin kamera ditolak</div><div style="font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.5">Buka Pengaturan Telegram &rarr; Privasi &rarr; Kamera, lalu aktifkan izin kamera.</div><button onclick="closeCamOverlay()" style="padding:9px 20px;border-radius:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--danger);font-size:11px;font-weight:700;cursor:pointer">&times; Tutup</button></div>`;
       return;
     }
 
@@ -2982,12 +3015,15 @@ async function openCamOverlay(onDone) {
     // Simpan track video ke window agar bisa diakses untuk flash
     // Cek kapabilitas flash HANYA SETELAH stream berjalan 100%
     window._camVideoTrack = _camStream.getVideoTracks()[0];
+    window._currentFacingMode = fMode; // Fix #9: track facing mode
     try {
       // Tunggu sedikit agar kapabilitas terisi (Chrome Android bug)
       setTimeout(() => {
         try {
+          // Fix #9: Flash hanya ditampilkan untuk kamera belakang (environment)
           const capabilities = window._camVideoTrack.getCapabilities();
-          if (capabilities.torch) {
+          const isBackCamera = (window._currentFacingMode === 'environment');
+          if (capabilities.torch && isBackCamera) {
             $('camFlashBtn').style.display = 'flex';
           } else {
             $('camFlashBtn').style.display = 'none';
@@ -2995,17 +3031,16 @@ async function openCamOverlay(onDone) {
         } catch(e) { $('camFlashBtn').style.display = 'none'; }
       }, 500);
     } catch(e) { console.warn(e); $('camFlashBtn').style.display = 'none'; }
-    
+
   } catch(e) {
-    // Catat status denied ke cache jika user menolak
-    if (e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError')) {
-      _writePermStore({ camera: 'denied' });
-    }
-    $('modelLoading').textContent = '❌ Izin kamera ditolak. Berikan izin kamera dan coba lagi.';
+    // Fix #8: Tampilkan tombol retry & tutup saat error kamera
+    const isDenied = e && (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError');
+    if (isDenied) _writePermStore({ camera: 'denied' });
+    window._lastCamCb = _absenCallbackAfterCam;
+    $('modelLoading').innerHTML = `<div style="text-align:center;padding:10px"><div style="font-size:28px;margin-bottom:8px">${isDenied ? '🚫' : '📷'}</div><div style="font-size:12px;font-weight:700;color:var(--danger);margin-bottom:6px">${isDenied ? 'Izin kamera ditolak' : 'Kamera tidak dapat dibuka'}</div><div style="font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.5">${isDenied ? 'Buka Pengaturan Telegram &rarr; Privasi &rarr; Kamera, aktifkan izin kamera.' : 'Coba tutup aplikasi lain yang menggunakan kamera, lalu coba lagi.'}</div><div style="display:flex;gap:8px;justify-content:center"><button onclick="closeCamOverlay()" style="flex:1;max-width:120px;padding:9px;border-radius:10px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--danger);font-size:11px;font-weight:700;cursor:pointer">&times; Tutup</button>${!isDenied ? '<button onclick="(()=>{closeCamOverlay();setTimeout(()=>openCamOverlay(window._lastCamCb),300)})()" style="flex:1;max-width:120px;padding:9px;border-radius:10px;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">&#128260; Coba Lagi</button>' : ''}</div></div>`;
     return;
   }
 
-  // Muat BlazeFace model (skip jika isSimpleOverlay)
   const isRegMode = typeof onDone === 'object' && onDone !== null && onDone.isRegister;
   const isSimpleOverlay = typeof onDone === 'object' && onDone !== null && onDone.isSimple;
 
@@ -3037,7 +3072,6 @@ async function openCamOverlay(onDone) {
       setCamStatus('warn','⚠️','Model AI gagal dimuat','Foto tetap bisa diambil — verifikasi manual');
     }
     $('btnCapture').disabled = false;
-    $('btnCaptureSkip').style.display = isSimpleOverlay ? 'none' : 'block';
     $('btnCapture').textContent = isSimpleOverlay ? '📸 Ambil Foto Bukti' : '📸 Ambil Foto & Lanjutkan Absen';
     startSimpleCapture(isSimpleOverlay);
     return;
@@ -3112,13 +3146,13 @@ function startDetectLoop(model) {
   let lastDetect = 0;
   const INTERVAL = 120; // ms antar deteksi (≈8 fps untuk hemat baterai)
 
-  // Fallback: setelah 15 detik tombol capture selalu aktif
-  // agar wajah susah terdeteksi (cahaya kurang, posisi dll) tidak memblokir absen
+  // Fix #5: Fallback 15 detik — pesan lebih informatif
   setTimeout(() => {
     if (!$('btnCapture').dataset.enabled) {
       $('btnCapture').disabled = false;
       $('btnCapture').dataset.enabled = '1';
-      setCamStatus('warn','📷','Ambil Foto Sekarang','Posisikan wajah di dalam oval, lalu tekan tombol');
+      setCamStatus('warn','⚠️','Deteksi Wajah Timeout',
+        'Wajah tidak terdeteksi otomatis. Pastikan pencahayaan cukup & wajah menghadap kamera, lalu tekan tombol.');
     }
   }, 15000);
 
@@ -3347,7 +3381,13 @@ async function doCapture() {
     // Mirror seperti preview (selfie)
     ctx.translate(cnv.width,0); ctx.scale(-1,1);
   }
-  ctx.drawImage(vid,0,0,cnv.width,cnv.height);
+  ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
+
+  // Fix #10: Sampling warna seragam multi-piksel (grid 5×5 di area dada)
+  // Dilakukan sebelum toDataURL agar canvas masih readable
+  const [chestR, chestG, chestB] = sampleChestColor(cnv, ctx);
+  const dayIdx = new Date().getDay(); // 0=Minggu...6=Sabtu
+  const warnaResult = cekWarnaSeragam(chestR, chestG, chestB, dayIdx);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
 
@@ -3379,18 +3419,25 @@ async function doCapture() {
   const faceMatch = await matchFace(dataUrl);
 
   _captureData = { dataUrl, faceOk, livenessOk,
-                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
+                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
+                   warnaSeragam: warnaResult };
 
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;
   let badges = '';
   const matchBadge = faceMatch.score >= 0
     ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
+  // Badge warna seragam
+  const seragamBadge = warnaResult && warnaResult.verdict !== 'skip'
+    ? `<span class="cam-preview-badge ${warnaResult.verdict === 'ok' ? 'cpb-ok' : 'cpb-warn'}">${warnaResult.alasan || warnaResult.nama_warna}</span>`
+    : '';
   badges = [
     faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
     livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
-    matchBadge
+    matchBadge,
+    seragamBadge
   ].join('');
+
   
   $('camPreviewInfo').innerHTML = badges;
   $('camPreview').classList.add('show');

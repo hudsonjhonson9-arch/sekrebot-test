@@ -4079,9 +4079,9 @@ function ambilFotoKeterangan() {
         return;
       }
       const b64 = cap.dataUrl.split(',')[1];
-      window.fileBase64 = b64;
-      window.fileMime = 'image/jpeg';
-      window.fileOrigName = 'Kamera_' + Math.floor(Date.now()/1000) + '.jpg';
+      fileBase64 = b64;
+      fileMime = 'image/jpeg';
+      fileOrigName = 'Kamera_' + Math.floor(Date.now()/1000) + '.jpg';
       
       const preview = $('buktiPreview'), img = $('buktiImg');
       preview.classList.add('show');

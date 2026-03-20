@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d1b2a">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <style>
@@ -27,6 +29,9 @@
       background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(201,168,76,.12) 0%,transparent 60%),
                  radial-gradient(ellipse 60% 40% at 100% 100%,rgba(10,22,60,.8) 0%,transparent 60%)}
     .app{position:relative;z-index:1;max-width:420px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh}
+
+    /* Offline Banner */
+    .offline-banner{display:none;background:var(--danger);color:var(--white);text-align:center;padding:8px;font-size:12px;font-weight:700;width:100%;position:sticky;top:0;z-index:9999;box-shadow:0 2px 10px rgba(0,0,0,0.5)}
 
     /* Header */
     .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
@@ -644,6 +649,7 @@
   .splash-progress{height:100%;width:0;background:#c9a84c;border-radius:2px;animation:splashLoad 1.2s ease forwards}
   @keyframes splashLoad{0%{width:0}60%{width:70%}90%{width:90%}100%{width:100%}}
 </style>
+<div id="offlineBanner" class="offline-banner">⚠️ ANDA SEDANG OFFLINE (MODE OFFLINE)</div>
 <div id="appSplash">
   <div class="splash-logo">🏛️</div>
   <div class="splash-title">BAPPERIDA Sumba Barat</div>
@@ -1542,7 +1548,87 @@
 </div><!-- .app -->
 
 <script>
-/* ════ KONFIGURASI ════ */
+/* ════ SUPABASE CONFIGURATION (MIGRASI DARI N8N) ════ */
+// TODO: Ganti placeholder ini dengan kredensial Supabase dari dashboard
+const SUPABASE_URL = 'https://[PROJECT_ID].supabase.co';
+const SUPABASE_KEY = 'ey-ANON-KEY';
+
+const S_HDR = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Prefer': 'return=representation'
+};
+
+/* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
+const DB_NAME = 'BapperidaOfflineDB';
+const DB_VERSION = 1;
+
+const idb = {
+  db: null,
+  async init() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('offline_queue')) {
+          db.createObjectStore('offline_queue', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('master_data')) {
+          db.createObjectStore('master_data', { keyPath: 'key' });
+        }
+      };
+      req.onsuccess = (e) => { this.db = e.target.result; resolve(); };
+      req.onerror = reject;
+    });
+  },
+  async set(storeName, val) {
+    if (!this.db) await this.init();
+    return new Promise((resolve) => {
+      try {
+        const tx = this.db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(val);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      } catch(e) { resolve(false); }
+    });
+  },
+  async get(storeName, key) {
+    if (!this.db) await this.init();
+    return new Promise((resolve) => {
+      try {
+        const tx = this.db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).get(key);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      } catch(e) { resolve(null); }
+    });
+  },
+  async getAll(storeName) {
+    if (!this.db) await this.init();
+    return new Promise((resolve) => {
+      try {
+        const req = this.db.transaction(storeName, 'readonly').objectStore(storeName).getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve([]);
+      } catch(e) { resolve([]); }
+    });
+  },
+  async delete(storeName, key) {
+    if (!this.db) await this.init();
+    return new Promise((resolve) => {
+      try {
+        const req = this.db.transaction(storeName, 'readwrite').objectStore(storeName).delete(key);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => resolve(false);
+      } catch(e) { resolve(false); }
+    });
+  }
+};
+idb.init();
+
+/* ════ KONFIGURASI N8N ════ */
+// Akan dihapus secara bertahap saat migrasi ke Supabase selesai
 const SERVER_1  = 'https://mindcloud.my.id';           // server utama (permanen)
 const SERVER_2  = 'https://unheeled-timmy-supernumerously.ngrok-free.dev'; // fallback/dev
 const isTest    = false;
@@ -1596,6 +1682,7 @@ const P = {
   jamPeriodeList : isTest ? '/webhook-test/jam-periode-list'  : '/webhook/jam-periode-list',
   jamPeriodeAdd  : isTest ? '/webhook-test/jam-periode-add'   : '/webhook/jam-periode-add',
   jamPeriodeDel  : isTest ? '/webhook-test/jam-periode-delete': '/webhook/jam-periode-delete',
+  adminList      : isTest ? '/webhook-test/admin-list'        : '/webhook/admin-list',
   adminAdd       : isTest ? '/webhook-test/admin-add'         : '/webhook/admin-add',
   adminDel       : isTest ? '/webhook-test/admin-delete'      : '/webhook/admin-delete',
 };
@@ -2478,168 +2565,7 @@ async function cekJaringan() {
    5. Lanjutkan GPS + kirim payload dengan foto
    ════════════════════════════════════════════════════════════════ */
 
-/* ── Jadwal Seragam Harian ── */
-const JADWAL_SERAGAM = {
-  0: { nama: 'Minggu',  warna: [],                      label: 'Libur',                       emoji: '🏠' },
-  1: { nama: 'Senin',   warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  2: { nama: 'Selasa',  warna: ['coklat_khaki'],         label: 'Coklat / Khaki (Seragam ASN)',emoji: '🟤' },
-  3: { nama: 'Rabu',    warna: ['putih'],                label: 'Kemeja Putih',                emoji: '⬜' },
-  4: { nama: 'Kamis',   warna: ['tenun_sumba'],          label: 'Kain Tenun Sumba (Warna Cerah/Motif)',emoji: '🎨' },
-  5: { nama: 'Jumat',   warna: ['bebas'],                label: 'Baju Bebas',                  emoji: '👕' },
-  6: { nama: 'Sabtu',   warna: [],                      label: 'Libur',                       emoji: '🏠' },
-};
 
-// Helper: parse warna field (string CSV atau array) → selalu array bersih
-function _parseWarnaArray(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw.filter(Boolean);
-  // String CSV dari Google Sheets: "coklat_khaki,putih"
-  return String(raw).split(',').map(s => s.trim()).filter(Boolean);
-}
-
-// Helper: build label + emoji dari array warna
-function _buildSeragamLabel(warnaArr) {
-  if (!warnaArr || !warnaArr.length) return { label: 'Libur', emoji: '🏠' };
-  const opts = warnaArr.map(w => SERAGAM_OPTIONS.find(o => o.warna === w)).filter(Boolean);
-  if (!opts.length) return { label: 'Libur', emoji: '🏠' };
-  return {
-    label: opts.map(o => o.label.split('(')[0].trim()).join(' / '),
-    emoji: opts.map(o => o.emoji).join('')
-  };
-}
-
-// Override dari server saat startup (dipanggil oleh loadSeragamPublik)
-function _applySeragamData(data) {
-  try {
-    Object.keys(data).forEach(k => {
-      const idx = parseInt(k);
-      if (JADWAL_SERAGAM[idx] && data[k]) {
-        if (data[k].warna !== undefined) {
-          JADWAL_SERAGAM[idx].warna = _parseWarnaArray(data[k].warna);
-          const built = _buildSeragamLabel(JADWAL_SERAGAM[idx].warna);
-          JADWAL_SERAGAM[idx].label = built.label;
-          JADWAL_SERAGAM[idx].emoji = built.emoji;
-        }
-        // label & emoji di-rebuild otomatis dari warna array
-      }
-    });
-  } catch(_) {}
-}
-
-/* ── Rentang warna HSL per seragam ──
-   Format: { hMin,hMax, sMin,sMax, lMin,lMax }
-   coklat_khaki : H=20-45, S=20-65, L=25-65
-   putih        : S<15, L>75
-   tenun_sumba  : Warna cerah/jenuh (S>35) — Merah, Oranye, Kuning, Biru Tua, Hijau Tua, dll
-                  (Tidak ada satu warna pasti — cek saturasi tinggi + bukan putih/hitam/abu)
-*/
-function cekWarnaSeragam(r, g, b, hariIdx) {
-  // Konversi RGB → HSL
-  const r1=r/255, g1=g/255, b1=b/255;
-  const max=Math.max(r1,g1,b1), min=Math.min(r1,g1,b1);
-  const l=(max+min)/2;
-  let h=0, s=0;
-  if(max!==min){
-    const d=max-min;
-    s=l>0.5?d/(2-max-min):d/(max+min);
-    switch(max){
-      case r1: h=((g1-b1)/d+(g1<b1?6:0))/6; break;
-      case g1: h=((b1-r1)/d+2)/6; break;
-      case b1: h=((r1-g1)/d+4)/6; break;
-    }
-  }
-  const H=Math.round(h*360), S=Math.round(s*100), L=Math.round(l*100);
-  const seragam = JADWAL_SERAGAM[hariIdx];
-
-  if (!seragam || !seragam.warna || !seragam.warna.length) {
-    return { verdict:'skip', nama_warna:'—', alasan:'Hari libur', H,S,L };
-  }
-
-  const nama_warna = getNamaWarna(H,S,L);
-
-  // Helper: cek satu warna terhadap HSL pixel
-  function _cekSatuWarna(warna) {
-    const opt = SERAGAM_OPTIONS.find(o => o.warna === warna);
-    // Deteksi dinamis dari HSL range server
-    if (opt && opt.hMin !== null && opt.hMin !== undefined && opt.hMin !== '') {
-      const hMin=Number(opt.hMin), hMax=Number(opt.hMax);
-      const sMin=Number(opt.sMin), sMax=Number(opt.sMax);
-      const lMin=Number(opt.lMin), lMax=Number(opt.lMax);
-      const hOk = hMin <= hMax ? (H>=hMin&&H<=hMax) : (H>=hMin||H<=hMax);
-      return hOk && S>=sMin && S<=sMax && L>=lMin && L<=lMax;
-    }
-    // Fallback bawaan
-    switch(warna) {
-      case 'coklat_khaki': return H>=15&&H<=65&&S>=15&&S<=75&&L>=20&&L<=75;
-      case 'putih':        return S<20&&L>=68;
-      case 'tenun_sumba':  return S>28&&L>15&&L<90;
-      case 'bebas':        return true;
-      default:             return true; // custom tanpa HSL = bebas
-    }
-  }
-
-  const warnaArr = seragam.warna; // selalu array
-  const labelsAktif = warnaArr.map(w => SERAGAM_OPTIONS.find(o=>o.warna===w)?.label || w).join(' / ');
-
-  // Jika ada 'bebas' di list → langsung ok
-  if (warnaArr.includes('bebas')) {
-    return { verdict:'ok', nama_warna, alasan:`✅ ${labelsAktif}`, H,S,L };
-  }
-
-  // Cek apakah pixel cocok SALAH SATU dari seragam yang diizinkan
-  const adaYangCocok = warnaArr.some(w => _cekSatuWarna(w));
-  const verdict = adaYangCocok ? 'ok' : 'warn';
-
-  // Temukan nama seragam yang cocok (untuk pesan sukses)
-  const namaCocok = warnaArr.find(w => _cekSatuWarna(w));
-  const labelCocok = namaCocok ? (SERAGAM_OPTIONS.find(o=>o.warna===namaCocok)?.label || namaCocok) : null;
-
-  return {
-    verdict,
-    nama_warna,
-    alasan: verdict==='ok'
-      ? `✅ Sesuai ${labelCocok}`
-      : `⚠️ Seharusnya ${labelsAktif} (terdeteksi: ${nama_warna})`,
-    H, S, L
-  };
-}
-
-
-function getNamaWarna(H,S,L) {
-  if(S<12)  return L>80?'Putih':L<25?'Hitam':'Abu-abu';
-  if(L<18)  return 'Hitam';
-  if(H<15||H>=345) return 'Merah';
-  if(H<45)  return S>50?'Oranye':'Coklat';
-  if(H<65)  return S>40?'Kuning':'Kuning Pucat';
-  if(H<150) return S>35?'Hijau':'Hijau Muda';
-  if(H<195) return 'Cyan/Tosca';
-  if(H<255) return 'Biru';
-  if(H<285) return 'Ungu';
-  if(H<345) return 'Merah Muda/Pink';
-  return 'Tidak Dikenal';
-}
-
-// Fix #10: Sampling multi-piksel area dada (grid 5×5) untuk deteksi warna seragam
-// Lebih tahan terhadap bayangan/highlight daripada 1 piksel tengah
-function sampleChestColor(canvas, ctx) {
-  const w = canvas.width, h = canvas.height;
-  // Area sampling: horizontal tengah (±20%), vertikal 55-75% dari atas (area dada)
-  const cx = Math.floor(w * 0.5);
-  const cy = Math.floor(h * 0.65);
-  const step = Math.max(4, Math.floor(w * 0.04)); // step ~4% lebar, min 4px
-  let rSum = 0, gSum = 0, bSum = 0, count = 0;
-  for (let dx = -2; dx <= 2; dx++) {
-    for (let dy = -2; dy <= 2; dy++) {
-      const px = cx + dx * step;
-      const py = cy + dy * step;
-      if (px < 1 || px >= w - 1 || py < 1 || py >= h - 1) continue;
-      const d = ctx.getImageData(px, py, 1, 1).data;
-      rSum += d[0]; gSum += d[1]; bSum += d[2]; count++;
-    }
-  }
-  if (!count) return [128, 128, 128]; // fallback abu-abu
-  return [Math.round(rSum / count), Math.round(gSum / count), Math.round(bSum / count)];
-}
 
 let _camStream    = null;
 let _blazeModel   = null;
@@ -3383,12 +3309,6 @@ async function doCapture() {
   }
   ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
 
-  // Fix #10: Sampling warna seragam multi-piksel (grid 5×5 di area dada)
-  // Dilakukan sebelum toDataURL agar canvas masih readable
-  const [chestR, chestG, chestB] = sampleChestColor(cnv, ctx);
-  const dayIdx = new Date().getDay(); // 0=Minggu...6=Sabtu
-  const warnaResult = cekWarnaSeragam(chestR, chestG, chestB, dayIdx);
-
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
 
   if (isSimpleCap) {
@@ -3419,23 +3339,17 @@ async function doCapture() {
   const faceMatch = await matchFace(dataUrl);
 
   _captureData = { dataUrl, faceOk, livenessOk,
-                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
-                   warnaSeragam: warnaResult };
+                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
 
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;
   let badges = '';
   const matchBadge = faceMatch.score >= 0
     ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
-  // Badge warna seragam
-  const seragamBadge = warnaResult && warnaResult.verdict !== 'skip'
-    ? `<span class="cam-preview-badge ${warnaResult.verdict === 'ok' ? 'cpb-ok' : 'cpb-warn'}">${warnaResult.alasan || warnaResult.nama_warna}</span>`
-    : '';
   badges = [
     faceOk    ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
     livenessOk? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
-    matchBadge,
-    seragamBadge
+    matchBadge
   ].join('');
 
   
@@ -3523,8 +3437,9 @@ async function handleAbsen() {
   // ── Buka kamera untuk verifikasi wajah & seragam ──
   setBtnL('btnAbsen',true,'Membuka kamera...');
 
-  if (!FACE_RECOGNITION_ENABLED) {
-    // Face recognition dinonaktifkan admin — langsung absen tanpa kamera
+  if (!FACE_RECOGNITION_ENABLED || !navigator.onLine) {
+    // Face recognition dinonaktifkan admin ATAU perangkat sedang offline
+    // Langsung absen tanpa buka kamera (nanti lari ke offline queue di _doAbsenWithGPS)
     await _doAbsenWithGPS(initData, isTgX, null);
     setBtnL('btnAbsen',false,'Kirim Lokasi & Absen');
     return;
@@ -3863,6 +3778,30 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         foto_verifikasi: fotoInfo,
         _gps_elapsed_ms:_gpsElapsed,_detection_score:_score,_detection_flags:_flags,..._suspiciousPayload
       };
+      // ── OFFLINE QUEUE INTERCEPTOR ──
+      if (!navigator.onLine) {
+        payload._is_offline_sync = true;
+        const offlineData = {
+          endpoint: P.absen,
+          method: 'POST',
+          payload: payload,
+          timestamp: Date.now(),
+          type: 'absen'
+        };
+        await idb.set('offline_queue', offlineData);
+        
+        const fotoOfflineKet = camResult?.faceOk ? '\\n📸 Wajah: ✅ Tersimpan offline' : '\\n📸 Foto: ⚠️ Dilewati';
+        showResult('resultCard','rIcon','rTitle','rMsg','warning','📴','Tersimpan Sementara Karena Offline',
+          `Data absen Anda tersimpan di antrean perangkat.\\n📅 ${tanggal}\\n🕐 ${jam}\\n📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}${fotoOfflineKet}\\n\\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
+        
+        setBtnL('btnAbsen',false,'✅ Tersimpan Offline');
+        $('btnAbsen').disabled=true;
+        logLoaded=false;
+        autoUpdateStatusAktif();
+        // Not calling tg.close() immediately to let user see the orange warning
+        return;
+      }
+
       try {
         const res=await apiFetch(P.absen,{method:'POST',body:JSON.stringify(payload)});
         let d={};try{d=await res.json()}catch(_){}
@@ -3983,6 +3922,29 @@ async function handlePulangLuar() {
         timestamp: Math.floor(Date.now()/1000),
         init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent
       };
+      // ── OFFLINE QUEUE INTERCEPTOR ──
+      if (!navigator.onLine) {
+        payload._is_offline_sync = true;
+        const offlineData = {
+          endpoint: P.absen, // Endpoint absen bisa membedakan jenis PULANG LUAR dari body
+          method: 'POST',
+          payload: payload,
+          timestamp: Date.now(),
+          type: 'pulang_luar'
+        };
+        await idb.set('offline_queue', offlineData);
+        
+        showResult('resultCard','rIcon','rTitle','rMsg','warning','📴','Tersimpan Sementara Karena Offline',
+          `Data Pulang Lapangan Anda tersimpan di perangkat.\\n${ket}\\n📅 ${tanggal}\\n🕐 ${jam}\\n\\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
+        
+        $('btnPulangLuar').disabled = true;
+        $('btnAbsen').disabled = true;
+        $('pulangLuarForm').classList.remove('show');
+        $('btnPulangLuar').classList.remove('show');
+        logLoaded = false;
+        return;
+      }
+
       try {
         const res = await apiFetch(P.absen, {method:'POST', body:JSON.stringify(payload)});
         let d = {}; try { d = await res.json(); } catch(_) {}
@@ -4162,6 +4124,27 @@ async function handleKet(){
     bukti_base64:fileBase64||null,bukti_mime:fileMime||null,bukti_nama:fileOrigName||null,
     init_data:tg?.initData||'',timestamp:Math.floor(Date.now()/1000),source:'telegram_miniapp'
   };
+  // ── OFFLINE QUEUE INTERCEPTOR ──
+  if (!navigator.onLine) {
+    payload._is_offline_sync = true;
+    const offlineData = {
+      endpoint: P.ket,
+      method: 'POST',
+      payload: payload,
+      timestamp: Date.now(),
+      type: 'keterangan'
+    };
+    await idb.set('offline_queue', offlineData);
+    
+    showResult('ketResult','ketRIcon','ketRTitle','ketRMsg','warning','📴','Tersimpan Sementara Karena Offline',
+      `Pengajuan ${selectedJenis} Anda tersimpan di perangkat. Sistem akan mengirim otomatis saat koneksi internet kembali.`);
+    setBtnL('btnKet',false,'✅ Tersimpan Offline');
+    $('btnKet').disabled=true;
+    ketStatusLoaded=false;
+    setTimeout(()=>resetKetForm(),3200);
+    return;
+  }
+
   try{
     const res=await apiFetch(P.ket,{method:'POST',body:JSON.stringify(payload)});
     let d={};try{d=await res.json()}catch(_){}
@@ -7338,6 +7321,81 @@ function _wxCond(c){
   if(c>=96)               return'Petir + Es';
   return'—';
 }
+
+/* ════ OFFLINE QUEUE SYNC ════ */
+let isSyncing = false;
+async function syncOfflineQueue() {
+  if (isSyncing || !navigator.onLine) return;
+  isSyncing = true;
+  try {
+    const queue = await idb.getAll('offline_queue');
+    if (!queue || queue.length === 0) { isSyncing = false; return; }
+    
+    // Sort by timestamp so older records are sent first
+    queue.sort((a, b) => a.timestamp - b.timestamp);
+    
+    let successCount = 0;
+    for (const item of queue) {
+      try {
+        const res = await apiFetch(item.endpoint, {
+          method: item.method,
+          body: JSON.stringify(item.payload)
+        });
+        if (res.ok) {
+          await idb.delete('offline_queue', item.id);
+          successCount++;
+        }
+      } catch (err) {
+        console.warn('Sync failed for item', item.id, err);
+        // Break loop if one fails to preserve order and avoid spamming server
+        break; 
+      }
+    }
+    
+    if (successCount > 0) {
+      const msg = document.createElement('div');
+      msg.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:10px 16px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
+      msg.textContent = `✅ ${successCount} data absen offline disinkronisasi`;
+      document.body.appendChild(msg);
+      setTimeout(() => { if(msg.parentNode) msg.parentNode.removeChild(msg); }, 4000);
+      
+      if (typeof loadLog === 'function') setTimeout(loadLog, 1500);
+    }
+  } catch (err) {
+    console.error('Offline sync error', err);
+  } finally {
+    isSyncing = false;
+  }
+}
+
+/* ════ PWA & OFFLINE LOGIC ════ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(e => console.warn('SW Reg Failed:', e));
+  });
+}
+
+function updateOnlineStatus() {
+  const banner = $('offlineBanner');
+  if (!navigator.onLine) {
+    if(banner) banner.style.display = 'block';
+    // Matikan kamera jika overlay masih terbuka saat offline
+    if(typeof closeCamOverlay === 'function') {
+       const overlay = $('camOverlay');
+       if (overlay && !overlay.classList.contains('hidden')) {
+           closeCamOverlay();
+       }
+    }
+  } else {
+    if(banner) banner.style.display = 'none';
+    // Di sini akan dipanggil sync offline queue nantinya
+    if(typeof syncOfflineQueue === 'function') syncOfflineQueue();
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
 </script>
 </body>
 </html>

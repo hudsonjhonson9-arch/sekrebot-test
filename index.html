@@ -400,6 +400,7 @@
     .rs-izin   {border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.06)} .rs-izin   .rs-num{color:#fbbf24}
     .rs-sakit  {border-color:rgba(239,68,68,.3) ;background:rgba(239,68,68,.06) } .rs-sakit  .rs-num{color:var(--danger)}
     .rs-tugas  {border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.06)} .rs-tugas  .rs-num{color:#8b5cf6}
+    .rs-alpa   {border-color:rgba(239,68,68,.25) ;background:rgba(239,68,68,.1) } .rs-alpa   .rs-num{color:#fca5a5}
 
     /* ════ PROFIL ════ */
     .profil-hero-card{background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.3);border-radius:16px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
@@ -906,6 +907,19 @@
         <button class="jenis-pill"        onclick="selectJenis('SAKIT',this)">🤒 Sakit</button>
         <button class="jenis-pill"        onclick="selectJenis('TUGAS',this)">💼 Tugas</button>
       </div>
+
+      <!-- Izin Jam UI -->
+      <div id="izinJamWrap" style="margin-bottom:12px; display:block;">
+        <div id="labelIzinJam" onclick="toggleIzinJam()" 
+             style="cursor:pointer; padding:10px; background:var(--gold-dim); border-radius:10px; border:1px dashed var(--gold); display:flex; align-items:center; justify-content:center; gap:8px; font-size:11px; font-weight:700; color:var(--gold);">
+             <input type="checkbox" id="checkIzinJam" style="display:none;"/>
+             <span id="izinJamIcon">⏰</span> <span id="izinJamText">IZIN / SAKIT PER JAM</span>
+        </div>
+        <div id="rowIzinJam" style="display:none; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
+          <div><label class="form-label">🕒 JAM MULAI</label><input type="time" class="form-input" id="inJamMulai" style="font-family:'JetBrains Mono',monospace;"/></div>
+          <div><label class="form-label">🕒 JAM SELESAI</label><input type="time" class="form-input" id="inJamSelesai" style="font-family:'JetBrains Mono',monospace;"/></div>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">📅 Tanggal Mulai</label><input type="date" class="form-input" id="tglMulai"/></div>
       <div class="form-group"><label class="form-label">📅 Tanggal Selesai</label><input type="date" class="form-input" id="tglSelesai"/></div>
       <div class="form-group" id="durLabel" style="display:none">
@@ -1237,8 +1251,8 @@
       </div>
       <!-- Label seksi -->
       <div style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 2px">📝 Keterangan</div>
-      <!-- Baris 2: Izin · Sakit · Tugas — 3 kolom -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+      <!-- Baris 2: Izin · Sakit · Tugas · Alpa — 4 kolom -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
         <div class="rs-card rs-izin">
           <div class="rs-num" id="rsIzin">—</div>
           <div class="rs-ico">🙏</div>
@@ -1253,6 +1267,11 @@
           <div class="rs-num" id="rsTugas">—</div>
           <div class="rs-ico">💼</div>
           <div class="rs-lbl">Tugas</div>
+        </div>
+        <div class="rs-card rs-alpa">
+          <div class="rs-num" id="rsAlpa">—</div>
+          <div class="rs-ico">🔴</div>
+          <div class="rs-lbl">Alpa</div>
         </div>
       </div>
     </div>
@@ -3985,10 +4004,36 @@ async function handlePulangLuar() {
 
 /* ════ KETERANGAN ════ */
 let selectedJenis='IZIN', fileBase64=null, fileMime=null, fileOrigName=null;
+function toggleIzinJam() {
+  const ch = $('checkIzinJam');
+  ch.checked = !ch.checked;
+  const row = $('rowIzinJam');
+  const box = $('labelIzinJam');
+  if (ch.checked) {
+    row.style.display = 'grid';
+    box.style.background = 'var(--gold)';
+    box.style.color = 'var(--bg)';
+    box.style.borderStyle = 'solid';
+    $('izinJamIcon').textContent = '✅';
+    // Set default jam jika kosong
+    if (!$('inJamMulai').value)  $('inJamMulai').value = '08:00';
+    if (!$('inJamSelesai').value) $('inJamSelesai').value = '10:00';
+  } else {
+    row.style.display = 'none';
+    box.style.background = 'var(--gold-dim)';
+    box.style.color = 'var(--gold)';
+    box.style.borderStyle = 'dashed';
+    $('izinJamIcon').textContent = '⏰';
+  }
+}
+
 function selectJenis(j,el){
   selectedJenis=j;
   document.querySelectorAll('.jenis-pill').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
+  // Tampilkan/sembunyikan opsi Izin Jam (hanya untuk IZIN & SAKIT)
+  const wrap = $('izinJamWrap');
+  if (wrap) wrap.style.display = (j==='IZIN' || j==='SAKIT') ? 'block' : 'none';
 }
 (function(){const t=fmtD(nowWITA());$('tglMulai').value=$('tglSelesai').value=t;updateDur();})();
 function updateDur(){
@@ -4121,6 +4166,8 @@ async function handleKet(){
     user:{id:MY_ID,first_name:tgUser.first_name||'',last_name:tgUser.last_name||'',username:tgUser.username||'',
           nama_lengkap:userProfile?.nama||'',jabatan:userProfile?.jabatan||'',nip:userProfile?.nip||''},
     jenis:selectedJenis,tgl_mulai:tm,tgl_selesai:ts,keterangan:k,
+    jam_mulai: $('checkIzinJam').checked ? $('inJamMulai').value : '',
+    jam_selesai: $('checkIzinJam').checked ? $('inJamSelesai').value : '',
     bukti_base64:fileBase64||null,bukti_mime:fileMime||null,bukti_nama:fileOrigName||null,
     init_data:tg?.initData||'',timestamp:Math.floor(Date.now()/1000),source:'telegram_miniapp'
   };
@@ -4178,12 +4225,22 @@ async function handleKet(){
 
 function resetKetForm(){
   selectedJenis='IZIN';
-  document.querySelectorAll('#tab-ket .jenis-pill').forEach((p,i)=>{
+  document.querySelectorAll('#panel-ket .jenis-pill').forEach((p,i)=>{
     p.classList.toggle('active',i===0);
   });
   const t=fmtD(nowWITA());
   $('tglMulai').value=t; $('tglSelesai').value=t; updateDur();
   $('ketText').value='';
+  // Reset Izin Jam
+  $('checkIzinJam').checked = false;
+  $('rowIzinJam').style.display = 'none';
+  const box = $('labelIzinJam');
+  if (box) {
+    box.style.background = 'var(--gold-dim)';
+    box.style.color = 'var(--gold)';
+    box.style.borderStyle = 'dashed';
+    $('izinJamIcon').textContent = '⏰';
+  }
   clearBukti();
   $('btnKet').disabled=false;
   setBtnL('btnKet',false,'📤 Kirim Keterangan');
@@ -4897,6 +4954,7 @@ async function loadRekap(){
     $('rsIzin').textContent       = ringkasan.izin        ?? 0;
     $('rsSakit').textContent      = ringkasan.sakit       ?? 0;
     $('rsTugas').textContent      = ringkasan.tugas       ?? 0;
+    $('rsAlpa').textContent       = ringkasan.alpa        ?? 0;
 
     const order = await orderPromise;
     // Enrich jabatan dari user_list jika belum ada, lalu sort by urutan
@@ -5095,7 +5153,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null) {
   };
 }
 
-function resetRekapStats(){['rsMasuk','rsPulang','rsPulangLuar','rsLuar','rsIzin','rsSakit','rsTugas'].forEach(id=>{const el=$(id);if(el)el.textContent='—';});}
+function resetRekapStats(){['rsMasuk','rsPulang','rsPulangLuar','rsLuar','rsIzin','rsSakit','rsTugas','rsAlpa'].forEach(id=>{const el=$(id);if(el)el.textContent='—';});}
 
 /* ════ RENDER REKAP — dengan discipline, HH:MM badge, all-time accumulation ════ */
 function renderRekap(pg){
@@ -5365,7 +5423,8 @@ function renderRekap(pg){
         ${izin  >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
         ${sakit >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
         ${tugas >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
-        ${total===0?`<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ Tidak Ada Data</span>`:''}
+        ${(p.alpa||0) >0?`<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">🔴 Alpa: ${p.alpa}</span>`:''}
+        ${total===0 && (p.alpa||0)===0?`<span class="pbar-item" style="background:rgba(255,255,255,.06);color:var(--muted)">❌ Tidak Ada Data</span>`:''}
       </div>`;
 
     // ── Akumulasi all-time (hanya jika ada data) ──
@@ -5562,7 +5621,7 @@ async function downloadRekap() {
       'Sakit'            : sakit,
       'Izin'             : izin,
       'Dinas Luar (DL)'  : tugas,
-      'Alpa'             : 0,
+      'Alpa'             : (p.alpa || 0),
       'Keterangan'       : [
         masuk      > 0 ? `M:${masuk}`      : '',
         pulang     > 0 ? `P:${pulang}`     : '',
@@ -5843,7 +5902,15 @@ async function loadLokasiAdmin(){
     const json=await res.json();list=Array.isArray(json)?json:(json.data||[]);
     if(!list.length){el.innerHTML=`<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;
     }else{
-      if(adminMap){list.forEach(l=>{const lat=parseFloat(l.latitude||l.lat||0),lng=parseFloat(l.longitude||l.lng||0);if(!lat||!lng)return;L.circle([lat,lng],{radius:l.radius||100,color:'#c9a84c',fillColor:'rgba(201,168,76,.1)',fillOpacity:1,weight:1}).addTo(adminMap).bindTooltip(l.nama_lokasi||l.nama||'Lokasi');});}
+      if(adminMap){
+        // Clear existing markers/circles before re-adding
+        adminMap.eachLayer((layer) => {
+          if (layer instanceof L.Circle || layer instanceof L.Marker) {
+            adminMap.removeLayer(layer);
+          }
+        });
+        list.forEach(l=>{const lat=parseFloat(l.latitude||l.lat||0),lng=parseFloat(l.longitude||l.lng||0);if(!lat||!lng)return;L.circle([lat,lng],{radius:l.radius||100,color:'#c9a84c',fillColor:'rgba(201,168,76,.1)',fillOpacity:1,weight:1}).addTo(adminMap).bindTooltip(l.nama_lokasi||l.nama||'Lokasi');});
+      }
       // ── Rebuild LOK_DEF dari datatable pakai kolom hari ──
       const newLOK={};
       list.forEach(l=>{

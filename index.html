@@ -391,7 +391,7 @@
     /* Rekap stat cards baru */
     .rs-card{background:var(--card-bg);border:1px solid var(--border);border-radius:11px;padding:9px 6px 7px;text-align:center;backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;gap:2px}
     .rs-num{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;line-height:1}
-    .rs-ico{font-size:12px;line-height:1}
+    .rs-ico{font-size:16px;line-height:1}
     .rs-lbl{font-size:8px;color:var(--muted);font-weight:600;letter-spacing:.03em}
     .rs-masuk  {border-color:rgba(34,197,94,.3) ;background:rgba(34,197,94,.06) } .rs-masuk  .rs-num{color:var(--success)}
     .rs-pulang {border-color:rgba(96,165,250,.3);background:rgba(96,165,250,.06)} .rs-pulang .rs-num{color:var(--info)}
@@ -913,7 +913,7 @@
         <div id="labelIzinJam" onclick="toggleIzinJam()" 
              style="cursor:pointer; padding:10px; background:var(--gold-dim); border-radius:10px; border:1px dashed var(--gold); display:flex; align-items:center; justify-content:center; gap:8px; font-size:11px; font-weight:700; color:var(--gold);">
              <input type="checkbox" id="checkIzinJam" style="display:none;"/>
-             <span id="izinJamIcon">⏰</span> <span id="izinJamText">IZIN PER JAM</span>
+             <span id="izinJamIcon">⏰</span> <span id="izinJamText">IZIN / SAKIT PER JAM</span>
         </div>
         <div id="rowIzinJam" style="display:none; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;">
           <div><label class="form-label">🕒 JAM MULAI</label><input type="time" class="form-input" id="inJamMulai" style="font-family:'JetBrains Mono',monospace;"/></div>
@@ -1270,7 +1270,7 @@
         </div>
         <div class="rs-card rs-alpa">
           <div class="rs-num" id="rsAlpa">—</div>
-          <div class="rs-ico">🔴</div>
+          <div class="rs-ico">❌</div>
           <div class="rs-lbl">Alpa</div>
         </div>
       </div>
@@ -4031,9 +4031,20 @@ function selectJenis(j,el){
   selectedJenis=j;
   document.querySelectorAll('.jenis-pill').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
-  // Tampilkan/sembunyikan opsi Izin Jam (hanya untuk IZIN & SAKIT)
+  // Tampilkan opsi Izin Jam HANYA untuk IZIN (bukan SAKIT/TUGAS)
   const wrap = $('izinJamWrap');
-  if (wrap) wrap.style.display = (j==='IZIN' || j==='SAKIT') ? 'block' : 'none';
+  if (wrap) {
+    const isIzin = (j==='IZIN');
+    wrap.style.display = isIzin ? 'block' : 'none';
+    if (!isIzin && $('checkIzinJam').checked) {
+      // Reset jika pindah ke SAKIT/TUGAS saat masih tercentang
+      $('checkIzinJam').checked = false;
+      if ($('rowIzinJam')) $('rowIzinJam').style.display = 'none';
+      const box = $('labelIzinJam');
+      if (box) { box.style.background='var(--gold-dim)'; box.style.color='var(--gold)'; box.style.borderStyle='dashed'; }
+      if ($('izinJamIcon')) $('izinJamIcon').textContent='⏰';
+    }
+  }
 }
 (function(){const t=fmtD(nowWITA());$('tglMulai').value=$('tglSelesai').value=t;updateDur();})();
 function updateDur(){
@@ -5423,7 +5434,7 @@ function renderRekap(pg){
         ${izin  >0?`<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>`:''}
         ${sakit >0?`<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>`:''}
         ${tugas >0?`<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>`:''}
-        ${(p.alpa||0) >0?`<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">🔴 Alpa: ${p.alpa}</span>`:''}
+        ${(p.alpa||0) >0?`<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ Alpa: ${p.alpa}</span>`:''}
         ${total===0 && (p.alpa||0)===0?`<span class="pbar-item" style="background:rgba(255,255,255,.06);color:var(--muted)">❌ Tidak Ada Data</span>`:''}
       </div>`;
 

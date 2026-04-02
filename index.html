@@ -929,9 +929,8 @@
       <div class="form-group">
         <label class="form-label">📸 Bukti (Foto/Dokumen)</label>
         <input type="file" id="inputGaleri"  accept="image/*,.pdf"    style="display:none" onchange="handleBukti(event,'galeri')"/>
-        <input type="file" id="inputKamera"  accept="image/*" capture="environment" style="display:none" onchange="handleBukti(event,'kamera')"/>
         <div class="bukti-btn-row">
-          <button type="button" class="bukti-btn" id="btnKamera" onclick="$('inputKamera').click()">
+          <button type="button" class="bukti-btn" id="btnKamera" onclick="ambilFotoKeterangan()">
             <span class="bukti-btn-icon">📷</span>
             <span id="lblKamera">Ambil Foto</span>
           </button>

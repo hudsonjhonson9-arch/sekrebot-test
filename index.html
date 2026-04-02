@@ -3322,10 +3322,7 @@ async function doCapture() {
   const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
   const isEnvCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.facingMode === 'environment';
 
-  if (!isEnvCap) {
-    // Mirror seperti preview (selfie)
-    ctx.translate(cnv.width,0); ctx.scale(-1,1);
-  }
+  // Mirroring dinonaktifkan untuk semua kamera
   ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
 
   const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
@@ -4134,16 +4131,21 @@ function ambilFotoKeterangan() {
         $('lblKamera').textContent = 'Ambil Foto';
         return;
       }
-      const b64 = cap.dataUrl.split(',')[1];
+      let b64 = cap.dataUrl.split(',')[1];
+      // Pastikan payload tidak terlalu besar untuk n8n
+      if (atob(b64).length > 2 * 1024 * 1024) {
+        b64 = await compressImage(b64, 'image/jpeg', 1.8);
+      }
+
       fileBase64 = b64;
       fileMime = 'image/jpeg';
       fileOrigName = 'Kamera_' + Math.floor(Date.now()/1000) + '.jpg';
       
       const preview = $('buktiPreview'), img = $('buktiImg');
       preview.classList.add('show');
-      img.src = cap.dataUrl;
+      img.src = 'data:image/jpeg;base64,' + b64;
       img.style.display = 'block';
-      $('buktiNamaText').textContent = window.fileOrigName;
+      $('buktiNamaText').textContent = fileOrigName;
       
       $('btnKamera').classList.add('has-file');
       $('btnGaleri').classList.remove('has-file');

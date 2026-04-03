@@ -1995,6 +1995,16 @@ function switchTab(tab) {
       loadFaceStatusAdmin(); // muat status wajah semua pegawai
       // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
     }
+    // Muat data face reg, tanda tangan, dan extended admin UI
+    setTimeout(() => {
+      if (typeof loadAdminFaceReg === 'function')  loadAdminFaceReg();
+      if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+      if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
+    }, 300);
+  }
+  // Auto-load tanda tangan saat buka tab profil
+  if (tab === 'profil') {
+    if (typeof loadMySignature === 'function') loadMySignature();
   }
 }
 
@@ -6950,6 +6960,7 @@ async function loadJamAbsen(){
     IS_ADMIN = ADMIN_IDS.includes(MY_ID);
     REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID || null;
     _applyAdminUI();
+    if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
 
     try{ localStorage.setItem('jam_absen_bapperida', JSON.stringify({masuk:menitToStr(JAM_MASUK_MENIT),pulang:menitToStr(JAM_PULANG_MENIT)})); }catch(_){}
     updateClock();
@@ -8249,41 +8260,10 @@ function _updateCamFaceBadge(faceCount, label) {
 }
 
 /* ════════════════════════════════════════════════════
-   PATCH: Hubungkan _applyAdminUIExtended ke _applyAdminUI
+   Logika PATCH sebelumnya telah diintegrasikan langsung
+   ke dalam switchTab() dan loadJamAbsen() di atas untuk
+   menghindari infinite recursion akibat function hoisting.
 ════════════════════════════════════════════════════════ */
-const _origApplyAdminUI = typeof _applyAdminUI === 'function' ? _applyAdminUI : null;
-// Override: setelah admin UI diterapkan, jalankan extended
-function _applyAdminUIWithExtension() {
-  if (_origApplyAdminUI) _origApplyAdminUI();
-  _applyAdminUIExtended();
-}
-
-/* ════════════════════════════════════════════════════
-   PATCH: Auto-load tanda tangan saat buka tab profil
-════════════════════════════════════════════════════════ */
-const _origSwitchTab = switchTab;
-function switchTab(tab) {
-  _origSwitchTab(tab);
-  if (tab === 'profil') {
-    loadMySignature();
-  }
-  if (tab === 'admin' && IS_ADMIN) {
-    setTimeout(() => {
-      loadAdminFaceReg();
-      loadAdminSigStatus();
-      _applyAdminUIExtended();
-    }, 300);
-  }
-}
-
-/* ════════════════════════════════════════════════════
-   PATCH: loadJamAbsen — tambahkan extended setelah selesai
-════════════════════════════════════════════════════════ */
-const _origLoadJamAbsen = loadJamAbsen;
-async function loadJamAbsen() {
-  await _origLoadJamAbsen();
-  _applyAdminUIExtended();
-}
 
 /* ════════════════════════════════════════════════════
    OFFLINE QUEUE SYNC ════ */

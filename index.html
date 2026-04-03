@@ -272,6 +272,26 @@
     .form-input:focus,.form-textarea:focus{border-color:var(--gold)}
     .form-textarea{resize:none;min-height:80px;line-height:1.5}
 
+    /* Dropdown / Select dark theme */
+    select.form-input,select.date-range-input,select.dok-input,.dok-select{
+      background:rgba(20,35,70,.92);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c9a84c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat;background-position:right 12px center;background-size:12px;
+      appearance:none;-webkit-appearance:none;
+      padding-right:32px;
+      color:var(--white);
+      border:1px solid var(--border);
+      cursor:pointer;
+    }
+    select.form-input:focus,select.date-range-input:focus,select.dok-input:focus{border-color:var(--gold);outline:none;}
+    select.form-input option,select.date-range-input option,select.dok-input option{
+      background:#0f1e3a;color:var(--white);padding:8px;
+    }
+    select.form-input option:hover,select.form-input option:checked,
+    select.date-range-input option:checked,select.dok-input option:checked{
+      background:rgba(201,168,76,.25);color:var(--gold);
+    }
+
     /* Jenis pills */
     .jenis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
     .jenis-pill{padding:8px 4px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
@@ -309,7 +329,7 @@
       .stat-num2,.stat-lbl2{color:#0a1628 !important}
       .pegawai-card{background:#f8f9fc !important;border:1px solid #ddd !important;break-inside:avoid;margin-bottom:6px}
       .pegawai-name,.pegawai-jabatan{color:#0a1628 !important}
-      .pbar-item{background:#e8edf5 !important;color:#333 !important;-webkit-print-color-adjust:exact}
+      .pbar-item{background:#e8edf5 !important;color:#333 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .rekap-title{color:#0a1628 !important;font-size:16px !important}
       .print-info{display:block !important}
     }
@@ -639,12 +659,41 @@
     .leaflet-container{background:#112240 !important}
 
     /* ══ DESKTOP MODE ══ */
-    body.desktop-mode .app{max-width:900px}
+    body.desktop-mode .app{max-width:1200px}
     body.desktop-mode .tabs .tab{min-width:auto;padding:10px 20px;font-size:12px}
-    body.desktop-mode .panel{padding:16px 24px 40px}
+    body.desktop-mode .panel{padding:20px 32px 48px}
     body.desktop-mode .cam-video-wrap{max-width:480px}
     body.desktop-mode .btn-capture,.desktop-mode .cam-status,.desktop-mode .liveness-card,.desktop-mode .face-reg-card,.desktop-mode .cam-preview{max-width:480px}
     .desktop-mode-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:#60a5fa}
+
+    /* ── Desktop: 2-column admin panel ── */
+    @media (min-width:800px) {
+      body.desktop-mode #panel-admin .admin-desktop-grid {
+        display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
+      }
+      body.desktop-mode #panel-admin .card,
+      body.desktop-mode #panel-absen .clock-card {
+        border-radius:18px;
+      }
+      body.desktop-mode #panel-absen {
+        display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
+      }
+      body.desktop-mode #panel-absen .clock-card,
+      body.desktop-mode #panel-absen .user-card,
+      body.desktop-mode #panel-absen .card {
+        margin-bottom:0;
+      }
+      body.desktop-mode #panel-absen > .divider,
+      body.desktop-mode #panel-absen > .wifi-bar,
+      body.desktop-mode #panel-absen > #gpsCard,
+      body.desktop-mode #panel-absen > .result-card,
+      body.desktop-mode #panel-absen > #btnAbsen,
+      body.desktop-mode #panel-absen > .pulang-luar-form,
+      body.desktop-mode #panel-absen > .btn-pulang-luar,
+      body.desktop-mode #panel-absen > .footer {
+        grid-column: 1 / -1;
+      }
+    }
 
     /* ══ SUPERADMIN GUARD ══ */
     .superadmin-section{display:none}
@@ -883,37 +932,39 @@
         </div>
       </div>
 
-      <!-- Liveness check steps -->
-      <!-- Face Registration Card -->
-      <div class="face-reg-card" id="faceRegCard" style="display:none">
-        <div class="face-reg-title">🧠 Face Recognition</div>
-        <div class="face-reg-row">
-          <div class="face-reg-thumb empty" id="faceRegThumbWrap">
-            <img id="faceRegThumb" src="" alt="" style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
-            <span id="faceRegThumbEmpty">👤</span>
+      <!-- Combined: Face Recognition + Liveness Card (compact merged) -->
+      <div id="faceRegCard" style="display:none;width:100%;max-width:320px;flex-shrink:0">
+        <!-- Face match row -->
+        <div style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
+              <img id="faceRegThumb" src="" alt="" style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
+              <span id="faceRegThumbEmpty">👤</span>
+            </div>
+            <div class="face-reg-info" style="flex:1;min-width:0">
+              <div style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">🧠 Face Recognition</div>
+              <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data wajah</div>
+              <div class="face-reg-sub" id="faceRegSub" style="font-size:8.5px;color:var(--muted);margin-top:1px">Daftarkan untuk pengenalan otomatis</div>
+            </div>
+            <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()" style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
           </div>
-          <div class="face-reg-info">
-            <div class="face-reg-status" id="faceRegStatus">Belum ada data wajah</div>
-            <div class="face-reg-sub" id="faceRegSub">Daftarkan wajah untuk pengenalan otomatis</div>
-          </div>
-          <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()">📷 Daftarkan</button>
         </div>
-      </div>
-
-      <div class="liveness-card" id="livenessCard" style="display:none">
-        <div class="liveness-title">🔐 Liveness Check — Anti Foto</div>
-        <div class="liveness-steps" id="livenessSteps">
-          <div class="liveness-step" id="ls0">
-            <div class="ls-icon">😐</div>
-            <div class="ls-label">Wajah Terdeteksi</div>
-          </div>
-          <div class="liveness-step" id="ls1">
-            <div class="ls-icon">😉</div>
-            <div class="ls-label">Kedipkan Mata</div>
-          </div>
-          <div class="liveness-step" id="ls2">
-            <div class="ls-icon">↔️</div>
-            <div class="ls-label">Geleng Kepala</div>
+        <!-- Liveness steps (inline compact) -->
+        <div id="livenessCard" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:8px 13px">
+          <div style="font-size:8.5px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:7px">🔐 Liveness — Anti Foto</div>
+          <div class="liveness-steps" id="livenessSteps" style="display:flex;gap:5px">
+            <div class="liveness-step" id="ls0" style="flex:1">
+              <div class="ls-icon">😐</div>
+              <div class="ls-label">Wajah Terdeteksi</div>
+            </div>
+            <div class="liveness-step" id="ls1" style="flex:1">
+              <div class="ls-icon">😉</div>
+              <div class="ls-label">Kedipkan Mata</div>
+            </div>
+            <div class="liveness-step" id="ls2" style="flex:1">
+              <div class="ls-icon">↔️</div>
+              <div class="ls-label">Geleng Kepala</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1422,6 +1473,7 @@
       </button>
     </div>
     <!-- ══ DAFTAR LOKASI — ALL IN ONE ══ -->
+    <div class="admin-desktop-grid">
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:7px">
@@ -1694,10 +1746,12 @@
       </div>
     </div>
 
-    <!-- ══ MODE DESKTOP (SUPER ADMIN ONLY) ══ -->
-    <div class="card superadmin-section" style="margin-top:10px" id="desktopModeCard">
+    </div><!-- /.admin-desktop-grid -->
+
+    <!-- ══ MODE DESKTOP (ADMIN) ══ -->
+    <div class="card" style="margin-top:10px" id="desktopModeCard">
       <div class="card-title">🖥️ Mode Desktop</div>
-      <div class="radius-note">Aktifkan tampilan mode desktop untuk akses via browser PC/laptop. Hanya Super Admin yang dapat mengubah ini.</div>
+      <div class="radius-note">Aktifkan tampilan mode desktop untuk akses via browser PC/laptop. Admin dapat mengubah pengaturan ini.</div>
       <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:12px;padding:14px 16px;margin:12px 0">
         <div>
           <div id="desktopModeLabel" style="font-size:13px;font-weight:700;color:#fff">⏳ Memuat...</div>
@@ -7662,7 +7716,7 @@ function _applyDesktopMode(on) {
 }
 
 function toggleDesktopMode() {
-  if (!_isSuperAdmin()) return;
+  if (!IS_ADMIN) return; // semua admin bisa toggle desktop mode
   const newVal = !_desktopModeOn;
   _applyDesktopMode(newVal);
   try { localStorage.setItem('bapperida_desktop_mode', newVal ? '1' : '0'); } catch(_){}
@@ -7679,9 +7733,13 @@ function _applyAdminUIExtended() {
   document.querySelectorAll('.superadmin-section').forEach(el => {
     el.style.display = isSA ? 'block' : 'none';
   });
-  if (isSA) {
+  // Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
+  if (IS_ADMIN) {
     initDesktopMode();
     _applyDesktopMode(_desktopModeOn);
+    // Tampilkan desktop mode card untuk semua admin
+    const dmCard = $('desktopModeCard');
+    if (dmCard) dmCard.style.display = 'block';
   }
 }
 

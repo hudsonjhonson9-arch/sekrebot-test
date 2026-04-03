@@ -7281,16 +7281,17 @@ function _applyFaceToggleUI(enabled) {
   const knob  = $('faceToggleKnob');
   const label = $('faceToggleLabel');
   const desc  = $('faceToggleDesc');
-  if (!sw) return;
+  if (!sw || !knob) return;
+  
   if (enabled) {
-    sw.style.background = '#22c55e';
-    knob.style.left     = '27px';
+    sw.style.background = '#22c55e'; // Green
+    knob.style.left     = '27px';    // Right
     label.textContent   = '🟢 Face Recognition Aktif';
     desc.textContent    = 'Pegawai wajib verifikasi wajah saat absen';
   } else {
-    sw.style.background = '#ef4444';
-    knob.style.left     = '3px';
-    label.textContent   = '🔴 Face Recognition Nonaktif';
+    sw.style.background = '#6b7280'; // Grey (Neutral Inactive)
+    knob.style.left     = '3px';     // Left
+    label.textContent   = '⚪ Face Recognition Nonaktif';
     desc.textContent    = 'Absen tanpa verifikasi wajah (hanya GPS)';
   }
   // Sinkronisasi UI profil dengan status toggle
@@ -7856,13 +7857,18 @@ async function loadAdminFaceReg() {
 
     listEl.innerHTML = users.map(u => {
       const uid      = String(u.ID || u.id || u.telegram_id || '');
+      const nama     = u.Nama || u.nama || u.username || uid;
       const sigData  = sigMap[uid];
       const hasSig   = !!(sigData && sigData.signature);
+      
+      const faceData = faceMap[uid];
+      const hasFace  = !!(faceData && (faceData.dataUrl || faceData.foto_base64));
+      const tgl      = hasFace ? new Date(faceData.savedAt || faceData.saved_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}) : null;
 
       return `<div class="face-adm-item">
         <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
-          ${hasFace && faceData.dataUrl
-            ? `<img src="${faceData.dataUrl}" alt="" style="width:100%;height:100%;object-fit:cover">`
+          ${hasFace && (faceData.dataUrl || faceData.foto_base64)
+            ? `<img src="${faceData.dataUrl || faceData.foto_base64}" alt="" style="width:100%;height:100%;object-fit:cover">`
             : '👤'}
         </div>
         <div class="face-adm-info">
@@ -7876,12 +7882,13 @@ async function loadAdminFaceReg() {
               ? `<span style="color:var(--success)">✍️ TTD: OK</span>`
               : `<span style="color:var(--danger)">✍️ TTD: Belum</span>`}
           </div>
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">ID: ${uid}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <button class="face-adm-btn" style="padding:4px 8px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
+          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
             ${hasFace ? '🔄 Wajah' : '📷 Wajah'}
           </button>
-          <button class="face-adm-btn" style="padding:4px 8px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
+          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
             ${hasSig ? '🔄 TTD' : '✍️ TTD'}
           </button>
         </div>
@@ -7891,6 +7898,43 @@ async function loadAdminFaceReg() {
   } catch(e) {
     listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat pegawai</div></div>`;
   }
+}
+
+function adminCaptureFaceFor(uid, name) {
+  openCamOverlay({
+    isRegister: true,
+    onDone: async (cap) => {
+      if (!cap?.dataUrl) return;
+      const ok = await saveFaceRefFor(uid, cap.dataUrl);
+      if (ok) {
+        loadAdminFaceReg();
+        setCamStatus('ok','🧠','Wajah Terdaftar!',`Wajah ${name} berhasil disimpan.`);
+      }
+    }
+  });
+}
+
+async function saveFaceRefFor(uid, dataUrl) {
+  try {
+    const savedAt = new Date().toISOString();
+    const descriptor = await getDescriptorFromDataUrl(dataUrl);
+    const descriptorArray = descriptor ? Array.from(descriptor) : null;
+    
+    // Save to local cache
+    _writeFaceRefLocal(uid, { dataUrl, descriptor: descriptorArray, savedAt });
+    
+    // Sync to server
+    await apiFetch(P.faceRegister, {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: uid,
+        foto_base64: dataUrl,
+        face_descriptor: descriptorArray,
+        saved_at: savedAt
+      })
+    });
+    return true;
+  } catch(e) { return false; }
 }
 
 function adminCaptureFace() {
@@ -8625,6 +8669,13 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor) {
 
   setCamStatus('ok','✅',`Halo, ${nama}!`,`Tunggu sebentar, sedang mencatat kehadiran...`);
   
+  // Meja Mode Feedback in Camera UI
+  const wrap = $('camVideoWrap');
+  if (wrap) {
+    wrap.classList.add('face-match-success');
+    setTimeout(() => wrap.classList.remove('face-match-success'), 2500);
+  }
+
   // Simulasi/Kirim Absen (Meja mode biasanya bypass GPS radius atau pakai GPS device)
   try {
     const n = nowWITA();

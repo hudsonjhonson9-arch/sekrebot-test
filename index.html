@@ -637,6 +637,76 @@
 
     .footer{text-align:center;font-size:9px;color:var(--muted);padding:6px 0 3px}
     .leaflet-container{background:#112240 !important}
+
+    /* ══ DESKTOP MODE ══ */
+    body.desktop-mode .app{max-width:900px}
+    body.desktop-mode .tabs .tab{min-width:auto;padding:10px 20px;font-size:12px}
+    body.desktop-mode .panel{padding:16px 24px 40px}
+    body.desktop-mode .cam-video-wrap{max-width:480px}
+    body.desktop-mode .btn-capture,.desktop-mode .cam-status,.desktop-mode .liveness-card,.desktop-mode .face-reg-card,.desktop-mode .cam-preview{max-width:480px}
+    .desktop-mode-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:#60a5fa}
+
+    /* ══ SUPERADMIN GUARD ══ */
+    .superadmin-section{display:none}
+
+    /* ══ CAMERA KASIRJEGRUP STYLE ENHANCEMENT ══ */
+    .cam-corner{position:absolute;width:26px;height:26px;border-color:var(--gold);border-style:solid;pointer-events:none;transition:border-color .3s}
+    .cam-corner.tl{top:10px;left:10px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+    .cam-corner.tr{top:10px;right:10px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+    .cam-corner.bl{bottom:10px;left:10px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+    .cam-corner.br{bottom:10px;right:10px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+    .cam-video-wrap.face-ok .cam-corner{border-color:var(--success)}
+    .cam-video-wrap.face-bad .cam-corner{border-color:var(--danger)}
+    .cam-scan-line{position:absolute;left:12px;right:12px;height:2px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.9),transparent);top:20%;pointer-events:none;opacity:0;transition:opacity .3s}
+    .cam-video-wrap.face-ok .cam-scan-line{opacity:1;animation:scanLine 2.5s ease-in-out infinite}
+    @keyframes scanLine{0%{top:15%}50%{top:78%}100%{top:15%}}
+    .cam-face-badge{position:absolute;bottom:8px;left:10px;background:rgba(0,0,0,.65);border-radius:8px;padding:2px 9px;font-size:9px;color:#fff;font-weight:700;pointer-events:none;backdrop-filter:blur(4px)}
+
+    /* ══ SIGNATURE PAD ══ */
+    .sig-overlay{position:fixed;inset:0;z-index:9998;background:rgba(5,12,30,.98);display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+    .sig-overlay.hidden{display:none}
+    .sig-header{width:100%;padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0}
+    .sig-title{font-size:13px;font-weight:800;color:var(--white)}
+    .sig-close{width:30px;height:30px;border-radius:8px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:var(--danger);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .sig-body{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;padding:14px;gap:10px;overflow-y:auto}
+    /* Mode tabs */
+    .sig-mode-tabs{display:flex;gap:6px;width:100%;max-width:360px;flex-shrink:0}
+    .sig-mode-tab{flex:1;padding:8px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;text-align:center}
+    .sig-mode-tab.active{background:var(--gold-dim);border-color:rgba(201,168,76,.4);color:var(--gold)}
+    /* Draw pad */
+    .sig-canvas-wrap{width:100%;max-width:360px;position:relative;border-radius:14px;overflow:hidden;border:2px solid rgba(201,168,76,.5);touch-action:none;cursor:crosshair;flex-shrink:0;background:#fff}
+    #sigCanvas{display:block;width:100%;height:200px}
+    .sig-empty-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(0,0,0,.25);pointer-events:none;font-weight:600;letter-spacing:.04em;user-select:none}
+    /* Upload photo */
+    .sig-upload-wrap{width:100%;max-width:360px;flex-shrink:0}
+    .sig-upload-zone{border:2px dashed rgba(201,168,76,.4);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;color:var(--muted);font-size:11px;transition:all .2s;background:rgba(201,168,76,.04)}
+    .sig-upload-zone:active{border-color:var(--gold);background:var(--gold-dim)}
+    .sig-upload-zone-icon{font-size:32px;margin-bottom:8px}
+    .sig-upload-zone-text{font-size:11px;font-weight:700;color:var(--white);margin-bottom:4px}
+    .sig-upload-zone-sub{font-size:9px;color:var(--muted)}
+    .sig-upload-preview{border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#fff;max-width:360px;width:100%}
+    .sig-upload-preview img{width:100%;display:block;max-height:180px;object-fit:contain;background:#fff}
+    .sig-upload-change{width:100%;padding:8px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit}
+    /* Actions */
+    .sig-actions{display:flex;gap:8px;width:100%;max-width:360px;flex-shrink:0}
+    .sig-btn-clear{flex:1;padding:11px;border-radius:10px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+    .sig-btn-save{flex:2;padding:11px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+    .sig-btn-save:disabled{opacity:.5;cursor:not-allowed}
+    .sig-msg{width:100%;max-width:360px;padding:8px 12px;border-radius:10px;font-size:10px;font-weight:700;text-align:center;flex-shrink:0}
+    /* Profil card */
+    .profil-sig-card{background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:14px;padding:12px 14px;margin-bottom:12px;backdrop-filter:blur(12px)}
+    .profil-sig-row{display:flex;align-items:center;gap:10px}
+    .profil-sig-thumb{width:96px;height:54px;border-radius:10px;background:rgba(255,255,255,.06);border:2px solid rgba(201,168,76,.3);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted)}
+    .profil-sig-thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+
+    /* ══ ADMIN FACE REG ══ */
+    .face-adm-item{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .face-adm-thumb{width:40px;height:40px;border-radius:9px;background:rgba(255,255,255,.07);border:1px solid rgba(167,139,250,.25);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted)}
+    .face-adm-thumb img{width:100%;height:100%;object-fit:cover}
+    .face-adm-info{flex:1;min-width:0}
+    .face-adm-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .face-adm-status{font-size:9px;color:var(--muted);margin-top:1px}
+    .face-adm-btn{background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);color:var(--admin);border-radius:8px;padding:5px 11px;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit}
   </style>
 </head>
 <body>
@@ -795,6 +865,13 @@
         <video id="camVideo" autoplay playsinline muted></video>
         <canvas id="camCanvas"></canvas>
         <div class="face-guide" id="faceGuideWrap"><div class="face-oval" id="faceOval"></div></div>
+        <!-- Kasirjegrup-style corner brackets -->
+        <div class="cam-corner tl"></div>
+        <div class="cam-corner tr"></div>
+        <div class="cam-corner bl"></div>
+        <div class="cam-corner br"></div>
+        <div class="cam-scan-line" id="camScanLine"></div>
+        <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
       </div>
 
       <!-- Status deteksi wajah -->
@@ -1038,9 +1115,24 @@
       </div>
     </div>
 
-
-
-    <!-- ══ DOKUMEN KEPEGAWAIAN ══ -->
+    <!-- ══ TANDA TANGAN DIGITAL ══ -->
+    <div class="profil-section-title">✍️ Tanda Tangan Digital</div>
+    <div class="profil-sig-card">
+      <div class="profil-sig-row">
+        <div class="profil-sig-thumb" id="profilSigThumb">
+          <img id="profilSigImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:contain;background:#fff">
+          <span id="profilSigEmpty">✍️</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div id="profilSigStatus" style="font-size:11px;font-weight:800;color:var(--muted)">Belum ada tanda tangan</div>
+          <div id="profilSigSub" style="font-size:9px;color:var(--muted);margin-top:2px">Daftarkan tanda tangan untuk rekap absen &amp; PDF</div>
+        </div>
+        <button onclick="openSignaturePad(MY_ID)" style="background:linear-gradient(135deg,rgba(201,168,76,.2),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.4);color:var(--gold);border-radius:10px;padding:7px 12px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap" id="btnProfilSig">✏️ Buat</button>
+      </div>
+      <div style="font-size:9px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">
+        💡 Tanda tangan disimpan sebagai PNG transparan dan disisipkan ke rekap absen PDF sesuai urutan pegawai.
+      </div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div class="profil-section-title" style="margin-bottom:0">📁 Dokumen Kepegawaian</div>
       <div style="display:flex;gap:6px">
@@ -1562,9 +1654,122 @@
         <div class="btn-inner"><span>💾</span><span id="btnFaceToggleText">Simpan Pengaturan Face Recognition</span></div>
       </button>
     </div>
+
+    <!-- ══ DAFTARKAN WAJAH PEGAWAI (ADMIN) ══ -->
+    <div class="card" style="margin-top:10px" id="adminFaceRegCard">
+      <div class="card-title">
+        <span>📷 Daftarkan Wajah Pegawai</span>
+        <button class="btn-sm-admin" onclick="loadAdminFaceReg()">🔄</button>
+      </div>
+      <div class="radius-note">Admin mendaftarkan wajah pegawai secara langsung. Pilih pegawai lalu ambil foto wajah.</div>
+      <!-- Pilih pegawai -->
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">👤 Pilih Pegawai</label>
+        <select class="form-input" id="selectPegawaiFaceReg" style="font-size:12px">
+          <option value="">— Pilih Pegawai —</option>
+        </select>
+      </div>
+      <button class="btn-admin" id="btnAdminCaptureFace" onclick="adminCaptureFace()" style="margin-bottom:10px">
+        <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan Wajah</span></div>
+      </button>
+      <div class="result-card" id="adminFaceRegResult" style="display:none"><div class="r-icon" id="adminFaceRegRIcon">📷</div><div class="r-title" id="adminFaceRegRTitle">—</div><div class="r-msg" id="adminFaceRegRMsg">—</div></div>
+      <!-- Daftar status wajah pegawai -->
+      <div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin:10px 0 6px">📋 STATUS WAJAH SEMUA PEGAWAI</div>
+      <div id="adminFaceRegList">
+        <div class="shimmer" style="height:44px;border-radius:10px"></div>
+        <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- ══ TANDA TANGAN PEGAWAI (ADMIN VIEW) ══ -->
+    <div class="card" style="margin-top:10px" id="adminSigCard">
+      <div class="card-title">
+        <span>✍️ Status Tanda Tangan Pegawai</span>
+        <button class="btn-sm-admin" onclick="loadAdminSigStatus()">🔄</button>
+      </div>
+      <div class="radius-note">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda tangan digital untuk rekap PDF.</div>
+      <div id="adminSigList" style="margin-top:8px">
+        <div class="shimmer" style="height:40px;border-radius:10px"></div>
+        <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- ══ MODE DESKTOP (SUPER ADMIN ONLY) ══ -->
+    <div class="card superadmin-section" style="margin-top:10px" id="desktopModeCard">
+      <div class="card-title">🖥️ Mode Desktop</div>
+      <div class="radius-note">Aktifkan tampilan mode desktop untuk akses via browser PC/laptop. Hanya Super Admin yang dapat mengubah ini.</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:12px;padding:14px 16px;margin:12px 0">
+        <div>
+          <div id="desktopModeLabel" style="font-size:13px;font-weight:700;color:#fff">⏳ Memuat...</div>
+          <div id="desktopModeDesc" style="font-size:10px;color:var(--muted);margin-top:3px">Memeriksa pengaturan...</div>
+        </div>
+        <div id="desktopModeSwitch" onclick="toggleDesktopMode()"
+          style="width:52px;height:28px;border-radius:14px;background:#6b7280;cursor:pointer;position:relative;transition:background .3s;flex-shrink:0">
+          <div id="desktopModeKnob"
+            style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
+        </div>
+      </div>
+      <div style="font-size:9px;color:var(--muted)">💡 Mode desktop memperlebar layout hingga 900px. Pengaturan disimpan lokal di perangkat ini.</div>
+    </div>
   </div>
 
 </div><!-- .app -->
+
+<!-- ══ SIGNATURE PAD OVERLAY ══ -->
+<div class="sig-overlay hidden" id="sigOverlay">
+  <div class="sig-header">
+    <div class="sig-title">✍️ <span id="sigOverlayTitle">Tanda Tangan Digital</span></div>
+    <button class="sig-close" onclick="closeSignaturePad()">✕</button>
+  </div>
+  <div class="sig-body">
+    <!-- Mode tabs -->
+    <div class="sig-mode-tabs">
+      <button class="sig-mode-tab active" id="sigTabDraw" onclick="switchSigMode('draw')">✏️ Gambar</button>
+      <button class="sig-mode-tab" id="sigTabPhoto" onclick="switchSigMode('photo')">📷 Upload Foto</button>
+    </div>
+
+    <!-- DRAW MODE -->
+    <div id="sigDrawPanel" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div style="font-size:9px;color:var(--muted);text-align:center;background:var(--gold-dim);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:5px 12px;width:100%;max-width:360px">
+        Tulis tanda tangan menggunakan jari atau stylus
+      </div>
+      <div class="sig-canvas-wrap" id="sigCanvasWrap">
+        <canvas id="sigCanvas"></canvas>
+        <div class="sig-empty-hint" id="sigEmptyHint">Tanda tangan di sini...</div>
+      </div>
+    </div>
+
+    <!-- PHOTO MODE -->
+    <div id="sigPhotoPanel" style="width:100%;display:none;flex-direction:column;align-items:center;gap:10px">
+      <div style="font-size:9px;color:var(--muted);text-align:center;background:var(--gold-dim);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:5px 12px;width:100%;max-width:360px">
+        Upload foto tanda tangan Anda dari galeri atau kamera
+      </div>
+      <div class="sig-upload-wrap">
+        <div id="sigUploadZone" class="sig-upload-zone" onclick="$('sigFileInput').click()">
+          <div class="sig-upload-zone-icon">📁</div>
+          <div class="sig-upload-zone-text">Tap untuk pilih foto</div>
+          <div class="sig-upload-zone-sub">JPG / PNG · Maks 5MB · Tanda tangan di atas kertas putih</div>
+        </div>
+        <input type="file" id="sigFileInput" accept="image/*" style="display:none" onchange="onSigFileChange(event)">
+        <div id="sigUploadPreview" style="display:none">
+          <div class="sig-upload-preview">
+            <img id="sigUploadImg" src="" alt="Preview">
+          </div>
+          <button class="sig-upload-change" onclick="$('sigFileInput').click()">🔄 Ganti Foto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="sig-actions">
+      <button class="sig-btn-clear" onclick="clearSignaturePad()">🗑 Hapus</button>
+      <button class="sig-btn-save" id="btnSaveSig" onclick="saveSignature()">
+        <span>💾</span><span id="btnSaveSigTxt">Simpan Tanda Tangan</span>
+      </button>
+    </div>
+    <div id="sigMsg" style="display:none" class="sig-msg"></div>
+  </div>
+</div>
 
 <script>
 /* ════ SUPABASE CONFIGURATION (MIGRASI DARI N8N) ════ */
@@ -1704,6 +1909,9 @@ const P = {
   adminList      : isTest ? '/webhook-test/admin-list'        : '/webhook/admin-list',
   adminAdd       : isTest ? '/webhook-test/admin-add'         : '/webhook/admin-add',
   adminDel       : isTest ? '/webhook-test/admin-delete'      : '/webhook/admin-delete',
+  signatureSave  : isTest ? '/webhook-test/signature-save'    : '/webhook/signature-save',
+  signatureGet   : isTest ? '/webhook-test/signature-get'     : '/webhook/signature-get',
+  signatureList  : isTest ? '/webhook-test/signature-list'    : '/webhook/signature-list',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -7402,7 +7610,683 @@ function _wxCond(c){
   return'—';
 }
 
-/* ════ OFFLINE QUEUE SYNC ════ */
+/* ════════════════════════════════════════════════════
+   ██████╗ ███████╗███████╗██╗  ██╗████████╗ ██████╗ ██████╗
+   ██╔══██╗██╔════╝██╔════╝██║ ██╔╝╚══██╔══╝██╔═══██╗██╔══██╗
+   ██║  ██║█████╗  ███████╗█████╔╝    ██║   ██║   ██║██████╔╝
+   ██║  ██║██╔══╝  ╚════██║██╔═██╗    ██║   ██║   ██║██╔═══╝
+   ██████╔╝███████╗███████║██║  ██╗   ██║   ╚██████╔╝██║
+   ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝
+   MODE — berlaku mulai init, hanya Super Admin
+════════════════════════════════════════════════════════ */
+
+/* ── Desktop Mode ── */
+let _desktopModeOn = false;
+
+function initDesktopMode() {
+  try { _desktopModeOn = localStorage.getItem('bapperida_desktop_mode') === '1'; } catch(_){}
+  _applyDesktopMode(_desktopModeOn);
+}
+
+function _applyDesktopMode(on) {
+  _desktopModeOn = on;
+  document.body.classList.toggle('desktop-mode', on);
+  // Update toggle UI
+  const sw   = $('desktopModeSwitch');
+  const knob = $('desktopModeKnob');
+  const lbl  = $('desktopModeLabel');
+  const desc = $('desktopModeDesc');
+  if (!sw) return;
+  if (on) {
+    sw.style.background = '#3b82f6';
+    knob.style.left     = '27px';
+    lbl.textContent     = '🖥️ Mode Desktop Aktif';
+    desc.textContent    = 'Layout diperlebar untuk layar besar (maks 900px)';
+  } else {
+    sw.style.background = '#6b7280';
+    knob.style.left     = '3px';
+    lbl.textContent     = '📱 Mode Mobile (Default)';
+    desc.textContent    = 'Layout standar untuk smartphone (maks 420px)';
+  }
+}
+
+function toggleDesktopMode() {
+  if (!_isSuperAdmin()) return;
+  const newVal = !_desktopModeOn;
+  _applyDesktopMode(newVal);
+  try { localStorage.setItem('bapperida_desktop_mode', newVal ? '1' : '0'); } catch(_){}
+}
+
+function _isSuperAdmin() {
+  return IS_ADMIN && ADMIN_IDS.length > 0 && ADMIN_IDS[0] === MY_ID;
+}
+
+function _applyAdminUIExtended() {
+  // Tampilkan section super-admin jika sesuai
+  const isSA = _isSuperAdmin();
+  document.body.classList.toggle('is-superadmin', isSA);
+  document.querySelectorAll('.superadmin-section').forEach(el => {
+    el.style.display = isSA ? 'block' : 'none';
+  });
+  if (isSA) {
+    initDesktopMode();
+    _applyDesktopMode(_desktopModeOn);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   ADMIN: DAFTARKAN WAJAH PEGAWAI
+════════════════════════════════════════════════════════ */
+let _adminFaceTargetId   = null;
+let _adminFaceTargetNama = null;
+
+async function loadAdminFaceReg() {
+  const listEl  = $('adminFaceRegList');
+  const selectEl = $('selectPegawaiFaceReg');
+  if (!listEl) return;
+
+  listEl.innerHTML = `<div class="shimmer" style="height:44px;border-radius:10px"></div>`;
+
+  try {
+    // Muat daftar pegawai
+    const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+    const ud = ur.ok ? await ur.json() : [];
+    const users = Array.isArray(ud) ? ud : (ud.data || []);
+
+    // Populate select
+    if (selectEl) {
+      selectEl.innerHTML = `<option value="">— Pilih Pegawai —</option>` +
+        users.map(u => {
+          const uid  = u.ID || u.id || u.telegram_id || '';
+          const nama = u.Nama || u.nama || u.username || String(uid);
+          return `<option value="${uid}" data-nama="${nama}">${nama}</option>`;
+        }).join('');
+    }
+
+    // Muat status wajah dari server
+    let faceMap = {};
+    try {
+      const fr = await apiFetch(P.faceGet + '?all=1', { method: 'GET' });
+      if (fr.ok) {
+        const fd = await fr.json();
+        const arr = Array.isArray(fd) ? fd : (fd.data || []);
+        arr.forEach(f => { faceMap[String(f.telegram_id || f.id || '')] = f; });
+      }
+    } catch(_) {}
+
+    if (!users.length) {
+      listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
+      return;
+    }
+
+    listEl.innerHTML = users.map(u => {
+      const uid      = String(u.ID || u.id || u.telegram_id || '');
+      const nama     = u.Nama || u.nama || u.username || uid;
+      const jabatan  = u.Jabatan || u.jabatan || '—';
+      const faceData = faceMap[uid];
+      const hasFace  = faceData && faceData.descriptor;
+      const tgl      = hasFace && faceData.savedAt
+        ? new Date(faceData.savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
+        : null;
+
+      return `<div class="face-adm-item">
+        <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
+          ${hasFace && faceData.dataUrl
+            ? `<img src="${faceData.dataUrl}" alt="" style="width:100%;height:100%;object-fit:cover">`
+            : '👤'}
+        </div>
+        <div class="face-adm-info">
+          <div class="face-adm-name">${nama}</div>
+          <div class="face-adm-status">
+            ${hasFace
+              ? `<span style="color:var(--success)">✅ Terdaftar${tgl ? ' · '+tgl : ''}</span>`
+              : `<span style="color:var(--muted)">⬜ Belum terdaftar</span>`}
+          </div>
+        </div>
+        <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
+          ${hasFace ? '🔄 Perbarui' : '📷 Daftar'}
+        </button>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat pegawai</div></div>`;
+  }
+}
+
+function adminCaptureFace() {
+  const selectEl = $('selectPegawaiFaceReg');
+  if (!selectEl || !selectEl.value) {
+    showResult('adminFaceRegResult','adminFaceRegRIcon','adminFaceRegRTitle','adminFaceRegRMsg',
+      'warning','⚠️','Pilih Pegawai','Pilih nama pegawai terlebih dahulu sebelum membuka kamera.');
+    $('adminFaceRegResult').style.display = 'flex';
+    return;
+  }
+  const uid  = selectEl.value;
+  const opt  = selectEl.options[selectEl.selectedIndex];
+  const nama = opt ? (opt.dataset.nama || opt.text) : uid;
+  adminCaptureFaceFor(uid, nama);
+}
+
+function adminCaptureFaceFor(uid, nama) {
+  _adminFaceTargetId   = uid;
+  _adminFaceTargetNama = nama;
+
+  // Ubah judul kamera
+  const title = $('camTitle');
+  if (title) title.textContent = `📷 Daftar Wajah: ${nama}`;
+
+  openCamOverlay({
+    isRegister: true,
+    onDone: async (cap) => {
+      if (!cap?.dataUrl) return;
+      const ok = await _saveAdminFaceFor(uid, nama, cap.dataUrl, cap.descriptor || null);
+      if (ok) {
+        loadAdminFaceReg();
+        // Juga update status wajah admin card yang lama
+        if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
+      }
+    },
+    onCancel: () => {
+      const title = $('camTitle');
+      if (title) title.textContent = '📸 Verifikasi Wajah';
+    }
+  });
+}
+
+async function _saveAdminFaceFor(uid, nama, dataUrl, descriptor) {
+  try {
+    const payload = {
+      telegram_id : uid,
+      nama        : nama,
+      dataUrl     : dataUrl,
+      descriptor  : descriptor,
+      savedAt     : new Date().toISOString(),
+      savedBy     : MY_ID,
+      savedByName : tgUser.first_name || 'Admin'
+    };
+    const res = await apiFetch(P.faceRegister, { method:'POST', body: JSON.stringify(payload) });
+    const ok  = res.ok;
+    showResult('adminFaceRegResult','adminFaceRegRIcon','adminFaceRegRTitle','adminFaceRegRMsg',
+      ok ? 'success' : 'warning',
+      ok ? '✅' : '⚠️',
+      ok ? 'Wajah Tersimpan!' : 'Gagal Simpan',
+      ok ? `Wajah ${nama} berhasil didaftarkan.` : 'Terjadi kesalahan saat menyimpan. Coba lagi.');
+    $('adminFaceRegResult').style.display = 'flex';
+    return ok;
+  } catch(e) {
+    showResult('adminFaceRegResult','adminFaceRegRIcon','adminFaceRegRTitle','adminFaceRegRMsg',
+      'warning','🔌','Koneksi Gagal','Pastikan server n8n aktif dan endpoint face-register tersedia.');
+    $('adminFaceRegResult').style.display = 'flex';
+    return false;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   TANDA TANGAN DIGITAL
+════════════════════════════════════════════════════════ */
+let _sigMode       = 'draw';   // 'draw' | 'photo'
+let _sigDrawing    = false;
+let _sigHasContent = false;
+let _sigPhotoData  = null;     // base64 dari upload foto
+let _sigTargetId   = null;     // telegram_id pemilik tanda tangan
+let _sigCallback   = null;     // callback setelah simpan berhasil
+
+// ── State tanda tangan tersimpan per pegawai (cache lokal) ──
+let _sigCache = {};
+
+// ── Buka signature pad ──
+function openSignaturePad(telegramId, callback) {
+  _sigTargetId  = telegramId || MY_ID;
+  _sigCallback  = callback   || null;
+  _sigMode      = 'draw';
+  _sigHasContent = false;
+  _sigPhotoData  = null;
+
+  // Reset title
+  const titleEl = $('sigOverlayTitle');
+  if (titleEl) {
+    const isOwnSig = String(_sigTargetId) === String(MY_ID);
+    titleEl.textContent = isOwnSig ? 'Tanda Tangan Saya' : `Tanda Tangan: ${_sigTargetId}`;
+  }
+
+  // Reset UI
+  switchSigMode('draw');
+  $('sigOverlay').classList.remove('hidden');
+
+  // Init canvas setelah overlay visible
+  requestAnimationFrame(() => {
+    _initSigCanvas();
+    clearSignaturePad();
+  });
+}
+
+function closeSignaturePad() {
+  $('sigOverlay').classList.add('hidden');
+  _stopSigCanvas();
+}
+
+function switchSigMode(mode) {
+  _sigMode = mode;
+  $('sigTabDraw').classList.toggle('active',  mode === 'draw');
+  $('sigTabPhoto').classList.toggle('active', mode === 'photo');
+  $('sigDrawPanel').style.display  = mode === 'draw'  ? 'flex'   : 'none';
+  $('sigPhotoPanel').style.display = mode === 'photo' ? 'flex'   : 'none';
+  const msgEl = $('sigMsg');
+  if (msgEl) msgEl.style.display = 'none';
+}
+
+// ── Canvas drawing logic ──
+let _sigCtx = null;
+let _sigLastX = 0, _sigLastY = 0;
+
+function _initSigCanvas() {
+  const canvas = $('sigCanvas');
+  if (!canvas) return;
+  const wrap = $('sigCanvasWrap');
+  const W = wrap ? wrap.clientWidth  : 340;
+  canvas.width  = W;
+  canvas.height = 200;
+  _sigCtx = canvas.getContext('2d');
+  _sigCtx.clearRect(0,0,canvas.width,canvas.height);
+  _sigCtx.strokeStyle = '#1a1a2e';
+  _sigCtx.lineWidth   = 2.5;
+  _sigCtx.lineCap     = 'round';
+  _sigCtx.lineJoin    = 'round';
+  _sigHasContent = false;
+
+  // Remove old listeners
+  canvas.removeEventListener('mousedown',  _onSigDown);
+  canvas.removeEventListener('mousemove',  _onSigMove);
+  canvas.removeEventListener('mouseup',    _onSigUp);
+  canvas.removeEventListener('mouseleave', _onSigUp);
+  canvas.removeEventListener('touchstart', _onSigTouchStart,{passive:false});
+  canvas.removeEventListener('touchmove',  _onSigTouchMove, {passive:false});
+  canvas.removeEventListener('touchend',   _onSigUp);
+
+  canvas.addEventListener('mousedown',  _onSigDown);
+  canvas.addEventListener('mousemove',  _onSigMove);
+  canvas.addEventListener('mouseup',    _onSigUp);
+  canvas.addEventListener('mouseleave', _onSigUp);
+  canvas.addEventListener('touchstart', _onSigTouchStart,{passive:false});
+  canvas.addEventListener('touchmove',  _onSigTouchMove, {passive:false});
+  canvas.addEventListener('touchend',   _onSigUp);
+}
+
+function _stopSigCanvas() {
+  const canvas = $('sigCanvas');
+  if (!canvas) return;
+  canvas.removeEventListener('mousedown',  _onSigDown);
+  canvas.removeEventListener('mousemove',  _onSigMove);
+  canvas.removeEventListener('mouseup',    _onSigUp);
+  canvas.removeEventListener('mouseleave', _onSigUp);
+  canvas.removeEventListener('touchstart', _onSigTouchStart,{passive:false});
+  canvas.removeEventListener('touchmove',  _onSigTouchMove, {passive:false});
+  canvas.removeEventListener('touchend',   _onSigUp);
+}
+
+function _getSigPos(canvas, e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / r.width;
+  const scaleY = canvas.height / r.height;
+  return {
+    x: (e.clientX - r.left) * scaleX,
+    y: (e.clientY - r.top)  * scaleY
+  };
+}
+
+function _onSigDown(e) {
+  _sigDrawing = true;
+  const p = _getSigPos(this, e);
+  _sigLastX = p.x; _sigLastY = p.y;
+  _sigCtx.beginPath();
+  _sigCtx.arc(p.x, p.y, 1.2, 0, Math.PI*2);
+  _sigCtx.fillStyle = '#1a1a2e';
+  _sigCtx.fill();
+  _sigHasContent = true;
+  const hint = $('sigEmptyHint');
+  if (hint) hint.style.display = 'none';
+}
+
+function _onSigMove(e) {
+  if (!_sigDrawing) return;
+  const p = _getSigPos(this, e);
+  _sigCtx.beginPath();
+  _sigCtx.moveTo(_sigLastX, _sigLastY);
+  _sigCtx.lineTo(p.x, p.y);
+  _sigCtx.stroke();
+  _sigLastX = p.x; _sigLastY = p.y;
+}
+
+function _onSigUp() { _sigDrawing = false; }
+
+function _onSigTouchStart(e) {
+  e.preventDefault();
+  if (!e.touches[0]) return;
+  _onSigDown.call(this, e.touches[0]);
+}
+function _onSigTouchMove(e) {
+  e.preventDefault();
+  if (!e.touches[0]) return;
+  _onSigMove.call(this, e.touches[0]);
+}
+
+// ── Handle upload foto tanda tangan ──
+function onSigFileChange(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    _showSigMsg('⚠️ Ukuran file terlalu besar (maks 5MB)', 'warn'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _sigPhotoData = ev.target.result;
+    // Convert to clean PNG with transparent bg
+    _convertSigPhotoToPng(_sigPhotoData, png => {
+      _sigPhotoData = png;
+      const prev = $('sigUploadPreview');
+      const img  = $('sigUploadImg');
+      const zone = $('sigUploadZone');
+      if (img)  img.src  = png;
+      if (prev) prev.style.display  = 'block';
+      if (zone) zone.style.display  = 'none';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+// Convert foto ke PNG transparan (hapus latar putih)
+function _convertSigPhotoToPng(dataUrl, cb) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    // Scale down if too large
+    const MAX = 600;
+    let w = img.width, h = img.height;
+    if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    // Make near-white pixels transparent
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i+1], b = data[i+2];
+      const brightness = (r + g + b) / 3;
+      if (brightness > 200) {
+        data[i+3] = 0; // transparent
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    cb(canvas.toDataURL('image/png', 0.92));
+  };
+  img.onerror = () => cb(dataUrl);
+  img.src = dataUrl;
+}
+
+// ── Clear pad ──
+function clearSignaturePad() {
+  if (_sigMode === 'draw') {
+    const canvas = $('sigCanvas');
+    if (canvas && _sigCtx) _sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+    _sigHasContent = false;
+    const hint = $('sigEmptyHint');
+    if (hint) hint.style.display = 'flex';
+  } else {
+    _sigPhotoData = null;
+    const prev = $('sigUploadPreview');
+    const zone = $('sigUploadZone');
+    const inp  = $('sigFileInput');
+    if (prev) prev.style.display = 'none';
+    if (zone) zone.style.display = 'block';
+    if (inp)  inp.value = '';
+  }
+  const msgEl = $('sigMsg');
+  if (msgEl) msgEl.style.display = 'none';
+}
+
+// ── Save tanda tangan ke server ──
+async function saveSignature() {
+  let dataUrl = null;
+
+  if (_sigMode === 'draw') {
+    if (!_sigHasContent) {
+      _showSigMsg('⚠️ Tulis tanda tangan Anda terlebih dahulu', 'warn'); return;
+    }
+    const canvas = $('sigCanvas');
+    // Render dengan background putih untuk PNG bersih
+    const tmpC = document.createElement('canvas');
+    tmpC.width = canvas.width; tmpC.height = canvas.height;
+    const tmpCtx = tmpC.getContext('2d');
+    tmpCtx.fillStyle = '#ffffff';
+    tmpCtx.fillRect(0,0,tmpC.width,tmpC.height);
+    tmpCtx.drawImage(canvas,0,0);
+    // Buat transparan
+    const imgData = tmpCtx.getImageData(0,0,tmpC.width,tmpC.height);
+    const d = imgData.data;
+    for (let i=0;i<d.length;i+=4){
+      if((d[i]+d[i+1]+d[i+2])/3 > 220){ d[i+3]=0; }
+    }
+    tmpCtx.putImageData(imgData,0,0);
+    dataUrl = tmpC.toDataURL('image/png', 0.92);
+  } else {
+    if (!_sigPhotoData) {
+      _showSigMsg('⚠️ Pilih foto tanda tangan terlebih dahulu', 'warn'); return;
+    }
+    dataUrl = _sigPhotoData;
+  }
+
+  // Set loading state
+  const btn    = $('btnSaveSig');
+  const btnTxt = $('btnSaveSigTxt');
+  if (btn)    btn.disabled    = true;
+  if (btnTxt) btnTxt.textContent = 'Menyimpan...';
+
+  try {
+    const payload = {
+      telegram_id : _sigTargetId,
+      signature   : dataUrl,
+      savedAt     : new Date().toISOString(),
+      savedBy     : MY_ID
+    };
+    const res = await apiFetch(P.signatureSave, { method:'POST', body: JSON.stringify(payload) });
+
+    if (res.ok) {
+      // Cache lokal
+      _sigCache[String(_sigTargetId)] = dataUrl;
+      try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch(_){}
+
+      _showSigMsg('✅ Tanda tangan berhasil disimpan!', 'ok');
+      // Update UI profil
+      if (String(_sigTargetId) === String(MY_ID)) updateProfilSigUI(dataUrl);
+      // Callback jika ada
+      if (typeof _sigCallback === 'function') _sigCallback(dataUrl);
+      // Tutup overlay setelah 1.5 detik
+      setTimeout(() => closeSignaturePad(), 1500);
+    } else {
+      throw new Error('Server error ' + res.status);
+    }
+  } catch(e) {
+    // Fallback: simpan lokal saja
+    _sigCache[String(_sigTargetId)] = dataUrl;
+    try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch(_){}
+    if (String(_sigTargetId) === String(MY_ID)) updateProfilSigUI(dataUrl);
+    _showSigMsg('⚠️ Tersimpan lokal (server tidak merespons)', 'warn');
+    setTimeout(() => closeSignaturePad(), 1800);
+  } finally {
+    if (btn) btn.disabled = false;
+    if (btnTxt) btnTxt.textContent = 'Simpan Tanda Tangan';
+  }
+}
+
+function _showSigMsg(text, type) {
+  const el = $('sigMsg');
+  if (!el) return;
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.cssText = el.style.cssText + `;background:${type==='ok'
+    ? 'rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--success)'
+    : 'rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--warning)'
+  }`;
+}
+
+// ── Update profil UI tanda tangan ──
+function updateProfilSigUI(dataUrl) {
+  const img    = $('profilSigImg');
+  const empty  = $('profilSigEmpty');
+  const status = $('profilSigStatus');
+  const sub    = $('profilSigSub');
+  const btn    = $('btnProfilSig');
+  if (!status) return;
+
+  if (dataUrl) {
+    if (img)   { img.src = dataUrl; img.style.display = 'block'; }
+    if (empty) empty.style.display = 'none';
+    status.textContent = '✅ Tanda Tangan Tersimpan';
+    status.style.color = 'var(--success)';
+    if (sub) sub.textContent = 'Tanda tangan akan disisipkan pada rekap absen PDF';
+    if (btn) btn.textContent = '🔄 Perbarui';
+  } else {
+    if (img)   img.style.display = 'none';
+    if (empty) empty.style.display = 'flex';
+    status.textContent = 'Belum ada tanda tangan';
+    status.style.color = 'var(--muted)';
+    if (sub) sub.textContent = 'Daftarkan tanda tangan untuk rekap absen & PDF';
+    if (btn) btn.textContent = '✏️ Buat';
+  }
+}
+
+// ── Load tanda tangan dari server atau localStorage ──
+async function loadMySignature() {
+  const uid = String(MY_ID);
+  // Cek cache lokal dulu
+  let cached = null;
+  try { cached = localStorage.getItem(`sig_${uid}`); } catch(_){}
+  if (cached) { updateProfilSigUI(cached); _sigCache[uid] = cached; }
+
+  // Fetch dari server
+  try {
+    const res = await apiFetch(`${P.signatureGet}?telegram_id=${uid}`, { method:'GET' });
+    if (res.ok) {
+      const d = await res.json();
+      const sig = d.signature || d.data?.signature || null;
+      if (sig) {
+        _sigCache[uid] = sig;
+        try { localStorage.setItem(`sig_${uid}`, sig); } catch(_){}
+        updateProfilSigUI(sig);
+      }
+    }
+  } catch(_) {}
+}
+
+// ── Admin: Status tanda tangan semua pegawai ──
+async function loadAdminSigStatus() {
+  const el = $('adminSigList');
+  if (!el) return;
+  el.innerHTML = `<div class="shimmer" style="height:40px;border-radius:10px"></div>`;
+
+  try {
+    // Parallel: daftar pegawai + daftar tanda tangan
+    const [ur, sr] = await Promise.allSettled([
+      apiFetch(P.userList + '?format=full', { method:'GET' }),
+      apiFetch(P.signatureList,             { method:'GET' })
+    ]);
+
+    const users = ur.status === 'fulfilled' && ur.value.ok
+      ? await ur.value.json().then(d => Array.isArray(d) ? d : (d.data||[]))
+      : [];
+
+    let sigMap = {};
+    if (sr.status === 'fulfilled' && sr.value.ok) {
+      const sd = await sr.value.json();
+      const arr = Array.isArray(sd) ? sd : (sd.data||[]);
+      arr.forEach(s => { sigMap[String(s.telegram_id||s.id||'')] = s; });
+    }
+
+    if (!users.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada data pegawai</div></div>`;
+      return;
+    }
+
+    el.innerHTML = users.map(u => {
+      const uid     = String(u.ID || u.id || u.telegram_id || '');
+      const nama    = u.Nama || u.nama || u.username || uid;
+      const hasSig  = !!sigMap[uid];
+      const tgl     = hasSig && sigMap[uid].savedAt
+        ? new Date(sigMap[uid].savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})
+        : null;
+
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:5px">
+        <div style="font-size:16px">${hasSig ? '✅' : '⬜'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:1px">${hasSig ? `Didaftarkan: ${tgl||'—'}` : 'Belum ada tanda tangan'}</div>
+        </div>
+        ${hasSig
+          ? `<div style="width:60px;height:34px;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#fff"><img src="${sigMap[uid].signature||''}" style="width:100%;height:100%;object-fit:contain"></div>`
+          : `<span style="font-size:9px;color:var(--muted);background:rgba(255,255,255,.05);padding:3px 8px;border-radius:6px">—</span>`
+        }
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat</div></div>`;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   FACE SCAN BADGE UPDATE — kasirjegrup style
+════════════════════════════════════════════════════════ */
+// Tambahkan face badge info saat wajah terdeteksi (dipanggil dari loop deteksi)
+function _updateCamFaceBadge(faceCount, label) {
+  const badge = $('camFaceBadge');
+  if (!badge) return;
+  if (faceCount === 0) {
+    badge.style.display = 'none';
+  } else {
+    badge.style.display = 'block';
+    badge.textContent   = label || `👤 ${faceCount} wajah`;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   PATCH: Hubungkan _applyAdminUIExtended ke _applyAdminUI
+════════════════════════════════════════════════════════ */
+const _origApplyAdminUI = typeof _applyAdminUI === 'function' ? _applyAdminUI : null;
+// Override: setelah admin UI diterapkan, jalankan extended
+function _applyAdminUIWithExtension() {
+  if (_origApplyAdminUI) _origApplyAdminUI();
+  _applyAdminUIExtended();
+}
+
+/* ════════════════════════════════════════════════════
+   PATCH: Auto-load tanda tangan saat buka tab profil
+════════════════════════════════════════════════════════ */
+const _origSwitchTab = switchTab;
+function switchTab(tab) {
+  _origSwitchTab(tab);
+  if (tab === 'profil') {
+    loadMySignature();
+  }
+  if (tab === 'admin' && IS_ADMIN) {
+    setTimeout(() => {
+      loadAdminFaceReg();
+      loadAdminSigStatus();
+      _applyAdminUIExtended();
+    }, 300);
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   PATCH: loadJamAbsen — tambahkan extended setelah selesai
+════════════════════════════════════════════════════════ */
+const _origLoadJamAbsen = loadJamAbsen;
+async function loadJamAbsen() {
+  await _origLoadJamAbsen();
+  _applyAdminUIExtended();
+}
+
+/* ════════════════════════════════════════════════════
+   OFFLINE QUEUE SYNC ════ */
 let isSyncing = false;
 async function syncOfflineQueue() {
   if (isSyncing || !navigator.onLine) return;

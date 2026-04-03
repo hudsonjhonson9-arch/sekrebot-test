@@ -660,39 +660,23 @@
 
     /* ══ DESKTOP MODE ══ */
     body.desktop-mode .app{max-width:1200px}
-    body.desktop-mode .tabs .tab{min-width:auto;padding:10px 20px;font-size:12px}
+    body.desktop-mode .tabs .tab{min-width:auto;padding:10px 22px;font-size:12px;letter-spacing:.02em}
     body.desktop-mode .panel{padding:20px 32px 48px}
     body.desktop-mode .cam-video-wrap{max-width:480px}
     body.desktop-mode .btn-capture,.desktop-mode .cam-status,.desktop-mode .liveness-card,.desktop-mode .face-reg-card,.desktop-mode .cam-preview{max-width:480px}
     .desktop-mode-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(96,165,250,.15);border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:#60a5fa}
 
-    /* ── Desktop: 2-column admin panel ── */
+    /* ── Desktop: 2-column hanya panel ACTIVE ── */
     @media (min-width:800px) {
-      body.desktop-mode #panel-admin .admin-desktop-grid {
+      body.desktop-mode #panel-admin.active .admin-desktop-grid {
         display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
       }
-      body.desktop-mode #panel-admin .card,
-      body.desktop-mode #panel-absen .clock-card {
-        border-radius:18px;
-      }
-      body.desktop-mode #panel-absen {
+      body.desktop-mode .panel.active .card { border-radius:16px; }
+      /* Absen grid pakai wrapper class absen-desktop-grid agar panel lain tidak terdampak */
+      body.desktop-mode #panel-absen.active .absen-desktop-grid {
         display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
       }
-      body.desktop-mode #panel-absen .clock-card,
-      body.desktop-mode #panel-absen .user-card,
-      body.desktop-mode #panel-absen .card {
-        margin-bottom:0;
-      }
-      body.desktop-mode #panel-absen > .divider,
-      body.desktop-mode #panel-absen > .wifi-bar,
-      body.desktop-mode #panel-absen > #gpsCard,
-      body.desktop-mode #panel-absen > .result-card,
-      body.desktop-mode #panel-absen > #btnAbsen,
-      body.desktop-mode #panel-absen > .pulang-luar-form,
-      body.desktop-mode #panel-absen > .btn-pulang-luar,
-      body.desktop-mode #panel-absen > .footer {
-        grid-column: 1 / -1;
-      }
+      body.desktop-mode #panel-absen.active .absen-desktop-grid > * { margin-bottom:0; }
     }
 
     /* ══ SUPERADMIN GUARD ══ */
@@ -796,6 +780,7 @@
 
   <!-- ══ TAB ABSEN ══ -->
   <div class="panel active" id="panel-absen">
+    <div class="absen-desktop-grid">
     <div class="clock-card" id="weatherCard" style="opacity:1">
       <!-- Kiri: jam & status -->
       <div class="clock-left">
@@ -842,6 +827,7 @@
         <div class="shimmer" style="height:32px;border-radius:8px"></div>
       </div>
     </div>
+    </div><!-- /.absen-desktop-grid -->
     <div class="gps-card" id="gpsCard">
       <div class="card-title">🛰️ Data GPS</div>
       <div class="gps-row"><span class="gps-key">LATITUDE</span> <span class="gps-val" id="gpsLat">—</span></div>
@@ -1672,23 +1658,10 @@
       <div class="result-card" id="periodeResult" style="margin-top:8px"><div class="r-icon" id="periodeRIcon">✅</div><div class="r-title" id="periodeRTitle">—</div><div class="r-msg" id="periodeRMsg">—</div></div>
     </div>
 
-    <!-- ══ STATUS WAJAH PEGAWAI ══ -->
-    <div class="card" style="margin-top:10px" id="faceStatusAdminCard">
-      <div class="card-title">
-        <span>🧠 Status Wajah Pegawai</span>
-        <button class="btn-sm-admin" onclick="loadFaceStatusAdmin()">🔄</button>
-      </div>
-      <div class="radius-note">Pantau pegawai yang sudah &amp; belum mendaftarkan wajah. Klik tombol reset untuk hapus data wajah pegawai.</div>
-      <div id="faceStatusAdminList" style="margin-top:8px">
-        <div class="shimmer" style="height:38px;border-radius:10px"></div>
-      </div>
-    </div>
-
     <!-- ══ PENGATURAN FACE RECOGNITION ══ -->
     <div class="card" style="margin-top:10px">
       <div class="card-title">📸 Pengaturan Face Recognition</div>
       <div class="radius-note">Aktifkan atau nonaktifkan verifikasi wajah saat absensi. Berlaku untuk semua pegawai.</div>
-
       <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;margin:12px 0">
         <div>
           <div id="faceToggleLabel" style="font-size:13px;font-weight:700;color:#fff">⏳ Memuat...</div>
@@ -1700,51 +1673,58 @@
             style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>
         </div>
       </div>
-
       <div class="result-card" id="faceToggleResult" style="display:none"><div class="r-icon" id="faceToggleRIcon">📸</div><div class="r-title" id="faceToggleRTitle">—</div><div class="r-msg" id="faceToggleRMsg">—</div></div>
       <button class="btn-admin" id="btnSimpanFaceToggle" onclick="simpanFaceToggle()">
         <div class="btn-inner"><span>💾</span><span id="btnFaceToggleText">Simpan Pengaturan Face Recognition</span></div>
       </button>
     </div>
 
-    <!-- ══ DAFTARKAN WAJAH PEGAWAI (ADMIN) ══ -->
+    <!-- ══ WAJAH & TANDA TANGAN PEGAWAI (MERGED TABBED CARD) ══ -->
     <div class="card" style="margin-top:10px" id="adminFaceRegCard">
-      <div class="card-title">
-        <span>📷 Daftarkan Wajah Pegawai</span>
-        <button class="btn-sm-admin" onclick="loadAdminFaceReg()">🔄</button>
+      <!-- Tab selector -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+        <div style="display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;padding:3px">
+          <button id="tabFaceBtn" onclick="switchFaceSigTab('face')"
+            style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s">📷 Wajah</button>
+          <button id="tabSigBtn" onclick="switchFaceSigTab('sig')"
+            style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">✍️ Tanda Tangan</button>
+        </div>
+        <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
       </div>
-      <div class="radius-note">Admin mendaftarkan wajah pegawai secara langsung. Pilih pegawai lalu ambil foto wajah.</div>
-      <!-- Pilih pegawai -->
-      <div class="form-group" style="margin-bottom:10px">
-        <label class="form-label">👤 Pilih Pegawai</label>
-        <select class="form-input" id="selectPegawaiFaceReg" style="font-size:12px">
-          <option value="">— Pilih Pegawai —</option>
-        </select>
+
+      <!-- TAB: Wajah -->
+      <div id="faceSigTabFace">
+        <div class="radius-note" style="margin-bottom:10px">Daftarkan wajah pegawai secara langsung. Pilih pegawai lalu ambil foto.</div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">👤 Pilih Pegawai</label>
+          <select class="form-input" id="selectPegawaiFaceReg" style="font-size:12px">
+            <option value="">— Pilih Pegawai —</option>
+          </select>
+        </div>
+        <button class="btn-admin" id="btnAdminCaptureFace" onclick="adminCaptureFace()" style="margin-bottom:10px">
+          <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan Wajah</span></div>
+        </button>
+        <div class="result-card" id="adminFaceRegResult" style="display:none"><div class="r-icon" id="adminFaceRegRIcon">📷</div><div class="r-title" id="adminFaceRegRTitle">—</div><div class="r-msg" id="adminFaceRegRMsg">—</div></div>
+        <div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 7px">📋 Status Wajah Semua Pegawai</div>
+        <div id="adminFaceRegList">
+          <div class="shimmer" style="height:44px;border-radius:10px"></div>
+          <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
+        </div>
       </div>
-      <button class="btn-admin" id="btnAdminCaptureFace" onclick="adminCaptureFace()" style="margin-bottom:10px">
-        <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan Wajah</span></div>
-      </button>
-      <div class="result-card" id="adminFaceRegResult" style="display:none"><div class="r-icon" id="adminFaceRegRIcon">📷</div><div class="r-title" id="adminFaceRegRTitle">—</div><div class="r-msg" id="adminFaceRegRMsg">—</div></div>
-      <!-- Daftar status wajah pegawai -->
-      <div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin:10px 0 6px">📋 STATUS WAJAH SEMUA PEGAWAI</div>
-      <div id="adminFaceRegList">
-        <div class="shimmer" style="height:44px;border-radius:10px"></div>
-        <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
+
+      <!-- TAB: Tanda Tangan -->
+      <div id="faceSigTabSig" style="display:none">
+        <div class="radius-note" style="margin-bottom:10px">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda tangan digital untuk rekap PDF.</div>
+        <div id="adminSigList" style="margin-top:4px">
+          <div class="shimmer" style="height:40px;border-radius:10px"></div>
+          <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ══ TANDA TANGAN PEGAWAI (ADMIN VIEW) ══ -->
-    <div class="card" style="margin-top:10px" id="adminSigCard">
-      <div class="card-title">
-        <span>✍️ Status Tanda Tangan Pegawai</span>
-        <button class="btn-sm-admin" onclick="loadAdminSigStatus()">🔄</button>
-      </div>
-      <div class="radius-note">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda tangan digital untuk rekap PDF.</div>
-      <div id="adminSigList" style="margin-top:8px">
-        <div class="shimmer" style="height:40px;border-radius:10px"></div>
-        <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
-      </div>
-    </div>
+    <!-- Stub tersembunyi untuk backward compatibility fungsi JS lama -->
+    <div id="faceStatusAdminCard" style="display:none"><div id="faceStatusAdminList"></div></div>
+    <div id="adminSigCard" style="display:none"></div>
 
     </div><!-- /.admin-desktop-grid -->
 
@@ -7217,6 +7197,43 @@ async function hapusJamPeriode(id, nama){
     await loadJamPeriodeAdmin();
   }catch{
     showResult('periodeResult','periodeRIcon','periodeRTitle','periodeRMsg','warning','⚠️','Gagal Hapus','Pastikan webhook jam-periode-delete aktif di n8n.');
+  }
+}
+
+/* ════ WAJAH + TANDA TANGAN TAB (MERGED CARD) ════ */
+
+let _faceSigCurrentTab = 'face';
+
+function switchFaceSigTab(tab) {
+  _faceSigCurrentTab = tab;
+  const faceTab = $('faceSigTabFace');
+  const sigTab  = $('faceSigTabSig');
+  const btnFace = $('tabFaceBtn');
+  const btnSig  = $('tabSigBtn');
+  if (!faceTab || !sigTab) return;
+
+  if (tab === 'face') {
+    faceTab.style.display = 'block';
+    sigTab.style.display  = 'none';
+    if (btnFace) { btnFace.style.background = 'var(--gold)'; btnFace.style.color = 'var(--bg)'; btnFace.style.fontWeight = '800'; }
+    if (btnSig)  { btnSig.style.background = 'transparent'; btnSig.style.color = 'var(--muted)'; btnSig.style.fontWeight = '700'; }
+    // Load face data jika belum
+    if ($('adminFaceRegList') && $('adminFaceRegList').children.length <= 2) loadAdminFaceReg();
+  } else {
+    faceTab.style.display = 'none';
+    sigTab.style.display  = 'block';
+    if (btnSig)  { btnSig.style.background = 'var(--gold)'; btnSig.style.color = 'var(--bg)'; btnSig.style.fontWeight = '800'; }
+    if (btnFace) { btnFace.style.background = 'transparent'; btnFace.style.color = 'var(--muted)'; btnFace.style.fontWeight = '700'; }
+    // Load sig data
+    if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+  }
+}
+
+function refreshFaceSigTab() {
+  if (_faceSigCurrentTab === 'face') {
+    loadAdminFaceReg();
+  } else {
+    if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
   }
 }
 

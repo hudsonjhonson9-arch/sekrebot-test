@@ -6,6 +6,8 @@
   <title>Absensi BAPPERIDA</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <!-- face-api.js loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +15,8 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0d1b2a">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <!-- ══ MODAL TANDA TANGAN (HAPUS DUPLIKAT) ══ -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <style>
     :root{
@@ -1404,6 +1408,16 @@
         </div>
       </div>
     </div>
+    <!-- Export Buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <button class="btn-admin" id="btnDownloadRekap" onclick="downloadRekap()" style="margin:0;height:44px;font-size:12px">
+        <div class="btn-inner"><span>📊</span> Excel Rekap</div>
+      </button>
+      <button class="btn-admin" id="btnDownloadPDF" onclick="generateRekapPDF()" style="margin:0;height:44px;font-size:12px;background:var(--admin-dim);border-color:var(--admin);color:var(--admin)">
+        <div class="btn-inner"><span>📄</span> Tarik PDF</div>
+      </button>
+    </div>
+    
     <div id="rekapToast" style="display:none;border-radius:11px;padding:10px 13px;margin-bottom:10px;font-size:11px;font-weight:700;animation:slideUp .3s ease"></div>
     <div class="pegawai-list" id="pegawaiList">
       <div class="sh-row"><div class="shimmer sh-circ"></div><div class="sh-lines"><div class="shimmer sh-line" style="width:65%"></div><div class="shimmer sh-line" style="width:40%"></div></div></div>
@@ -3168,6 +3182,9 @@ async function openCamOverlay(onDone) {
   _eyeHistory     = [];
   _noseYHistory   = [];
 
+  // Reset Meja Mode if not explicitly set
+  if (onDone !== 'meja') _isMejaAbsen = false;
+
   // Pilih 2 tantangan random sesi ini
   _activeChallenges = pickRandomChallenges();
   buildLivenessStepsUI(_activeChallenges);
@@ -3341,6 +3358,7 @@ function startDetectLoop(model) {
   const wrap= $('camVideoWrap');
 
   let lastDetect = 0;
+  let lastMejaMatch = 0;
   const INTERVAL = 120; // ms antar deteksi (≈8 fps untuk hemat baterai)
 
   // Fix #5: Fallback 15 detik — pesan lebih informatif
@@ -3379,10 +3397,26 @@ function startDetectLoop(model) {
     if (ts - lastDetect < INTERVAL) return;
     lastDetect = ts;
 
-    // Sinkronisasi ukuran canvas
-    if (cnv.width !== vid.videoWidth && vid.videoWidth>0) {
-      cnv.width=vid.videoWidth; cnv.height=vid.videoHeight;
+    // ── MEJA ABSEN (1:N Match) ──
+    if (_isMejaAbsen && _allFaceDescriptors.length > 0 && ts - lastMejaMatch > 2000) {
+      lastMejaMatch = ts;
+      try {
+        const fullDetection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+          .withFaceLandmarks(true)
+          .withFaceDescriptor();
+        
+        if (fullDetection) {
+          const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+          const bestMatch = faceMatcher.findBestMatch(fullDetection.descriptor);
+          if (bestMatch.label !== 'unknown') {
+            _onMejaAbsenMatchFound(bestMatch.label, fullDetection.descriptor);
+          } else {
+            setCamStatus('warn','🔍','Mencari Pegawai...','Posisikan wajah dengan jelas di depan kamera');
+          }
+        }
+      } catch(e) { console.warn('Meja match error:', e); }
     }
+
     ctx.clearRect(0,0,cnv.width,cnv.height);
 
     let detection = null;
@@ -7777,7 +7811,14 @@ async function loadAdminFaceReg() {
     // Muat daftar pegawai
     const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
     const ud = ur.ok ? await ur.json() : [];
-    const users = Array.isArray(ud) ? ud : (ud.data || []);
+    let users = Array.isArray(ud) ? ud : (ud.data || []);
+
+    // Urutkan berdasarkan NIP (No Pegawai)
+    users.sort((a, b) => {
+      const nipA = String(a.NIP || a.nip || '');
+      const nipB = String(b.NIP || b.nip || '');
+      return nipA.localeCompare(nipB, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
     // Populate select
     if (selectEl) {
@@ -7789,14 +7830,22 @@ async function loadAdminFaceReg() {
         }).join('');
     }
 
-    // Muat status wajah dari server
-    let faceMap = {};
+    // Muat status wajah & tanda tangan dari server
+    let faceMap = {}, sigMap = {};
     try {
-      const fr = await apiFetch(P.faceGet + '?all=1', { method: 'GET' });
+      const [fr, sr] = await Promise.all([
+        apiFetch(P.faceGet + '?all=1', { method: 'GET' }),
+        apiFetch(P.signatureList, { method: 'GET' })
+      ]);
       if (fr.ok) {
         const fd = await fr.json();
         const arr = Array.isArray(fd) ? fd : (fd.data || []);
         arr.forEach(f => { faceMap[String(f.telegram_id || f.id || '')] = f; });
+      }
+      if (sr.ok) {
+        const sd = await sr.json();
+        const arr = Array.isArray(sd) ? sd : (sd.data || []);
+        arr.forEach(s => { sigMap[String(s.telegram_id || s.id || '')] = s; });
       }
     } catch(_) {}
 
@@ -7807,13 +7856,8 @@ async function loadAdminFaceReg() {
 
     listEl.innerHTML = users.map(u => {
       const uid      = String(u.ID || u.id || u.telegram_id || '');
-      const nama     = u.Nama || u.nama || u.username || uid;
-      const jabatan  = u.Jabatan || u.jabatan || '—';
-      const faceData = faceMap[uid];
-      const hasFace  = faceData && faceData.descriptor;
-      const tgl      = hasFace && faceData.savedAt
-        ? new Date(faceData.savedAt).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
-        : null;
+      const sigData  = sigMap[uid];
+      const hasSig   = !!(sigData && sigData.signature);
 
       return `<div class="face-adm-item">
         <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
@@ -7825,13 +7869,22 @@ async function loadAdminFaceReg() {
           <div class="face-adm-name">${nama}</div>
           <div class="face-adm-status">
             ${hasFace
-              ? `<span style="color:var(--success)">✅ Terdaftar${tgl ? ' · '+tgl : ''}</span>`
-              : `<span style="color:var(--muted)">⬜ Belum terdaftar</span>`}
+              ? `<span style="color:var(--success)">📷 Wajah: OK${tgl ? ' ('+tgl+')' : ''}</span>`
+              : `<span style="color:var(--muted)">📷 Wajah: Belum</span>`}
+            <span style="font-size:10px;color:var(--muted)"> · </span>
+            ${hasSig
+              ? `<span style="color:var(--success)">✍️ TTD: OK</span>`
+              : `<span style="color:var(--danger)">✍️ TTD: Belum</span>`}
           </div>
         </div>
-        <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
-          ${hasFace ? '🔄 Perbarui' : '📷 Daftar'}
-        </button>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="face-adm-btn" style="padding:4px 8px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
+            ${hasFace ? '🔄 Wajah' : '📷 Wajah'}
+          </button>
+          <button class="face-adm-btn" style="padding:4px 8px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g,'&#39;')}')">
+            ${hasSig ? '🔄 TTD' : '✍️ TTD'}
+          </button>
+        </div>
       </div>`;
     }).join('');
 
@@ -8340,6 +8393,146 @@ function _updateCamFaceBadge(faceCount, label) {
    menghindari infinite recursion akibat function hoisting.
 ════════════════════════════════════════════════════════ */
 
+/* ════ MEJA ABSEN (1:N matching) ════ */
+let _isMejaAbsen = false;
+let _allFaceDescriptors = [];
+
+async function startMejaAbsen() {
+  showRekapToast('loading', '⏳ Memuat data wajah pegawai...');
+  try {
+    const res = await apiFetch(P.faceGet + '?all=1&descriptors=1', { method: 'GET' });
+    if (!res.ok) throw 0;
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.data || []);
+    
+    _allFaceDescriptors = list.filter(f => f.descriptor).map(f => {
+      const desc = typeof f.descriptor === 'string' ? JSON.parse(f.descriptor) : f.descriptor;
+      return new faceapi.LabeledFaceDescriptors(String(f.telegram_id), [new Float32Array(desc)]);
+    });
+
+    if (!_allFaceDescriptors.length) {
+      alert('Belum ada wajah terdaftar untuk Meja Absen.');
+      return;
+    }
+
+    _isMejaAbsen = true;
+    openCamOverlay('meja');
+  } catch(e) {
+    showRekapToast('fail', '❌ Gagal memuat data wajah');
+  }
+}
+
+/* ════ PROFESSIONAL PDF REKAP ════ */
+async function generateRekapPDF() {
+  if (!lastRekapPegawai.length) {
+    showRekapToast('fail','⚠️ Muat rekap terlebih dahulu');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert('jsPDF not loaded'); return; }
+  const doc = new jsPDF('p', 'mm', 'a4');
+  
+  showRekapToast('loading', '⏳ Menyiapkan PDF Rekapan...');
+
+  // 1. KOP SURAT
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
+  doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 105, 15, { align: 'center' });
+  doc.setFontSize(16);
+  doc.text('BADAN PERENCANAAN PEMBANGUNAN, PENELITIAN', 105, 22, { align: 'center' });
+  doc.text('DAN PENGEMBANGAN DAERAH (BAPPERIDA)', 105, 29, { align: 'center' });
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.text('Jl. Weekarou No. 1, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 105, 35, { align: 'center' });
+  doc.setLineWidth(0.8);
+  doc.line(15, 38, 195, 38);
+  doc.setLineWidth(0.2);
+  doc.line(15, 39, 195, 39);
+
+  // JUDUL
+  const dari = $('rekapDari').value;
+  const sampai = $('rekapSampai').value;
+  doc.setFontSize(12);
+  doc.setFont('times', 'bold');
+  doc.text('LAPORAN REKAPITULASI KEHADIRAN PEGAWAI', 105, 50, { align: 'center' });
+  doc.setFont('times', 'normal');
+  doc.text(`Periode: ${dari} s.d. ${sampai}`, 105, 56, { align: 'center' });
+
+  // 2. LOAD SIGNATURES
+  showRekapToast('loading', '✍️ Menarik data tanda tangan...');
+  try {
+    const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
+    const sigJson = sigRes.ok ? await sigRes.json() : {};
+    const sigData = sigJson.data || sigJson || [];
+    const sigMap = {};
+    if(Array.isArray(sigData)) sigData.forEach(s => sigMap[String(s.telegram_id)] = s.signature);
+
+    // 3. TABLE DATA
+    const body = lastRekapPegawai.map((p, i) => [
+      i + 1,
+      p.nama,
+      p.nip || '—',
+      p.hadir || 0,
+      p.jamHadir || 0,
+      p.lambat || 0,
+      '' 
+    ]);
+
+    doc.autoTable({
+      startY: 65,
+      head: [['No', 'Nama Pegawai', 'NIP', 'Hadir', 'Jam', 'Lambat', 'Tanda Tangan']],
+      body: body,
+      theme: 'grid',
+      headStyles: { fillColor: [13, 27, 42], textColor: [201, 168, 76], fontStyle: 'bold', halign: 'center' },
+      styles: { font: 'times', fontSize: 9, cellPadding: 3 },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        3: { halign: 'center', cellWidth: 15 },
+        4: { halign: 'center', cellWidth: 15 },
+        5: { halign: 'center', cellWidth: 15 },
+        6: { cellWidth: 35, minCellHeight: 15 }
+      },
+      didDrawCell: (data) => {
+        if (data.column.index === 6 && data.cell.section === 'body') {
+          const uid = String(lastRekapPegawai[data.row.index].id);
+          const sig = sigMap[uid];
+          if (sig) {
+            try {
+              doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 1, 30, 12);
+            } catch(e) {}
+          }
+        }
+      }
+    });
+
+    // 4. SIGNATORY (SUPERIOR No. 1)
+    const finalY = (doc.lastAutoTable?.finalY || 100) + 15;
+    const superior = lastRekapPegawai.find(p => p.no == 1 || p.ID == 1) || lastRekapPegawai[0];
+    const supSig = sigMap[String(superior?.id)];
+
+    doc.setFontSize(11);
+    doc.text('Mengetahui,', 140, finalY);
+    doc.text(superior?.jabatan || 'Kepala Badan', 140, finalY + 6);
+    
+    if (supSig) {
+      try {
+        doc.addImage(supSig, 'PNG', 140, finalY + 8, 40, 15);
+      } catch(e) {}
+    }
+
+    doc.setFont('times', 'bold');
+    doc.text(superior?.nama || '—', 140, finalY + 30);
+    doc.setFont('times', 'normal');
+    doc.text(`NIP. ${superior?.nip || '—'}`, 140, finalY + 35);
+
+    doc.save(`Rekap_Absensi_${dari}_${sampai}.pdf`);
+    showRekapToast('success', '✅ PDF Rekapan berhasil diunduh');
+  } catch(e) {
+    showRekapToast('fail', '❌ Gagal membuat PDF');
+    console.error(e);
+  }
+}
+
 /* ════════════════════════════════════════════════════
    OFFLINE QUEUE SYNC ════ */
 let isSyncing = false;
@@ -8414,6 +8607,75 @@ function updateOnlineStatus() {
 window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 updateOnlineStatus();
+
+/* ════════════════════════════════════════════════════
+   MEJA ABSEN / DESK ATTENDANCE LOGIC
+════════════════════════════════════════════════════════ */
+async function _onMejaAbsenMatchFound(telegramId, descriptor) {
+  if (window._mejaProcessing) return;
+  window._mejaProcessing = true;
+  
+  // Ambil data dari rekap (untuk nama)
+  let nama = 'Pegawai';
+  try {
+    const res = await apiFetch(`${P.userList}?telegram_id=${telegramId}`, { method:'GET' });
+    const user = await res.json();
+    nama = user.nama || user.Nama || 'Pegawai';
+  } catch(_) {}
+
+  setCamStatus('ok','✅',`Halo, ${nama}!`,`Tunggu sebentar, sedang mencatat kehadiran...`);
+  
+  // Simulasi/Kirim Absen (Meja mode biasanya bypass GPS radius atau pakai GPS device)
+  try {
+    const n = nowWITA();
+    const payload = {
+      user: { id: telegramId },
+      meja_mode: true,
+      timestamp: Math.floor(Date.now()/1000),
+      face_match: 100,
+      jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`
+    };
+    const res = await apiFetch(P.absen, { method:'POST', body: JSON.stringify(payload) });
+    if (res.ok) {
+      showRekapToast('success', `✅ Absen ${nama} berhasil tercatat`);
+      setTimeout(() => {
+        window._mejaProcessing = false;
+      }, 3000); // 3 detik cold-down agar tidak double scan
+    } else {
+      throw 0;
+    }
+  } catch(e) {
+    showRekapToast('fail', `❌ Gagal mencatat absen ${nama}`);
+    window._mejaProcessing = false;
+  }
+}
+
+// ── Override existing openSignaturePad for Admin Support ──
+const _origOpenSignaturePad = openSignaturePad;
+openSignaturePad = function(telegramId, callback) {
+  _sigTargetId = telegramId || MY_ID;
+  _sigCallback = callback || null;
+  
+  const titleEl = $('sigOverlayTitle');
+  if (titleEl) {
+    const isOwn = String(_sigTargetId) === String(MY_ID);
+    if (!isOwn) {
+      // Find name from list if admin is capturing for someone else
+      titleEl.textContent = `✍️ TTD: ${telegramId}`;
+    }
+  }
+  _origOpenSignaturePad(telegramId, callback);
+};
+
+// ── Admin: Capture Signature Helper ──
+function adminCaptureSignatureFor(uid, name) {
+  openSignaturePad(uid, (dataUrl) => {
+    // Optional refresh after save
+    loadAdminFaceReg();
+  });
+  const titleEl = $('sigOverlayTitle');
+  if (titleEl) titleEl.textContent = `✍️ TTD: ${name}`;
+}
 
 </script>
 </body>

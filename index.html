@@ -2012,6 +2012,8 @@ const P = {
   faceRegister: isTest ? '/webhook-test/face-register'   : '/webhook/face-register',
   faceGet     : isTest ? '/webhook-test/face-get'        : '/webhook/face-get',
   faceToggle  : isTest ? '/webhook-test/face-toggle'     : '/webhook/face-toggle',
+  faceGetAll  : isTest ? '/webhook-test/face-get-all'   : '/webhook/face-get-all',
+  mejaAbsen   : isTest ? '/webhook-test/meja-absen'      : '/webhook/meja-absen',
   seragamGet : isTest ? '/webhook-test/seragam-get'      : '/webhook/seragam-get',
   seragamSave: isTest ? '/webhook-test/seragam-save'     : '/webhook/seragam-save',
   seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
@@ -7745,7 +7747,7 @@ async function loadAdminFaceReg() {
     let faceMap = {}, sigMap = {};
     try {
       const [fr, sr] = await Promise.all([
-        apiFetch(P.faceGet + '?all=1', { method: 'GET' }),
+        apiFetch(P.faceGetAll, { method: 'GET' }),
         apiFetch(P.signatureList, { method: 'GET' })
       ]);
       if (fr.ok) {

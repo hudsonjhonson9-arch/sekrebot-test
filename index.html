@@ -2972,10 +2972,16 @@ function _writeFaceRefLocal(uid, faceData) {
 async function getFaceDescriptor(input) {
   if (!window.faceapi) return null;
   try {
-    const detection = await faceapi
-      .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-      .withFaceLandmarks(true)
-      .withFaceDescriptor();
+    // 1. Coba deteksi dengan SSD (lebih akurat untuk gambar tunggal)
+    let detection = await faceapi.detectSingleFace(input).withFaceLandmarks().withFaceDescriptor();
+    
+    // 2. Fallback ke Tiny jika SSD gagal (untuk fleksibilitas)
+    if (!detection) {
+      detection = await faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
+        .withFaceLandmarks(true)
+        .withFaceDescriptor();
+    }
+    
     if (!detection) return null;
     return detection.descriptor; // Float32Array[128]
   } catch(e) { console.warn('getFaceDescriptor error:', e); return null; }
@@ -3008,9 +3014,10 @@ async function saveFaceRef(dataUrl, descriptor) {
     // Use existing descriptor from capture to avoid re-extraction failure
     let descriptorToSave = descriptor;
     if (!descriptorToSave) {
-      descriptorToSave = await getDescriptorFromDataUrl(dataUrl);
+      alert("⚠️ Wajah tidak terdeteksi dengan jelas. Harap posisikan wajah lurus ke kamera dan ambil foto lagi.");
+      return false;
     }
-    const descriptorArray = descriptorToSave ? Array.from(descriptorToSave) : null;
+    const descriptorArray = Array.from(descriptorToSave);
     const faceData = { dataUrl, descriptor: descriptorArray, savedAt };
     _writeFaceRefLocal(uid, faceData);
     _sendFaceToServer(dataUrl, savedAt, descriptorArray);
@@ -3205,6 +3212,7 @@ async function loadFaceApiModels() {
     // Load 3 models: tinyFaceDetector + faceLandmark68 + faceRecognition
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(FACE_API_MODELS),
+      faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS),
       faceapi.nets.faceLandmark68TinyNet.loadFromUri(FACE_API_MODELS),
       faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS),
     ]);
@@ -7900,7 +7908,11 @@ function adminCaptureFaceFor(uid, nama) {
 
 async function _saveAdminFaceFor(uid, nama, dataUrl, descriptor) {
   try {
-    const descriptorArray = descriptor ? Array.from(descriptor) : null;
+    if (!descriptor) {
+      alert("⚠️ Wajah tidak terdeteksi dengan jelas. Harap posisikan wajah lurus ke kamera dan ambil foto lagi.");
+      return false;
+    }
+    const descriptorArray = Array.from(descriptor);
     const payload = {
       user_id         : uid,
       nama            : nama,

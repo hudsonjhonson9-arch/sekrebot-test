@@ -11713,7 +11713,9 @@ File di Google Drive juga akan dihapus.`)) return;
             const arr = Array.isArray(sd) ? sd : (sd.data || []);
             arr.forEach(s => { sigMap[String(s.telegram_id || s.id || '')] = s; });
           }
-        } catch (_) { }
+        } catch (err) {
+          console.warn('[Admin] Failed to load supplemental face/sig maps:', err);
+        }
 
         if (!users.length) {
           listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
@@ -11726,15 +11728,19 @@ File di Google Drive juga akan dihapus.`)) return;
           const sigData = sigMap[uid];
           const faceData = faceMap[uid];
           // facePhoto: diambil dari face-get-all (sudah include face_photo setelah fix n8n)
-          const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64)) || u.face_photo || null;
-          const hasFace = !!(u.has_face || facePhoto);
-          const hasSig = !!(u.has_signature || (sigData && sigData.signature));
-          const tgl = (faceData && (faceData.savedAt || faceData.saved_at)) ? new Date(faceData.savedAt || faceData.saved_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : null;
+          const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64 || faceData.face_photo)) || u.face_photo || null;
+          const hasFace = !!(u.has_face || faceData || facePhoto);
+          const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
+          const tglRaw = (faceData && (faceData.savedAt || faceData.saved_at)) || null;
+          let tgl = null;
+          if (tglRaw) {
+            try { tgl = new Date(tglRaw).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }); } catch (_) { }
+          }
 
           return `<div class="face-adm-item">
         <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
-          ${hasFace && facePhoto
-              ? `<img src="${facePhoto}" alt="" style="width:100%;height:100%;object-fit:cover">`
+          ${facePhoto
+              ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='👤'">`
               : '👤'}
         </div>
         <div class="face-adm-info">
@@ -11751,10 +11757,10 @@ File di Google Drive juga akan dihapus.`)) return;
           <div style="font-size:8px;color:var(--muted);margin-top:2px">ID: ${uid}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, '&#39;')}')">
+          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
             ${hasFace ? '🔄 Wajah' : '📷 Wajah'}
           </button>
-          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, '&#39;')}')">
+          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
             ${hasSig ? '🔄 TTD' : '✍️ TTD'}
           </button>
         </div>
@@ -12599,8 +12605,12 @@ File di Google Drive juga akan dihapus.`)) return;
       if (window._mejaProcessing) return;
       window._mejaProcessing = true;
 
-      _setMejaStatus('processing', '⏳', 'Mencocokkan & mencatat absen...', 'Harap tunggu');
-      setCamStatus('ok', '⏳', 'Wajah Dikenali!', 'Mencatat kehadiran...');
+      const tid = String(telegramId);
+      const user = _mejaUserMap[tid] || { nama: 'Pegawai', nip: '-', foto: null };
+      const nama = user.nama;
+
+      _setMejaStatus('processing', '⏳', `Mencatat: ${nama}...`, 'Harap tunggu');
+      setCamStatus('ok', '⏳', 'Wajah Dikenali!', `Pegawai: ${nama}`);
 
       const wrap = $('camVideoWrap');
       if (wrap) {
@@ -12613,7 +12623,9 @@ File di Google Drive juga akan dihapus.`)) return;
       const jam = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
 
       const payload = {
-        telegram_id: String(telegramId),
+        telegram_id: tid,
+        nama: nama,
+        nip: user.nip,
         admin_id: MY_ID,
         jam,
         tanggal_iso: tanggalIso,

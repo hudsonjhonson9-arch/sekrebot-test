@@ -11724,6 +11724,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
           const sigData = sigMap[uid];
+          const faceData = faceMap[uid];
           const hasFace = !!(u.has_face || (faceData && (faceData.dataUrl || faceData.foto_base64)));
           const hasSig = !!(u.has_signature || (sigData && sigData.signature));
           const tgl = (faceData && (faceData.savedAt || faceData.saved_at)) ? new Date(faceData.savedAt || faceData.saved_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : null;

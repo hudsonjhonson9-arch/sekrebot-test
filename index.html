@@ -7824,46 +7824,30 @@ async function loadAdminFaceReg() {
   }
 }
 
-function adminCaptureFaceFor(uid, name) {
+function adminCaptureFaceFor(uid, nama) {
+  _adminFaceTargetId   = uid;
+  _adminFaceTargetNama = nama;
+
+  // Ubah judul kamera
+  const title = $('camTitle');
+  if (title) title.textContent = `📷 Daftar Wajah: ${nama}`;
+
   openCamOverlay({
     isRegister: true,
     onDone: async (cap) => {
       if (!cap?.dataUrl) return;
-      const ok = await saveFaceRefFor(uid, cap.dataUrl, cap.descriptor);
+      const ok = await saveFaceRefFor(uid, cap.dataUrl, cap.descriptor, nama);
       if (ok) {
         loadAdminFaceReg();
-        setCamStatus('ok','🧠','Wajah Terdaftar!',`Wajah ${name} berhasil disimpan.`);
+        // Juga update status wajah admin card yang lama
+        if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
       }
+    },
+    onCancel: () => {
+      const title = $('camTitle');
+      if (title) title.textContent = '📸 Verifikasi Wajah';
     }
   });
-}
-
-async function saveFaceRefFor(uid, dataUrl, descriptor) {
-  try {
-    const savedAt = new Date().toISOString();
-    let descriptorArray = null;
-    if (descriptor) {
-      descriptorArray = Array.isArray(descriptor) ? descriptor : Array.from(descriptor);
-    } else {
-      const extracted = await getDescriptorFromDataUrl(dataUrl);
-      if (extracted) descriptorArray = Array.from(extracted);
-    }
-    
-    // Save to local cache
-    _writeFaceRefLocal(uid, { dataUrl, descriptor: descriptorArray, savedAt });
-    
-    // Sync to server
-    await apiFetch(P.faceRegister, {
-      method: 'POST',
-      body: JSON.stringify({
-        user_id: uid,
-        foto_base64: dataUrl,
-        face_descriptor: descriptorArray,
-        saved_at: savedAt
-      })
-    });
-    return true;
-  } catch(e) { return false; }
 }
 
 function adminCaptureFace() {
@@ -7880,60 +7864,46 @@ function adminCaptureFace() {
   adminCaptureFaceFor(uid, nama);
 }
 
-function adminCaptureFaceFor(uid, nama) {
-  _adminFaceTargetId   = uid;
-  _adminFaceTargetNama = nama;
-
-  // Ubah judul kamera
-  const title = $('camTitle');
-  if (title) title.textContent = `📷 Daftar Wajah: ${nama}`;
-
-  openCamOverlay({
-    isRegister: true,
-    onDone: async (cap) => {
-      if (!cap?.dataUrl) return;
-      const ok = await _saveAdminFaceFor(uid, nama, cap.dataUrl, cap.descriptor || null);
-      if (ok) {
-        loadAdminFaceReg();
-        // Juga update status wajah admin card yang lama
-        if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
-      }
-    },
-    onCancel: () => {
-      const title = $('camTitle');
-      if (title) title.textContent = '📸 Verifikasi Wajah';
-    }
-  });
-}
-
-async function _saveAdminFaceFor(uid, nama, dataUrl, descriptor) {
+async function saveFaceRefFor(uid, dataUrl, descriptor, nama) {
   try {
+    const savedAt = new Date().toISOString();
+    
+    // Safety check: Face MUST be detected
     if (!descriptor) {
       alert("⚠️ Wajah tidak terdeteksi dengan jelas. Harap posisikan wajah lurus ke kamera dan ambil foto lagi.");
       return false;
     }
     const descriptorArray = Array.from(descriptor);
+    
+    // Save to local cache for 1:N matching
+    _writeFaceRefLocal(uid, { dataUrl, descriptor: descriptorArray, savedAt });
+    
+    // Sync to server (n8n face-register)
     const payload = {
-      user_id         : uid,
-      nama            : nama,
-      foto_base64     : dataUrl,
-      face_descriptor : descriptorArray,
-      saved_at        : new Date().toISOString(),
-      savedBy         : MY_ID,
-      savedByName     : tgUser.first_name || 'Admin'
+      user_id: uid,
+      nama: nama || 'Pegawai',
+      foto_base64: dataUrl,
+      face_descriptor: descriptorArray,
+      saved_at: savedAt,
+      savedBy: MY_ID,
+      savedByName: tgUser.first_name || 'Admin'
     };
-    const res = await apiFetch(P.faceRegister, { method:'POST', body: JSON.stringify(payload) });
-    const ok  = res.ok;
+
+    const res = await apiFetch(P.faceRegister, { method: 'POST', body: JSON.stringify(payload) });
+    const ok = res.ok;
+    
     showResult('adminFaceRegResult','adminFaceRegRIcon','adminFaceRegRTitle','adminFaceRegRMsg',
       ok ? 'success' : 'warning',
       ok ? '✅' : '⚠️',
       ok ? 'Wajah Tersimpan!' : 'Gagal Simpan',
-      ok ? `Wajah ${nama} berhasil didaftarkan.` : 'Terjadi kesalahan saat menyimpan. Coba lagi.');
+      ok ? `Wajah ${nama} berhasil didaftarkan.` : 'Terjadi kesalahan saat menyimpan di server.');
     $('adminFaceRegResult').style.display = 'flex';
+    
     return ok;
   } catch(e) {
+    console.error('Registration error:', e);
     showResult('adminFaceRegResult','adminFaceRegRIcon','adminFaceRegRTitle','adminFaceRegRMsg',
-      'warning','🔌','Koneksi Gagal','Pastikan server n8n aktif dan endpoint face-register tersedia.');
+      'warning','🔌','Koneksi Gagal','Gagal menghubungi server pendaftaran wajah.');
     $('adminFaceRegResult').style.display = 'flex';
     return false;
   }

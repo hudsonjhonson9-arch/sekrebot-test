@@ -676,6 +676,32 @@
     /* ══ SUPERADMIN GUARD ══ */
     .superadmin-section{display:none}
 
+    /* ══ MEJA ABSEN CARD ══ */
+    .meja-absen-card{background:linear-gradient(135deg,rgba(13,27,42,.95),rgba(10,22,40,.98));border:1px solid rgba(201,168,76,.35);border-radius:16px;padding:18px 16px;margin-top:10px;position:relative;overflow:hidden}
+    .meja-absen-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),#f59e0b,var(--gold));animation:shimmerBar 2.5s ease-in-out infinite}
+    @keyframes shimmerBar{0%,100%{opacity:.6}50%{opacity:1}}
+    .meja-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(201,168,76,.2),rgba(245,158,11,.15));border:1px solid rgba(201,168,76,.4);border-radius:20px;padding:3px 10px;font-size:9px;font-weight:800;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+    .meja-title{font-size:15px;font-weight:800;color:var(--white);margin-bottom:3px;display:flex;align-items:center;gap:7px}
+    .meja-sub{font-size:10px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+    .meja-status-bar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 12px;margin-bottom:12px;min-height:38px}
+    .meja-status-dot{width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;transition:background .3s}
+    .meja-status-dot.active{background:var(--success);box-shadow:0 0 6px rgba(34,197,94,.6);animation:pulseDot 1.2s ease-in-out infinite}
+    .meja-status-dot.processing{background:#f59e0b;box-shadow:0 0 6px rgba(245,158,11,.6);animation:pulseDot 0.8s ease-in-out infinite}
+    @keyframes pulseDot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.7}}
+    .meja-status-text{font-size:10px;font-weight:700;color:var(--white);flex:1}
+    .meja-status-sub{font-size:8.5px;color:var(--muted)}
+    .meja-loc-bar{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:6px 10px;margin-bottom:12px;min-height:30px}
+    .meja-loc-bar span.loc-val{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;font-size:8px}
+    .btn-meja-start{width:100%;padding:13px;border-radius:12px;background:linear-gradient(135deg,var(--gold),#b8860b);border:none;color:var(--navy);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;box-shadow:0 4px 16px rgba(201,168,76,.25)}
+    .btn-meja-start:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,.35)}
+    .btn-meja-start:active{transform:translateY(0)}
+    .btn-meja-start:disabled{opacity:.5;cursor:not-allowed;transform:none}
+    .btn-meja-stop{width:100%;padding:11px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s;margin-top:8px}
+    .btn-meja-stop:hover{background:rgba(239,68,68,.2)}
+    .meja-result-card{display:none;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:10px;font-weight:700;border-left:3px solid}
+    .meja-result-card.success{background:rgba(34,197,94,.08);border-color:var(--success);color:var(--success)}
+    .meja-result-card.fail{background:rgba(239,68,68,.08);border-color:var(--danger);color:var(--danger)}
+
     /* ══ CAMERA KASIRJEGRUP STYLE ENHANCEMENT ══ */
     .cam-corner{position:absolute;width:26px;height:26px;border-color:var(--gold);border-style:solid;pointer-events:none;transition:border-color .3s}
     .cam-corner.tl{top:10px;left:10px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
@@ -1732,6 +1758,56 @@
 
     </div><!-- /.admin-desktop-grid -->
 
+    <!-- ══ MEJA ABSEN — SUPERADMIN ONLY ══ -->
+    <div class="superadmin-section meja-absen-card" id="mejaAbsenCard">
+      <div class="meja-badge">👑 Super Admin</div>
+      <div class="meja-title">🖥️ Meja Absen</div>
+      <div class="meja-sub">Scan wajah pegawai untuk mengabsenkan secara manual dari perangkat ini. Lokasi GPS dan waktu dicatat otomatis.</div>
+
+      <!-- Status Bar -->
+      <div class="meja-status-bar" id="mejaStatusBar">
+        <div class="meja-status-dot" id="mejaStatusDot"></div>
+        <div style="flex:1">
+          <div class="meja-status-text" id="mejaStatusText">Siap digunakan</div>
+          <div class="meja-status-sub" id="mejaStatusSub">Tekan tombol untuk memulai sesi Meja Absen</div>
+        </div>
+        <div style="font-size:18px" id="mejaStatusIcon">🖥️</div>
+      </div>
+
+      <!-- Lokasi Bar -->
+      <div class="meja-loc-bar" id="mejaLocBar">
+        <span>📍</span>
+        <span class="loc-val" id="mejaLocVal">Lokasi belum diambil</span>
+        <span id="mejaLocAccuracy" style="font-size:8px;color:var(--muted)"></span>
+      </div>
+
+      <!-- Counter -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px" id="mejaCounterGrid">
+        <div style="text-align:center;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:8px">
+          <div style="font-size:18px;font-weight:800;color:var(--success)" id="mejaCntMasuk">0</div>
+          <div style="font-size:8px;color:var(--muted);font-weight:700">✅ MASUK</div>
+        </div>
+        <div style="text-align:center;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:8px">
+          <div style="font-size:18px;font-weight:800;color:var(--info)" id="mejaCntPulang">0</div>
+          <div style="font-size:8px;color:var(--muted);font-weight:700">🔵 PULANG</div>
+        </div>
+        <div style="text-align:center;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:8px">
+          <div style="font-size:18px;font-weight:800;color:var(--danger)" id="mejaCntGagal">0</div>
+          <div style="font-size:8px;color:var(--muted);font-weight:700">❌ GAGAL</div>
+        </div>
+      </div>
+
+      <div class="meja-result-card" id="mejaResultCard"></div>
+
+      <!-- Tombol Aksi -->
+      <button class="btn-meja-start" id="btnMejaAbsen" onclick="startMejaAbsen()">
+        <span>🖥️</span><span id="btnMejaText">Mulai Meja Absen</span>
+      </button>
+      <button class="btn-meja-stop" id="btnMejaStop" onclick="stopMejaAbsen()" style="display:none">
+        ⏹️ Hentikan Sesi
+      </button>
+    </div>
+
     <!-- ══ MODE DESKTOP (ADMIN) ══ -->
     <div class="card" style="margin-top:10px" id="desktopModeCard">
       <div class="card-title">🖥️ Mode Desktop</div>
@@ -1950,6 +2026,8 @@ const P = {
   signatureSave  : isTest ? '/webhook-test/signature-save'    : '/webhook/signature-save',
   signatureGet   : isTest ? '/webhook-test/signature-get'     : '/webhook/signature-get',
   signatureList  : isTest ? '/webhook-test/signature-list'    : '/webhook/signature-list',
+  mejaAbsen      : isTest ? '/webhook-test/meja-absen'         : '/webhook/meja-absen',
+  faceGetAll     : isTest ? '/webhook-test/face-get-all'       : '/webhook/face-get-all',
 };
 
 const HDR = {'Content-Type':'application/json','ngrok-skip-browser-warning':'true','Accept':'application/json'};
@@ -8272,29 +8350,110 @@ function _updateCamFaceBadge(faceCount, label) {
 /* ════ MEJA ABSEN (1:N matching) ════ */
 let _isMejaAbsen = false;
 let _allFaceDescriptors = [];
+let _mejaGpsLocation = null;
+let _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+
+function _setMejaStatus(mode, icon, text, sub) {
+  const dot  = $('mejaStatusDot');
+  const ico  = $('mejaStatusIcon');
+  const txt  = $('mejaStatusText');
+  const stxt = $('mejaStatusSub');
+  if (dot) { dot.className = 'meja-status-dot' + (mode === 'active' ? ' active' : mode === 'processing' ? ' processing' : ''); }
+  if (ico) ico.textContent  = icon;
+  if (txt) txt.textContent  = text;
+  if (stxt) stxt.textContent = sub || '';
+}
+
+function _updateMejaCnt() {
+  const msk = $('mejaCntMasuk');   if (msk) msk.textContent = _mejaCnt.masuk;
+  const plg = $('mejaCntPulang');  if (plg) plg.textContent = _mejaCnt.pulang;
+  const ggl = $('mejaCntGagal');   if (ggl) ggl.textContent = _mejaCnt.gagal;
+}
+
+function _showMejaResult(type, msg) {
+  const el = $('mejaResultCard');
+  if (!el) return;
+  el.className = 'meja-result-card ' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+async function _getMejaGps() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+      () => resolve(null),
+      { timeout: 8000, maximumAge: 30000, enableHighAccuracy: true }
+    );
+  });
+}
+
+async function stopMejaAbsen() {
+  _isMejaAbsen = false;
+  _allFaceDescriptors = [];
+  _mejaGpsLocation = null;
+  closeCamOverlay();
+  _setMejaStatus('idle','🖥️','Sesi dihentikan','Counter tersimpan di atas');
+  const btnStart = $('btnMejaAbsen');
+  const btnStop  = $('btnMejaStop');
+  if (btnStart) { btnStart.style.display = 'flex'; btnStart.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+  if (btnStop)  btnStop.style.display = 'none';
+}
 
 async function startMejaAbsen() {
-  showRekapToast('loading', '⏳ Memuat data wajah pegawai...');
+  const btn = $('btnMejaAbsen');
+  if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat...'; }
+  _setMejaStatus('processing','⏳','Mengambil lokasi GPS...','Harap tunggu');
+
+  // 1. Ambil GPS
+  _mejaGpsLocation = await _getMejaGps();
+  const locEl  = $('mejaLocVal');
+  const accEl  = $('mejaLocAccuracy');
+  if (_mejaGpsLocation && locEl) {
+    locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
+    if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
+  } else if (locEl) {
+    locEl.textContent = 'Lokasi tidak tersedia (GPS off?)';
+  }
+
+  _setMejaStatus('processing','📥','Memuat data wajah pegawai...','Harap tunggu sebentar');
+
+  // 2. Load face descriptors via endpoint dedicated
   try {
-    const res = await apiFetch(P.faceGet + '?all=1&descriptors=1', { method: 'GET' });
-    if (!res.ok) throw 0;
+    const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const list = Array.isArray(data) ? data : (data.data || []);
-    
+
     _allFaceDescriptors = list.filter(f => f.descriptor).map(f => {
       const desc = typeof f.descriptor === 'string' ? JSON.parse(f.descriptor) : f.descriptor;
       return new faceapi.LabeledFaceDescriptors(String(f.telegram_id), [new Float32Array(desc)]);
     });
 
     if (!_allFaceDescriptors.length) {
-      alert('Belum ada wajah terdaftar untuk Meja Absen.');
+      _setMejaStatus('idle','⚠️','Tidak Ada Data Wajah','Daftarkan wajah pegawai terlebih dahulu');
+      _showMejaResult('fail', '⚠️ Belum ada wajah terdaftar untuk Meja Absen.');
+      if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
       return;
     }
 
+    _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+    _updateMejaCnt();
     _isMejaAbsen = true;
+
+    _setMejaStatus('active','🔍',`Data wajah dimuat (${_allFaceDescriptors.length} pegawai)`,'Membuka kamera untuk scan...');
+    if (btn) btn.style.display = 'none';
+    const btnStop = $('btnMejaStop');
+    if (btnStop) btnStop.style.display = 'flex';
+
     openCamOverlay('meja');
   } catch(e) {
-    showRekapToast('fail', '❌ Gagal memuat data wajah');
+    console.error('startMejaAbsen error:', e);
+    _setMejaStatus('idle','❌','Gagal memuat data wajah',e.message || 'Coba lagi');
+    _showMejaResult('fail', '❌ Gagal memuat data wajah. Coba lagi.');
+    if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
   }
 }
 
@@ -8490,45 +8649,65 @@ updateOnlineStatus();
 async function _onMejaAbsenMatchFound(telegramId, descriptor) {
   if (window._mejaProcessing) return;
   window._mejaProcessing = true;
-  
-  // Ambil data dari rekap (untuk nama)
-  let nama = 'Pegawai';
-  try {
-    const res = await apiFetch(`${P.userList}?telegram_id=${telegramId}`, { method:'GET' });
-    const user = await res.json();
-    nama = user.nama || user.Nama || 'Pegawai';
-  } catch(_) {}
 
-  setCamStatus('ok','✅',`Halo, ${nama}!`,`Tunggu sebentar, sedang mencatat kehadiran...`);
-  
-  // Meja Mode Feedback in Camera UI
+  _setMejaStatus('processing','⏳','Mencocokkan & mencatat absen...','Harap tunggu');
+  setCamStatus('ok','⏳','Wajah Dikenali!','Mencatat kehadiran...');
+
   const wrap = $('camVideoWrap');
   if (wrap) {
     wrap.classList.add('face-match-success');
     setTimeout(() => wrap.classList.remove('face-match-success'), 2500);
   }
 
-  // Simulasi/Kirim Absen (Meja mode biasanya bypass GPS radius atau pakai GPS device)
+  const n = nowWITA();
+  const tanggalIso = fmtD(n);
+  const jam = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
+
+  const payload = {
+    telegram_id : String(telegramId),
+    admin_id    : MY_ID,
+    jam,
+    tanggal_iso : tanggalIso,
+    latitude    : _mejaGpsLocation?.lat  ?? 0,
+    longitude   : _mejaGpsLocation?.lng  ?? 0,
+    accuracy    : _mejaGpsLocation?.acc  ?? 0,
+    lokasi_nama : 'Meja Absen',
+    face_match  : 100,
+    timestamp   : Math.floor(Date.now()/1000)
+  };
+
   try {
-    const n = nowWITA();
-    const payload = {
-      user: { id: telegramId },
-      meja_mode: true,
-      timestamp: Math.floor(Date.now()/1000),
-      face_match: 100,
-      jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`
-    };
-    const res = await apiFetch(P.absen, { method:'POST', body: JSON.stringify(payload) });
-    if (res.ok) {
-      showRekapToast('success', `✅ Absen ${nama} berhasil tercatat`);
+    const res = await apiFetch(P.mejaAbsen, { method:'POST', body: JSON.stringify(payload) });
+    const d = await res.json().catch(() => ({}));
+
+    if (res.ok && d.ok !== false) {
+      const nama = d.nama || d.pegawai?.nama || 'Pegawai';
+      const jenis = d.jenis_absen || 'ABSEN';
+      const ismasuk = jenis.toUpperCase().includes('MASUK');
+      if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
+      _updateMejaCnt();
+      _setMejaStatus('active','✅',`${nama} — ${jenis}`,'Siap scan berikutnya...');
+      setCamStatus('ok','✅',`${nama}`,`${jenis} berhasil dicatat`);
+      _showMejaResult('success', `✅ ${nama} — ${jenis} berhasil dicatat`);
       setTimeout(() => {
         window._mejaProcessing = false;
-      }, 3000); // 3 detik cold-down agar tidak double scan
+        _setMejaStatus('active','🔍','Siap Scan...','Posisikan wajah pegawai ke kamera');
+      }, 3000);
     } else {
-      throw 0;
+      const errMsg = d.message || d.error || 'Gagal mencatat absen';
+      _mejaCnt.gagal++;
+      _updateMejaCnt();
+      setCamStatus('bad','❌','Gagal',errMsg);
+      _setMejaStatus('active','⚠️','Gagal Catat',errMsg);
+      _showMejaResult('fail', `❌ ${errMsg}`);
+      setTimeout(() => { window._mejaProcessing = false; }, 3000);
     }
   } catch(e) {
-    showRekapToast('fail', `❌ Gagal mencatat absen ${nama}`);
+    _mejaCnt.gagal++;
+    _updateMejaCnt();
+    setCamStatus('bad','🔌','Koneksi Error','Server tidak merespons');
+    _setMejaStatus('active','⚠️','Error Koneksi','Pastikan server n8n aktif');
+    _showMejaResult('fail', '❌ Server tidak merespons');
     window._mejaProcessing = false;
   }
 }

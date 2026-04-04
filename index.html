@@ -3553,8 +3553,9 @@ async function doCapture() {
   // Face recognition — bandingkan dengan data referensi
   const faceMatch = await matchFace(dataUrl);
 
-  _captureData = { dataUrl, faceOk, livenessOk,
-                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label };
+  _captureData = { dataUrl, faceOk, livenessOk, 
+                   faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
+                   descriptor: faceMatch.descriptor };
 
   // Tampilkan preview
   $('camPreviewImg').src = dataUrl;

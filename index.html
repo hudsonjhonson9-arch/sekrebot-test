@@ -6952,36 +6952,50 @@ File di Google Drive juga akan dihapus.`)) return;
     async function getFaceDescriptor(input) {
       if (!window.faceapi) return null;
       try {
-        // 1. Coba deteksi dengan SSD (lebih akurat untuk gambar tunggal)
-        let detection = await faceapi.detectSingleFace(input).withFaceLandmarks().withFaceDescriptor();
+        // Coba Tiny dahulu (lebih cepat, cocok mobile)
+        let detection = await faceapi
+          .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320, scoreThreshold: 0.4   // ← diturunkan dari 0.5
+          }))
+          .withFaceLandmarks(true)
+          .withFaceDescriptor();
 
-        // 2. Fallback ke Tiny jika SSD gagal (untuk fleksibilitas)
+        // Fallback ke SSD jika Tiny gagal
         if (!detection) {
-          detection = await faceapi.detectSingleFace(input, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 }))
-            .withFaceLandmarks(true)
+          detection = await faceapi
+            .detectSingleFace(input)              // SSD MobileNet
+            .withFaceLandmarks()
             .withFaceDescriptor();
         }
 
         if (!detection) return null;
         return detection.descriptor; // Float32Array[128]
-      } catch (e) { console.warn('getFaceDescriptor error:', e); return null; }
+      } catch (e) {
+        console.warn('getFaceDescriptor error:', e);
+        return null;
+      }
     }
 
     // ── Extract descriptor from a dataUrl image ──
     async function getDescriptorFromDataUrl(dataUrl) {
-      return new Promise(async (resolve) => {
+      if (!dataUrl || !window.faceapi) return null;
+      return new Promise((resolve) => {
         try {
           const img = new Image();
           img.crossOrigin = 'anonymous';
+
+          const timeout = setTimeout(() => resolve(null), 8000);
+
           img.onload = async () => {
+            clearTimeout(timeout);
             const cnv = document.createElement('canvas');
-            cnv.width = img.width; cnv.height = img.height;
-            const ctx = cnv.getContext('2d');
-            ctx.drawImage(img, 0, 0);
+            cnv.width = img.width;
+            cnv.height = img.height;
+            cnv.getContext('2d').drawImage(img, 0, 0);
             const desc = await getFaceDescriptor(cnv);
             resolve(desc);
           };
-          img.onerror = () => resolve(null);
+          img.onerror = () => { clearTimeout(timeout); resolve(null); };
           img.src = dataUrl;
         } catch (_) { resolve(null); }
       });
@@ -6991,16 +7005,28 @@ File di Google Drive juga akan dihapus.`)) return;
       try {
         const uid = String(MY_ID || '');
         const savedAt = new Date().toISOString();
-        // Use existing descriptor from capture to avoid re-extraction failure
-        let descriptorToSave = descriptor;
+
+        let descriptorToSave = descriptor
+          ? (Array.isArray(descriptor) ? descriptor : Array.from(descriptor))
+          : null;
+
+        // Fallback: re-extract dari foto jika descriptor tidak tersedia
+        if (!descriptorToSave && dataUrl && window.faceapi && _faceApiLoaded) {
+          setCamStatus('ok', '🔍', 'Mengekstrak data wajah...', 'Harap tunggu sebentar');
+          try {
+            const desc = await getDescriptorFromDataUrl(dataUrl);
+            if (desc) descriptorToSave = Array.from(desc);
+          } catch (e) { console.warn('Fallback extraction error:', e); }
+        }
+
         if (!descriptorToSave) {
-          alert("⚠️ Wajah tidak terdeteksi dengan jelas. Harap posisikan wajah lurus ke kamera dan ambil foto lagi.");
+          alert('⚠️ Wajah tidak terdeteksi dengan jelas.\n\nPastikan:\n• Pencahayaan cukup\n• Wajah menghadap lurus ke kamera\n• Tidak ada objek menutupi wajah\n\nLalu coba lagi.');
           return false;
         }
-        const descriptorArray = Array.from(descriptorToSave);
-        const faceData = { dataUrl, descriptor: descriptorArray, savedAt };
+
+        const faceData = { dataUrl, descriptor: descriptorToSave, savedAt };
         _writeFaceRefLocal(uid, faceData);
-        _sendFaceToServer(dataUrl, savedAt, descriptorArray);
+        _sendFaceToServer(dataUrl, savedAt, descriptorToSave);
         return true;
       } catch (_) { return false; }
     }
@@ -7060,40 +7086,38 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function matchFace(capturedDataUrl) {
       const ref = getFaceRef();
-      if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip' };
+      if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
-      // Prefer descriptor-based matching (face-api.js)
       let refDesc = ref.descriptor;
-      const capturedDesc = await getDescriptorFromDataUrl(capturedDataUrl);
+      const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
+      const capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
 
-      if (refDesc && capturedDesc) {
-        // If refDesc is a plain array, it's already correct
-        const dist = euclideanDistance(refDesc, Array.from(capturedDesc));
-        // Distance thresholds: ≤0.45 = excellent match, ≤0.55 = good, ≤0.65 = marginal, >0.65 = no match
-        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100)); // 0-100 scale
-        if (dist <= 0.45) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', distance: dist };
-        if (dist <= 0.55) return { score, label: `✅ Cocok ${score}%`, cls: 'face-match-ok', distance: dist };
-        if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', distance: dist };
-        return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', distance: dist };
+      if (refDesc && capturedDescArr) {
+        const dist = euclideanDistance(refDesc, capturedDescArr);
+        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
+        let label, cls;
+        if (dist <= 0.45) { label = `✅ Dikenali ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= 0.55) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= 0.65) { label = `⚠️ Kurang Jelas ${score}%`; cls = 'face-match-warn'; }
+        else { label = `❌ Tidak Dikenali ${score}%`; cls = 'face-match-warn'; }
+        return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
-      // Fallback: ref has no descriptor (old registration) → re-extract from saved image
-      if (!refDesc && ref.dataUrl && capturedDesc) {
+      // refDesc belum ada → re-extract dari foto referensi
+      if (!refDesc && ref.dataUrl && capturedDescArr) {
         const reExtracted = await getDescriptorFromDataUrl(ref.dataUrl);
         if (reExtracted) {
-          refDesc = Array.from(reExtracted);
-          // Save re-extracted descriptor for future use
-          _writeFaceRefLocal(String(MY_ID || ''), { ...ref, descriptor: refDesc });
-          const dist = euclideanDistance(refDesc, Array.from(capturedDesc));
+          const reArr = Array.from(reExtracted);
+          _writeFaceRefLocal(String(MY_ID || ''), { ...ref, descriptor: reArr });
+          const dist = euclideanDistance(reArr, capturedDescArr);
           const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
-          if (dist <= 0.55) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', distance: dist };
-          if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', distance: dist };
-          return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', distance: dist };
+          if (dist <= 0.55) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', capturedDescriptor: capturedDescArr, distance: dist };
+          if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', capturedDescriptor: capturedDescArr, distance: dist };
+          return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', capturedDescriptor: capturedDescArr, distance: dist };
         }
       }
 
-      // Can't compare — model might not have loaded
-      return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn' };
+      return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
     }
 
     function updateFaceRegUI() {
@@ -7393,21 +7417,24 @@ File di Google Drive juga akan dihapus.`)) return;
       const ctx = cnv.getContext('2d');
       const wrap = $('camVideoWrap');
 
-      let lastDetect = 0;
-      let lastMejaMatch = 0;
-      const INTERVAL = 120; // ms antar deteksi (≈8 fps untuk hemat baterai)
+      cnv.width = vid.videoWidth || 320;
+      cnv.height = vid.videoHeight || 240;
 
-      // Fix #5: Fallback 15 detik — pesan lebih informatif
-      setTimeout(() => {
+      let lastDetect = 0;
+      let lastLiveMatch = 0;
+      const INTERVAL = 150; // ms (~6fps) — hemat baterai
+
+      // Fallback 15 detik — aktifkan tombol manual
+      const _fbTimer = setTimeout(() => {
         if (!$('btnCapture').dataset.enabled) {
           $('btnCapture').disabled = false;
           $('btnCapture').dataset.enabled = '1';
-          setCamStatus('warn', '⚠️', 'Deteksi Wajah Timeout',
-            'Wajah tidak terdeteksi otomatis. Pastikan pencahayaan cukup & wajah menghadap kamera, lalu tekan tombol.');
+          setCamStatus('warn', '⚠️', 'Timeout Deteksi Otomatis',
+            'Pencahayaan kurang? Tekan tombol untuk ambil foto manual.');
         }
       }, 15000);
 
-      // ── Live Face Match: descriptor-based real-time matching every 3 seconds ──
+      // Live face match setiap 3 detik (update sub-label similarity)
       const _ref = getFaceRef();
       if (_ref && _ref.descriptor && _faceApiLoaded) {
         _liveMatchTimer = setInterval(async () => {
@@ -7421,8 +7448,8 @@ File di Google Drive juga akan dihapus.`)) return;
             const sub = $('faceRegSub');
             if (sub) {
               if (dist <= 0.55) sub.textContent = `🟢 Wajah cocok ${score}% · Siap absen`;
-              else if (dist <= 0.70) sub.textContent = `🟡 Kemiripan ${score}% · Posisikan wajah lebih dekat`;
-              else sub.textContent = `🔴 Belum cocok ${score}% · Pastikan pencahayaan cukup`;
+              else if (dist <= 0.70) sub.textContent = `🟡 Kemiripan ${score}% · Dekatkan wajah`;
+              else sub.textContent = `🔴 Belum cocok ${score}% · Pastikan pencahayaan`;
             }
           } catch (_) { }
         }, 3000);
@@ -7433,21 +7460,21 @@ File di Google Drive juga akan dihapus.`)) return;
         if (ts - lastDetect < INTERVAL) return;
         lastDetect = ts;
 
-        // ── MEJA ABSEN (1:N Match) ──
-        if (_isMejaAbsen && _allFaceDescriptors.length > 0 && ts - lastMejaMatch > 2000) {
-          lastMejaMatch = ts;
+        // ── Meja Absen 1:N matching ──
+        if (_isMejaAbsen && _allFaceDescriptors.length > 0 && ts - lastLiveMatch > 2000) {
+          lastLiveMatch = ts;
           try {
-            const fullDetection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+            const fullDet = await faceapi
+              .detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
               .withFaceLandmarks(true)
               .withFaceDescriptor();
-
-            if (fullDetection) {
-              const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-              const bestMatch = faceMatcher.findBestMatch(fullDetection.descriptor);
+            if (fullDet) {
+              const matcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+              const bestMatch = matcher.findBestMatch(fullDet.descriptor);
               if (bestMatch.label !== 'unknown') {
-                _onMejaAbsenMatchFound(bestMatch.label, fullDetection.descriptor);
+                _onMejaAbsenMatchFound(bestMatch.label, fullDet.descriptor);
               } else {
-                setCamStatus('warn', '🔍', 'Mencari Pegawai...', 'Posisikan wajah dengan jelas di depan kamera');
+                setCamStatus('warn', '🔍', 'Mencari Pegawai...', 'Posisikan wajah dengan jelas');
               }
             }
           } catch (e) { console.warn('Meja match error:', e); }
@@ -7455,30 +7482,32 @@ File di Google Drive juga akan dihapus.`)) return;
 
         ctx.clearRect(0, 0, cnv.width, cnv.height);
 
+        // ── Deteksi wajah ── (threshold diturunkan untuk mobile)
         let detection = null;
         try {
-          detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }));
+          detection = await faceapi.detectSingleFace(
+            vid,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 })
+          );
         } catch (_) { return; }
 
         if (!detection) {
           wrap.className = 'cam-video-wrap face-bad';
-          setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Hadapkan wajah ke kamera dalam oval');
+          setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Hadapkan wajah ke kamera, pastikan cahaya cukup');
           _livenessState.faceOk = false;
           return;
         }
 
-        const box = detection.box;
-        const x = box.x, y = box.y, w = box.width, h = box.height;
-
-        // Jarak minimal: wajah harus >= 3% area frame
+        // Gambar bounding box
+        const { x, y, width: w, height: h } = detection.box;
         const faceAreaRatio = (w * h) / (cnv.width * cnv.height);
-        if (faceAreaRatio < 0.03) {
+
+        if (faceAreaRatio < 0.025) { // ← diturunkan dari 0.03
           wrap.className = 'cam-video-wrap face-bad';
           setCamStatus('bad', '🔍', 'Wajah Terlalu Kecil', 'Dekatkan wajah ke kamera');
           return;
         }
 
-        // Gambar kotak wajah
         ctx.strokeStyle = '#22c55e';
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, w, h);
@@ -7487,14 +7516,15 @@ File di Google Drive juga akan dihapus.`)) return;
         _livenessState.ch1 = true;
         _livenessState.ch2 = true;
         wrap.className = 'cam-video-wrap face-ok';
-        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Wajah siap, mengambil foto otomatis...');
+        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mengambil foto otomatis...');
 
-        if (!document.getElementById('btnCapture').dataset.enabled) {
-          document.getElementById('btnCapture').disabled = false;
-          document.getElementById('btnCapture').dataset.enabled = '1';
+        if (!$('btnCapture').dataset.enabled) {
+          clearTimeout(_fbTimer);
+          $('btnCapture').disabled = false;
+          $('btnCapture').dataset.enabled = '1';
         }
-        // Langsung capture ketika wajah oke
-        // resilient retry: jika sudah dipicu tapi belum ada data dalam 3 detik, boleh coba lagi
+
+        // Auto-capture dengan anti-spam (3 detik jika gagal)
         const now = Date.now();
         if (!_autoCaptured || (!_captureData && now - (window._lastAutoTrigger || 0) > 3000)) {
           _autoCaptured = true;
@@ -7502,36 +7532,37 @@ File di Google Drive juga akan dihapus.`)) return;
           setTimeout(() => { if (!_captureData) doCapture(); }, 400);
         }
       }
+
       _detectLoop = requestAnimationFrame(loop);
     }
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
       try {
-        if (_captureData) return; // sudah ada data
+        if (_captureData) return;
         $('btnCapture').disabled = true;
         setCamStatus('ok', '📸', 'Sedang Memproses...', 'Harap tetap diam sejenak');
 
         const vid = $('camVideo');
         if (!vid || vid.readyState < 2) throw new Error('Video tidak siap');
 
+        // ── Ambil frame dari video ──
         const cnv = document.createElement('canvas');
         cnv.width = vid.videoWidth || 640;
         cnv.height = vid.videoHeight || 480;
-        const ctx = cnv.getContext('2d');
-
-        const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
-
-        // Mirroring dinonaktifkan
-        ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
+        cnv.getContext('2d').drawImage(vid, 0, 0, cnv.width, cnv.height);
         const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
+
+        // ── Mode dokumen/bukti sederhana ──
+        const isSimpleCap = _absenCallbackAfterCam
+          && typeof _absenCallbackAfterCam === 'object'
+          && _absenCallbackAfterCam.isSimple;
 
         if (isSimpleCap) {
           _captureData = { dataUrl, faceOk: true, livenessOk: true, faceMatchScore: 1, faceMatchLabel: 'Dokumen' };
           $('camPreviewImg').src = dataUrl;
           $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
           $('camPreview').classList.add('show');
-
           setTimeout(() => {
             closeCamOverlay();
             const cb = _absenCallbackAfterCam;
@@ -7541,60 +7572,82 @@ File di Google Drive juga akan dihapus.`)) return;
           return;
         }
 
-        // ==== MODE ABSEN (AI Match) ====
-        const livenessOk = true; // liveness bypass
-        const faceOk = _livenessState.faceOk;
+        // ══ Mode absen / registrasi wajah ══
 
-        // Face recognition — bandingkan dengan data referensi (fail-safe)
-        let faceMatch = { score: 0, label: 'Tanpa Cocok', cls: 'cpb-warn' };
-        try {
-          // Timeout match agar tidak hang (max 3 detik)
-          const matchPromise = matchFace(dataUrl);
-          const timeoutPromise = new Promise(r => setTimeout(() => r({ score: 0, label: 'Match Timeout', cls: 'cpb-warn' }), 3500));
-          faceMatch = await Promise.race([matchPromise, timeoutPromise]);
-        } catch (e) {
-          console.warn('Match error:', e);
+        // FIX: Ekstrak descriptor LANGSUNG dari canvas (bukan via matchFace)
+        // Ini mencegah descriptor = undefined yang menyebabkan registrasi selalu gagal
+        let capturedDescriptor = null;
+        if (window.faceapi && _faceApiLoaded) {
+          try {
+            setCamStatus('ok', '🔍', 'Menganalisis wajah...', 'Harap diam sebentar');
+            const rawDesc = await getFaceDescriptor(cnv);
+            if (rawDesc) capturedDescriptor = Array.from(rawDesc);
+          } catch (e) { console.warn('Descriptor extract error:', e); }
         }
 
+        const faceOk = _livenessState.faceOk || !!capturedDescriptor;
+        const livenessOk = true; // liveness bypass
+
+        // Match dengan referensi (gunakan descriptor yang sudah diekstrak)
+        let faceMatch = { score: 0, label: 'Tanpa Referensi', cls: 'cpb-warn' };
+        try {
+          const ref = getFaceRef();
+          if (ref && ref.descriptor && capturedDescriptor) {
+            const dist = euclideanDistance(ref.descriptor, capturedDescriptor);
+            const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
+            if (dist <= 0.45) faceMatch = { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok' };
+            else if (dist <= 0.55) faceMatch = { score, label: `✅ Cocok ${score}%`, cls: 'face-match-ok' };
+            else if (dist <= 0.65) faceMatch = { score, label: `⚠️ Kurang ${score}%`, cls: 'face-match-warn' };
+            else faceMatch = { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn' };
+          } else if (!ref) {
+            faceMatch = { score: -1, label: 'Belum ada referensi', cls: 'face-match-skip' };
+          } else if (!capturedDescriptor) {
+            faceMatch = { score: 0, label: '⚠️ Wajah tidak terdeteksi', cls: 'face-match-warn' };
+          }
+        } catch (e) { console.warn('Match error:', e); }
+
+        // ── Simpan hasil capture dengan descriptor ──
         _captureData = {
-          dataUrl, faceOk, livenessOk,
-          faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
-          descriptor: faceMatch.descriptor
+          dataUrl,
+          faceOk,
+          livenessOk,
+          faceMatchScore: faceMatch.score,
+          faceMatchLabel: faceMatch.label,
+          descriptor: capturedDescriptor   // ← FIX: selalu terisi, bukan undefined
         };
 
-        // UI Review
+        // UI review
         $('camPreviewImg').src = dataUrl;
         const matchBadge = `<span class="cam-preview-badge ${faceMatch.cls || 'cpb-warn'} face-match-badge">${faceMatch.label}</span>`;
         $('camPreviewInfo').innerHTML = [
-          faceOk ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
+          faceOk ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>'
+            : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
           matchBadge
         ].join('');
         $('camPreview').classList.add('show');
 
-        // Stop feedback loop
+        // Stop loop & tutup kamera
         stopDetectLoop();
         stopCamStream();
         $('camVideoWrap').style.display = 'none';
         $('livenessCard').style.display = 'none';
         $('faceRegCard').style.display = 'none';
-
         setCamStatus('ok', '✅', 'Selesai', 'Data absensi sedang dikirim...');
 
-        // Final Callback
         setTimeout(() => {
           $('camOverlay').classList.add('hidden');
           const cb = _absenCallbackAfterCam;
           if (cb) {
             if (typeof cb === 'function') cb(_captureData);
-            else if (cb && typeof cb === 'object' && typeof cb.onDone === 'function') cb.onDone(_captureData);
+            else if (cb && typeof cb.onDone === 'function') cb.onDone(_captureData);
           }
         }, 1000);
 
       } catch (err) {
         console.error('Capture failed:', err);
-        _autoCaptured = false; // Reset agar bisa coba lagi
+        _autoCaptured = false;
         $('btnCapture').disabled = false;
-        setCamStatus('error', '⚠️', 'Gagal Mengambil Foto', 'Coba ulangi posisi wajah Anda');
+        setCamStatus('warn', '⚠️', 'Gagal Mengambil Foto', 'Coba ulangi posisi wajah Anda');
       }
     }
 

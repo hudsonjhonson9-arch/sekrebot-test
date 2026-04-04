@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bapperida-v3';
+const CACHE_NAME = 'bapperida-v4';
 const STATIC_ASSETS = [
     './',
     './index.html',

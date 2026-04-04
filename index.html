@@ -7493,9 +7493,12 @@ File di Google Drive juga akan dihapus.`)) return;
           document.getElementById('btnCapture').disabled = false;
           document.getElementById('btnCapture').dataset.enabled = '1';
         }
-        // Langsung capture ketika wajah oke (krn liveness dihapus)
-        if (!_autoCaptured) {
+        // Langsung capture ketika wajah oke
+        // resilient retry: jika sudah dipicu tapi belum ada data dalam 3 detik, boleh coba lagi
+        const now = Date.now();
+        if (!_autoCaptured || (!_captureData && now - (window._lastAutoTrigger || 0) > 3000)) {
           _autoCaptured = true;
+          window._lastAutoTrigger = now;
           setTimeout(() => { if (!_captureData) doCapture(); }, 400);
         }
       }
@@ -7504,86 +7507,95 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-      $('btnCapture').disabled = true;
-      const vid = $('camVideo');
-      const cnv = document.createElement('canvas');
-      cnv.width = vid.videoWidth || 640;
-      cnv.height = vid.videoHeight || 480;
-      const ctx = cnv.getContext('2d');
+      try {
+        if (_captureData) return; // sudah ada data
+        $('btnCapture').disabled = true;
+        setCamStatus('ok', '📸', 'Sedang Memproses...', 'Harap tetap diam sejenak');
 
-      const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
-      const isEnvCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.facingMode === 'environment';
+        const vid = $('camVideo');
+        if (!vid || vid.readyState < 2) throw new Error('Video tidak siap');
 
-      // Mirroring dinonaktifkan untuk semua kamera
-      ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
+        const cnv = document.createElement('canvas');
+        cnv.width = vid.videoWidth || 640;
+        cnv.height = vid.videoHeight || 480;
+        const ctx = cnv.getContext('2d');
 
-      const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
+        const isSimpleCap = _absenCallbackAfterCam && typeof _absenCallbackAfterCam === 'object' && _absenCallbackAfterCam.isSimple;
 
-      if (isSimpleCap) {
-        // Mode Dokumen/Generik
-        _captureData = { dataUrl, faceOk: true, livenessOk: true, faceMatchScore: 1, faceMatchLabel: 'Dokumen' };
+        // Mirroring dinonaktifkan
+        ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
+        const dataUrl = cnv.toDataURL('image/jpeg', 0.82);
+
+        if (isSimpleCap) {
+          _captureData = { dataUrl, faceOk: true, livenessOk: true, faceMatchScore: 1, faceMatchLabel: 'Dokumen' };
+          $('camPreviewImg').src = dataUrl;
+          $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
+          $('camPreview').classList.add('show');
+
+          setTimeout(() => {
+            closeCamOverlay();
+            const cb = _absenCallbackAfterCam;
+            if (typeof cb === 'function') cb(_captureData);
+            else if (cb && typeof cb.onDone === 'function') cb.onDone(_captureData);
+          }, 800);
+          return;
+        }
+
+        // ==== MODE ABSEN (AI Match) ====
+        const livenessOk = true; // liveness bypass
+        const faceOk = _livenessState.faceOk;
+
+        // Face recognition — bandingkan dengan data referensi (fail-safe)
+        let faceMatch = { score: 0, label: 'Tanpa Cocok', cls: 'cpb-warn' };
+        try {
+          // Timeout match agar tidak hang (max 3 detik)
+          const matchPromise = matchFace(dataUrl);
+          const timeoutPromise = new Promise(r => setTimeout(() => r({ score: 0, label: 'Match Timeout', cls: 'cpb-warn' }), 3500));
+          faceMatch = await Promise.race([matchPromise, timeoutPromise]);
+        } catch (e) {
+          console.warn('Match error:', e);
+        }
+
+        _captureData = {
+          dataUrl, faceOk, livenessOk,
+          faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
+          descriptor: faceMatch.descriptor
+        };
+
+        // UI Review
         $('camPreviewImg').src = dataUrl;
-        $('camPreviewInfo').innerHTML = '<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span>';
+        const matchBadge = `<span class="cam-preview-badge ${faceMatch.cls || 'cpb-warn'} face-match-badge">${faceMatch.label}</span>`;
+        $('camPreviewInfo').innerHTML = [
+          faceOk ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
+          matchBadge
+        ].join('');
         $('camPreview').classList.add('show');
-        // Langsung jalankan callback untuk mode dokumen
-        if (typeof _absenCallbackAfterCam === 'function') {
-          // old signature
-          _absenCallbackAfterCam(_captureData);
-          closeCamOverlay();
-        } else if (_absenCallbackAfterCam && typeof _absenCallbackAfterCam.onDone === 'function') {
-          // object signature
-          _absenCallbackAfterCam.onDone(_captureData);
-          closeCamOverlay();
-        }
 
-        return;
+        // Stop feedback loop
+        stopDetectLoop();
+        stopCamStream();
+        $('camVideoWrap').style.display = 'none';
+        $('livenessCard').style.display = 'none';
+        $('faceRegCard').style.display = 'none';
+
+        setCamStatus('ok', '✅', 'Selesai', 'Data absensi sedang dikirim...');
+
+        // Final Callback
+        setTimeout(() => {
+          $('camOverlay').classList.add('hidden');
+          const cb = _absenCallbackAfterCam;
+          if (cb) {
+            if (typeof cb === 'function') cb(_captureData);
+            else if (cb && typeof cb === 'object' && typeof cb.onDone === 'function') cb.onDone(_captureData);
+          }
+        }, 1000);
+
+      } catch (err) {
+        console.error('Capture failed:', err);
+        _autoCaptured = false; // Reset agar bisa coba lagi
+        $('btnCapture').disabled = false;
+        setCamStatus('error', '⚠️', 'Gagal Mengambil Foto', 'Coba ulangi posisi wajah Anda');
       }
-
-      // ==== MODE ABSEN (Dgn AI Wajah & Liveness) ====
-      const livenessOk = _livenessState.ch1 && _livenessState.ch2;
-      const faceOk = _livenessState.faceOk;
-
-      // Face recognition — bandingkan dengan data referensi
-      const faceMatch = await matchFace(dataUrl);
-
-      _captureData = {
-        dataUrl, faceOk, livenessOk,
-        faceMatchScore: faceMatch.score, faceMatchLabel: faceMatch.label,
-        descriptor: faceMatch.descriptor
-      };
-
-      // Tampilkan preview
-      $('camPreviewImg').src = dataUrl;
-      let badges = '';
-      const matchBadge = faceMatch.score >= 0
-        ? `<span class="cam-preview-badge ${faceMatch.cls} face-match-badge">${faceMatch.label}</span>` : '';
-      badges = [
-        faceOk ? '<span class="cam-preview-badge cpb-ok">✅ Wajah</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ No Wajah</span>',
-        livenessOk ? '<span class="cam-preview-badge cpb-ok">✅ Liveness</span>' : '<span class="cam-preview-badge cpb-warn">⚠️ Liveness</span>',
-        matchBadge
-      ].join('');
-
-
-      $('camPreviewInfo').innerHTML = badges;
-      $('camPreview').classList.add('show');
-
-      stopDetectLoop();
-      stopCamStream();
-      $('camVideoWrap').style.display = 'none';
-      $('livenessCard').style.display = 'none';
-      $('faceRegCard').style.display = 'none';
-
-      setCamStatus('ok', '📸', 'Foto Berhasil Diambil', 'Melanjutkan proses absen...');
-
-      // Tutup overlay dan lanjutkan absen setelah 1 detik
-      setTimeout(() => {
-        $('camOverlay').classList.add('hidden');
-        const cb = _absenCallbackAfterCam;
-        if (cb) {
-          if (typeof cb === 'function') cb(_captureData);
-          else if (cb && typeof cb === 'object' && typeof cb.onDone === 'function') cb.onDone(_captureData);
-        }
-      }, 1000);
     }
 
     async function skipVerifikasi() {

@@ -3001,13 +3001,16 @@ async function getDescriptorFromDataUrl(dataUrl) {
   });
 }
 
-async function saveFaceRef(dataUrl) {
+async function saveFaceRef(dataUrl, descriptor) {
   try {
     const uid = String(MY_ID||'');
     const savedAt = new Date().toISOString();
-    // Extract face descriptor
-    const descriptor = await getDescriptorFromDataUrl(dataUrl);
-    const descriptorArray = descriptor ? Array.from(descriptor) : null;
+    // Use existing descriptor from capture to avoid re-extraction failure
+    let descriptorToSave = descriptor;
+    if (!descriptorToSave) {
+      descriptorToSave = await getDescriptorFromDataUrl(dataUrl);
+    }
+    const descriptorArray = descriptorToSave ? Array.from(descriptorToSave) : null;
     const faceData = { dataUrl, descriptor: descriptorArray, savedAt };
     _writeFaceRefLocal(uid, faceData);
     _sendFaceToServer(dataUrl, savedAt, descriptorArray);
@@ -3136,7 +3139,7 @@ function updateFaceRegUI() {
 function registerFaceFromPreview() {
   openCamOverlay({ onDone: async (cap) => {
     if (!cap?.dataUrl) return;
-    const ok = await saveFaceRef(cap.dataUrl);
+    const ok = await saveFaceRef(cap.dataUrl, cap.descriptor);
     if (ok) {
       updateFaceRegUI();
       updateProfilFaceUI();
@@ -7422,7 +7425,7 @@ async function daftarWajahPaksa() {
       return;
     }
     if (status) { status.textContent = 'Menyimpan data wajah...'; status.style.color = 'var(--muted)'; }
-    const ok = saveFaceRef(cap.dataUrl);
+    const ok = await saveFaceRef(cap.dataUrl, cap.descriptor);
     if (ok) {
       if (status) { status.textContent = 'Wajah berhasil didaftarkan!'; status.style.color = 'var(--success)'; }
       updateFaceRegUI();
@@ -7818,7 +7821,7 @@ function adminCaptureFaceFor(uid, name) {
     isRegister: true,
     onDone: async (cap) => {
       if (!cap?.dataUrl) return;
-      const ok = await saveFaceRefFor(uid, cap.dataUrl);
+      const ok = await saveFaceRefFor(uid, cap.dataUrl, cap.descriptor);
       if (ok) {
         loadAdminFaceReg();
         setCamStatus('ok','🧠','Wajah Terdaftar!',`Wajah ${name} berhasil disimpan.`);
@@ -7827,11 +7830,16 @@ function adminCaptureFaceFor(uid, name) {
   });
 }
 
-async function saveFaceRefFor(uid, dataUrl) {
+async function saveFaceRefFor(uid, dataUrl, descriptor) {
   try {
     const savedAt = new Date().toISOString();
-    const descriptor = await getDescriptorFromDataUrl(dataUrl);
-    const descriptorArray = descriptor ? Array.from(descriptor) : null;
+    let descriptorArray = null;
+    if (descriptor) {
+      descriptorArray = Array.isArray(descriptor) ? descriptor : Array.from(descriptor);
+    } else {
+      const extracted = await getDescriptorFromDataUrl(dataUrl);
+      if (extracted) descriptorArray = Array.from(extracted);
+    }
     
     // Save to local cache
     _writeFaceRefLocal(uid, { dataUrl, descriptor: descriptorArray, savedAt });

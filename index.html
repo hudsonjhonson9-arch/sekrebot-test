@@ -7470,9 +7470,9 @@ File di Google Drive juga akan dihapus.`)) return;
         const box = detection.box;
         const x = box.x, y = box.y, w = box.width, h = box.height;
 
-        // Jarak minimal: wajah harus >= 5% area frame
+        // Jarak minimal: wajah harus >= 3% area frame
         const faceAreaRatio = (w * h) / (cnv.width * cnv.height);
-        if (faceAreaRatio < 0.05) {
+        if (faceAreaRatio < 0.03) {
           wrap.className = 'cam-video-wrap face-bad';
           setCamStatus('bad', '🔍', 'Wajah Terlalu Kecil', 'Dekatkan wajah ke kamera');
           return;
@@ -7496,7 +7496,7 @@ File di Google Drive juga akan dihapus.`)) return;
         // Langsung capture ketika wajah oke (krn liveness dihapus)
         if (!_autoCaptured) {
           _autoCaptured = true;
-          setTimeout(() => { if (!_captureData) doCapture(); }, 800);
+          setTimeout(() => { if (!_captureData) doCapture(); }, 400);
         }
       }
       _detectLoop = requestAnimationFrame(loop);

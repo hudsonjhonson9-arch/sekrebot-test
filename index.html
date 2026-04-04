@@ -7096,8 +7096,8 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!res || !res.ok) return;
         const json = await res.json();
         const dataUrl = json.dataUrl || json.foto_base64 || null;
-        // Support 'histogram' field for backward compatibility with n8n responses
-        const descriptor = json.face_descriptor || json.descriptor || json.histogram || null;
+        // Support 'face_histogram' (Supabase), 'face_descriptor' (Internal), and 'descriptor' (Legacy)
+        const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.saved_at || json.savedAt || new Date().toISOString();
         if (dataUrl) {
           _writeFaceRefLocal(uid, { dataUrl, descriptor, savedAt });
@@ -7276,10 +7276,12 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Buka overlay kamera ── */
     async function openCamOverlay(onDone) {
+      const isMeja = onDone === 'meja';
       _absenCallbackAfterCam = onDone;
       _captureData = null;
       _autoCaptured = false;
       _livenessState = { faceOk: false };
+      window._isMejaMode = isMeja; // Set global flag for continuous mode
 
       $('camOverlay').classList.remove('hidden');
       $('modelLoading').style.display = 'block';
@@ -7452,6 +7454,35 @@ File di Google Drive juga akan dihapus.`)) return;
         else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
       }
 
+      // Handle "Meja Absen" Matching (1:N)
+      if (window._isMejaMode && _allFaceDescriptors.length > 0 && descriptor) {
+        const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+        const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
+        if (bestMatch.label !== 'unknown') {
+          // Employee Found!
+          _onMejaAbsenMatchFound(bestMatch.label, descriptor);
+          if (window._isMejaMode) {
+            // Stay open, reset for next person after a delay
+            setTimeout(() => {
+              _captureData = null;
+              _autoCaptured = false;
+              setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai ke kamera');
+              $('camPreview').classList.remove('show');
+              startDetectLoop();
+            }, 3000);
+            return; // Don't close
+          }
+        } else {
+           setCamStatus('bad', '👤', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
+           setTimeout(() => {
+             _captureData = null;
+             _autoCaptured = false;
+             startDetectLoop();
+           }, 2000);
+           return;
+        }
+      }
+
       _captureData = { dataUrl, descriptor, faceOk: true, livenessOk: true };
 
       // Preview UI
@@ -7461,6 +7492,7 @@ File di Google Drive juga akan dihapus.`)) return;
       stopCamStream();
 
       setTimeout(() => {
+        if (window._isMejaAbsen || window._isMejaMode) return; // Stay open in Meja Mode
         closeCamOverlay();
         const cb = _absenCallbackAfterCam;
         if (typeof cb === 'function') cb(_captureData);
@@ -11692,11 +11724,9 @@ File di Google Drive juga akan dihapus.`)) return;
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
           const sigData = sigMap[uid];
-          const hasSig = !!(sigData && sigData.signature);
-
-          const faceData = faceMap[uid];
-          const hasFace = !!(faceData && (faceData.dataUrl || faceData.foto_base64));
-          const tgl = hasFace ? new Date(faceData.savedAt || faceData.saved_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : null;
+          const hasFace = !!(u.has_face || (faceData && (faceData.dataUrl || faceData.foto_base64)));
+          const hasSig = !!(u.has_signature || (sigData && sigData.signature));
+          const tgl = (faceData && (faceData.savedAt || faceData.saved_at)) ? new Date(faceData.savedAt || faceData.saved_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : null;
 
           return `<div class="face-adm-item">
         <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
@@ -12251,7 +12281,7 @@ File di Google Drive juga akan dihapus.`)) return;
     ════════════════════════════════════════════════════════ */
 
     /* ════ MEJA ABSEN (1:N matching) ════ */
-    let _isMejaAbsen = false;
+    window._isMejaAbsen = false;
     let _allFaceDescriptors = [];
     let _mejaGpsLocation = null;
     let _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
@@ -12330,8 +12360,9 @@ File di Google Drive juga akan dihapus.`)) return;
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);
 
-        _allFaceDescriptors = list.filter(f => f.descriptor).map(f => {
-          const desc = typeof f.descriptor === 'string' ? JSON.parse(f.descriptor) : f.descriptor;
+        _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
+          const rawDesc = f.face_histogram || f.descriptor;
+          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
           return new faceapi.LabeledFaceDescriptors(String(f.telegram_id), [new Float32Array(desc)]);
         });
 
@@ -12579,8 +12610,10 @@ File di Google Drive juga akan dihapus.`)) return;
         timestamp: Math.floor(Date.now() / 1000)
       };
 
+      payload.source = 'meja_absen';
+
       try {
-        const res = await apiFetch(P.mejaAbsen, { method: 'POST', body: JSON.stringify(payload) });
+        const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
         const d = await res.json().catch(() => ({}));
 
         if (res.ok && d.ok !== false) {

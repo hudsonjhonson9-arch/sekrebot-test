@@ -7891,14 +7891,15 @@ function adminCaptureFaceFor(uid, nama) {
 
 async function _saveAdminFaceFor(uid, nama, dataUrl, descriptor) {
   try {
+    const descriptorArray = descriptor ? Array.from(descriptor) : null;
     const payload = {
-      telegram_id : uid,
-      nama        : nama,
-      dataUrl     : dataUrl,
-      descriptor  : descriptor,
-      savedAt     : new Date().toISOString(),
-      savedBy     : MY_ID,
-      savedByName : tgUser.first_name || 'Admin'
+      user_id         : uid,
+      nama            : nama,
+      foto_base64     : dataUrl,
+      face_descriptor : descriptorArray,
+      saved_at        : new Date().toISOString(),
+      savedBy         : MY_ID,
+      savedByName     : tgUser.first_name || 'Admin'
     };
     const res = await apiFetch(P.faceRegister, { method:'POST', body: JSON.stringify(payload) });
     const ok  = res.ok;

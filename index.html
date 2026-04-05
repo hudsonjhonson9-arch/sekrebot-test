@@ -12421,6 +12421,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
+      // 1. Validasi Awal
       if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
@@ -12432,67 +12433,58 @@ async function generateRekapPDF() {
       const sampai = $('rekapSampai').value;
       const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
       
-      // Logo URL
-      const logoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
+      // Update Logo URL (Raw GitHub)
+      const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-      showRekapToast('loading', '⏳ Memuat data tanda tangan...');
+      showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
 
-      // 1. Fungsi Helper untuk Load Gambar secara Asinkron (Anti-Macet)
-      const loadImage = (src) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.src = src;
-          img.onload = () => resolve(img);
-          img.onerror = () => resolve(null); // Jika gagal, return null agar tidak crash
-        });
-      };
-
-      // 2. Ambil data tanda tangan dari server
-      let rawSigs = [];
+      // 2. Ambil data tanda tangan (Safe Fetch)
+      let sigMap = {};
       try {
         const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
         const sigJson = sigRes.ok ? await sigRes.json() : {};
-        rawSigs = sigJson.data || sigJson || [];
-      } catch (e) { console.warn("Gagal fetch tanda tangan."); }
-
-      // 3. Pre-load Logo dan Semua Tanda Tangan ke Memori
-      const logoImg = await loadImage(logoUrl);
-      const sigMap = {};
-      
-      // Filter data pegawai agar tidak ada baris kosong
-      const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
-
-      // Load tanda tangan yang relevan saja (pegawai yang ada di list rekap)
-      for (const p of filteredPegawai) {
-        const found = rawSigs.find(s => String(s.telegram_id) === String(p.id));
-        if (found && found.signature) {
-          const sImg = await loadImage(found.signature);
-          if (sImg) sigMap[String(p.id)] = sImg;
+        const sigData = sigJson.data || sigJson || [];
+        if (Array.isArray(sigData)) {
+          sigData.forEach(s => {
+            if (s.signature && s.signature.length > 100) { 
+              sigMap[String(s.telegram_id)] = s.signature;
+            }
+          });
         }
+      } catch (e) {
+        console.warn("Gagal load paraf, lanjut tanpa paraf.");
       }
 
       showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-      // 4. Siapkan Body Tabel
+      // 3. Bersihkan data pegawai
+      const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+
       const tableBody = filteredPegawai.map((p, i) => {
         const row = p.dataExcelRow || {};
         const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
         const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-        return [i + 1, `${p.nama}\nNIP. ${p.nip || '—'}`, jamM, '', jamP, ''];
+        return [
+          i + 1,
+          `${p.nama}\nNIP. ${p.nip || '—'}`,
+          jamM,
+          '', 
+          jamP,
+          ''  
+        ];
       });
 
-      // 5. Generate Tabel
+      // 4. Proses Tabel
       doc.autoTable({
-        startY: 60,
-        margin: { top: 15 },
+        startY: 60, // Memberi ruang untuk Kop di halaman 1
+        margin: { top: 20 }, // Margin untuk halaman 2 dst agar tidak terlalu rapat ke atas
         head: [['No', 'Nama / NIP', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-        styles: { font: 'times', fontSize: 8.5, cellPadding: 2.5, valign: 'middle' },
+        styles: { font: 'times', fontSize: 8, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
         columnStyles: {
-          0: { halign: 'center', cellWidth: 10 },
+          0: { halign: 'center', cellWidth: 8 },
           1: { cellWidth: 55 },
           2: { halign: 'center', cellWidth: 22 },
           3: { cellWidth: 32, minCellHeight: 14 }, 
@@ -12502,50 +12494,64 @@ async function generateRekapPDF() {
         didDrawCell: (data) => {
           if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
             const peg = filteredPegawai[data.row.index];
-            const imgObj = sigMap[String(peg.id)];
-            if (imgObj) {
+            const sig = sigMap[String(peg.id)];
+            
+            if (sig) {
               const isParafMasuk = (data.column.index === 3);
-              const jamVal = isParafMasuk ? (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
-              // Tempel gambar jika hadir
-              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(String(jamVal).trim())) {
+              const jamVal = isParafMasuk ? 
+                 (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
+                 (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+
+              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
                 try {
-                  doc.addImage(imgObj, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 10);
-                } catch (e) {}
+                  doc.addImage(sig, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 11, undefined, 'FAST');
+                } catch (err) {}
               }
             }
           }
         },
         didDrawPage: (data) => {
+          // HANYA GAMBAR KOP DI HALAMAN 1
           if (data.pageNumber === 1) {
-            // Kop Surat
-            if (logoImg) doc.addImage(logoImg, 'PNG', 15, 8, 22, 25);
+            try {
+              // Logo diletakkan di X=15 agar tidak menabrak teks tengah
+              doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+            } catch(e) {}
+            
             doc.setFont('times', 'bold');
             doc.setFontSize(12);
-            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 110, 14, { align: 'center' });
-            doc.setFontSize(13);
-            doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 110, 21, { align: 'center' });
+            // Teks digeser sedikit ke kanan (X=115) untuk memberi ruang logo
+            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 16, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 115, 23, { align: 'center' });
             doc.setFont('times', 'normal');
             doc.setFontSize(9);
-            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 110, 27, { align: 'center' });
+            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 29, { align: 'center' });
+            
             doc.setLineWidth(0.7);
-            doc.line(15, 34, 195, 34);
+            doc.line(15, 36, 195, 36);
             doc.setLineWidth(0.2);
-            doc.line(15, 35, 195, 35);
+            doc.line(15, 37, 195, 37);
+
             doc.setFontSize(11);
             doc.setFont('times', 'bold');
-            doc.text('DAFTAR HADIR PEGAWAI', 105, 45, { align: 'center' });
+            doc.text('DAFTAR HADIR PEGAWAI', 105, 47, { align: 'center' });
             doc.setFont('times', 'normal');
-            doc.text(`Periode: ${tanggalLabel}`, 105, 51, { align: 'center' });
+            doc.text(`Periode: ${tanggalLabel}`, 105, 53, { align: 'center' });
           }
         }
       });
 
-      // 6. Footer (Kepala Badan)
+      // 5. Footer Tanda Tangan Kaban
       const pageHeight = doc.internal.pageSize.height;
       let footerY = doc.lastAutoTable.finalY + 12;
-      if (footerY + 45 > pageHeight) { doc.addPage(); footerY = 25; }
 
-      doc.setFontSize(10.5);
+      if (footerY + 45 > pageHeight) {
+        doc.addPage();
+        footerY = 25;
+      }
+
+      doc.setFontSize(10);
       doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
       doc.text('Mengetahui,', 145, footerY + 6);
       doc.text('Kepala Badan', 145, footerY + 11);
@@ -12553,7 +12559,7 @@ async function generateRekapPDF() {
       const kaban = filteredPegawai[0];
       const kabanSig = sigMap[String(kaban?.id)];
       if (kabanSig) {
-        try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14); } catch(e){}
+        try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14, undefined, 'FAST'); } catch(e){}
       }
 
       doc.setFont('times', 'bold');
@@ -12561,11 +12567,11 @@ async function generateRekapPDF() {
       doc.setFont('times', 'normal');
       doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
 
-      // 7. Simpan & Kirim
+      // 6. Simpan & Kirim
       const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
       doc.save(fileName);
       
-      showRekapToast('loading', '📤 Mengirim ke Telegram...');
+      showRekapToast('loading', '📤 Mengirim file ke Telegram...');
       try {
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         await apiFetch(P.kirimRekap, { 
@@ -12573,12 +12579,13 @@ async function generateRekapPDF() {
           body: JSON.stringify({
             chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
             pdf_base64: pdfBase64,
-            namaFilePdf: fileName,
-            isHarian: (dari === sampai)
+            namaFilePdf: fileName
           }) 
         });
-        showRekapToast('success', '✅ PDF Berhasil dikirim!');
-      } catch (e) { showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot'); }
+        showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
+      } catch (e) {
+        showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot');
+      }
     }
 
     /* ════════════════════════════════════════════════════

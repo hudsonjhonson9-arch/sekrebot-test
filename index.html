@@ -697,7 +697,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain; /* Agar tidak terlalu zoom (muat tanpa crop) */
-      transform: scaleX(-1) !important;
+      transform: none !important;
       background: #000;
     }
 
@@ -705,7 +705,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      transform: scaleX(-1) !important;
+      transform: none !important;
     }
 
     #camCanvas {
@@ -7489,9 +7489,6 @@ File di Google Drive juga akan dihapus.`)) return;
       cnv.width = vid.videoWidth; 
       cnv.height = vid.videoHeight;
       const ctx = cnv.getContext('2d');
-      // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
-      ctx.translate(cnv.width, 0);
-      ctx.scale(-1, 1);
       ctx.drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
@@ -11899,16 +11896,12 @@ File di Google Drive juga akan dihapus.`)) return;
         const ud = ur.ok ? await ur.json() : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
-        // Urutkan secara default berdasarkan "No" atau "no"
+        // Urutkan berdasarkan No Pegawai / NIP / No urut secara cerdas (mendukung angka & teks campuran)
         users.sort((a, b) => {
-          const noA = parseInt(a.No || a.no) || 0;
-          const noB = parseInt(b.No || b.no) || 0;
-          if (noA !== 0 && noB !== 0 && noA !== noB) return noA - noB;
-
-          // Fallback: Jika 'No' kosong, gunakan NIP
-          const nipA = String(a.NIP || a.nip || '');
-          const nipB = String(b.NIP || b.nip || '');
-          return nipA.localeCompare(nipB, undefined, { numeric: true, sensitivity: 'base' });
+          let noA = String(a.no_pegawai || a.No_Pegawai || a.NIP || a.nip || a.No || a.no || a.ID_Pegawai || a.id || '').trim();
+          let noB = String(b.no_pegawai || b.No_Pegawai || b.NIP || b.nip || b.No || b.no || b.ID_Pegawai || b.id || '').trim();
+          
+          return noA.localeCompare(noB, undefined, { numeric: true, sensitivity: 'base' });
         });
 
         // Populate select

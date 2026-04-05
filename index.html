@@ -12431,49 +12431,70 @@ async function generateRekapPDF() {
       const dari = $('rekapDari').value;
       const sampai = $('rekapSampai').value;
       const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
-      
-      // Link Logo RAW GitHub (Pastikan link ini bisa dibuka di browser)
-      const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-      showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
+      showRekapToast('loading', '⏳ Memuat gambar dan tanda tangan...');
 
-      // 1. AMBIL DATA TANDA TANGAN (SAFE FETCH)
-      let sigMap = {};
-      try {
-        const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-        const sigJson = sigRes.ok ? await sigRes.json() : {};
-        const sigData = sigJson.data || sigJson || [];
-        if (Array.isArray(sigData)) {
-          sigData.forEach(s => {
-            if (s.signature && s.signature.startsWith('data:image')) {
-              sigMap[String(s.telegram_id)] = s.signature;
+      // 1. PRE-LOAD LOGO KE OBJEK IMAGE HTML (Anti-Macet)
+      const loadLogo = () => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = "Lambang_Kabupaten_Sumba_Barat.png"; // Berkas GitHub/Vercel Anda
+          img.onload = () => resolve(img);
+          img.onerror = () => {
+            // Backup ke link raw github jika jalur vercel bermasalah
+            const fallBackImg = new Image();
+            fallBackImg.crossOrigin = "anonymous";
+            fallBackImg.src = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
+            fallBackImg.onload = () => resolve(fallBackImg);
+            fallBackImg.onerror = () => resolve(null); // Jika semua gagal, abaikan logo
+          };
+        });
+      };
+
+      // 2. AMBIL TANDA TANGAN PEGAWAI (Dengan Proteksi Timeout)
+      const fetchSignatures = async () => {
+        const sigMap = {};
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000); // Batas tunggu 6 detik
+
+          const res = await fetch(SERVER_1 + P.signatureList, { signal: controller.signal });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const sigJson = await res.json();
+            const sigData = sigJson.data || sigJson || [];
+            if (Array.isArray(sigData)) {
+              sigData.forEach(s => {
+                if (s.signature && s.signature.startsWith('data:image')) {
+                  sigMap[String(s.telegram_id)] = s.signature;
+                }
+              });
             }
-          });
+          }
+        } catch (e) {
+          console.warn("Gagal memuat tanda tangan digital server.");
         }
-      } catch (e) {
-        console.warn("Gagal memuat tanda tangan server, lanjut tanpa paraf.");
-      }
+        return sigMap;
+      };
+
+      // Jalankan proses unduh data secara paralel di awal
+      const [logoImg, sigMap] = await Promise.all([loadLogo(), fetchSignatures()]);
 
       showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-      // 2. MEMBERSIHKAN DATA (Cegah baris kosong/NIP melayang)
+      // 3. Bersihkan baris kosong
       const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
       const tableBody = filteredPegawai.map((p, i) => {
         const row = p.dataExcelRow || {};
         const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
         const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-        return [
-          i + 1,
-          `${p.nama}\nNIP. ${p.nip || '—'}`,
-          jamM,
-          '', // Placeholder TTD Masuk (Index 3)
-          jamP,
-          ''  // Placeholder TTD Pulang (Index 5)
-        ];
+        return [i + 1, `${p.nama}\nNIP. ${p.nip || '—'}`, jamM, '', jamP, ''];
       });
 
-      // 3. GENERATE TABEL DENGAN PROTEKSI GAMBAR
+      // 4. Generate Tabel
       doc.autoTable({
         startY: 60,
         margin: { top: 15 },
@@ -12491,34 +12512,26 @@ async function generateRekapPDF() {
           5: { cellWidth: 32, minCellHeight: 14 }
         },
         didDrawCell: (data) => {
-          // Logika menempelkan tanda tangan di kolom 3 dan 5
           if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
             const peg = filteredPegawai[data.row.index];
             const sig = sigMap[String(peg.id)];
-            
             if (sig) {
               const isParafMasuk = (data.column.index === 3);
-              const jamVal = isParafMasuk ? 
-                (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
-                (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+              const jamVal = isParafMasuk ? (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
               
-              // Hanya tempel paraf jika pegawai hadir (ada jamnya)
               if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(String(jamVal).trim())) {
                 try {
                   doc.addImage(sig, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 10, undefined, 'FAST');
-                } catch (err) {
-                  // Abaikan jika satu gambar error agar proses tidak macet
-                }
+                } catch (err) {}
               }
             }
           }
         },
         didDrawPage: (data) => {
-          // KOP SURAT HANYA DI HALAMAN 1
           if (data.pageNumber === 1) {
-            try {
-              doc.addImage(rawLogoUrl, 'PNG', 15, 8, 22, 25, undefined, 'FAST');
-            } catch(e) { console.error("Logo gagal dimuat"); }
+            if (logoImg) {
+              try { doc.addImage(logoImg, 'PNG', 15, 8, 22, 25, undefined, 'FAST'); } catch(e){}
+            }
 
             doc.setFont('times', 'bold');
             doc.setFontSize(12);
@@ -12543,7 +12556,7 @@ async function generateRekapPDF() {
         }
       });
 
-      // 4. FOOTER TANDA TANGAN (KABAN)
+      // 5. Footer Tanda Tangan Kaban
       const pageHeight = doc.internal.pageSize.height;
       let footerY = doc.lastAutoTable.finalY + 12;
 
@@ -12557,7 +12570,6 @@ async function generateRekapPDF() {
       doc.text('Mengetahui,', 145, footerY + 6);
       doc.text('Kepala Badan', 145, footerY + 11);
 
-      // TTD Pejabat urutan 1
       const kaban = filteredPegawai[0];
       const kabanSig = sigMap[String(kaban?.id)];
       if (kabanSig) {
@@ -12569,10 +12581,9 @@ async function generateRekapPDF() {
       doc.setFont('times', 'normal');
       doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
 
-      // 5. SELESAI & KIRIM
-      const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
-      doc.save(fileName);
-      
+      // 6. Simpan Lokal dan Kirim Telegram
+      doc.save(`Rekap_Absensi_${dari}_${sampai}.pdf`);
+
       showRekapToast('loading', '📤 Mengirim ke Telegram...');
       try {
         const pdfBase64 = doc.output('datauristring').split(',')[1];
@@ -12581,13 +12592,13 @@ async function generateRekapPDF() {
           body: JSON.stringify({
             chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
             pdf_base64: pdfBase64,
-            namaFilePdf: fileName,
+            namaFilePdf: `Rekap_Absensi_${dari}_${sampai}.pdf`,
             isHarian: (dari === sampai)
           }) 
         });
-        showRekapToast('success', '✅ PDF Berhasil dikirim!');
+        showRekapToast('success', '✅ PDF Berhasil ditarik & dikirim ke Telegram!');
       } catch (e) {
-        showRekapToast('fail', '❌ PDF Gagal dikirim ke Bot');
+        showRekapToast('fail', '❌ Gagal mengirim PDF');
       }
     }
 

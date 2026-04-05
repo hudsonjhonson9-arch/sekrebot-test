@@ -4649,54 +4649,98 @@
        KAMERA / FACE SCAN OVERLAY
        Muncul saat pegawai menekan tombol Absen
   ══════════════════════════════════════════════════ -->
-    <!-- ══ MODIFIKASI KAMERA OVERLAY (MEJA ABSEN) ══ -->
-<div class="cam-overlay hidden" id="camOverlay">
-  <div class="cam-header">
-    <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
-    <button class="cam-close" id="camCloseBtn" onclick="stopMejaAbsen()">✕ Keluar</button>
-  </div>
-  <div class="cam-body" id="camBody">
-    <!-- Loading model -->
-    <div class="model-loading" id="modelLoading">
-      <span class="spin">🧠</span> Memuat AI...
-    </div>
+<!-- ════════════════════════════════════════════════════════
+         KAMERA / FACE SCAN OVERLAY (REVISED)
+    ════════════════════════════════════════════════════════ -->
+    <div class="cam-overlay hidden" id="camOverlay">
+      <div class="cam-header">
+        <div>
+          <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
+        </div>
+        <!-- Tombol Flash Dihapus, Tombol Close langsung memanggil closeCamOverlay -->
+        <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+      </div>
+      <div class="cam-body" id="camBody">
 
-    <!-- Video stream -->
-    <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
-      <video id="camVideo" autoplay playsinline muted></video>
-      <canvas id="camCanvas"></canvas>
-      <div class="cam-corner tl"></div><div class="cam-corner tr"></div>
-      <div class="cam-corner bl"></div><div class="cam-corner br"></div>
-      <div class="cam-scan-line" id="camScanLine"></div>
-      <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
-      
-      <!-- Overlay Hasil Scan (Muncul otomatis saat terdeteksi) -->
-      <div id="mejaOverlayResult" style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.9); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:fadeIn 0.3s;">
-          <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
-          <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
-          <div id="moStatus" style="font-size:14px; font-weight:700; color:#fff; margin-top:5px;">BERHASIL ABSEN</div>
-          <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:8px;">Jam 08:00 WITA</div>
+        <!-- Loading model -->
+        <div class="model-loading" id="modelLoading">
+          <div style="width:100%;max-width:300px;text-align:center">
+            <div style="font-size:28px;margin-bottom:10px">🧠</div>
+            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px" id="mlTitle">Memuat Model AI Deteksi Wajah</div>
+            <div style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+              <div id="mlProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);border-radius:3px;transition:width .4s ease"></div>
+            </div>
+            <div id="mlPercent" style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:10px">0%</div>
+          </div>
+        </div>
+
+        <!-- Video stream + canvas overlay -->
+        <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
+          <video id="camVideo" autoplay playsinline muted></video>
+          <canvas id="camCanvas"></canvas>
+          <div class="face-guide" id="faceGuideWrap">
+            <div class="face-oval" id="faceOval"></div>
+          </div>
+          <div class="cam-corner tl"></div>
+          <div class="cam-corner tr"></div>
+          <div class="cam-corner bl"></div>
+          <div class="cam-corner br"></div>
+          <div class="cam-scan-line" id="camScanLine"></div>
+          <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
+
+          <!-- Overlay Hasil Meja Absen (Otomatis) -->
+          <div id="mejaOverlayResult" style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:slideUp 0.3s;">
+              <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
+              <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
+              <div id="moStatus" style="font-size:14px; font-weight:700; color:#fff; margin-top:5px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.1);">BERHASIL ABSEN</div>
+              <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:12px; line-height:1.4;">Jam 08:00 WITA</div>
+          </div>
+        </div>
+
+        <!-- Status deteksi wajah -->
+        <div class="cam-status idle" id="camStatus" style="display:none">
+          <div class="cam-status-icon" id="camStatusIcon">🔍</div>
+          <div class="cam-status-text">
+            <div class="cam-status-title" id="camStatusTitle">Mendeteksi wajah...</div>
+            <div class="cam-status-sub" id="camStatusSub">Hadapkan wajah ke kamera</div>
+          </div>
+        </div>
+
+        <!-- Face Recognition Reg Info -->
+        <div id="faceRegCard" style="display:none;width:100%;max-width:320px;flex-shrink:0">
+            <div style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
+                  <img id="faceRegThumb" src="" alt="" style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
+                  <span id="faceRegThumbEmpty">👤</span>
+                </div>
+                <div class="face-reg-info" style="flex:1;min-width:0">
+                  <div style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">🧠 Face Recognition</div>
+                  <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data wajah</div>
+                </div>
+                <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()" style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
+              </div>
+            </div>
+        </div>
+
+        <!-- Liveness Sederhana -->
+        <div id="livenessMini" style="display:none; width:100%; max-width:320px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); padding:10px; border-radius:10px; text-align:center; font-size:12px; font-weight:700; color:var(--gold);">
+            <span id="lsIcon">😐</span> <span id="lsText">Harap Kedipkan Mata Anda</span>
+        </div>
+
+        <!-- Preview hasil foto (Hanya untuk absen personal) -->
+        <div class="cam-preview" id="camPreview">
+          <img id="camPreviewImg" src="" alt="Foto Absen">
+          <div class="cam-preview-info" id="camPreviewInfo"></div>
+        </div>
+
+        <!-- Tombol ambil foto (Sembunyi otomatis jika Meja Absen) -->
+        <button class="btn-capture" id="btnCapture" onclick="doCapture()" disabled>
+          📸 Ambil Foto & Lanjutkan
+        </button>
+
       </div>
     </div>
-
-    <!-- Status deteksi -->
-    <div class="cam-status idle" id="camStatus" style="display:none">
-      <div class="cam-status-icon" id="camStatusIcon">🔍</div>
-      <div class="cam-status-text">
-        <div class="cam-status-title" id="camStatusTitle">Siap Scan</div>
-        <div class="cam-status-sub" id="camStatusSub">Posisikan wajah di area kotak</div>
-      </div>
-    </div>
-
-    <!-- Info Liveness (1 Saja: Kedip) -->
-    <div id="livenessMini" style="display:none; width:100%; max-width:320px; background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; font-size:11px;">
-        <span id="lsIcon">😐</span> <span id="lsText">Mohon Berkedip</span>
-    </div>
-    
-    <!-- Tombol Capture disembunyikan total di Meja Mode -->
-    <button class="btn-capture" id="btnCapture" style="display:none"></button>
-  </div>
-</div>
 
     <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
     <div id="faceRequiredModal"
@@ -7280,13 +7324,18 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function closeCamOverlay() {
-      _isFlashOn = false; // Reset flash state
-      window._isMejaMode = false; // Important Fix: Reset high-speed mode
+      // Jika mode meja absen sedang aktif, menekan silang berarti mengakhiri sesi Meja Absen
+      if (window._isMejaMode) {
+        stopMejaAbsen();
+        return;
+      }
+      
+      _isFlashOn = false; 
       stopDetectLoop();
       stopCamStream();
       $('camOverlay').classList.add('hidden');
       setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-      // Panggil onCancel jika ada (misal: modal paksa wajah perlu muncul kembali)
+      
       const cb = _absenCallbackAfterCam;
       _absenCallbackAfterCam = null;
       _captureData = null;
@@ -7308,36 +7357,75 @@ File di Google Drive juga akan dihapus.`)) return;
       const cnv = $('camCanvas');
       const ctx = cnv.getContext('2d');
       const wrap = $('camVideoWrap');
+      
+      _blinkDetected = false;
 
-      // Grace period before manual capture enabled
-      setTimeout(() => { if ($('btnCapture')) $('btnCapture').disabled = false; }, 8000);
+      // Munculkan tombol capture manual setelah 8 detik untuk mode personal (bukan meja)
+      setTimeout(() => { 
+          if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
+      }, 8000);
 
       const loop = async () => {
         if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         _detectLoop = requestAnimationFrame(loop);
 
-        const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }));
+        // Deteksi wajah + landmarks untuk deteksi kedip (Liveness)
+        const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks(true);
 
         if (!detection) {
           wrap.className = 'cam-video-wrap face-bad';
           setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
           _livenessState.faceOk = false;
+          if(window._isMejaMode) {
+              $('lsIcon').textContent = '😐';
+              $('lsText').textContent = 'Menunggu Wajah...';
+              $('lsText').style.color = 'var(--muted)';
+          }
           return;
         }
-
-        const { x, y, width: w, height: h } = detection.box;
-        ctx.clearRect(0, 0, cnv.width, cnv.height);
-        //ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
-        //ctx.strokeRect(x, y, w, h);
 
         _livenessState.faceOk = true;
         wrap.className = 'cam-video-wrap face-ok';
         setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mohon tetap diam...');
 
-        // Auto capture only if model is fully loaded
-        if (!_autoCaptured && _modelsReady) {
+        // ── LIVENESS: Deteksi Kedip Mata (EAR - Eye Aspect Ratio) ──
+        const leftEye = detection.landmarks.getLeftEye();
+        const rightEye = detection.landmarks.getRightEye();
+        
+        const getEAR = (eye) => {
+           const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+           const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+           const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+           return (v1 + v2) / (2.0 * h);
+        };
+
+        const earL = getEAR(leftEye);
+        const earR = getEAR(rightEye);
+        const ear = (earL + earR) / 2;
+
+        // Jika EAR sangat kecil (mata tertutup)
+        if (ear < 0.22) {
+            _blinkDetected = true;
+        }
+
+        if (window._isMejaMode) {
+            if (_blinkDetected) {
+                $('lsIcon').textContent = '😉';
+                $('lsText').textContent = 'Liveness OK! Sedang mencocokkan...';
+                $('lsText').style.color = 'var(--success)';
+            } else {
+                $('lsIcon').textContent = '😐';
+                $('lsText').textContent = 'Harap Kedipkan Mata Anda';
+                $('lsText').style.color = 'var(--gold)';
+            }
+        } else {
+            _blinkDetected = true; // Jika mode personal, anggap liveness otomatis true untuk fallback
+        }
+
+        // Auto capture HANYA jika model siap DAN (Liveness kedip berhasil ATAU bukan mode Meja)
+        if (!_autoCaptured && _modelsReady && (_blinkDetected || !window._isMejaMode)) {
           _autoCaptured = true;
-          setTimeout(doCapture, 600);
+          setTimeout(doCapture, 400); // Jeda sedikit sebelum foto
         }
       };
       loop();
@@ -7356,14 +7444,36 @@ File di Google Drive juga akan dihapus.`)) return;
       cnv.getContext('2d').drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
-      // Extract descriptor (retry logic handeled in matchFace or saveFaceRef)
+      // Extract descriptor
       let descriptor = null;
       if (_modelsReady) {
         const desc = await getFaceDescriptor(cnv);
         if (desc) descriptor = Array.from(desc);
       }
 
-      // Check Match
+      // Handle "Meja Absen" Matching (1:N) secara Otomatis
+      if (window._isMejaMode) {
+          if (_allFaceDescriptors.length > 0 && descriptor) {
+            const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+            const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
+            
+            if (bestMatch.label !== 'unknown') {
+              // Wajah Dikenali -> Panggil fungsi pencatatan
+              _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+              return; 
+            } else {
+               // Wajah tak dikenal
+               _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+               return;
+            }
+          } else {
+              // Gagal ekstrak wajah
+             _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+             return;
+          }
+      }
+
+      // --- LOGIKA UNTUK ABSEN PERSONAL (HP SENDIRI) ---
       let match = { label: 'Tanpa Verifikasi AI', cls: 'cpb-warn' };
       const ref = getFaceRef();
       if (ref && descriptor) {
@@ -7371,37 +7481,6 @@ File di Google Drive juga akan dihapus.`)) return;
         const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
         if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
         else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
-      }
-
-      // Handle "Meja Absen" Matching (1:N)
-      if (window._isMejaMode && _allFaceDescriptors.length > 0 && descriptor) {
-        const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-        const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
-        if (bestMatch.label !== 'unknown') {
-          // Pegawai Ditemukan -> Lempar ke fungsi handler
-          _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
-          return; 
-        } else {
-           // Wajah tak dikenal
-           $('camPreviewImg').src = dataUrl;
-           $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">❌ Wajah Tak Dikenal</span>`;
-           $('camPreview').classList.add('show');
-           $('camStatus').style.display = 'none';
-
-           setCamStatus('bad', '👤', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
-           setTimeout(() => {
-              if (window._isMejaMode) {
-              _captureData = null;
-              _autoCaptured = false;
-              $('camPreview').classList.remove('show');
-              $('camStatus').style.display = 'flex';
-              startDetectLoop();
-              return; 
-            }
-            closeCamOverlay();
-           }, 2500);
-           return;
-        }
       }
 
       _captureData = { dataUrl, descriptor, faceOk: true, livenessOk: true };
@@ -7413,7 +7492,6 @@ File di Google Drive juga akan dihapus.`)) return;
       stopCamStream();
 
       setTimeout(() => {
-        if (window._isMejaAbsen || window._isMejaMode) return; // Stay open in Meja Mode
         closeCamOverlay();
         const cb = _absenCallbackAfterCam;
         if (typeof cb === 'function') cb(_captureData);
@@ -12267,92 +12345,114 @@ File di Google Drive juga akan dihapus.`)) return;
         );
       });
     }
-
-    // 2. Fungsi Menghentikan Sesi (Dipanggil tombol X di kamera)
-    function stopMejaAbsen() {
-        window._isMejaMode = false;
-        window._mejaProcessing = false;
-        _allFaceDescriptors = [];
-        closeCamOverlay();
-        _setMejaStatus('idle', '🖥️', 'Sesi Berakhir', 'Data counter tersimpan');
-        const btn = $('btnMejaAbsen');
-        if(btn) { btn.disabled = false; btn.innerHTML = '<span>🖥️</span><span>Mulai Meja Absen</span>'; }
-    }
     // 3. Modifikasi Detect Loop (Tambahkan di dalam startDetectLoop yang ada)
-// Masukkan logika ini ke dalam loop 'const loop = async () => { ... }' di kode asli Anda
-async function handleMejaLogic(detection, vid) {
-    if (!window._isMejaMode || window._mejaProcessing) return;
+    // Masukkan logika ini ke dalam loop 'const loop = async () => { ... }' di kode asli Anda
+    async function handleMejaLogic(detection, vid) {
+        if (!window._isMejaMode || window._mejaProcessing) return;
 
-    // Liveness Sederhana: Cek Kedipan
-    const landmarks = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true);
-    if (landmarks) {
-        const leftEye = landmarks.landmarks.getLeftEye();
-        const rightEye = landmarks.landmarks.getRightEye();
-        
-        // Hitung jarak kelopak mata (sederhana)
-        const dist = Math.abs(leftEye[1].y - leftEye[5].y);
-        if (_lastEyeRatio > 0 && dist < _lastEyeRatio * 0.6) {
-            _blinkDetected = true;
-            $('lsIcon').textContent = '😉';
-            $('lsText').textContent = 'Kedipan Terdeteksi!';
+        // Liveness Sederhana: Cek Kedipan
+        const landmarks = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true);
+        if (landmarks) {
+            const leftEye = landmarks.landmarks.getLeftEye();
+            const rightEye = landmarks.landmarks.getRightEye();
+            
+            // Hitung jarak kelopak mata (sederhana)
+            const dist = Math.abs(leftEye[1].y - leftEye[5].y);
+            if (_lastEyeRatio > 0 && dist < _lastEyeRatio * 0.6) {
+                _blinkDetected = true;
+                $('lsIcon').textContent = '😉';
+                $('lsText').textContent = 'Kedipan Terdeteksi!';
+            }
+            _lastEyeRatio = dist;
         }
-        _lastEyeRatio = dist;
+
+        // Jika wajah stabil & sudah kedip (atau terdeteksi jelas)
+        if (detection.score > 0.8) {
+            setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mencocokkan data...');
+            // Auto trigger capture tanpa tombol
+            setTimeout(doCapture, 500); 
+        }
     }
 
-    // Jika wajah stabil & sudah kedip (atau terdeteksi jelas)
-    if (detection.score > 0.8) {
-        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mencocokkan data...');
-        // Auto trigger capture tanpa tombol
-        setTimeout(doCapture, 500); 
-    }
-}
     async function startMejaAbsen() {
       const btn = $('btnMejaAbsen');
-      setBtnL('btnMejaAbsen', true, 'Menyiapkan Meja...');
-      
-      _setMejaStatus('processing', '⏳', 'Sinkronisasi Data...', 'Mengambil database wajah pegawai');
+      if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat Data...'; }
+      _setMejaStatus('processing', '⏳', 'Mengambil GPS & Database...', 'Harap tunggu');
 
-      try {
-          // Load data wajah semua pegawai
-          const res = await apiFetch(P.faceGetAll, { method: 'GET' });
-          const data = await res.json();
-          const list = Array.isArray(data) ? data : (data.data || []);
-
-          window._mejaUserMap = {};
-          _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
-              const rawDesc = f.face_histogram || f.descriptor;
-              const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
-              const tid = String(f.telegram_id || f.id || '');
-              window._mejaUserMap[tid] = {
-                  nama: f.nama || f.Nama || tid,
-                  nip: f.nip || f.NIP || '-'
-              };
-              return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-          });
-
-          if (!_allFaceDescriptors.length) {
-              alert("Belum ada data wajah terdaftar di server.");
-              setBtnL('btnMejaAbsen', false, 'Mulai Meja Absen');
-              return;
-          }
-
-          // Ambil GPS Meja Sekali di Awal
-          _mejaGpsLocation = await _getMejaGps();
-          
-          window._isMejaMode = true;
-          _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
-          _updateMejaCnt();
-
-          // Buka Kamera
-          openCamOverlay('meja');
-          $('livenessMini').style.display = 'block';
-          $('camHeaderTitle').textContent = '🖥️ Meja Absen Otomatis';
-          
-      } catch (e) {
-          alert("Gagal koneksi ke server: " + e.message);
-          setBtnL('btnMejaAbsen', false, 'Mulai Meja Absen');
+      // 1. Ambil GPS Meja
+      _mejaGpsLocation = await _getMejaGps();
+      const locEl = $('mejaLocVal');
+      const accEl = $('mejaLocAccuracy');
+      if (_mejaGpsLocation && locEl) {
+        locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
+        if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
+      } else if (locEl) {
+        locEl.textContent = 'Lokasi GPS Meja Tidak Tersedia';
       }
-  }
+
+      // 2. Load face descriptors dari server
+      try {
+        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.data || []);
+
+        window._mejaUserMap = {};
+        _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
+          const rawDesc = f.face_histogram || f.descriptor;
+          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+          const tid = String(f.telegram_id || f.id || '');
+          window._mejaUserMap[tid] = {
+            nama: f.nama || f.Nama || tid,
+            nip: f.nip || f.NIP || '-'
+          };
+          return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+        });
+
+        if (!_allFaceDescriptors.length) {
+          _setMejaStatus('idle', '⚠️', 'Tidak Ada Data Wajah', 'Daftarkan wajah pegawai terlebih dahulu');
+          if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+          return;
+        }
+
+        _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+        _updateMejaCnt();
+        
+        window._isMejaMode = true; // Set Global State
+        _isMejaAbsen = true;
+
+        _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
+        
+        if (btn) btn.style.display = 'none';
+        const btnStop = $('btnMejaStop');
+        if (btnStop) btnStop.style.display = 'flex';
+
+        // Buka Kamera
+        openCamOverlay('meja');
+        $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
+        $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
+        $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
+        
+      } catch (e) {
+        _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
+        if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+      }
+    }
+
+    async function stopMejaAbsen() {
+      window._isMejaMode = false;
+      _isMejaAbsen = false;
+      window._mejaProcessing = false;
+      _allFaceDescriptors = [];
+      
+      closeCamOverlay(); // Mematikan kamera & stream
+      
+      _setMejaStatus('idle', '🖥️', 'Sesi Dihentikan', 'Counter tersimpan di atas');
+      const btnStart = $('btnMejaAbsen');
+      const btnStop = $('btnMejaStop');
+      if (btnStart) { btnStart.style.display = 'flex'; btnStart.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+      if (btnStop) btnStop.style.display = 'none';
+    }
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
@@ -12603,77 +12703,123 @@ async function generateRekapPDF() {
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
     // 4. Handler Pencocokan & Cek Status (AJAX ke Webhook)
-async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
-    if (window._mejaProcessing) return;
-    window._mejaProcessing = true;
+  async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+      if (window._mejaProcessing) return;
+      window._mejaProcessing = true;
 
-    const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai '+telegramId, nip: '-' };
-    const overlay = $('mejaOverlayResult');
-    
-    // Tampilkan state loading di overlay
-    overlay.style.display = 'flex';
-    $('moIcon').textContent = '⏳';
-    $('moNama').textContent = user.nama;
-    $('moStatus').textContent = 'Memeriksa status...';
-    $('moDetail').textContent = 'Harap tunggu sebentar';
+      const overlay = $('mejaOverlayResult');
+      overlay.style.display = 'flex';
 
-    const n = nowWITA();
-    const payload = {
+      // JIKA WAJAH TIDAK DIKENAL
+      if (telegramId === 'unknown') {
+          $('moIcon').textContent = '❓';
+          $('moNama').textContent = 'TIDAK DIKENAL';
+          $('moStatus').textContent = 'WAJAH BELUM TERDAFTAR';
+          $('moStatus').style.color = 'var(--danger)';
+          $('moStatus').style.background = 'rgba(239,68,68,0.2)';
+          $('moDetail').textContent = 'Mulai ulang scan dalam 3 detik...';
+          
+          _mejaCnt.gagal++;
+          _updateMejaCnt();
+          _setMejaStatus('active', '⚠️', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
+
+          setTimeout(() => {
+              overlay.style.display = 'none';
+              window._mejaProcessing = false;
+              _autoCaptured = false;
+              _captureData = null;
+              _blinkDetected = false;
+              startDetectLoop();
+          }, 3000);
+          return;
+      }
+
+      // JIKA WAJAH DIKENAL
+      const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
+      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.55) * 100));
+
+      $('moIcon').textContent = '⏳';
+      $('moNama').textContent = user.nama;
+      $('moStatus').textContent = 'MEMERIKSA STATUS...';
+      $('moStatus').style.color = 'var(--gold)';
+      $('moStatus').style.background = 'rgba(201,168,76,0.2)';
+      $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
+
+      _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
+
+      const n = nowWITA();
+      const payload = {
         telegram_id: telegramId,
         nama: user.nama,
         nip: user.nip,
         admin_id: MY_ID,
-        jam: `${p2(n.getHours())}:${p2(n.getMinutes())} WITA`,
+        jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`,
         tanggal_iso: fmtD(n),
-        latitude: _mejaGpsLocation?.lat || 0,
-        longitude: _mejaGpsLocation?.lng || 0,
-        accuracy: _mejaGpsLocation?.acc || 0,
+        latitude: _mejaGpsLocation?.lat ?? 0,
+        longitude: _mejaGpsLocation?.lng ?? 0,
+        accuracy: _mejaGpsLocation?.acc ?? 0,
+        lokasi_nama: 'Meja Absen',
+        face_match: score,
+        timestamp: Math.floor(Date.now() / 1000),
         source: 'meja_absen'
-    };
+      };
 
-    try {
+      try {
         const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
-        const d = await res.json();
+        const d = await res.json().catch(() => ({}));
 
-        if (res.ok && d.ok !== false) {
-            const isMasuk = (d.jenis_absen || '').includes('MASUK');
-            if(isMasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
-            
-            $('moIcon').textContent = '✅';
-            $('moStatus').textContent = (d.jenis_absen || 'BERHASIL');
-            $('moStatus').style.color = '#22c55e';
-            $('moDetail').textContent = d.message || 'Data berhasil dicatat';
+        if (res.ok && d.ok !== false && d.validasi?.is_valid !== false) {
+          // BERHASIL ABSEN BARU
+          const jenis = d.jenis_absen || d.validasi?.jenis_absen || 'ABSEN BERHASIL';
+          const ismasuk = jenis.toUpperCase().includes('MASUK');
+          if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
+          
+          $('moIcon').textContent = '✅';
+          $('moStatus').textContent = jenis.toUpperCase();
+          $('moStatus').style.color = '#4ade80'; // Success
+          $('moStatus').style.background = 'rgba(74,222,128,0.2)';
+          $('moDetail').textContent = d.validasi?.keterangan || 'Data tercatat di server.';
+          _setMejaStatus('active', '✅', `${user.nama} — ${jenis}`, 'Siap scan berikutnya...');
+          
         } else {
-            // Cek jika sudah absen (logic n8n mengembalikan is_valid: false dengan keterangan "sudah absen")
-            const msg = d.validasi?.keterangan || d.message || 'Gagal';
-            const isSudah = msg.toLowerCase().includes('sudah');
-            
-            $('moIcon').textContent = isSudah ? 'ℹ️' : '❌';
-            $('moStatus').textContent = isSudah ? 'SUDAH ABSEN' : 'DITOLAK';
-            $('moStatus').style.color = isSudah ? var(--info) : var(--danger);
-            $('moDetail').textContent = msg;
-            _mejaCnt.gagal++;
+          // GAGAL ATAU SUDAH ABSEN
+          let errMsg = d.message || d.error || 'Ditolak Server';
+          if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan; 
+          
+          const isSudah = errMsg.toLowerCase().includes('sudah');
+          
+          $('moIcon').textContent = isSudah ? 'ℹ️' : '❌';
+          $('moStatus').textContent = isSudah ? 'SUDAH ABSEN' : 'GAGAL';
+          $('moStatus').style.color = isSudah ? '#60a5fa' : '#f87171';
+          $('moStatus').style.background = isSudah ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)';
+          $('moDetail').textContent = errMsg;
+
+          if(!isSudah) _mejaCnt.gagal++;
+          _setMejaStatus('active', isSudah ? 'ℹ️' : '⚠️', user.nama, errMsg);
         }
-    } catch (e) {
+      } catch (e) {
         $('moIcon').textContent = '🔌';
-        $('moStatus').textContent = 'OFFLINE';
-        $('moDetail').textContent = 'Gagal menghubungi server';
+        $('moStatus').textContent = 'KONEKSI TERPUTUS';
+        $('moStatus').style.color = '#f87171';
+        $('moStatus').style.background = 'rgba(248,113,113,0.2)';
+        $('moDetail').textContent = 'Gagal menghubungi server absen n8n';
         _mejaCnt.gagal++;
-    }
+        _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
+      }
 
-    _updateMejaCnt();
+      _updateMejaCnt();
 
-    // COOLDOWN 3 Detik lalu Reset untuk Scan Berikutnya
-    setTimeout(() => {
+      // Tahan overlay 3 detik agar admin dan pegawai bisa membaca, lalu reset otomatis
+      setTimeout(() => {
         overlay.style.display = 'none';
         window._mejaProcessing = false;
-        _blinkDetected = false;
         _autoCaptured = false;
         _captureData = null;
-        setCamStatus('ok', '🔍', 'Siap Scan Berikutnya', 'Posisikan wajah pegawai');
-        startDetectLoop(); // Mulai loop lagi
-    }, 3500);
-}
+        _blinkDetected = false;
+        setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+        startDetectLoop(); // Lanjut scan berikutnya
+      }, 3500);
+    }
 
     // ── Override existing openSignaturePad for Admin Support ──
     const _origOpenSignaturePad = openSignaturePad;

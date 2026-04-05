@@ -7329,7 +7329,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('modelLoading').style.display = 'none';
       $('camVideoWrap').style.display = 'block';
       $('camStatus').style.display = 'flex';
-      if (MY_ID && !onDone?.isRegister) {
+      if (MY_ID && !onDone?.isRegister && !window._isMejaMode) {
         updateFaceRegUI();
         $('faceRegCard').style.display = 'block';
       }
@@ -7363,6 +7363,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     function closeCamOverlay() {
       _isFlashOn = false; // Reset flash state
+      window._isMejaMode = false; // Important Fix: Reset high-speed mode
       stopDetectLoop();
       stopCamStream();
       $('camOverlay').classList.add('hidden');
@@ -11789,7 +11790,7 @@ File di Google Drive juga akan dihapus.`)) return;
       _adminFaceTargetNama = nama;
 
       // Ubah judul kamera
-      const title = $('camTitle');
+      const title = $('camHeaderTitle');
       if (title) title.textContent = `📷 Daftar Wajah: ${nama}`;
 
       openCamOverlay({
@@ -12346,6 +12347,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function stopMejaAbsen() {
       _isMejaAbsen = false;
+      window._isMejaMode = false;
       _allFaceDescriptors = [];
       _mejaGpsLocation = null;
       closeCamOverlay();
@@ -12399,6 +12401,8 @@ File di Google Drive juga akan dihapus.`)) return;
         _isMejaAbsen = true;
 
         _setMejaStatus('active', '🔍', `Data wajah dimuat (${_allFaceDescriptors.length} pegawai)`, 'Membuka kamera untuk scan...');
+        const camTitle = $('camHeaderTitle');
+        if (camTitle) camTitle.textContent = '🖥️ Meja Absen (Continuous Scan)';
         if (btn) btn.style.display = 'none';
         const btnStop = $('btnMejaStop');
         if (btnStop) btnStop.style.display = 'flex';

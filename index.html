@@ -12926,6 +12926,10 @@ async function generateRekapPDF() {
               _autoCaptured = false;
               _captureData = null;
               _blinkDetected = false;
+              
+              const vid = $('camVideo');
+              if (vid && vid.paused) vid.play().catch(()=>{});
+
               startDetectLoop();
           }, 3000);
           return;
@@ -13014,6 +13018,14 @@ async function generateRekapPDF() {
         _captureData = null;
         _blinkDetected = false;
         setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+        
+        // Browser mobile (iOS/Android) sering mem-pause video saat tertutup overlay penuh
+        // Pastikan video diputar paksa kembali sebelum mulai loop
+        const vid = $('camVideo');
+        if (vid && vid.paused) {
+            vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
+        }
+
         startDetectLoop(); // Lanjut scan berikutnya
       }, 3500);
     }

@@ -12523,7 +12523,10 @@ async function generateRekapPDF() {
             // Teks digeser sedikit ke kanan (X=115) untuk memberi ruang logo
             doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 16, { align: 'center' });
             doc.setFontSize(14);
-            doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 115, 23, { align: 'center' });
+            doc.text('BADAN PERENCANAAN PEMBANGUNAN', 115, 23, { align: 'center' });
+            doc.setFont('times', 'normal');
+            doc.setFontSize(14);
+            doc.text('RISET DAN INOVASI DAERAH', 115, 23, { align: 'center' });
             doc.setFont('times', 'normal');
             doc.setFontSize(9);
             doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 29, { align: 'center' });

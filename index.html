@@ -690,14 +690,14 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transform: none !important
+      transform: scaleX(-1) !important;
     }
 
     #buktiVideo {
       width: 100%;
       height: 100%;
       object-fit: contain; /* Agar tidak terlalu zoom (muat tanpa crop) */
-      transform: none !important;
+      transform: scaleX(-1) !important;
       background: #000;
     }
 
@@ -705,7 +705,7 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
-      transform: none !important;
+      transform: scaleX(-1) !important;
     }
 
     #camCanvas {
@@ -1025,7 +1025,7 @@
     .cam-preview img {
       width: 100%;
       display: block;
-      transform: none !important;
+      transform: scaleX(-1) !important;
     }
 
     .cam-preview-info {
@@ -7488,7 +7488,11 @@ File di Google Drive juga akan dihapus.`)) return;
       const cnv = document.createElement('canvas');
       cnv.width = vid.videoWidth; 
       cnv.height = vid.videoHeight;
-      cnv.getContext('2d').drawImage(vid, 0, 0);
+      const ctx = cnv.getContext('2d');
+      // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
+      ctx.translate(cnv.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
       stopCamStream();
@@ -7627,7 +7631,11 @@ File di Google Drive juga akan dihapus.`)) return;
       const cnv = document.createElement('canvas');
       cnv.width = vid.videoWidth; 
       cnv.height = vid.videoHeight;
-      cnv.getContext('2d').drawImage(vid, 0, 0);
+      const ctx = cnv.getContext('2d');
+      // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
+      ctx.translate(cnv.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
       // Matikan stream video agar hemat memori (Kecuali untuk Meja Absen yang butuh kamera terus menyala)

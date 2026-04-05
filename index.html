@@ -12421,7 +12421,6 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
-      // 1. Validasi awal
       if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
@@ -12433,156 +12432,141 @@ async function generateRekapPDF() {
       const sampai = $('rekapSampai').value;
       const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
       
-      // Link Logo
+      // Logo URL
       const logoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-      showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
+      showRekapToast('loading', '⏳ Memuat data tanda tangan...');
 
-      // 2. Ambil data tanda tangan (Safe Fetch)
-      let sigMap = {};
+      // 1. Fungsi Helper untuk Load Gambar secara Asinkron (Anti-Macet)
+      const loadImage = (src) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = src;
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null); // Jika gagal, return null agar tidak crash
+        });
+      };
+
+      // 2. Ambil data tanda tangan dari server
+      let rawSigs = [];
       try {
         const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-        if (sigRes.ok) {
-          const sigJson = await sigRes.json();
-          const sigData = sigJson.data || sigJson || [];
-          if (Array.isArray(sigData)) {
-            sigData.forEach(s => {
-              // Hanya simpan jika string signature valid
-              if (s.signature && s.signature.startsWith('data:image')) {
-                sigMap[String(s.telegram_id)] = s.signature;
-              }
-            });
-          }
+        const sigJson = sigRes.ok ? await sigRes.json() : {};
+        rawSigs = sigJson.data || sigJson || [];
+      } catch (e) { console.warn("Gagal fetch tanda tangan."); }
+
+      // 3. Pre-load Logo dan Semua Tanda Tangan ke Memori
+      const logoImg = await loadImage(logoUrl);
+      const sigMap = {};
+      
+      // Filter data pegawai agar tidak ada baris kosong
+      const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+
+      // Load tanda tangan yang relevan saja (pegawai yang ada di list rekap)
+      for (const p of filteredPegawai) {
+        const found = rawSigs.find(s => String(s.telegram_id) === String(p.id));
+        if (found && found.signature) {
+          const sImg = await loadImage(found.signature);
+          if (sImg) sigMap[String(p.id)] = sImg;
         }
-      } catch (e) {
-        console.warn("Gagal mengambil tanda tangan server.");
       }
 
       showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-      // 3. Bersihkan data (Cegah baris kosong)
-      const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
-
+      // 4. Siapkan Body Tabel
       const tableBody = filteredPegawai.map((p, i) => {
         const row = p.dataExcelRow || {};
         const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
         const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-        return [
-          i + 1,
-          `${p.nama}\nNIP. ${p.nip || '—'}`,
-          jamM,
-          '', // Kolom Paraf Masuk
-          jamP,
-          ''  // Kolom Paraf Pulang
-        ];
+        return [i + 1, `${p.nama}\nNIP. ${p.nip || '—'}`, jamM, '', jamP, ''];
       });
 
-      // 4. Proses Tabel dengan Pengaman Gambar
-      try {
-        doc.autoTable({
-          startY: 60,
-          margin: { top: 15 },
-          head: [['No', 'Nama / NIP', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
-          body: tableBody,
-          theme: 'grid',
-          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-          styles: { font: 'times', fontSize: 8.5, cellPadding: 2.5, valign: 'middle', overflow: 'linebreak' },
-          columnStyles: {
-            0: { halign: 'center', cellWidth: 10 },
-            1: { cellWidth: 55 },
-            2: { halign: 'center', cellWidth: 22 },
-            3: { cellWidth: 32, minCellHeight: 14 }, 
-            4: { halign: 'center', cellWidth: 22 },
-            5: { cellWidth: 32, minCellHeight: 14 }
-          },
-          // FUNGSI UTAMA: Menggambar TTD di dalam sel secara aman
-          didDrawCell: (data) => {
-            if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
-              const peg = filteredPegawai[data.row.index];
-              const sigData = sigMap[String(peg.id)];
-              
-              if (sigData) {
-                const isParafMasuk = (data.column.index === 3);
-                const jamVal = isParafMasuk ? 
-                    (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
-                    (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
-
-                // Cek apakah ada data jam (Hadir)
-                const checkVal = String(jamVal || '').trim();
-                if (checkVal && !['—', '-', 'Alpa', 'Belum'].includes(checkVal)) {
-                  try {
-                    // Masukkan gambar dengan mode kompresi FAST
-                    doc.addImage(sigData, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 10, undefined, 'FAST');
-                  } catch (err) {
-                    // Jika satu gambar gagal, biarkan kosong agar tidak macet
-                  }
-                }
+      // 5. Generate Tabel
+      doc.autoTable({
+        startY: 60,
+        margin: { top: 15 },
+        head: [['No', 'Nama / NIP', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
+        body: tableBody,
+        theme: 'grid',
+        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
+        styles: { font: 'times', fontSize: 8.5, cellPadding: 2.5, valign: 'middle' },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 10 },
+          1: { cellWidth: 55 },
+          2: { halign: 'center', cellWidth: 22 },
+          3: { cellWidth: 32, minCellHeight: 14 }, 
+          4: { halign: 'center', cellWidth: 22 },
+          5: { cellWidth: 32, minCellHeight: 14 }
+        },
+        didDrawCell: (data) => {
+          if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
+            const peg = filteredPegawai[data.row.index];
+            const imgObj = sigMap[String(peg.id)];
+            if (imgObj) {
+              const isParafMasuk = (data.column.index === 3);
+              const jamVal = isParafMasuk ? (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+              // Tempel gambar jika hadir
+              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(String(jamVal).trim())) {
+                try {
+                  doc.addImage(imgObj, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 10);
+                } catch (e) {}
               }
             }
-          },
-          // Header halaman
-          didDrawPage: (data) => {
-            if (data.pageNumber === 1) {
-              try {
-                // Gunakan link logo langsung
-                doc.addImage(logoUrl, 'PNG', 15, 8, 22, 25, undefined, 'FAST');
-              } catch(e) {}
-              
-              doc.setFont('times', 'bold');
-              doc.setFontSize(12);
-              doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 110, 14, { align: 'center' });
-              doc.setFontSize(13);
-              doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 110, 21, { align: 'center' });
-              doc.setFont('times', 'normal');
-              doc.setFontSize(9);
-              doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 110, 27, { align: 'center' });
-              
-              doc.setLineWidth(0.7);
-              doc.line(15, 34, 195, 34);
-              doc.setLineWidth(0.2);
-              doc.line(15, 35, 195, 35);
-
-              doc.setFontSize(11);
-              doc.setFont('times', 'bold');
-              doc.text('DAFTAR HADIR PEGAWAI', 105, 45, { align: 'center' });
-              doc.setFont('times', 'normal');
-              doc.text(`Periode: ${tanggalLabel}`, 105, 51, { align: 'center' });
-            }
           }
-        });
-
-        // 5. Footer Tanda Tangan Kaban
-        const pageHeight = doc.internal.pageSize.height;
-        let footerY = doc.lastAutoTable.finalY + 12;
-
-        // Cek sisa halaman
-        if (footerY + 45 > pageHeight) {
-          doc.addPage();
-          footerY = 25;
+        },
+        didDrawPage: (data) => {
+          if (data.pageNumber === 1) {
+            // Kop Surat
+            if (logoImg) doc.addImage(logoImg, 'PNG', 15, 8, 22, 25);
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 110, 14, { align: 'center' });
+            doc.setFontSize(13);
+            doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 110, 21, { align: 'center' });
+            doc.setFont('times', 'normal');
+            doc.setFontSize(9);
+            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 110, 27, { align: 'center' });
+            doc.setLineWidth(0.7);
+            doc.line(15, 34, 195, 34);
+            doc.setLineWidth(0.2);
+            doc.line(15, 35, 195, 35);
+            doc.setFontSize(11);
+            doc.setFont('times', 'bold');
+            doc.text('DAFTAR HADIR PEGAWAI', 105, 45, { align: 'center' });
+            doc.setFont('times', 'normal');
+            doc.text(`Periode: ${tanggalLabel}`, 105, 51, { align: 'center' });
+          }
         }
+      });
 
-        doc.setFontSize(10.5);
-        doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
-        doc.text('Mengetahui,', 145, footerY + 6);
-        doc.text('Kepala Badan', 145, footerY + 11);
+      // 6. Footer (Kepala Badan)
+      const pageHeight = doc.internal.pageSize.height;
+      let footerY = doc.lastAutoTable.finalY + 12;
+      if (footerY + 45 > pageHeight) { doc.addPage(); footerY = 25; }
 
-        // Ambil TTD pejabat No 1
-        const kaban = filteredPegawai[0];
-        const kabanSig = sigMap[String(kaban?.id)];
-        if (kabanSig) {
-          try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14, undefined, 'FAST'); } catch(e){}
-        }
+      doc.setFontSize(10.5);
+      doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
+      doc.text('Mengetahui,', 145, footerY + 6);
+      doc.text('Kepala Badan', 145, footerY + 11);
 
-        doc.setFont('times', 'bold');
-        doc.text(kaban?.nama || '__________________________', 145, footerY + 38);
-        doc.setFont('times', 'normal');
-        doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
+      const kaban = filteredPegawai[0];
+      const kabanSig = sigMap[String(kaban?.id)];
+      if (kabanSig) {
+        try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14); } catch(e){}
+      }
 
-        // 6. Simpan & Kirim
-        const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
-        doc.save(fileName);
-        
-        showRekapToast('loading', '📤 Mengirim ke Telegram...');
+      doc.setFont('times', 'bold');
+      doc.text(kaban?.nama || '__________________________', 145, footerY + 38);
+      doc.setFont('times', 'normal');
+      doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
+
+      // 7. Simpan & Kirim
+      const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
+      doc.save(fileName);
+      
+      showRekapToast('loading', '📤 Mengirim ke Telegram...');
+      try {
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         await apiFetch(P.kirimRekap, { 
           method: 'POST', 
@@ -12594,11 +12578,7 @@ async function generateRekapPDF() {
           }) 
         });
         showRekapToast('success', '✅ PDF Berhasil dikirim!');
-
-      } catch (err) {
-        console.error("Critical error PDF:", err);
-        showRekapToast('fail', '❌ Gagal menyusun PDF. Coba segarkan halaman.');
-      }
+      } catch (e) { showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot'); }
     }
 
     /* ════════════════════════════════════════════════════

@@ -4649,135 +4649,54 @@
        KAMERA / FACE SCAN OVERLAY
        Muncul saat pegawai menekan tombol Absen
   ══════════════════════════════════════════════════ -->
-    <div class="cam-overlay hidden" id="camOverlay">
-      <div class="cam-header">
-        <div>
-          <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <button class="cam-close" id="camFlashBtn"
-            style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;"
-            onclick="toggleFlash()" title="Nyalakan/Matikan Flash">⚡</button>
-          <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
-        </div>
-      </div>
-      <div class="cam-body" id="camBody">
+    <!-- ══ MODIFIKASI KAMERA OVERLAY (MEJA ABSEN) ══ -->
+<div class="cam-overlay hidden" id="camOverlay">
+  <div class="cam-header">
+    <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
+    <button class="cam-close" id="camCloseBtn" onclick="stopMejaAbsen()">✕ Keluar</button>
+  </div>
+  <div class="cam-body" id="camBody">
+    <!-- Loading model -->
+    <div class="model-loading" id="modelLoading">
+      <span class="spin">🧠</span> Memuat AI...
+    </div>
 
-        <!-- Loading model -->
-        <div class="model-loading" id="modelLoading">
-          <div style="width:100%;max-width:300px;text-align:center">
-            <div style="font-size:28px;margin-bottom:10px">🧠</div>
-            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px"
-                 id="mlTitle">Memuat Model AI Deteksi Wajah</div>
-            <!-- Progress bar -->
-            <div style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
-              <div id="mlProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);border-radius:3px;transition:width .4s ease"></div>
-            </div>
-            <div id="mlPercent" style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:10px">0%</div>
-            <!-- Step list -->
-            <div style="text-align:left;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;width:100%">
-              <div id="mlStep0" style="display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--muted)">
-                <span id="mlStep0Icon">⏳</span><span>TinyFaceDetector (190 KB)</span>
-              </div>
-              <div id="mlStep1" style="display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:10px;color:var(--muted)">
-                <span id="mlStep1Icon">⏳</span><span>FaceLandmark (330 KB)</span>
-              </div>
-              <div id="mlStep2" style="display:flex;align-items:center;gap:7px;font-size:10px;color:var(--muted)">
-                <span id="mlStep2Icon">⏳</span><span>FaceRecognition (6.2 MB)</span>
-              </div>
-            </div>
-            <div id="mlHint" style="font-size:9px;color:var(--muted);margin-top:8px;line-height:1.5">
-              Pertama kali membutuhkan ~10 detik.<br>Selanjutnya lebih cepat karena tersimpan cache.
-            </div>
-          </div>
-        </div>
-
-        <!-- Video stream + canvas overlay -->
-        <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
-          <video id="camVideo" autoplay playsinline muted></video>
-          <canvas id="camCanvas"></canvas>
-          <div class="face-guide" id="faceGuideWrap">
-            <div class="face-oval" id="faceOval"></div>
-          </div>
-          <!-- Kasirjegrup-style corner brackets -->
-          <div class="cam-corner tl"></div>
-          <div class="cam-corner tr"></div>
-          <div class="cam-corner bl"></div>
-          <div class="cam-corner br"></div>
-          <div class="cam-scan-line" id="camScanLine"></div>
-          <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
-        </div>
-
-        <!-- Status deteksi wajah -->
-        <div class="cam-status idle" id="camStatus" style="display:none">
-          <div class="cam-status-icon" id="camStatusIcon">🔍</div>
-          <div class="cam-status-text">
-            <div class="cam-status-title" id="camStatusTitle">Mendeteksi wajah...</div>
-            <div class="cam-status-sub" id="camStatusSub">Hadapkan wajah ke kamera</div>
-          </div>
-        </div>
-
-        <!-- Combined: Face Recognition + Liveness Card (compact merged) -->
-        <div id="faceRegCard" style="display:none;width:100%;max-width:320px;flex-shrink:0">
-          <!-- Face match row -->
-          <div
-            style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
-            <div style="display:flex;align-items:center;gap:9px">
-              <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
-                <img id="faceRegThumb" src="" alt=""
-                  style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
-                <span id="faceRegThumbEmpty">👤</span>
-              </div>
-              <div class="face-reg-info" style="flex:1;min-width:0">
-                <div
-                  style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">
-                  🧠 Face Recognition</div>
-                <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data
-                  wajah</div>
-                <div class="face-reg-sub" id="faceRegSub" style="font-size:8.5px;color:var(--muted);margin-top:1px">
-                  Daftarkan untuk pengenalan otomatis</div>
-              </div>
-              <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()"
-                style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
-            </div>
-          </div>
-          <!-- Liveness steps (inline compact) -->
-          <div id="livenessCard"
-            style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:8px 13px">
-            <div
-              style="font-size:8.5px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:7px">
-              🔐 Liveness — Anti Foto</div>
-            <div class="liveness-steps" id="livenessSteps" style="display:flex;gap:5px">
-              <div class="liveness-step" id="ls0" style="flex:1">
-                <div class="ls-icon">😐</div>
-                <div class="ls-label">Wajah Terdeteksi</div>
-              </div>
-              <div class="liveness-step" id="ls1" style="flex:1">
-                <div class="ls-icon">😉</div>
-                <div class="ls-label">Kedipkan Mata</div>
-              </div>
-              <div class="liveness-step" id="ls2" style="flex:1">
-                <div class="ls-icon">↔️</div>
-                <div class="ls-label">Geleng Kepala</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview hasil foto -->
-        <div class="cam-preview" id="camPreview">
-          <img id="camPreviewImg" src="" alt="Foto Absen">
-          <div class="cam-preview-info" id="camPreviewInfo"></div>
-        </div>
-
-        <!-- Tombol ambil foto -->
-        <button class="btn-capture" id="btnCapture" onclick="doCapture()" disabled>
-          📸 Ambil Foto & Lanjutkan Absen
-        </button>
-
-
+    <!-- Video stream -->
+    <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <canvas id="camCanvas"></canvas>
+      <div class="cam-corner tl"></div><div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div><div class="cam-corner br"></div>
+      <div class="cam-scan-line" id="camScanLine"></div>
+      <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
+      
+      <!-- Overlay Hasil Scan (Muncul otomatis saat terdeteksi) -->
+      <div id="mejaOverlayResult" style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.9); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:fadeIn 0.3s;">
+          <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
+          <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
+          <div id="moStatus" style="font-size:14px; font-weight:700; color:#fff; margin-top:5px;">BERHASIL ABSEN</div>
+          <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:8px;">Jam 08:00 WITA</div>
       </div>
     </div>
+
+    <!-- Status deteksi -->
+    <div class="cam-status idle" id="camStatus" style="display:none">
+      <div class="cam-status-icon" id="camStatusIcon">🔍</div>
+      <div class="cam-status-text">
+        <div class="cam-status-title" id="camStatusTitle">Siap Scan</div>
+        <div class="cam-status-sub" id="camStatusSub">Posisikan wajah di area kotak</div>
+      </div>
+    </div>
+
+    <!-- Info Liveness (1 Saja: Kedip) -->
+    <div id="livenessMini" style="display:none; width:100%; max-width:320px; background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; font-size:11px;">
+        <span id="lsIcon">😐</span> <span id="lsText">Mohon Berkedip</span>
+    </div>
+    
+    <!-- Tombol Capture disembunyikan total di Meja Mode -->
+    <button class="btn-capture" id="btnCapture" style="display:none"></button>
+  </div>
+</div>
 
     <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
     <div id="faceRequiredModal"
@@ -7471,11 +7390,15 @@ File di Google Drive juga akan dihapus.`)) return;
 
            setCamStatus('bad', '👤', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
            setTimeout(() => {
-             _captureData = null;
-             _autoCaptured = false;
-             $('camPreview').classList.remove('show');
-             $('camStatus').style.display = 'flex';
-             startDetectLoop();
+              if (window._isMejaMode) {
+              _captureData = null;
+              _autoCaptured = false;
+              $('camPreview').classList.remove('show');
+              $('camStatus').style.display = 'flex';
+              startDetectLoop();
+              return; 
+            }
+            closeCamOverlay();
            }, 2500);
            return;
         }
@@ -12300,7 +12223,10 @@ File di Google Drive juga akan dihapus.`)) return;
     ════════════════════════════════════════════════════════ */
 
     /* ════ MEJA ABSEN (1:N matching) ════ */
-    window._isMejaAbsen = false;
+    window._isMejaMode = false;
+    window._mejaProcessing = false;
+    let _blinkDetected = false;
+    let _lastEyeRatio = 0;
     let _allFaceDescriptors = [];
     let _mejaGpsLocation = null;
     let _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
@@ -12342,82 +12268,91 @@ File di Google Drive juga akan dihapus.`)) return;
       });
     }
 
-    async function stopMejaAbsen() {
-      _isMejaAbsen = false;
-      window._isMejaMode = false;
-      _allFaceDescriptors = [];
-      _mejaGpsLocation = null;
-      closeCamOverlay();
-      _setMejaStatus('idle', '🖥️', 'Sesi dihentikan', 'Counter tersimpan di atas');
-      const btnStart = $('btnMejaAbsen');
-      const btnStop = $('btnMejaStop');
-      if (btnStart) { btnStart.style.display = 'flex'; btnStart.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
-      if (btnStop) btnStop.style.display = 'none';
+    // 2. Fungsi Menghentikan Sesi (Dipanggil tombol X di kamera)
+    function stopMejaAbsen() {
+        window._isMejaMode = false;
+        window._mejaProcessing = false;
+        _allFaceDescriptors = [];
+        closeCamOverlay();
+        _setMejaStatus('idle', '🖥️', 'Sesi Berakhir', 'Data counter tersimpan');
+        const btn = $('btnMejaAbsen');
+        if(btn) { btn.disabled = false; btn.innerHTML = '<span>🖥️</span><span>Mulai Meja Absen</span>'; }
+    }
+    // 3. Modifikasi Detect Loop (Tambahkan di dalam startDetectLoop yang ada)
+// Masukkan logika ini ke dalam loop 'const loop = async () => { ... }' di kode asli Anda
+async function handleMejaLogic(detection, vid) {
+    if (!window._isMejaMode || window._mejaProcessing) return;
+
+    // Liveness Sederhana: Cek Kedipan
+    const landmarks = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true);
+    if (landmarks) {
+        const leftEye = landmarks.landmarks.getLeftEye();
+        const rightEye = landmarks.landmarks.getRightEye();
+        
+        // Hitung jarak kelopak mata (sederhana)
+        const dist = Math.abs(leftEye[1].y - leftEye[5].y);
+        if (_lastEyeRatio > 0 && dist < _lastEyeRatio * 0.6) {
+            _blinkDetected = true;
+            $('lsIcon').textContent = '😉';
+            $('lsText').textContent = 'Kedipan Terdeteksi!';
+        }
+        _lastEyeRatio = dist;
     }
 
+    // Jika wajah stabil & sudah kedip (atau terdeteksi jelas)
+    if (detection.score > 0.8) {
+        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mencocokkan data...');
+        // Auto trigger capture tanpa tombol
+        setTimeout(doCapture, 500); 
+    }
+}
     async function startMejaAbsen() {
       const btn = $('btnMejaAbsen');
-      if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat...'; }
-      _setMejaStatus('processing', '⏳', 'Mengambil lokasi GPS...', 'Harap tunggu');
+      setBtnL('btnMejaAbsen', true, 'Menyiapkan Meja...');
+      
+      _setMejaStatus('processing', '⏳', 'Sinkronisasi Data...', 'Mengambil database wajah pegawai');
 
-      // 1. Ambil GPS
-      _mejaGpsLocation = await _getMejaGps();
-      const locEl = $('mejaLocVal');
-      const accEl = $('mejaLocAccuracy');
-      if (_mejaGpsLocation && locEl) {
-        locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
-        if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
-      } else if (locEl) {
-        locEl.textContent = 'Lokasi tidak tersedia (GPS off?)';
-      }
-
-      _setMejaStatus('processing', '📥', 'Memuat data wajah pegawai...', 'Harap tunggu sebentar');
-
-      // 2. Load face descriptors via endpoint dedicated
       try {
-        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.data || []);
+          // Load data wajah semua pegawai
+          const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+          const data = await res.json();
+          const list = Array.isArray(data) ? data : (data.data || []);
 
-        window._mejaUserMap = {};
-        _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
-          const rawDesc = f.face_histogram || f.descriptor;
-          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
-          const tid = String(f.telegram_id || f.id || '');
-          window._mejaUserMap[tid] = {
-            nama: f.nama || f.Nama || tid,
-            nip: f.nip || f.NIP || '-'
-          };
-          return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-        });
+          window._mejaUserMap = {};
+          _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
+              const rawDesc = f.face_histogram || f.descriptor;
+              const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+              const tid = String(f.telegram_id || f.id || '');
+              window._mejaUserMap[tid] = {
+                  nama: f.nama || f.Nama || tid,
+                  nip: f.nip || f.NIP || '-'
+              };
+              return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+          });
 
-        if (!_allFaceDescriptors.length) {
-          _setMejaStatus('idle', '⚠️', 'Tidak Ada Data Wajah', 'Daftarkan wajah pegawai terlebih dahulu');
-          _showMejaResult('fail', '⚠️ Belum ada wajah terdaftar untuk Meja Absen.');
-          if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
-          return;
-        }
+          if (!_allFaceDescriptors.length) {
+              alert("Belum ada data wajah terdaftar di server.");
+              setBtnL('btnMejaAbsen', false, 'Mulai Meja Absen');
+              return;
+          }
 
-        _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
-        _updateMejaCnt();
-        _isMejaAbsen = true;
+          // Ambil GPS Meja Sekali di Awal
+          _mejaGpsLocation = await _getMejaGps();
+          
+          window._isMejaMode = true;
+          _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+          _updateMejaCnt();
 
-        _setMejaStatus('active', '🔍', `Data wajah dimuat (${_allFaceDescriptors.length} pegawai)`, 'Membuka kamera untuk scan...');
-        const camTitle = $('camHeaderTitle');
-        if (camTitle) camTitle.textContent = '🖥️ Meja Absen (Continuous Scan)';
-        if (btn) btn.style.display = 'none';
-        const btnStop = $('btnMejaStop');
-        if (btnStop) btnStop.style.display = 'flex';
-
-        openCamOverlay('meja');
+          // Buka Kamera
+          openCamOverlay('meja');
+          $('livenessMini').style.display = 'block';
+          $('camHeaderTitle').textContent = '🖥️ Meja Absen Otomatis';
+          
       } catch (e) {
-        console.error('startMejaAbsen error:', e);
-        _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
-        _showMejaResult('fail', '❌ Gagal memuat data wajah. Coba lagi.');
-        if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+          alert("Gagal koneksi ke server: " + e.message);
+          setBtnL('btnMejaAbsen', false, 'Mulai Meja Absen');
       }
-    }
+  }
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
@@ -12667,99 +12602,78 @@ async function generateRekapPDF() {
     /* ════════════════════════════════════════════════════
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
-    async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
-      if (window._mejaProcessing) return;
-      window._mejaProcessing = true;
+    // 4. Handler Pencocokan & Cek Status (AJAX ke Webhook)
+async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+    if (window._mejaProcessing) return;
+    window._mejaProcessing = true;
 
-      const tid = String(telegramId);
-      const user = window._mejaUserMap ? window._mejaUserMap[tid] : null;
-      const nama = user ? user.nama : tid;
-      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.55) * 100));
+    const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai '+telegramId, nip: '-' };
+    const overlay = $('mejaOverlayResult');
+    
+    // Tampilkan state loading di overlay
+    overlay.style.display = 'flex';
+    $('moIcon').textContent = '⏳';
+    $('moNama').textContent = user.nama;
+    $('moStatus').textContent = 'Memeriksa status...';
+    $('moDetail').textContent = 'Harap tunggu sebentar';
 
-      // 1. Tampilkan Preview di Layar Kamera Langsung
-      if (dataUrl) {
-        $('camPreviewImg').src = dataUrl;
-        $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama} (${score}%)</span> <span class="cam-preview-badge" style="background:rgba(245,158,11,0.15);color:var(--warning)">⏳ Memproses...</span>`;
-        $('camPreview').classList.add('show');
-        $('camStatus').style.display = 'none';
-      }
-
-      _setMejaStatus('processing', '⏳', `Mencatat: ${nama}...`, 'Harap tunggu');
-
-      const wrap = $('camVideoWrap');
-      if (wrap) {
-        wrap.classList.add('face-match-success');
-        setTimeout(() => wrap.classList.remove('face-match-success'), 2500);
-      }
-
-      const n = nowWITA();
-      const tanggalIso = fmtD(n);
-      const jam = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
-
-      const payload = {
-        telegram_id: tid,
-        nama: nama,
-        nip: user ? user.nip : '-',
+    const n = nowWITA();
+    const payload = {
+        telegram_id: telegramId,
+        nama: user.nama,
+        nip: user.nip,
         admin_id: MY_ID,
-        jam,
-        tanggal_iso: tanggalIso,
-        latitude: _mejaGpsLocation?.lat ?? 0,
-        longitude: _mejaGpsLocation?.lng ?? 0,
-        accuracy: _mejaGpsLocation?.acc ?? 0,
-        lokasi_nama: 'Meja Absen',
-        face_match: score,
-        timestamp: Math.floor(Date.now() / 1000),
+        jam: `${p2(n.getHours())}:${p2(n.getMinutes())} WITA`,
+        tanggal_iso: fmtD(n),
+        latitude: _mejaGpsLocation?.lat || 0,
+        longitude: _mejaGpsLocation?.lng || 0,
+        accuracy: _mejaGpsLocation?.acc || 0,
         source: 'meja_absen'
-      };
+    };
 
-      try {
+    try {
         const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
-        const d = await res.json().catch(() => ({}));
+        const d = await res.json();
 
         if (res.ok && d.ok !== false) {
-          const resNama = d.nama || d.pegawai?.nama || nama;
-          const jenis = d.jenis_absen || 'ABSEN';
-          const ismasuk = jenis.toUpperCase().includes('MASUK');
-          if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
-          _updateMejaCnt();
-          
-          _setMejaStatus('active', '✅', `${resNama} — ${jenis}`, 'Siap scan berikutnya...');
-          _showMejaResult('success', `✅ ${resNama} — ${jenis} berhasil dicatat`);
-          
-          // Update Status di Layar Kamera Langsung
-          $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${resNama}</span> <span class="cam-preview-badge cpb-ok">✅ ${jenis} Berhasil</span>`;
+            const isMasuk = (d.jenis_absen || '').includes('MASUK');
+            if(isMasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
+            
+            $('moIcon').textContent = '✅';
+            $('moStatus').textContent = (d.jenis_absen || 'BERHASIL');
+            $('moStatus').style.color = '#22c55e';
+            $('moDetail').textContent = d.message || 'Data berhasil dicatat';
         } else {
-          let errMsg = d.message || d.error || 'Gagal mencatat absen';
-          if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan; 
-          _mejaCnt.gagal++;
-          _updateMejaCnt();
-          
-          _setMejaStatus('active', '⚠️', 'Gagal Catat', errMsg);
-          _showMejaResult('fail', `❌ ${errMsg}`);
-          
-          // Update Error di Layar Kamera Langsung
-          $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama}</span> <span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">❌ ${errMsg}</span>`;
+            // Cek jika sudah absen (logic n8n mengembalikan is_valid: false dengan keterangan "sudah absen")
+            const msg = d.validasi?.keterangan || d.message || 'Gagal';
+            const isSudah = msg.toLowerCase().includes('sudah');
+            
+            $('moIcon').textContent = isSudah ? 'ℹ️' : '❌';
+            $('moStatus').textContent = isSudah ? 'SUDAH ABSEN' : 'DITOLAK';
+            $('moStatus').style.color = isSudah ? var(--info) : var(--danger);
+            $('moDetail').textContent = msg;
+            _mejaCnt.gagal++;
         }
-      } catch (e) {
+    } catch (e) {
+        $('moIcon').textContent = '🔌';
+        $('moStatus').textContent = 'OFFLINE';
+        $('moDetail').textContent = 'Gagal menghubungi server';
         _mejaCnt.gagal++;
-        _updateMejaCnt();
-        
-        _setMejaStatus('active', '⚠️', 'Error Koneksi', 'Pastikan server n8n aktif');
-        _showMejaResult('fail', '❌ Server tidak merespons');
-        $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama}</span> <span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">🔌 Error Koneksi</span>`;
-      }
-
-      // Tahan Frame kamera sebentar agar admin bisa membaca hasilnya, lalu reset ke Mode Scan selanjutnya
-      setTimeout(() => {
-        window._mejaProcessing = false;
-        _captureData = null;
-        _autoCaptured = false;
-        $('camPreview').classList.remove('show');
-        $('camStatus').style.display = 'flex';
-        setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai ke kamera');
-        startDetectLoop();
-      }, 3000);
     }
+
+    _updateMejaCnt();
+
+    // COOLDOWN 3 Detik lalu Reset untuk Scan Berikutnya
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        window._mejaProcessing = false;
+        _blinkDetected = false;
+        _autoCaptured = false;
+        _captureData = null;
+        setCamStatus('ok', '🔍', 'Siap Scan Berikutnya', 'Posisikan wajah pegawai');
+        startDetectLoop(); // Mulai loop lagi
+    }, 3500);
+}
 
     // ── Override existing openSignaturePad for Admin Support ──
     const _origOpenSignaturePad = openSignaturePad;

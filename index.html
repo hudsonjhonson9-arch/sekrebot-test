@@ -7251,7 +7251,16 @@ File di Google Drive juga akan dihapus.`)) return;
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';
       $('camPreview').classList.remove('show');
-      $('btnCapture').disabled = true;
+      
+      // FIX 1: Pastikan tombol tampil untuk absen/daftar manual, tapi sembunyi di Meja Absen
+      const btnCap = $('btnCapture');
+      if(btnCap) {
+          btnCap.style.display = isMeja ? 'none' : 'flex';
+          btnCap.disabled = true;
+      }
+      
+      const livenessUI = $('livenessMini');
+      if(livenessUI) livenessUI.style.display = isMeja ? 'block' : 'none';
 
       // Reset UI progress
       _updateModelProgress(0, 0);
@@ -7277,7 +7286,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('camVideoWrap').style.display = 'block';
         $('camStatus').style.display = 'flex';
         setCamStatus('ok', '📷', 'Ambil Foto', 'Posisikan bukti dengan jelas');
-        $('btnCapture').disabled = false;
+        if(btnCap) btnCap.disabled = false;
         return;
       }
 
@@ -7285,12 +7294,13 @@ File di Google Drive juga akan dihapus.`)) return;
       const ready = await loadFaceApiModels();
       if (!ready) {
         setCamStatus('warn', '⚠️', 'AI Gagal Dimuat', 'Gunakan tombol manual untuk ambil foto');
-        $('btnCapture').disabled = false;
+        if(btnCap) btnCap.disabled = false;
       }
 
       $('modelLoading').style.display = 'none';
       $('camVideoWrap').style.display = 'block';
       $('camStatus').style.display = 'flex';
+      
       if (MY_ID && !onDone?.isRegister && !window._isMejaMode) {
         updateFaceRegUI();
         $('faceRegCard').style.display = 'block';
@@ -7360,16 +7370,15 @@ File di Google Drive juga akan dihapus.`)) return;
       
       _blinkDetected = false;
 
-      // Munculkan tombol capture manual setelah 8 detik untuk mode personal (bukan meja)
+      // Munculkan tombol capture manual lebih cepat (3 detik) untuk mode Daftar Wajah/Absen biasa
       setTimeout(() => { 
           if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
-      }, 8000);
+      }, 3000);
 
       const loop = async () => {
         if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         _detectLoop = requestAnimationFrame(loop);
 
-        // Deteksi wajah + landmarks untuk deteksi kedip (Liveness)
         const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks(true);
 
         if (!detection) {
@@ -7386,29 +7395,25 @@ File di Google Drive juga akan dihapus.`)) return;
 
         _livenessState.faceOk = true;
         wrap.className = 'cam-video-wrap face-ok';
-        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mohon tetap diam...');
+        setCamStatus('ok', '✅', 'Wajah Terdeteksi', window._isMejaMode ? 'Mohon tetap diam...' : 'Posisikan wajah & Tekan tombol');
 
-        // ── LIVENESS: Deteksi Kedip Mata (EAR - Eye Aspect Ratio) ──
-        const leftEye = detection.landmarks.getLeftEye();
-        const rightEye = detection.landmarks.getRightEye();
-        
-        const getEAR = (eye) => {
-           const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-           const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-           const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-           return (v1 + v2) / (2.0 * h);
-        };
-
-        const earL = getEAR(leftEye);
-        const earR = getEAR(rightEye);
-        const ear = (earL + earR) / 2;
-
-        // Jika EAR sangat kecil (mata tertutup)
-        if (ear < 0.22) {
-            _blinkDetected = true;
-        }
-
+        // ── LIVENESS HANYA JALAN DI MEJA ABSEN ──
         if (window._isMejaMode) {
+            const leftEye = detection.landmarks.getLeftEye();
+            const rightEye = detection.landmarks.getRightEye();
+            const getEAR = (eye) => {
+               const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+               const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+               const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+               return (v1 + v2) / (2.0 * h);
+            };
+
+            const earL = getEAR(leftEye);
+            const earR = getEAR(rightEye);
+            const ear = (earL + earR) / 2;
+
+            if (ear < 0.22) _blinkDetected = true; // Mata Berkedip
+
             if (_blinkDetected) {
                 $('lsIcon').textContent = '😉';
                 $('lsText').textContent = 'Liveness OK! Sedang mencocokkan...';
@@ -7418,18 +7423,90 @@ File di Google Drive juga akan dihapus.`)) return;
                 $('lsText').textContent = 'Harap Kedipkan Mata Anda';
                 $('lsText').style.color = 'var(--gold)';
             }
-        } else {
-            _blinkDetected = true; // Jika mode personal, anggap liveness otomatis true untuk fallback
-        }
 
-        // Auto capture HANYA jika model siap DAN (Liveness kedip berhasil ATAU bukan mode Meja)
-        if (!_autoCaptured && _modelsReady && (_blinkDetected || !window._isMejaMode)) {
-          _autoCaptured = true;
-          setTimeout(doCapture, 400); // Jeda sedikit sebelum foto
+            // Auto capture Meja Mode
+            if (!_autoCaptured && _modelsReady && _blinkDetected) {
+              _autoCaptured = true;
+              setTimeout(doCapture, 400); 
+            }
         }
       };
       loop();
     }
+
+    /* ── Ambil foto (capture) ── */
+    function startDetectLoop() {
+      const vid = $('camVideo');
+      const cnv = $('camCanvas');
+      const ctx = cnv.getContext('2d');
+      const wrap = $('camVideoWrap');
+      
+      _blinkDetected = false;
+
+      // Munculkan tombol capture manual lebih cepat (3 detik) untuk mode Daftar Wajah/Absen biasa
+      setTimeout(() => { 
+          if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
+      }, 3000);
+
+      const loop = async () => {
+        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        _detectLoop = requestAnimationFrame(loop);
+
+        const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks(true);
+
+        if (!detection) {
+          wrap.className = 'cam-video-wrap face-bad';
+          setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
+          _livenessState.faceOk = false;
+          if(window._isMejaMode) {
+              $('lsIcon').textContent = '😐';
+              $('lsText').textContent = 'Menunggu Wajah...';
+              $('lsText').style.color = 'var(--muted)';
+          }
+          return;
+        }
+
+        _livenessState.faceOk = true;
+        wrap.className = 'cam-video-wrap face-ok';
+        setCamStatus('ok', '✅', 'Wajah Terdeteksi', window._isMejaMode ? 'Mohon tetap diam...' : 'Posisikan wajah & Tekan tombol');
+
+        // ── LIVENESS HANYA JALAN DI MEJA ABSEN ──
+        if (window._isMejaMode) {
+            const leftEye = detection.landmarks.getLeftEye();
+            const rightEye = detection.landmarks.getRightEye();
+            const getEAR = (eye) => {
+               const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+               const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+               const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+               return (v1 + v2) / (2.0 * h);
+            };
+
+            const earL = getEAR(leftEye);
+            const earR = getEAR(rightEye);
+            const ear = (earL + earR) / 2;
+
+            if (ear < 0.22) _blinkDetected = true; // Mata Berkedip
+
+            if (_blinkDetected) {
+                $('lsIcon').textContent = '😉';
+                $('lsText').textContent = 'Liveness OK! Sedang mencocokkan...';
+                $('lsText').style.color = 'var(--success)';
+            } else {
+                $('lsIcon').textContent = '😐';
+                $('lsText').textContent = 'Harap Kedipkan Mata Anda';
+                $('lsText').style.color = 'var(--gold)';
+            }
+
+            // Auto capture Meja Mode
+            if (!_autoCaptured && _modelsReady && _blinkDetected) {
+              _autoCaptured = true;
+              setTimeout(doCapture, 400); 
+            }
+        }
+      };
+      loop();
+    }
+
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
@@ -7444,58 +7521,63 @@ File di Google Drive juga akan dihapus.`)) return;
       cnv.getContext('2d').drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
-      // Extract descriptor
       let descriptor = null;
       if (_modelsReady) {
         const desc = await getFaceDescriptor(cnv);
         if (desc) descriptor = Array.from(desc);
       }
 
-      // Handle "Meja Absen" Matching (1:N) secara Otomatis
+      // Handle "Meja Absen" Matching (1:N)
       if (window._isMejaMode) {
           if (_allFaceDescriptors.length > 0 && descriptor) {
             const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
             const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
             
             if (bestMatch.label !== 'unknown') {
-              // Wajah Dikenali -> Panggil fungsi pencatatan
               _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
               return; 
             } else {
-               // Wajah tak dikenal
                _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
                return;
             }
           } else {
-              // Gagal ekstrak wajah
              _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
              return;
           }
       }
 
-      // --- LOGIKA UNTUK ABSEN PERSONAL (HP SENDIRI) ---
-      let match = { label: 'Tanpa Verifikasi AI', cls: 'cpb-warn' };
-      const ref = getFaceRef();
-      if (ref && descriptor) {
-        const dist = euclideanDistance(ref.descriptor, descriptor);
-        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-        if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
-        else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+      // --- LOGIKA UNTUK MANUAL (ABSEN DARI HP SENDIRI / DAFTAR WAJAH) ---
+      let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
+      
+      // Jika absen personal (Bukan Daftar Wajah), tampilkan match score
+      if (!_absenCallbackAfterCam?.isRegister) {
+          const ref = getFaceRef();
+          if (ref && descriptor) {
+            const dist = euclideanDistance(ref.descriptor, descriptor);
+            const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+            if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
+            else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+          }
       }
 
       _captureData = { dataUrl, descriptor, faceOk: true, livenessOk: true };
 
-      // Preview UI
       $('camPreviewImg').src = dataUrl;
       $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
       $('camPreview').classList.add('show');
       stopCamStream();
 
+      // FIX 2: Simpan callback ke dalam variabel sementara sebelum memanggil closeCamOverlay!
       setTimeout(() => {
-        closeCamOverlay();
-        const cb = _absenCallbackAfterCam;
-        if (typeof cb === 'function') cb(_captureData);
-        else if (cb?.onDone) cb.onDone(_captureData);
+        const tempCallback = _absenCallbackAfterCam; 
+        closeCamOverlay(); // Fungsi ini akan mengosongkan _absenCallbackAfterCam
+        
+        // Panggil server menggunakan tempCallback
+        if (typeof tempCallback === 'function') {
+            tempCallback(_captureData);
+        } else if (tempCallback?.onDone) {
+            tempCallback.onDone(_captureData);
+        }
       }, 1000);
     }
 

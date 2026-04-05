@@ -693,6 +693,21 @@
       transform: none !important
     }
 
+    #buktiVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Agar tidak terlalu zoom (muat tanpa crop) */
+      transform: none !important;
+      background: #000;
+    }
+
+    #buktiPreviewCamImg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transform: none !important;
+    }
+
     #camCanvas {
       position: absolute;
       inset: 0;
@@ -1009,7 +1024,8 @@
 
     .cam-preview img {
       width: 100%;
-      display: block
+      display: block;
+      transform: none !important;
     }
 
     .cam-preview-info {

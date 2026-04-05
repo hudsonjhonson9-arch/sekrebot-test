@@ -54,9 +54,8 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       background: var(--navy);
       color: var(--white);
-      height: 100%;
-      margin: 0;
-      overflow: hidden; /* Prevent global scroll */
+      min-height: 100vh;
+      overflow-x: hidden
     }
 
     body::before {
@@ -76,8 +75,7 @@
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      height: 100dvh; /* Fixed height for view */
-      overflow: hidden;
+      min-height: 100vh
     }
 
     /* Offline Banner */
@@ -183,10 +181,7 @@
     .panel {
       display: none;
       padding: 12px 14px 32px;
-      flex: 1;
-      overflow-y: auto; /* Independent scroll */
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
+      flex: 1
     }
 
     .panel.active {
@@ -1341,98 +1336,6 @@
       font-size: 9px;
       font-weight: 700;
       cursor: pointer
-    }
-
-    /* Sub-Pills for inner cards */
-    .sub-pill {
-      padding: 5px 14px;
-      border-radius: 18px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all .2s;
-    }
-    .sub-pill.active {
-      background: var(--gold);
-      color: var(--navy);
-      font-weight: 800;
-    }
-
-    /* Toggle Switch */
-    .toggle-switch {
-      width: 52px;
-      height: 28px;
-      border-radius: 14px;
-      background: #374151;
-      cursor: pointer;
-      position: relative;
-      transition: background .3s ease;
-      flex-shrink: 0;
-    }
-    .toggle-switch.active {
-      background: var(--success);
-    }
-    .toggle-knob {
-      position: absolute;
-      top: 3px;
-      left: 3px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #fff;
-      transition: left .3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 1px 4px rgba(0,0,0,.3);
-    }
-    .toggle-switch.active .toggle-knob {
-      left: 27px;
-    }
-
-    /* Admin Sub-Tabs */
-    .admin-sub-tabs {
-      display: flex;
-      gap: 6px;
-      padding: 4px;
-      background: rgba(255, 255, 255, .03);
-      border: 1px solid rgba(255, 255, 255, .06);
-      border-radius: 12px;
-      margin-bottom: 12px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      white-space: nowrap;
-    }
-    .admin-sub-tabs::-webkit-scrollbar { display: none; }
-    .admin-sub-tab {
-      padding: 8px 14px;
-      border-radius: 9px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      cursor: pointer;
-      border: 1px solid transparent;
-      background: transparent;
-      transition: all .2s ease;
-      font-family: inherit;
-      flex-shrink: 0;
-    }
-    .admin-sub-tab.active {
-      background: var(--admin-dim);
-      color: var(--admin);
-      border-color: rgba(167, 139, 250, .3);
-    }
-    .admin-sub-panel {
-      display: none;
-      animation: fadeIn .2s ease;
-    }
-    .admin-sub-panel.active {
-      display: block;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
     }
 
     /* Spinner */
@@ -5457,197 +5360,446 @@
     <div class="panel" id="panel-admin">
       <div class="admin-header-card">
         <div class="admin-badge">⚡ AKSES ADMIN</div>
-        <div class="admin-title">Panel Kendali Admin</div>
-        <div class="admin-sub">Kelola pegawai, lokasi, dan pengaturan sistem</div>
+        <div class="admin-title">Manajemen Lokasi Absen</div>
+        <div class="admin-sub">Tambah & kelola titik lokasi via pin peta interaktif</div>
       </div>
-
-      <!-- Admin Sub-Tabs Navigation -->
-      <div class="admin-sub-tabs">
-        <button class="admin-sub-tab active" id="adminSubTab-pegawai" onclick="switchAdminSubTab('pegawai')">👥 Pegawai</button>
-        <button class="admin-sub-tab" id="adminSubTab-lokasi" onclick="switchAdminSubTab('lokasi')">📍 Lokasi</button>
-        <button class="admin-sub-tab" id="adminSubTab-sistem" onclick="switchAdminSubTab('sistem')">⚙️ Sistem</button>
-        <button class="admin-sub-tab" id="adminSubTab-konf" onclick="switchAdminSubTab('konf')">📋 Konf</button>
+      <div class="card">
+        <div class="card-title">🗺️ Pin Lokasi Baru di Peta</div>
+        <div class="map-container">
+          <div class="map-hint">📍 Tap peta untuk memilih lokasi</div>
+          <div id="adminMap"></div>
+        </div>
+        <div class="map-coords" id="mapCoords">
+          <div class="map-coord-item">
+            <div class="map-coord-label">Latitude</div>
+            <div class="map-coord-val" id="pinLat">—</div>
+          </div>
+          <div class="map-coord-item">
+            <div class="map-coord-label">Longitude</div>
+            <div class="map-coord-val" id="pinLon">—</div>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">🏢 Nama Lokasi</label><input type="text" class="form-input"
+            id="namaLokasi" placeholder="Contoh: Kantor BAPPERIDA" /></div>
+        <div class="form-group"><label class="form-label">📏 Radius Toleransi (meter)</label><input type="number"
+            class="form-input" id="radiusLokasi" value="100" min="50" max="2000" /></div>
+        <div class="form-group">
+          <label class="form-label">🌐 IP Range Kantor (CIDR)</label>
+          <input type="text" class="form-input" id="ipRangeLokasi" placeholder="contoh: 36.84.229.0/24, 110.136.0.0/16"
+            style="font-family:'JetBrains Mono',monospace;font-size:12px" />
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">
+            💡 Pisahkan dengan koma. Support CIDR (misal <code>36.84.0.0/16</code>) atau IP exact.<br>
+            Kosongkan jika tidak ingin membatasi jaringan untuk lokasi ini.
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📅 Hari Aktif Lokasi Ini</label>
+          <div class="hari-grid" id="hariCheckGrid">
+            <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="senin"
+                checked />Senin</label>
+            <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox"
+                value="selasa" checked />Selasa</label>
+            <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="rabu"
+                checked />Rabu</label>
+            <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="kamis"
+                checked />Kamis</label>
+            <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="jumat"
+                checked />Jumat</label>
+            <label class="hari-check-label" onclick="toggleHariCheck(this)"><input type="checkbox"
+                value="sabtu" />Sabtu</label>
+            <label class="hari-check-label" onclick="toggleHariCheck(this)"><input type="checkbox"
+                value="minggu" />Minggu</label>
+          </div>
+        </div>
+        <div class="result-card" id="adminResult">
+          <div class="r-icon" id="adminRIcon">✅</div>
+          <div class="r-title" id="adminRTitle">—</div>
+          <div class="r-msg" id="adminRMsg">—</div>
+        </div>
+        <button class="btn-admin" id="btnTambahLokasi" onclick="handleTambahLokasi()">
+          <div class="btn-inner"><span>📌</span><span id="btnAdminText">Simpan Lokasi ke Database</span></div>
+        </button>
       </div>
-
-      <!-- ══ SUB-PANEL: PEGAWAI ══ -->
-      <div class="admin-sub-panel active" id="admin-sub-pegawai">
-        <!-- ══ MANAJEMEN DATA PEGAWAI (NEW) ══ -->
-        <div class="card" id="adminEmployeeMgmtCard">
-          <div class="card-title">
-            <span>👥 Manajemen Data Pegawai</span>
-            <button class="btn-sm-admin" onclick="loadEmployeeMgmt()">🔄</button>
-          </div>
-          <div class="radius-note">Tambah pegawai baru atau perbarui data pegawai (Nama, ID, No Pegawai).</div>
-          
-          <!-- Form Tambah/Edit -->
-          <div id="employeeFormContainer" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;display:none">
-            <div style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px;letter-spacing:.05em" id="employeeFormTitle">➕ TAMBAH PEGAWAI BARU</div>
-            <div class="form-group">
-              <label class="form-label">👤 Nama Lengkap</label>
-              <input type="text" id="inEmpNama" class="form-input" placeholder="Nama Pegawai" />
+      <!-- ══ DAFTAR LOKASI — ALL IN ONE ══ -->
+      <div class="admin-desktop-grid">
+        <div class="card" style="padding:0;overflow:hidden">
+          <div
+            style="padding:12px 14px 10px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
+            <div
+              style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:7px">
+              <span>🗺️</span> Daftar Lokasi Tersimpan
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div class="form-group">
-                <label class="form-label">🆔 Telegram ID (Manual)</label>
-                <input type="number" id="inEmpId" class="form-input" placeholder="ID Pegawai" style="font-family:'JetBrains Mono',monospace" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">🔢 No. Pegawai / NIP</label>
-                <input type="text" id="inEmpNo" class="form-input" placeholder="No. Pegawai" style="font-family:'JetBrains Mono',monospace" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">💼 Jabatan / Unit Kerja</label>
-              <input type="text" id="inEmpJabatan" class="form-input" placeholder="Contoh: Staff IT, Kabid..." />
-            </div>
-            <div class="result-card" id="empMgmtResult" style="margin-bottom:10px">
-              <div class="r-icon" id="empMgmtRIcon">✅</div>
-              <div class="r-title" id="empMgmtRTitle">—</div>
-              <div class="r-msg" id="empMgmtRMsg">—</div>
-            </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn-admin" onclick="handleSimpanPegawai()" style="flex:2;margin-bottom:0">
-                <div class="btn-inner"><span>💾</span><span id="btnSimpanEmpText">Simpan Pegawai</span></div>
-              </button>
-              <button class="btn-admin" onclick="toggleEmployeeForm(false)" style="flex:1;margin-bottom:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white)">
-                <span>Batal</span>
-              </button>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span id="lokasiCountBadge"
+                style="font-size:10px;color:var(--gold);background:var(--gold-dim);border:1px solid var(--border);padding:2px 8px;border-radius:6px;font-weight:700;display:none">0
+                lokasi</span>
+              <button class="btn-sm-admin" onclick="loadLokasiAdmin()">🔄</button>
             </div>
           </div>
-
-          <button class="btn-admin" id="btnShowAddEmp" onclick="toggleEmployeeForm(true)" style="margin-bottom:12px">
-            <div class="btn-inner"><span>➕</span><span>Tambah Pegawai Manual</span></div>
-          </button>
-
-          <div class="form-group" style="margin-bottom:10px">
-            <input type="text" id="searchEmpAdmin" class="form-input" placeholder="🔍 Cari nama atau ID..." onkeyup="filterEmployeeList()" style="background:rgba(255,255,255,.03)" />
+          <div style="padding:10px 12px 12px">
+            <div id="lokasiMgmtList" class="lokasi-mgmt-list">
+              <div class="shimmer" style="height:80px;border-radius:12px"></div>
+              <div class="shimmer" style="height:80px;border-radius:12px;margin-top:7px"></div>
+            </div>
+            <div id="jadwalLokasiContainer" style="display:none"></div>
           </div>
-
-          <div id="adminEmployeeList" style="max-height:400px;overflow-y:auto;padding-right:4px">
-            <div class="shimmer" style="height:44px;border-radius:10px"></div>
-            <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
+          <div style="padding:6px 12px 10px;border-top:1px solid rgba(255,255,255,.05)">
+            <div style="text-align:center;font-size:9px;color:var(--muted)">💡 Perubahan disimpan per lokasi · Hapus
+              memerlukan konfirmasi</div>
           </div>
         </div>
 
-        <!-- ══ WAJAH & TANDA TANGAN PEGAWAI ══ -->
-        <div class="card" id="adminFaceRegCard">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
-            <div style="display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;padding:3px">
-              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')" style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s">📷 Wajah</button>
-              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')" style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">✍️ TTD</button>
+        <!-- ══ KONFIRMASI KETERANGAN ══ -->
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">
+            <span>📋 Konfirmasi Keterangan Pegawai</span>
+            <button class="btn-sm-admin" onclick="loadKonfirmasiAdmin()">🔄</button>
+          </div>
+          <div class="radius-note">Keterangan berstatus PENDING yang menunggu persetujuan Anda.</div>
+          <div id="konfirmasiAdminList">
+            <div class="shimmer" style="height:80px;border-radius:12px"></div>
+            <div class="shimmer" style="height:80px;border-radius:12px;margin-top:8px"></div>
+          </div>
+          <div class="result-card" id="konfirmasiResult" style="display:none">
+            <div class="r-icon" id="konfirmasiRIcon">✅</div>
+            <div class="r-title" id="konfirmasiRTitle">—</div>
+            <div class="r-msg" id="konfirmasiRMsg">—</div>
+          </div>
+        </div>
+
+        <!-- ══ MANAJEMEN HARI LIBUR ══ -->
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">
+            <span>🏖️ Hari Libur Nasional / Cuti Bersama</span>
+            <button class="btn-sm-admin" onclick="loadLiburAdmin()">🔄</button>
+          </div>
+          <div class="radius-note">Tanggal libur tidak dihitung sebagai hari kerja dalam rekap. Pilih rentang tanggal
+            untuk libur multi-hari.</div>
+
+          <!-- Input rentang tanggal -->
+          <div class="libur-range-row">
+            <div>
+              <label class="form-label">📅 Tanggal Mulai</label>
+              <input type="date" class="form-input" id="inputTglLiburMulai" />
             </div>
-            <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
-          </div>
-          <div id="faceSigTabFace">
-            <div class="radius-note" style="margin-bottom:10px">Daftarkan wajah pegawai secara langsung.</div>
-            <div class="form-group" style="margin-bottom:10px">
-              <select class="form-input" id="selectPegawaiFaceReg"><option value="">— Pilih Pegawai —</option></select>
+            <div>
+              <label class="form-label">📅 Tanggal Selesai</label>
+              <input type="date" class="form-input" id="inputTglLiburSelesai" />
             </div>
-            <button class="btn-admin" onclick="adminCaptureFace()" style="margin-bottom:10px">
-              <div class="btn-inner"><span>📷</span><span>Buka Kamera & Daftarkan Wajah</span></div>
-            </button>
-            <div id="adminFaceRegList"></div>
           </div>
-          <div id="faceSigTabSig" style="display:none">
-            <div id="adminSigList"></div>
+          <div style="margin-bottom:10px">
+            <label class="form-label">📝 Nama / Keterangan</label>
+            <input type="text" class="form-input" id="inputNamaLibur"
+              placeholder="cth: Idul Fitri 1447H, Cuti Bersama..." />
           </div>
+          <div id="liburDurasiInfo" style="font-size:10px;color:var(--muted);margin-bottom:8px;display:none">
+            📆 <span id="liburDurasiTeks">—</span>
+          </div>
+          <button class="btn-admin" id="btnTambahLibur" onclick="handleTambahLibur()" style="margin-bottom:8px">
+            <div class="btn-inner"><span>➕</span><span id="btnLiburText">Tambah Hari Libur</span></div>
+          </button>
+
+
+          <div class="card-title" style="margin-top:4px;margin-bottom:8px;font-size:11px">
+            <span>Daftar Hari Libur Tersimpan</span>
+            <span id="liburTotalBadge" style="display:none" class="libur-badge">0</span>
+          </div>
+          <div id="liburAdminList">
+            <div class="shimmer" style="height:38px;border-radius:10px"></div>
+            <div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>
+          </div>
+          <div class="result-card" id="liburResult" style="display:none">
+            <div class="r-icon" id="liburRIcon">✅</div>
+            <div class="r-title" id="liburRTitle">—</div>
+            <div class="r-msg" id="liburRMsg">—</div>
+          </div>
+        </div>
+
+        <!-- ══ PENGATURAN JAM ABSEN ══ -->
+        <div class="card" style="margin-top:10px">
+          <div class="card-title">⏰ Pengaturan Jam Absen</div>
+          <div class="radius-note">Atur batas waktu absen masuk & pulang. Berlaku langsung setelah disimpan.</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div>
+              <div class="date-range-label" style="margin-bottom:6px">🟢 Batas Masuk (≤ jam ini)</div>
+              <input type="time" id="inputJamMasuk" class="date-range-input"
+                style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700" />
+              <div style="font-size:9px;color:var(--muted);margin-top:3px">Sebelum jam ini = tepat waktu</div>
+            </div>
+            <div>
+              <div class="date-range-label" style="margin-bottom:6px">🔵 Batas Pulang (≥ jam ini)</div>
+              <input type="time" id="inputJamPulang" class="date-range-input"
+                style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700" />
+              <div style="font-size:9px;color:var(--muted);margin-top:3px">Setelah jam ini = bisa pulang</div>
+            </div>
+          </div>
+
+          <!-- Preview -->
+          <div id="jamPreview"
+            style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:10px;line-height:1.7">
+            <div>🟢 Masuk tepat waktu : ≤ <b id="prevMasuk">08:00</b></div>
+            <div>⚠️ Terlambat masuk : <b id="prevMasuk1">08:01</b> — <b id="prevTengah">11:59</b></div>
+            <div>🟡 Belum waktunya : <b id="prevTengah2">12:00</b> — <b id="prevPulang1">14:29</b></div>
+            <div>🔵 Waktu pulang : ≥ <b id="prevPulang">14:30</b></div>
+          </div>
+
+          <div class="result-card" id="jamResult">
+            <div class="r-icon" id="jamRIcon">✅</div>
+            <div class="r-title" id="jamRTitle">—</div>
+            <div class="r-msg" id="jamRMsg">—</div>
+          </div>
+          <button class="btn-admin" id="btnSimpanJam" onclick="simpanJamAbsen()">
+            <div class="btn-inner"><span>💾</span><span id="btnJamText">Simpan Pengaturan Jam</span></div>
+          </button>
         </div>
 
         <!-- ══ MANAJEMEN ADMIN ══ -->
-        <div class="card" id="adminMgmtCard">
-          <div class="card-title"><span>👑 Manajemen Admin</span><button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button></div>
-          <div id="adminMgmtList" style="margin-bottom:12px"></div>
-          <div style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px;margin-bottom:10px">
-            <div style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:8px">TAMBAH ADMIN BARU</div>
+        <div class="card" style="margin-top:10px" id="adminMgmtCard">
+          <div class="card-title">
+            <span>👑 Manajemen Admin</span>
+            <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
+          </div>
+          <div class="radius-note">Kelola daftar akun admin. Perubahan aktif setelah app di-refresh.</div>
+
+          <!-- Daftar admin -->
+          <div id="adminMgmtList" style="margin-bottom:12px">
+            <div class="shimmer" style="height:38px;border-radius:10px"></div>
+            <div class="shimmer" style="height:38px;border-radius:10px;margin-top:6px"></div>
+          </div>
+
+          <!-- Form tambah -->
+          <div
+            style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px;margin-bottom:10px">
+            <div style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:8px;letter-spacing:.04em">➕
+              TAMBAH ADMIN BARU</div>
             <div style="display:flex;gap:8px;margin-bottom:8px">
-              <input id="inputAdminTgId" type="number" class="form-input" placeholder="ID Telegram" />
-              <input id="inputAdminNama" type="text" class="form-input" placeholder="Nama" />
+              <input id="inputAdminTgId" type="number" class="form-input" placeholder="Telegram ID"
+                style="flex:1;font-family:'JetBrains Mono',monospace;font-size:12px" />
+              <input id="inputAdminNama" type="text" class="form-input" placeholder="Nama" style="flex:1" />
             </div>
-            <select id="inputAdminRole" class="form-input" style="margin-bottom:8px"><option value="admin">admin</option><option value="superadmin">superadmin</option></select>
-            <button class="btn-admin" onclick="tambahAdmin()">Tambah Admin</button>
+            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+              <label style="font-size:10px;color:var(--muted);flex-shrink:0">Role:</label>
+              <select id="inputAdminRole" class="form-input" style="flex:1;font-size:11px">
+                <option value="admin">admin</option>
+                <option value="superadmin">superadmin</option>
+              </select>
+            </div>
+            <div class="result-card" id="adminMgmtResult" style="display:none">
+              <div class="r-icon" id="adminMgmtRIcon">✅</div>
+              <div class="r-title" id="adminMgmtRTitle">—</div>
+              <div class="r-msg" id="adminMgmtRMsg">—</div>
+            </div>
+            <button class="btn-admin" onclick="tambahAdmin()">
+              <div class="btn-inner"><span>👑</span><span>Tambah Admin</span></div>
+            </button>
           </div>
+
+          <div style="font-size:9px;color:var(--muted)">💡 ID Telegram bisa ditemukan via @userinfobot di Telegram.
+            Minimal 1 admin harus selalu ada.</div>
         </div>
 
-        <!-- ══ MEJA ABSEN — SUPERADMIN ONLY ══ -->
-        <div class="superadmin-section meja-absen-card" id="mejaAbsenCard">
-          <div class="meja-badge">👑 Super Admin</div>
-          <div class="meja-title">🖥️ Meja Absen</div>
-          <div class="meja-sub">Scan wajah pegawai manual dari perangkat ini.</div>
-          <button class="btn-meja-start" id="btnMejaAbsen" onclick="startMejaAbsen()"><span>🖥️</span><span>Mulai Meja Absen</span></button>
-        </div>
-      </div>
 
-      <!-- ══ SUB-PANEL: LOKASI ══ -->
-      <div class="admin-sub-panel" id="admin-sub-lokasi">
-        <div class="card">
-          <div class="card-title">🗺️ Tambah Lokasi Baru</div>
-          <div class="map-container"><div id="adminMap"></div></div>
-          <div class="map-coords" id="mapCoords">
-            <div class="map-coord-item"><div class="map-coord-label">Latitude</div><div class="map-coord-val" id="pinLat">—</div></div>
-            <div class="map-coord-item"><div class="map-coord-label">Longitude</div><div class="map-coord-val" id="pinLon">—</div></div>
-          </div>
-          <div class="form-group"><label class="form-label">🏢 Nama Lokasi</label><input type="text" class="form-input" id="namaLokasi" placeholder="Kantor BAPPERIDA..." /></div>
-          <div class="form-group"><label class="form-label">📏 Radius (m)</label><input type="number" class="form-input" id="radiusLokasi" value="100" /></div>
-          <button class="btn-admin" id="btnTambahLokasi" onclick="handleTambahLokasi()">
-            <div class="btn-inner"><span>📌</span><span>Simpan Lokasi</span></div>
-          </button>
-        </div>
-        
-        <div class="card" style="padding:0;overflow:hidden;margin-top:10px">
-          <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between">
-            <div style="font-size:9px;font-weight:700;color:var(--muted)">🗺️ DAFTAR LOKASI</div>
-            <button class="btn-sm-admin" onclick="loadLokasiAdmin()">🔄</button>
-          </div>
-          <div id="lokasiMgmtList" style="padding:10px"></div>
-        </div>
-
+        <!-- ══ JAM KERJA PERIODE KHUSUS ══ -->
         <div class="card" style="margin-top:10px">
           <div class="card-title">🌙 Jam Kerja Periode Khusus</div>
-          <div id="periodeAdminList"></div>
-        </div>
-      </div>
+          <div class="radius-note">Atur jam batas khusus untuk periode tertentu (Ramadan, Libur Nasional, dsb). Periode
+            aktif akan menggantikan jam global.</div>
 
-      <!-- ══ SUB-PANEL: SISTEM ══ -->
-      <div class="admin-sub-panel" id="admin-sub-sistem">
-        <div class="card">
-          <div class="card-title">⏰ Pengaturan Jam Absen</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-            <div><label class="form-label">🟢 Batas Masuk</label><input type="time" id="inputJamMasuk" class="form-input" /></div>
-            <div><label class="form-label">🔵 Batas Pulang</label><input type="time" id="inputJamPulang" class="form-input" /></div>
+          <!-- Form tambah -->
+          <div
+            style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:12px;margin-bottom:12px">
+            <div style="font-size:10px;font-weight:800;color:#a78bfa;margin-bottom:8px;letter-spacing:.04em">➕ TAMBAH
+              PERIODE BARU</div>
+            <div style="margin-bottom:8px">
+              <div class="date-range-label" style="margin-bottom:4px">Nama Periode</div>
+              <input id="inPeriodeNama" type="text" class="date-range-input" placeholder="contoh: Ramadan 2026"
+                style="width:100%;box-sizing:border-box" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div>
+                <div class="date-range-label" style="margin-bottom:4px">📅 Tanggal Mulai</div>
+                <input id="inPeriodeDari" type="date" class="date-range-input"
+                  style="width:100%;box-sizing:border-box" />
+              </div>
+              <div>
+                <div class="date-range-label" style="margin-bottom:4px">📅 Tanggal Selesai</div>
+                <input id="inPeriodeSampai" type="date" class="date-range-input"
+                  style="width:100%;box-sizing:border-box" />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+              <div>
+                <div class="date-range-label" style="margin-bottom:4px">🟢 Batas Masuk</div>
+                <input id="inPeriodeMasuk" type="time" class="date-range-input"
+                  style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;width:100%;box-sizing:border-box" />
+              </div>
+              <div>
+                <div class="date-range-label" style="margin-bottom:4px">🔵 Batas Pulang</div>
+                <input id="inPeriodePulang" type="time" class="date-range-input"
+                  style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;width:100%;box-sizing:border-box" />
+              </div>
+            </div>
+            <!-- Preview -->
+            <div id="periodePreview"
+              style="display:none;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:8px;padding:8px 10px;font-size:9.5px;line-height:1.8;margin-bottom:10px;color:var(--white)">
+            </div>
+            <button onclick="debugCekPeriode()"
+              style="width:100%;padding:8px;margin-bottom:8px;border-radius:10px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#a78bfa;font-size:10px;font-weight:700;cursor:pointer">🔍
+              Cek Tanggal → Periode/Global</button>
+            <button class="btn-admin" onclick="tambahJamPeriode()" id="btnTambahPeriode">
+              <div class="btn-inner"><span>💾</span><span id="btnTambahPeriodeTxt">Simpan Periode</span></div>
+            </button>
           </div>
-          <button class="btn-admin" onclick="simpanJamAbsen()"><span>💾</span><span>Simpan Jam</span></button>
+
+          <!-- Daftar periode -->
+          <div style="font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.04em;margin-bottom:6px">📋
+            DAFTAR PERIODE AKTIF</div>
+          <div id="periodeAdminList">
+            <div style="text-align:center;padding:14px;color:var(--muted);font-size:11px">⏳ Memuat...</div>
+          </div>
+          <div class="result-card" id="periodeResult" style="margin-top:8px">
+            <div class="r-icon" id="periodeRIcon">✅</div>
+            <div class="r-title" id="periodeRTitle">—</div>
+            <div class="r-msg" id="periodeRMsg">—</div>
+          </div>
         </div>
 
+        <!-- ══ PENGATURAN FACE RECOGNITION ══ -->
         <div class="card" style="margin-top:10px">
-          <div class="card-title">🏖️ Hari Libur Nasional</div>
-          <div id="liburAdminList"></div>
+          <div class="card-title">📸 Pengaturan Face Recognition</div>
+          <div class="radius-note">Aktifkan atau nonaktifkan verifikasi wajah saat absensi. Berlaku untuk semua pegawai.
+          </div>
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px 16px;margin:12px 0">
+            <div>
+              <div id="faceToggleLabel" style="font-size:13px;font-weight:700;color:#fff">⏳ Memuat...</div>
+              <div id="faceToggleDesc" style="font-size:10px;color:var(--muted);margin-top:3px">Mengambil pengaturan
+                dari server...</div>
+            </div>
+            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
+              style="width:52px;height:28px;border-radius:14px;background:#6b7280;cursor:pointer;position:relative;transition:background .3s;flex-shrink:0">
+              <div id="faceToggleKnob"
+                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)">
+              </div>
+            </div>
+          </div>
+          <div class="result-card" id="faceToggleResult" style="display:none">
+            <div class="r-icon" id="faceToggleRIcon">📸</div>
+            <div class="r-title" id="faceToggleRTitle">—</div>
+            <div class="r-msg" id="faceToggleRMsg">—</div>
+          </div>
+          <button class="btn-admin" id="btnSimpanFaceToggle" onclick="simpanFaceToggle()">
+            <div class="btn-inner"><span>💾</span><span id="btnFaceToggleText">Simpan Pengaturan Face Recognition</span>
+            </div>
+          </button>
         </div>
 
-        <div class="card" style="margin-top:10px">
-          <div class="card-title">📸 Face Recognition</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border-radius:10px;padding:12px">
-            <div><div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat...</div></div>
-            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;cursor:pointer;position:relative"><div id="faceToggleKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
+        <!-- ══ WAJAH & TANDA TANGAN PEGAWAI (MERGED TABBED CARD) ══ -->
+        <div class="card" style="margin-top:10px" id="adminFaceRegCard">
+          <!-- Tab selector -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+            <div
+              style="display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;padding:3px">
+              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')"
+                style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s">📷
+                Wajah</button>
+              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')"
+                style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">✍️
+                Tanda Tangan</button>
+            </div>
+            <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
+          </div>
+
+          <!-- TAB: Wajah -->
+          <div id="faceSigTabFace">
+            <div class="radius-note" style="margin-bottom:10px">Daftarkan wajah pegawai secara langsung. Pilih pegawai
+              lalu ambil foto.</div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label class="form-label">👤 Pilih Pegawai</label>
+              <select class="form-input" id="selectPegawaiFaceReg" style="font-size:12px">
+                <option value="">— Pilih Pegawai —</option>
+              </select>
+            </div>
+            <button class="btn-admin" id="btnAdminCaptureFace" onclick="adminCaptureFace()" style="margin-bottom:10px">
+              <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan
+                  Wajah</span></div>
+            </button>
+            <div class="result-card" id="adminFaceRegResult" style="display:none">
+              <div class="r-icon" id="adminFaceRegRIcon">📷</div>
+              <div class="r-title" id="adminFaceRegRTitle">—</div>
+              <div class="r-msg" id="adminFaceRegRMsg">—</div>
+            </div>
+            <div
+              style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 7px">
+              📋 Status Wajah Semua Pegawai</div>
+            <div id="adminFaceRegList">
+              <div class="shimmer" style="height:44px;border-radius:10px"></div>
+              <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
+            </div>
+          </div>
+
+          <!-- TAB: Tanda Tangan -->
+          <div id="faceSigTabSig" style="display:none">
+            <div class="radius-note" style="margin-bottom:10px">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda
+              tangan digital untuk rekap PDF.</div>
+            <div id="adminSigList" style="margin-top:4px">
+              <div class="shimmer" style="height:40px;border-radius:10px"></div>
+              <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
+            </div>
           </div>
         </div>
 
-        <div class="card" style="margin-top:10px" id="desktopModeCard">
-          <div class="card-title">🖥️ Mode Desktop</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);border-radius:10px;padding:12px">
-            <div><div id="desktopModeLabel" style="font-size:12px;font-weight:700">Mode Mobile</div></div>
-            <div id="desktopModeSwitch" onclick="toggleDesktopMode()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;cursor:pointer;position:relative"><div id="desktopModeKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
+        <!-- Stub tersembunyi untuk backward compatibility fungsi JS lama -->
+        <div id="faceStatusAdminCard" style="display:none">
+          <div id="faceStatusAdminList"></div>
+        </div>
+        <div id="adminSigCard" style="display:none"></div>
+
+      </div><!-- /.admin-desktop-grid -->
+
+      <!-- ══ MEJA ABSEN — SUPERADMIN ONLY ══ -->
+      <div class="superadmin-section meja-absen-card" id="mejaAbsenCard">
+        <div class="meja-badge">👑 Super Admin</div>
+        <div class="meja-title">🖥️ Meja Absen</div>
+        <div class="meja-sub">Scan wajah pegawai untuk mengabsenkan secara manual dari perangkat ini. Lokasi GPS dan
+          waktu dicatat otomatis.</div>
+
+        <!-- Status Bar -->
+        <div class="meja-status-bar" id="mejaStatusBar">
+          <div class="meja-status-dot" id="mejaStatusDot"></div>
+          <div style="flex:1">
+            <div class="meja-status-text" id="mejaStatusText">Siap digunakan</div>
+            <div class="meja-status-sub" id="mejaStatusSub">Tekan tombol untuk memulai sesi Meja Absen</div>
+          </div>
+          <div style="font-size:18px" id="mejaStatusIcon">🖥️</div>
+        </div>
+
+        <!-- Lokasi Bar -->
+        <div class="meja-loc-bar" id="mejaLocBar">
+          <span>📍</span>
+          <span class="loc-val" id="mejaLocVal">Lokasi belum diambil</span>
+          <span id="mejaLocAccuracy" style="font-size:8px;color:var(--muted)"></span>
+        </div>
+
+        <!-- Counter -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px" id="mejaCounterGrid">
+          <div
+            style="text-align:center;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--success)" id="mejaCntMasuk">0</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:700">✅ MASUK</div>
+          </div>
+          <div
+            style="text-align:center;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--info)" id="mejaCntPulang">0</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:700">🔵 PULANG</div>
+          </div>
+          <div
+            style="text-align:center;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:8px">
+            <div style="font-size:18px;font-weight:800;color:var(--danger)" id="mejaCntGagal">0</div>
+            <div style="font-size:8px;color:var(--muted);font-weight:700">❌ GAGAL</div>
           </div>
         </div>
-      </div>
-
-      <!-- ══ SUB-PANEL: KONFIRMASI ══ -->
-      <div class="admin-sub-panel" id="admin-sub-konf">
-        <div class="card">
-          <div class="card-title">📋 Konfirmasi Keterangan</div>
-          <div id="konfirmasiAdminList"></div>
-        </div>
-      </div>
-    </div>
 
         <div class="meja-result-card" id="mejaResultCard"></div>
 
@@ -5887,7 +6039,8 @@
       signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
       signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
       signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
-      employeeAdd: isTest ? '/webhook-test/add-employee' : '/webhook/add-employee',
+      mejaAbsen: isTest ? '/webhook-test/meja-absen' : '/webhook/meja-absen',
+      faceGetAll: isTest ? '/webhook-test/face-get-all' : '/webhook/face-get-all',
     };
 
     const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
@@ -5991,168 +6144,21 @@
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
           adminLoaded = true;
-          switchAdminSubTab('pegawai'); // Initial sub-tab load
           loadKonfirmasiAdmin(); loadLiburAdmin();
           loadJamPeriodeAdmin(); loadAdminMgmt();
+          loadFaceStatusAdmin(); // muat status wajah semua pegawai
+          // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
         }
-        // Muat data face reg & tanda tangan
+        // Muat data face reg, tanda tangan, dan extended admin UI
         setTimeout(() => {
           if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();
           if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+          if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
         }, 300);
       }
+      // Auto-load tanda tangan saat buka tab profil
       if (tab === 'profil') {
         if (typeof loadMySignature === 'function') loadMySignature();
-      }
-    }
-
-    /* ════ ADMIN SUB-TAB SYSTEM ════ */
-    function switchAdminSubTab(sub) {
-      document.querySelectorAll('.admin-sub-tab').forEach(btn => {
-        btn.classList.toggle('active', btn.id === 'adminSubTab-' + sub);
-      });
-      document.querySelectorAll('.admin-sub-panel').forEach(p => {
-        p.classList.toggle('active', p.id === 'admin-sub-' + sub);
-      });
-      
-      // Auto-load data di sub-tab terkait
-      if (sub === 'pegawai') loadEmployeeMgmt();
-      if (sub === 'lokasi') { loadLokasiAdmin(); loadJamGlobalAdminUI(); }
-      if (sub === 'sistem') { if (typeof loadFaceToggle === 'function') loadFaceToggle(); }
-      if (sub === 'konf') loadKonfirmasiAdmin();
-    }
-
-    function loadJamGlobalAdminUI() {
-      // Helper to ensure global settings are visible in lokasi subtab
-      if ($('inputJamMasuk')) $('inputJamMasuk').value = menitToStr(JAM_MASUK_MENIT);
-      if ($('inputJamPulang')) $('inputJamPulang').value = menitToStr(JAM_PULANG_MENIT);
-    }
-
-    /* ════ MANAJEMEN PEGAWAI (NEW) ════ */
-    let _allEmpAdmin = [];
-    async function loadEmployeeMgmt() {
-      const list = $('adminEmployeeList');
-      if (!list) return;
-      list.innerHTML = '<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>';
-      
-      try {
-        const res = await apiFetch(P.userList, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const json = await res.json();
-        _allEmpAdmin = Array.isArray(json) ? json : (json.data || []);
-        _allEmpAdmin.sort((a,b) => (a.Nama || '').localeCompare(b.Nama || ''));
-        renderEmployeeList(_allEmpAdmin);
-      } catch (e) {
-        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger);font-size:11px">❌ Gagal memuat data pegawai</div>';
-      }
-    }
-
-    function renderEmployeeList(data) {
-      const list = $('adminEmployeeList');
-      if (!list) return;
-      if (!data.length) {
-        list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:11px">Pegawai tidak ditemukan</div>';
-        return;
-      }
-      list.innerHTML = data.map(u => `
-        <div class="card" style="margin-top:0;margin-bottom:8px;padding:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between">
-          <div style="flex:1;min-width:0;margin-right:10px">
-            <div style="font-size:12px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.Nama || u.nama || '—'}</div>
-            <div style="font-size:10px;color:var(--muted);display:flex;gap:8px">
-               <span>🆔 ${u.id || u.ID || '—'}</span>
-               <span>🔢 ${u.NIP || u.nip || u.No || '—'}</span>
-            </div>
-          </div>
-          <button class="btn-sm-admin" onclick='toggleEmployeeForm(true, ${JSON.stringify(u).replace(/'/g, "&apos;")})'>✏️ Edit</button>
-        </div>
-      `).join('');
-    }
-
-    function filterEmployeeList() {
-      const q = $('searchEmpAdmin').value.toLowerCase();
-      const filtered = _allEmpAdmin.filter(u => 
-        (u.Nama || '').toLowerCase().includes(q) || 
-        String(u.id || '').includes(q) ||
-        String(u.NIP || u.nip || '').includes(q)
-      );
-      renderEmployeeList(filtered);
-    }
-
-    function toggleEmployeeForm(show, data = null) {
-      const cont = $('employeeFormContainer');
-      const btnAdd = $('btnShowAddEmp');
-      if (!cont) return;
-      
-      if (!show) {
-        cont.style.display = 'none';
-        btnAdd.style.display = 'block';
-        return;
-      }
-      
-      cont.style.display = 'block';
-      btnAdd.style.display = 'none';
-      $('empMgmtResult').style.display = 'none';
-      
-      if (data) {
-        $('employeeFormTitle').innerHTML = '✏️ EDIT DATA PEGAWAI';
-        $('btnSimpanEmpText').textContent = 'Simpan Perubahan';
-        $('inEmpNama').value = data.Nama || data.nama || '';
-        $('inEmpId').value = data.id || data.ID || '';
-        $('inEmpId').readOnly = true; 
-        $('inEmpId').style.opacity = '0.6';
-        $('inEmpNo').value = data.NIP || data.nip || data.No || '';
-        $('inEmpJabatan').value = data.Jabatan || data.jabatan || '';
-      } else {
-        $('employeeFormTitle').innerHTML = '➕ TAMBAH PEGAWAI BARU';
-        $('btnSimpanEmpText').textContent = 'Simpan Pegawai';
-        $('inEmpNama').value = '';
-        $('inEmpId').value = '';
-        $('inEmpId').readOnly = false;
-        $('inEmpId').style.opacity = '1';
-        $('inEmpNo').value = '';
-        $('inEmpJabatan').value = '';
-      }
-      cont.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    async function handleSimpanPegawai() {
-      const nama = $('inEmpNama').value.trim();
-      const id = $('inEmpId').value.trim();
-      const nip = $('inEmpNo').value.trim();
-      const jabatan = $('inEmpJabatan').value.trim();
-      
-      if (!nama || !id) {
-        alert('Nama dan ID Telegram wajib diisi!');
-        return;
-      }
-      
-      const resCard = $('empMgmtResult');
-      resCard.style.display = 'flex';
-      $('empMgmtRIcon').textContent = '⏳';
-      $('empMgmtRTitle').textContent = 'Menyimpan...';
-      $('empMgmtRMsg').textContent = 'Mohon tunggu sebentar';
-      
-      try {
-        const payload = { id, nama, nip, jabatan, action: 'upsert' };
-        const res = await apiFetch(P.employeeAdd, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        
-        if (!res.ok) throw 0;
-        
-        $('empMgmtRIcon').textContent = '✅';
-        $('empMgmtRTitle').textContent = 'Berhasil';
-        $('empMgmtRMsg').textContent = 'Data pegawai telah diperbarui';
-        
-        setTimeout(() => {
-          toggleEmployeeForm(false);
-          loadEmployeeMgmt();
-        }, 1500);
-      } catch (e) {
-        $('empMgmtRIcon').textContent = '❌';
-        $('empMgmtRTitle').textContent = 'Gagal';
-        $('empMgmtRMsg').textContent = 'Terjadi kesalahan saat menyimpan data';
       }
     }
 

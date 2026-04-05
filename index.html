@@ -5316,7 +5316,7 @@
           style="margin:0;height:44px;font-size:12px">
           <div class="btn-inner"><span>📊</span> Excel Rekap</div>
         </button>
-        <button class="btn-admin" id="btnDownloadPDF" onclick="generateRekapPDF()">
+        <button class="btn-admin" id="btnDownloadPDF" onclick="()">
           <div class="btn-inner"><span>📄</span> Tarik PDF</div>
         </button>
       </div>
@@ -12421,181 +12421,178 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
-      // 1. Validasi Awal
-      if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
-        showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
-        return;
-      }
+  // 1. Validasi Awal
+  if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
+    showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
+    return;
+  }
 
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const dari = $('rekapDari').value;
-      const sampai = $('rekapSampai').value;
-      const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
-      
-      // Update Logo URL (Raw GitHub)
-      const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const dari = $('rekapDari').value;
+  const sampai = $('rekapSampai').value;
+  const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
+  
+  const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-      showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
+  showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
 
-      // 2. Ambil data tanda tangan (Safe Fetch)
-      let sigMap = {};
-      try {
-        const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-        const sigJson = sigRes.ok ? await sigRes.json() : {};
-        const sigData = sigJson.data || sigJson || [];
-        if (Array.isArray(sigData)) {
-          sigData.forEach(s => {
-            if (s.signature && s.signature.length > 100) { 
-              sigMap[String(s.telegram_id)] = s.signature;
-            }
-          });
+  // 2. Ambil data tanda tangan
+  let sigMap = {};
+  try {
+    const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
+    const sigJson = sigRes.ok ? await sigRes.json() : {};
+    const sigData = sigJson.data || sigJson || [];
+    if (Array.isArray(sigData)) {
+      sigData.forEach(s => {
+        if (s.signature && s.signature.length > 100) { 
+          sigMap[String(s.telegram_id)] = s.signature;
         }
-      } catch (e) {
-        console.warn("Gagal load paraf, lanjut tanpa paraf.");
-      }
-
-      showRekapToast('loading', '⏳ Menyusun tabel absensi...');
-
-      // 3. Bersihkan data pegawai
-      const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
-
-      const tableBody = filteredPegawai.map((p, i) => {
-        const row = p.dataExcelRow || {};
-        const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
-        const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-        return [
-          i + 1,
-          `${p.nama}\nNIP. ${p.nip || '—'}`,
-          jamM,
-          '', 
-          jamP,
-          ''  
-        ];
       });
+    }
+  } catch (e) {
+    console.warn("Gagal load paraf, lanjut tanpa paraf.");
+  }
 
-      // 4. Proses Tabel
-      doc.autoTable({
-        startY: 60, // Memberi ruang untuk Kop di halaman 1
-        margin: { top: 20 }, // Margin untuk halaman 2 dst agar tidak terlalu rapat ke atas
-        head: [['No', 'Nama / NIP', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
-        body: tableBody,
-        theme: 'grid',
-        headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-        styles: { font: 'times', fontSize: 8, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
-        columnStyles: {
-          0: { halign: 'center', cellWidth: 8 },
-          1: { cellWidth: 55 },
-          2: { halign: 'center', cellWidth: 22 },
-          3: { cellWidth: 32, minCellHeight: 14 }, 
-          4: { halign: 'center', cellWidth: 22 },
-          5: { cellWidth: 32, minCellHeight: 14 }
-        },
-        didDrawCell: (data) => {
-          if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
-            const peg = filteredPegawai[data.row.index];
-            const sig = sigMap[String(peg.id)];
-            
-            if (sig) {
-              const isParafMasuk = (data.column.index === 3);
-              const jamVal = isParafMasuk ? 
-                 (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
-                 (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+  showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
-                try {
-                  doc.addImage(sig, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 11, undefined, 'FAST');
-                } catch (err) {}
-              }
-            }
-          }
-        },
-        didDrawPage: (data) => {
-          // HANYA GAMBAR KOP DI HALAMAN 1
-          if (data.pageNumber === 1) {
+  // 3. Bersihkan data pegawai & Petakan Kolom
+  const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+
+  const tableBody = filteredPegawai.map((p, i) => {
+    const row = p.dataExcelRow || {};
+    const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
+    const jamP = row['Jam Pulang'] || p.jamPulang || '—';
+    // Ambil jabatan dari data pegawai atau row excel
+    const jabatan = p.jabatan || row['Jabatan'] || '—';
+
+    return [
+      i + 1,
+      `${p.nama}\nNIP. ${p.nip || '—'}`,
+      jabatan, // KOLOM BARU
+      jamM,
+      '', 
+      jamP,
+      ''  
+    ];
+  });
+
+  // 4. Proses Tabel
+  doc.autoTable({
+    startY: 60,
+    margin: { top: 20 },
+    head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
+    body: tableBody,
+    theme: 'grid',
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
+    styles: { font: 'times', fontSize: 8, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 7 },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 33 }, // Lebar kolom jabatan
+      3: { halign: 'center', cellWidth: 18 },
+      4: { cellWidth: 28, minCellHeight: 14 }, // Paraf Masuk (Index 4)
+      5: { halign: 'center', cellWidth: 18 },
+      6: { cellWidth: 28, minCellHeight: 14 }  // Paraf Pulang (Index 6)
+    },
+    didDrawCell: (data) => {
+      // Index berubah karena ada kolom Jabatan: Paraf Masuk = 4, Paraf Pulang = 6
+      if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
+        const peg = filteredPegawai[data.row.index];
+        const sig = sigMap[String(peg.id)];
+        
+        if (sig) {
+          const isParafMasuk = (data.column.index === 4);
+          const jamVal = isParafMasuk ? 
+             (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
+             (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+
+          if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
             try {
-              // Logo diletakkan di X=15 agar tidak menabrak teks tengah
-              doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-            } catch(e) {}
-            
-            // Baris 1: Nama Kabupaten
-            doc.setFont('times', 'bold');
-            doc.setFontSize(14);
-            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 15, { align: 'center' });
-
-            // Baris 2: Nama Badan (Bagian Atas)
-            doc.setFontSize(18);
-            doc.text('BADAN PERENCANAAN PEMBANGUNAN', 115, 22, { align: 'center' });
-
-            // Baris 3: Nama Badan (Bagian Bawah - Diturunkan ke Y=28)
-            doc.text('RISET DAN INOVASI DAERAH', 115, 28, { align: 'center' });
-
-            // Baris 4: Alamat (Diturunkan ke Y=34)
-            doc.setFont('times', 'normal');
-            doc.setFontSize(12);
-            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 34, { align: 'center' });
-
-            // Perbaikan Garis Pembatas (Diturunkan agar tidak menabrak alamat)
-            doc.setLineWidth(0.7);
-            doc.line(15, 37, 195, 37); 
-            doc.setLineWidth(0.2);
-            doc.line(15, 38, 195, 38);
-
-            // Judul Laporan (Juga diturunkan sedikit agar proporsional)
-            doc.setFontSize(11);
-            doc.setFont('times', 'bold');
-            doc.text('DAFTAR HADIR PEGAWAI', 105, 48, { align: 'center' });
-            doc.setFont('times', 'normal');
-            doc.text(`Periode: ${tanggalLabel}`, 105, 54, { align: 'center' });
+              // Menyesuaikan posisi X karena lebar kolom berubah
+              doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 24, 11, undefined, 'FAST');
+            } catch (err) {}
           }
         }
-      });
-
-      // 5. Footer Tanda Tangan Kaban
-      const pageHeight = doc.internal.pageSize.height;
-      let footerY = doc.lastAutoTable.finalY + 12;
-
-      if (footerY + 45 > pageHeight) {
-        doc.addPage();
-        footerY = 25;
       }
+    },
+    didDrawPage: (data) => {
+      if (data.pageNumber === 1) {
+        try {
+          doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+        } catch(e) {}
+        
+        doc.setFont('times', 'bold');
+        doc.setFontSize(14);
+        doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 15, { align: 'center' });
 
-      doc.setFontSize(10);
-      doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
-      doc.text('Mengetahui,', 145, footerY + 6);
-      doc.text('Kepala Badan', 145, footerY + 11);
+        doc.setFontSize(18);
+        doc.text('BADAN PERENCANAAN PEMBANGUNAN', 115, 22, { align: 'center' });
+        doc.text('RISET DAN INOVASI DAERAH', 115, 28, { align: 'center' });
 
-      const kaban = filteredPegawai[0];
-      const kabanSig = sigMap[String(kaban?.id)];
-      if (kabanSig) {
-        try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14, undefined, 'FAST'); } catch(e){}
-      }
+        doc.setFont('times', 'normal');
+        doc.setFontSize(12);
+        doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 34, { align: 'center' });
 
-      doc.setFont('times', 'bold');
-      doc.text(kaban?.nama || '__________________________', 145, footerY + 38);
-      doc.setFont('times', 'normal');
-      doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
+        doc.setLineWidth(0.7);
+        doc.line(15, 37, 195, 37); 
+        doc.setLineWidth(0.2);
+        doc.line(15, 38, 195, 38);
 
-      // 6. Simpan & Kirim
-      const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
-      doc.save(fileName);
-      
-      showRekapToast('loading', '📤 Mengirim file ke Telegram...');
-      try {
-        const pdfBase64 = doc.output('datauristring').split(',')[1];
-        await apiFetch(P.kirimRekap, { 
-          method: 'POST', 
-          body: JSON.stringify({
-            chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
-            pdf_base64: pdfBase64,
-            namaFilePdf: fileName
-          }) 
-        });
-        showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
-      } catch (e) {
-        showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot');
+        doc.setFontSize(11);
+        doc.setFont('times', 'bold');
+        doc.text('DAFTAR HADIR PEGAWAI', 105, 48, { align: 'center' });
+        doc.setFont('times', 'normal');
+        doc.text(`Periode: ${tanggalLabel}`, 105, 54, { align: 'center' });
       }
     }
+  });
+
+  // 5. Footer Tanda Tangan Kaban
+  const pageHeight = doc.internal.pageSize.height;
+  let footerY = doc.lastAutoTable.finalY + 12;
+
+  if (footerY + 45 > pageHeight) {
+    doc.addPage();
+    footerY = 25;
+  }
+
+  doc.setFontSize(10);
+  doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
+  doc.text('Mengetahui,', 145, footerY + 6);
+  doc.text('Kepala Badan', 145, footerY + 11);
+
+  const kaban = filteredPegawai[0];
+  const kabanSig = sigMap[String(kaban?.id)];
+  if (kabanSig) {
+    try { doc.addImage(kabanSig, 'PNG', 145, footerY + 14, 35, 14, undefined, 'FAST'); } catch(e){}
+  }
+
+  doc.setFont('times', 'bold');
+  doc.text(kaban?.nama || '__________________________', 145, footerY + 38);
+  doc.setFont('times', 'normal');
+  doc.text(`NIP. ${kaban?.nip || '..........................................'}`, 145, footerY + 43);
+
+  // 6. Simpan & Kirim
+  const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
+  doc.save(fileName);
+  
+  showRekapToast('loading', '📤 Mengirim file ke Telegram...');
+  try {
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    await apiFetch(P.kirimRekap, { 
+      method: 'POST', 
+      body: JSON.stringify({
+        chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
+        pdf_base64: pdfBase64,
+        namaFilePdf: fileName
+      }) 
+    });
+    showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
+  } catch (e) {
+    showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot');
+  }
+}
 
     /* ════════════════════════════════════════════════════
        OFFLINE QUEUE SYNC ════ */

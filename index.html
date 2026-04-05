@@ -4658,7 +4658,7 @@
           <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
         </div>
         <!-- Tombol Flash Dihapus, Tombol Close langsung memanggil closeCamOverlay -->
-        <button class="cam-close" id="camCloseBtn" onclick="closeCamOverlay()">✕</button>
+        <button class="cam-close" id="camCloseBtn" onclick="closeCamByUser()">✕</button>
       </div>
       <div class="cam-body" id="camBody">
 
@@ -7239,68 +7239,96 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Buka overlay kamera ── */
     async function openCamOverlay(onDone) {
       const isMeja = onDone === 'meja';
+      const isSimple = typeof onDone === 'object' && onDone?.isSimple;
+      // Gunakan kamera belakang untuk foto bukti (isSimple), kamera depan untuk wajah
+      const facingMode = (isSimple && onDone?.facingMode) ? onDone.facingMode : 'user';
+
       _absenCallbackAfterCam = onDone;
       _captureData = null;
       _autoCaptured = false;
       _livenessState = { faceOk: false };
-      window._isMejaMode = isMeja; // Set global flag for continuous mode
+      window._isMejaMode = isMeja;
 
       $('camOverlay').classList.remove('hidden');
-      $('modelLoading').style.display = 'block';
+      $('modelLoading').style.display = isSimple ? 'none' : 'block';
       $('camVideoWrap').style.display = 'none';
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';
       $('camPreview').classList.remove('show');
-      
-      // FIX 1: Pastikan tombol tampil untuk absen/daftar manual, tapi sembunyi di Meja Absen
+
+      // Tampilkan/sembunyikan tombol capture
       const btnCap = $('btnCapture');
-      if(btnCap) {
-          btnCap.style.display = isMeja ? 'none' : 'flex';
-          btnCap.disabled = true;
+      if (btnCap) {
+        btnCap.style.display = isMeja ? 'none' : 'flex';
+        btnCap.disabled = true;
+        btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
       }
-      
+
       const livenessUI = $('livenessMini');
-      if(livenessUI) livenessUI.style.display = isMeja ? 'block' : 'none';
+      if (livenessUI) livenessUI.style.display = isMeja ? 'block' : 'none';
+
+      // Untuk mode foto bukti: sembunyikan panduan oval wajah
+      const faceGuideEl = $('faceGuideWrap');
+      if (faceGuideEl) faceGuideEl.style.display = isSimple ? 'none' : 'flex';
+
+      // Ubah judul kamera sesuai mode
+      // Catatan: untuk isRegister, judul sudah di-set oleh caller (misal adminCaptureFaceFor)
+      const titleEl = $('camHeaderTitle');
+      if (titleEl) {
+        if (isSimple) titleEl.textContent = '📷 Ambil Foto Bukti';
+        else if (!onDone?.isRegister && !isMeja) titleEl.textContent = '📷 Verifikasi Wajah';
+        // isRegister & isMeja: biarkan judul yang sudah diset caller
+      }
 
       // Reset UI progress
       _updateModelProgress(0, 0);
 
-      // Inisialisasi Kamera
+      // Inisialisasi Kamera (dengan facing mode yang benar)
       try {
         _camStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 960 } }
         });
         const vid = $('camVideo');
         vid.srcObject = _camStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         await vid.play();
       } catch (e) {
-        $('mlTitle').textContent = 'Kamera Gagal';
-        $('mlHint').innerHTML = '<span style="color:var(--danger)">Izinkan akses kamera di pengaturan browser/Telegram.</span>';
-        return;
+        // Fallback: coba tanpa constraint spesifik
+        try {
+          _camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const vid = $('camVideo');
+          vid.srcObject = _camStream;
+          await new Promise(r => { vid.onloadedmetadata = r; });
+          await vid.play();
+        } catch (e2) {
+          $('modelLoading').style.display = 'block';
+          if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
+          if ($('mlHint')) $('mlHint').innerHTML = '<span style="color:var(--danger)">Izinkan akses kamera di pengaturan browser/Telegram.</span>';
+          return;
+        }
       }
 
-      const isSimple = typeof onDone === 'object' && onDone?.isSimple;
+      // ── MODE FOTO BUKTI (isSimple) ── tidak perlu AI
       if (isSimple) {
         $('modelLoading').style.display = 'none';
         $('camVideoWrap').style.display = 'block';
         $('camStatus').style.display = 'flex';
-        setCamStatus('ok', '📷', 'Ambil Foto', 'Posisikan bukti dengan jelas');
-        if(btnCap) btnCap.disabled = false;
+        setCamStatus('ok', '📷', 'Kamera Siap', 'Arahkan ke dokumen/bukti lalu tekan Ambil Foto');
+        if (btnCap) btnCap.disabled = false;
         return;
       }
 
-      // Load AI Model
+      // ── MODE VERIFIKASI WAJAH ── muat AI
       const ready = await loadFaceApiModels();
       if (!ready) {
         setCamStatus('warn', '⚠️', 'AI Gagal Dimuat', 'Gunakan tombol manual untuk ambil foto');
-        if(btnCap) btnCap.disabled = false;
+        if (btnCap) btnCap.disabled = false;
       }
 
       $('modelLoading').style.display = 'none';
       $('camVideoWrap').style.display = 'block';
       $('camStatus').style.display = 'flex';
-      
+
       if (MY_ID && !onDone?.isRegister && !window._isMejaMode) {
         updateFaceRegUI();
         $('faceRegCard').style.display = 'block';
@@ -7333,30 +7361,39 @@ File di Google Drive juga akan dihapus.`)) return;
       }
     }
 
-    function closeCamOverlay() {
+    function closeCamOverlay(triggeredByUser) {
       if (window._isMejaMode) {
         stopMejaAbsen();
         return;
       }
-      
-      _isFlashOn = false; 
+
+      _isFlashOn = false;
       stopDetectLoop();
       stopCamStream();
-      
+
       // Tutup Modal
       $('camOverlay').classList.add('hidden');
       setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-      
-      // KEMBALIKAN UI SEPERTI SEMULA (Agar saat dibuka lagi tidak nyangkut di Preview)
+
+      // Kembalikan UI ke kondisi awal
       $('camVideoWrap').style.display = 'block';
       $('camPreview').classList.remove('show');
       $('camPreviewImg').src = '';
-      
+
+      // Kembalikan judul & panduan wajah untuk sesi berikutnya
+      const titleEl = $('camHeaderTitle');
+      if (titleEl) titleEl.textContent = '📷 Verifikasi Wajah';
+      const faceGuideEl = $('faceGuideWrap');
+      if (faceGuideEl) faceGuideEl.style.display = 'flex';
+
       const cb = _absenCallbackAfterCam;
       _absenCallbackAfterCam = null;
       _captureData = null;
-      
-      if (cb && typeof cb === 'object' && typeof cb.onCancel === 'function') cb.onCancel();
+
+      // Panggil onCancel HANYA jika ditutup manual oleh pengguna (bukan setelah onDone selesai)
+      if (triggeredByUser && cb && typeof cb === 'object' && typeof cb.onCancel === 'function') {
+        cb.onCancel();
+      }
     }
 
     function stopCamStream() {
@@ -7442,80 +7479,6 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Ambil foto (capture) ── */
-    function startDetectLoop() {
-      const vid = $('camVideo');
-      const cnv = $('camCanvas');
-      const ctx = cnv.getContext('2d');
-      const wrap = $('camVideoWrap');
-      
-      _blinkDetected = false;
-
-      // Munculkan tombol capture manual lebih cepat (3 detik) untuk mode Daftar Wajah/Absen biasa
-      setTimeout(() => { 
-          if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
-      }, 3000);
-
-      const loop = async () => {
-        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-        _detectLoop = requestAnimationFrame(loop);
-
-        const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks(true);
-
-        if (!detection) {
-          wrap.className = 'cam-video-wrap face-bad';
-          setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
-          _livenessState.faceOk = false;
-          if(window._isMejaMode) {
-              $('lsIcon').textContent = '😐';
-              $('lsText').textContent = 'Menunggu Wajah...';
-              $('lsText').style.color = 'var(--muted)';
-          }
-          return;
-        }
-
-        _livenessState.faceOk = true;
-        wrap.className = 'cam-video-wrap face-ok';
-        setCamStatus('ok', '✅', 'Wajah Terdeteksi', window._isMejaMode ? 'Mohon tetap diam...' : 'Posisikan wajah & Tekan tombol');
-
-        // ── LIVENESS HANYA JALAN DI MEJA ABSEN ──
-        if (window._isMejaMode) {
-            const leftEye = detection.landmarks.getLeftEye();
-            const rightEye = detection.landmarks.getRightEye();
-            const getEAR = (eye) => {
-               const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-               const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-               const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-               return (v1 + v2) / (2.0 * h);
-            };
-
-            const earL = getEAR(leftEye);
-            const earR = getEAR(rightEye);
-            const ear = (earL + earR) / 2;
-
-            if (ear < 0.22) _blinkDetected = true; // Mata Berkedip
-
-            if (_blinkDetected) {
-                $('lsIcon').textContent = '😉';
-                $('lsText').textContent = 'Liveness OK! Sedang mencocokkan...';
-                $('lsText').style.color = 'var(--success)';
-            } else {
-                $('lsIcon').textContent = '😐';
-                $('lsText').textContent = 'Harap Kedipkan Mata Anda';
-                $('lsText').style.color = 'var(--gold)';
-            }
-
-            // Auto capture Meja Mode
-            if (!_autoCaptured && _modelsReady && _blinkDetected) {
-              _autoCaptured = true;
-              setTimeout(doCapture, 400); 
-            }
-        }
-      };
-      loop();
-    }
-
-
-    /* ── Ambil foto (capture) ── */
     async function doCapture() {
       if (_captureData) return;
       _captureData = true; // Kunci agar tidak klik 2x
@@ -7594,30 +7557,37 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 4. Eksekusi Pengiriman Data ke Server
       const cb = _absenCallbackAfterCam;
-      
-      // Beri jeda 1 detik agar user melihat preview fotonya
+
+      // Beri jeda 1.5 detik agar user bisa melihat preview foto
       setTimeout(async () => {
         try {
-            // Tunggu proses API Server Selesai (await)
-            if (typeof cb === 'function') {
-                await cb(_captureData);
-            } else if (cb?.onDone) {
-                await cb.onDone(_captureData);
-            }
+          // Null-kan callback SEBELUM memanggil, agar closeCamOverlay tidak salah memanggil onCancel
+          _absenCallbackAfterCam = null;
+
+          if (typeof cb === 'function') {
+            await cb(_captureData);
+          } else if (cb?.onDone) {
+            await cb.onDone(_captureData);
+          }
         } catch (err) {
-            console.error(err);
+          console.error('[doCapture] callback error:', err);
         } finally {
-            // TUTUP KAMERA HANYA SETELAH DATA SELESAI DIKIRIM
-            closeCamOverlay(); 
-            if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan'; // Kembalikan teks tombol
+          // Tutup overlay setelah data selesai diproses
+          closeCamOverlay(false); // false = bukan oleh user, tidak trigger onCancel
+          if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
         }
-      }, 1000);
+      }, 1500);
     }
 
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
       _livenessState = { faceOk: true, ch1: true, ch2: true };
       await doCapture();
+    }
+
+    /* ── Tutup overlay manual oleh pengguna (tombol ✕) ── */
+    function closeCamByUser() {
+      closeCamOverlay(true); // true = user yang menutup → panggil onCancel
     }
 
     function startSimpleCapture(isSimpleMode) {
@@ -12560,7 +12530,7 @@ File di Google Drive juga akan dihapus.`)) return;
       window._mejaProcessing = false;
       _allFaceDescriptors = [];
       
-      closeCamOverlay(); // Mematikan kamera & stream
+      closeCamOverlay(false); // Mematikan kamera & stream (programmatic, bukan oleh user)
       
       _setMejaStatus('idle', '🖥️', 'Sesi Dihentikan', 'Counter tersimpan di atas');
       const btnStart = $('btnMejaAbsen');
@@ -12801,7 +12771,7 @@ async function generateRekapPDF() {
         if (typeof closeCamOverlay === 'function') {
           const overlay = $('camOverlay');
           if (overlay && !overlay.classList.contains('hidden')) {
-            closeCamOverlay();
+            closeCamOverlay(false); // Programmatic - offline event, tidak trigger onCancel
           }
         }
       } else {

@@ -7409,8 +7409,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
         const { x, y, width: w, height: h } = detection.box;
         ctx.clearRect(0, 0, cnv.width, cnv.height);
-        ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
-        ctx.strokeRect(x, y, w, h);
+        //ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 3;
+        //ctx.strokeRect(x, y, w, h);
 
         _livenessState.faceOk = true;
         wrap.className = 'cam-video-wrap face-ok';
@@ -7460,26 +7460,24 @@ File di Google Drive juga akan dihapus.`)) return;
         const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
         const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
         if (bestMatch.label !== 'unknown') {
-          // Employee Found!
-          _onMejaAbsenMatchFound(bestMatch.label, descriptor);
-          if (window._isMejaMode) {
-            // Stay open, reset for next person after a delay
-            setTimeout(() => {
-              _captureData = null;
-              _autoCaptured = false;
-              setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai ke kamera');
-              $('camPreview').classList.remove('show');
-              startDetectLoop();
-            }, 3000);
-            return; // Don't close
-          }
+          // Pegawai Ditemukan -> Lempar ke fungsi handler
+          _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+          return; 
         } else {
+           // Wajah tak dikenal
+           $('camPreviewImg').src = dataUrl;
+           $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">❌ Wajah Tak Dikenal</span>`;
+           $('camPreview').classList.add('show');
+           $('camStatus').style.display = 'none';
+
            setCamStatus('bad', '👤', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
            setTimeout(() => {
              _captureData = null;
              _autoCaptured = false;
+             $('camPreview').classList.remove('show');
+             $('camStatus').style.display = 'flex';
              startDetectLoop();
-           }, 2000);
+           }, 2500);
            return;
         }
       }
@@ -12383,10 +12381,16 @@ File di Google Drive juga akan dihapus.`)) return;
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);
 
+        window._mejaUserMap = {};
         _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
-          return new faceapi.LabeledFaceDescriptors(String(f.telegram_id), [new Float32Array(desc)]);
+          const tid = String(f.telegram_id || f.id || '');
+          window._mejaUserMap[tid] = {
+            nama: f.nama || f.Nama || tid,
+            nip: f.nip || f.NIP || '-'
+          };
+          return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
         });
 
         if (!_allFaceDescriptors.length) {
@@ -12605,16 +12609,24 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ════════════════════════════════════════════════════
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
-    async function _onMejaAbsenMatchFound(telegramId, descriptor) {
+    async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
       if (window._mejaProcessing) return;
       window._mejaProcessing = true;
 
       const tid = String(telegramId);
-      const user = _mejaUserMap[tid] || { nama: 'Pegawai', nip: '-', foto: null };
-      const nama = user.nama;
+      const user = window._mejaUserMap ? window._mejaUserMap[tid] : null;
+      const nama = user ? user.nama : tid;
+      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.55) * 100));
+
+      // 1. Tampilkan Preview di Layar Kamera Langsung
+      if (dataUrl) {
+        $('camPreviewImg').src = dataUrl;
+        $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama} (${score}%)</span> <span class="cam-preview-badge" style="background:rgba(245,158,11,0.15);color:var(--warning)">⏳ Memproses...</span>`;
+        $('camPreview').classList.add('show');
+        $('camStatus').style.display = 'none';
+      }
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${nama}...`, 'Harap tunggu');
-      setCamStatus('ok', '⏳', 'Wajah Dikenali!', `Pegawai: ${nama}`);
 
       const wrap = $('camVideoWrap');
       if (wrap) {
@@ -12629,7 +12641,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const payload = {
         telegram_id: tid,
         nama: nama,
-        nip: user.nip,
+        nip: user ? user.nip : '-',
         admin_id: MY_ID,
         jam,
         tanggal_iso: tanggalIso,
@@ -12637,46 +12649,58 @@ File di Google Drive juga akan dihapus.`)) return;
         longitude: _mejaGpsLocation?.lng ?? 0,
         accuracy: _mejaGpsLocation?.acc ?? 0,
         lokasi_nama: 'Meja Absen',
-        face_match: 100,
-        timestamp: Math.floor(Date.now() / 1000)
+        face_match: score,
+        timestamp: Math.floor(Date.now() / 1000),
+        source: 'meja_absen'
       };
-
-      payload.source = 'meja_absen';
 
       try {
         const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
         const d = await res.json().catch(() => ({}));
 
         if (res.ok && d.ok !== false) {
-          const nama = d.nama || d.pegawai?.nama || 'Pegawai';
+          const resNama = d.nama || d.pegawai?.nama || nama;
           const jenis = d.jenis_absen || 'ABSEN';
           const ismasuk = jenis.toUpperCase().includes('MASUK');
           if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
           _updateMejaCnt();
-          _setMejaStatus('active', '✅', `${nama} — ${jenis}`, 'Siap scan berikutnya...');
-          setCamStatus('ok', '✅', `${nama}`, `${jenis} berhasil dicatat`);
-          _showMejaResult('success', `✅ ${nama} — ${jenis} berhasil dicatat`);
-          setTimeout(() => {
-            window._mejaProcessing = false;
-            _setMejaStatus('active', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai ke kamera');
-          }, 3000);
+          
+          _setMejaStatus('active', '✅', `${resNama} — ${jenis}`, 'Siap scan berikutnya...');
+          _showMejaResult('success', `✅ ${resNama} — ${jenis} berhasil dicatat`);
+          
+          // Update Status di Layar Kamera Langsung
+          $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${resNama}</span> <span class="cam-preview-badge cpb-ok">✅ ${jenis} Berhasil</span>`;
         } else {
-          const errMsg = d.message || d.error || 'Gagal mencatat absen';
+          let errMsg = d.message || d.error || 'Gagal mencatat absen';
+          if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan; 
           _mejaCnt.gagal++;
           _updateMejaCnt();
-          setCamStatus('bad', '❌', 'Gagal', errMsg);
+          
           _setMejaStatus('active', '⚠️', 'Gagal Catat', errMsg);
           _showMejaResult('fail', `❌ ${errMsg}`);
-          setTimeout(() => { window._mejaProcessing = false; }, 3000);
+          
+          // Update Error di Layar Kamera Langsung
+          $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama}</span> <span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">❌ ${errMsg}</span>`;
         }
       } catch (e) {
         _mejaCnt.gagal++;
         _updateMejaCnt();
-        setCamStatus('bad', '🔌', 'Koneksi Error', 'Server tidak merespons');
+        
         _setMejaStatus('active', '⚠️', 'Error Koneksi', 'Pastikan server n8n aktif');
         _showMejaResult('fail', '❌ Server tidak merespons');
-        window._mejaProcessing = false;
+        $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ ${nama}</span> <span class="cam-preview-badge cpb-warn" style="background:rgba(239,68,68,0.15);color:#ef4444">🔌 Error Koneksi</span>`;
       }
+
+      // Tahan Frame kamera sebentar agar admin bisa membaca hasilnya, lalu reset ke Mode Scan selanjutnya
+      setTimeout(() => {
+        window._mejaProcessing = false;
+        _captureData = null;
+        _autoCaptured = false;
+        $('camPreview').classList.remove('show');
+        $('camStatus').style.display = 'flex';
+        setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai ke kamera');
+        startDetectLoop();
+      }, 3000);
     }
 
     // ── Override existing openSignaturePad for Admin Support ──

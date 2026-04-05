@@ -5316,8 +5316,7 @@
           style="margin:0;height:44px;font-size:12px">
           <div class="btn-inner"><span>📊</span> Excel Rekap</div>
         </button>
-        <button class="btn-admin" id="btnDownloadPDF" onclick="generateRekapPDF()"
-          style="margin:0;height:44px;font-size:12px;background:var(--admin-dim);border-color:var(--admin);color:var(--admin)">
+        <button class="btn-admin" id="btnDownloadPDF" onclick="generateRekapPDF()">
           <div class="btn-inner"><span>📄</span> Tarik PDF</div>
         </button>
       </div>
@@ -12421,7 +12420,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
-    async function generateRekapPDF() {
+async function generateRekapPDF() {
       if (!lastRekapPegawai.length) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
@@ -12523,10 +12522,31 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${superior?.nip || '—'}`, 140, finalY + 35);
 
+        // --- SIMPAN LOKAL ---
         doc.save(`Rekap_Absensi_${dari}_${sampai}.pdf`);
-        showRekapToast('success', '✅ PDF Rekapan berhasil diunduh');
+
+        // --- KIRIM KE TELEGRAM (BAGIAN BARU) ---
+        showRekapToast('loading', '📤 Mengirim PDF ke Telegram...');
+        
+        // Ambil data base64 dari PDF yang baru dibuat
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        
+        const payload = {
+          chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
+          pdf_base64: pdfBase64,
+          namaFilePdf: `Rekap_Absensi_${dari}_${sampai}.pdf`,
+          isHarian: (dari === sampai)
+        };
+
+        await apiFetch(P.kirimRekap, { 
+          method: 'POST', 
+          body: JSON.stringify(payload) 
+        });
+
+        showRekapToast('success', '✅ PDF berhasil didownload & dikirim ke Telegram');
+        
       } catch (e) {
-        showRekapToast('fail', '❌ Gagal membuat PDF');
+        showRekapToast('fail', '❌ Gagal membuat/mengirim PDF');
         console.error(e);
       }
     }

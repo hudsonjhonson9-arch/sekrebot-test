@@ -11899,8 +11899,13 @@ File di Google Drive juga akan dihapus.`)) return;
         const ud = ur.ok ? await ur.json() : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
-        // Urutkan berdasarkan NIP (No Pegawai)
+        // Urutkan secara default berdasarkan "No" atau "no"
         users.sort((a, b) => {
+          const noA = parseInt(a.No || a.no) || 0;
+          const noB = parseInt(b.No || b.no) || 0;
+          if (noA !== 0 && noB !== 0 && noA !== noB) return noA - noB;
+
+          // Fallback: Jika 'No' kosong, gunakan NIP
           const nipA = String(a.NIP || a.nip || '');
           const nipB = String(b.NIP || b.nip || '');
           return nipA.localeCompare(nipB, undefined, { numeric: true, sensitivity: 'base' });

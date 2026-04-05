@@ -12421,6 +12421,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
+      // 1. Validasi Awal
       if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
@@ -12431,11 +12432,13 @@ async function generateRekapPDF() {
       const dari = $('rekapDari').value;
       const sampai = $('rekapSampai').value;
       const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
+      
+      // Update Logo URL (Raw GitHub)
       const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
       showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
 
-      // 1. Ambil data tanda tangan
+      // 2. Ambil data tanda tangan (Safe Fetch)
       let sigMap = {};
       try {
         const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
@@ -12443,57 +12446,43 @@ async function generateRekapPDF() {
         const sigData = sigJson.data || sigJson || [];
         if (Array.isArray(sigData)) {
           sigData.forEach(s => {
-            if (s.signature) sigMap[String(s.telegram_id)] = s.signature;
+            if (s.signature && s.signature.length > 100) { 
+              sigMap[String(s.telegram_id)] = s.signature;
+            }
           });
         }
-      } catch (e) { console.warn("Gagal load paraf."); }
+      } catch (e) {
+        console.warn("Gagal load paraf, lanjut tanpa paraf.");
+      }
 
-      // 2. GAMBAR KOP SURAT (HANYA DI HALAMAN 1)
-      try {
-          doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-      } catch (e) { console.error("Logo gagal dimuat"); }
+      showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-      doc.setFont('times', 'bold');
-      doc.setFontSize(12);
-      // Koordinat X digeser ke 113 agar teks panjang tidak menabrak logo
-      doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 113, 16, { align: 'center' });
-      
-      doc.setFontSize(12); // Ukuran font disesuaikan agar muat satu baris
-      doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 113, 23, { align: 'center' });
-      
-      doc.setFont('times', 'normal');
-      doc.setFontSize(9);
-      doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 113, 29, { align: 'center' });
-      
-      doc.setLineWidth(0.7);
-      doc.line(15, 36, 195, 36);
-      doc.setLineWidth(0.2);
-      doc.line(15, 37, 195, 37);
-
-      doc.setFontSize(11);
-      doc.setFont('times', 'bold');
-      doc.text('DAFTAR HADIR PEGAWAI', 105, 47, { align: 'center' });
-      doc.setFont('times', 'normal');
-      doc.text(`Periode: ${tanggalLabel}`, 105, 53, { align: 'center' });
-
-      // 3. Siapkan Data Tabel
+      // 3. Bersihkan data pegawai
       const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+
       const tableBody = filteredPegawai.map((p, i) => {
         const row = p.dataExcelRow || {};
         const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
         const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-        return [i + 1, `${p.nama}\nNIP. ${p.nip || '—'}`, jamM, '', jamP, ''];
+        return [
+          i + 1,
+          `${p.nama}\nNIP. ${p.nip || '—'}`,
+          jamM,
+          '', 
+          jamP,
+          ''  
+        ];
       });
 
-      // 4. Generate Tabel
+      // 4. Proses Tabel
       doc.autoTable({
-        startY: 60,
-        margin: { top: 15 }, 
+        startY: 60, // Memberi ruang untuk Kop di halaman 1
+        margin: { top: 20 }, // Margin untuk halaman 2 dst agar tidak terlalu rapat ke atas
         head: [['No', 'Nama / NIP', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang']],
         body: tableBody,
         theme: 'grid',
         headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-        styles: { font: 'times', fontSize: 8.5, cellPadding: 2.5, valign: 'middle' },
+        styles: { font: 'times', fontSize: 8, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
         columnStyles: {
           0: { halign: 'center', cellWidth: 8 },
           1: { cellWidth: 55 },
@@ -12506,20 +12495,54 @@ async function generateRekapPDF() {
           if (data.cell.section === 'body' && (data.column.index === 3 || data.column.index === 5)) {
             const peg = filteredPegawai[data.row.index];
             const sig = sigMap[String(peg.id)];
+            
             if (sig) {
               const isParafMasuk = (data.column.index === 3);
-              const jamVal = isParafMasuk ? (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
-              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(String(jamVal).trim())) {
+              const jamVal = isParafMasuk ? 
+                 (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
+                 (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+
+              if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
                 try {
-                  doc.addImage(sig, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 10, undefined, 'FAST');
+                  doc.addImage(sig, 'PNG', data.cell.x + 4, data.cell.y + 2, 24, 11, undefined, 'FAST');
                 } catch (err) {}
               }
             }
           }
+        },
+        didDrawPage: (data) => {
+          // HANYA GAMBAR KOP DI HALAMAN 1
+          if (data.pageNumber === 1) {
+            try {
+              // Logo diletakkan di X=15 agar tidak menabrak teks tengah
+              doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+            } catch(e) {}
+            
+            doc.setFont('times', 'bold');
+            doc.setFontSize(12);
+            // Teks digeser sedikit ke kanan (X=115) untuk memberi ruang logo
+            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 16, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text('BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH', 115, 23, { align: 'center' });
+            doc.setFont('times', 'normal');
+            doc.setFontSize(9);
+            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 29, { align: 'center' });
+            
+            doc.setLineWidth(0.7);
+            doc.line(15, 36, 195, 36);
+            doc.setLineWidth(0.2);
+            doc.line(15, 37, 195, 37);
+
+            doc.setFontSize(11);
+            doc.setFont('times', 'bold');
+            doc.text('DAFTAR HADIR PEGAWAI', 105, 47, { align: 'center' });
+            doc.setFont('times', 'normal');
+            doc.text(`Periode: ${tanggalLabel}`, 105, 53, { align: 'center' });
+          }
         }
       });
 
-      // 5. Footer Tanda Tangan Kaban (Hanya di akhir dokumen)
+      // 5. Footer Tanda Tangan Kaban
       const pageHeight = doc.internal.pageSize.height;
       let footerY = doc.lastAutoTable.finalY + 12;
 
@@ -12528,12 +12551,11 @@ async function generateRekapPDF() {
         footerY = 25;
       }
 
-      doc.setFontSize(10.5);
+      doc.setFontSize(10);
       doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, 145, footerY);
       doc.text('Mengetahui,', 145, footerY + 6);
       doc.text('Kepala Badan', 145, footerY + 11);
 
-      // Ambil TTD Pejabat No 1 (Kepala Badan)
       const kaban = filteredPegawai[0];
       const kabanSig = sigMap[String(kaban?.id)];
       if (kabanSig) {
@@ -12549,7 +12571,7 @@ async function generateRekapPDF() {
       const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
       doc.save(fileName);
       
-      showRekapToast('loading', '📤 Mengirim ke Telegram...');
+      showRekapToast('loading', '📤 Mengirim file ke Telegram...');
       try {
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         await apiFetch(P.kirimRekap, { 
@@ -12557,12 +12579,13 @@ async function generateRekapPDF() {
           body: JSON.stringify({
             chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
             pdf_base64: pdfBase64,
-            namaFilePdf: fileName,
-            isHarian: (dari === sampai)
+            namaFilePdf: fileName
           }) 
         });
-        showRekapToast('success', '✅ PDF Berhasil dikirim!');
-      } catch (e) { showRekapToast('fail', '❌ Gagal mengirim PDF'); }
+        showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
+      } catch (e) {
+        showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot');
+      }
     }
 
     /* ════════════════════════════════════════════════════

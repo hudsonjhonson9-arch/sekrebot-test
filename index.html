@@ -4742,6 +4742,40 @@
       </div>
     </div>
 
+    <!-- ════════════════════════════════════════════════════════
+         KAMERA BUKTI / KETERANGAN SCAN OVERLAY
+    ════════════════════════════════════════════════════════ -->
+    <div class="cam-overlay hidden" id="buktiOverlay">
+      <div class="cam-header">
+        <div>
+          <div class="cam-title">📷 Ambil Foto Bukti</div>
+        </div>
+        <button class="cam-close" onclick="closeBuktiOverlay()">✕</button>
+      </div>
+      <div class="cam-body">
+        <div class="cam-video-wrap" style="display:block">
+          <video id="buktiVideo" autoplay playsinline muted></video>
+          <div class="cam-corner tl"></div>
+          <div class="cam-corner tr"></div>
+          <div class="cam-corner bl"></div>
+          <div class="cam-corner br"></div>
+        </div>
+        <div class="cam-status idle" id="buktiStatus" style="display:flex">
+          <div class="cam-status-icon">📷</div>
+          <div class="cam-status-text">
+            <div class="cam-status-title">Kamera Siap</div>
+            <div class="cam-status-sub">Arahkan ke dokumen/bukti lalu tekan Ambil Foto</div>
+          </div>
+        </div>
+        <div class="cam-preview" id="buktiPreviewCam">
+          <img id="buktiPreviewCamImg" src="" alt="Foto Bukti">
+        </div>
+        <button class="btn-capture" id="btnBuktiCapture" onclick="doBuktiCapture()">
+          📸 Ambil Foto Bukti
+        </button>
+      </div>
+    </div>
+
     <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
     <div id="faceRequiredModal"
       style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(5,12,30,.97);flex-direction:column;align-items:center;justify-content:center;padding:24px">
@@ -7239,9 +7273,6 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Buka overlay kamera ── */
     async function openCamOverlay(onDone) {
       const isMeja = onDone === 'meja';
-      const isSimple = typeof onDone === 'object' && onDone?.isSimple;
-      // Gunakan kamera belakang untuk foto bukti (isSimple), kamera depan untuk wajah
-      const facingMode = (isSimple && onDone?.facingMode) ? onDone.facingMode : 'user';
 
       _absenCallbackAfterCam = onDone;
       _captureData = null;
@@ -7250,7 +7281,7 @@ File di Google Drive juga akan dihapus.`)) return;
       window._isMejaMode = isMeja;
 
       $('camOverlay').classList.remove('hidden');
-      $('modelLoading').style.display = isSimple ? 'none' : 'block';
+      $('modelLoading').style.display = 'block';
       $('camVideoWrap').style.display = 'none';
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';
@@ -7267,54 +7298,34 @@ File di Google Drive juga akan dihapus.`)) return;
       const livenessUI = $('livenessMini');
       if (livenessUI) livenessUI.style.display = isMeja ? 'block' : 'none';
 
-      // Untuk mode foto bukti: sembunyikan panduan oval wajah
+      // Panduan oval wajah selalu tampil untuk mode verifikasi
       const faceGuideEl = $('faceGuideWrap');
-      if (faceGuideEl) faceGuideEl.style.display = isSimple ? 'none' : 'flex';
+      if (faceGuideEl) faceGuideEl.style.display = 'flex';
 
       // Ubah judul kamera sesuai mode
       // Catatan: untuk isRegister, judul sudah di-set oleh caller (misal adminCaptureFaceFor)
       const titleEl = $('camHeaderTitle');
       if (titleEl) {
-        if (isSimple) titleEl.textContent = '📷 Ambil Foto Bukti';
-        else if (!onDone?.isRegister && !isMeja) titleEl.textContent = '📷 Verifikasi Wajah';
+        if (!onDone?.isRegister && !isMeja) titleEl.textContent = '📷 Verifikasi Wajah';
         // isRegister & isMeja: biarkan judul yang sudah diset caller
       }
 
       // Reset UI progress
       _updateModelProgress(0, 0);
 
-      // Inisialisasi Kamera (dengan facing mode yang benar)
+      // Inisialisasi Kamera
       try {
         _camStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode, width: { ideal: 1280 }, height: { ideal: 960 } }
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         });
         const vid = $('camVideo');
         vid.srcObject = _camStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         await vid.play();
       } catch (e) {
-        // Fallback: coba tanpa constraint spesifik
-        try {
-          _camStream = await navigator.mediaDevices.getUserMedia({ video: true });
-          const vid = $('camVideo');
-          vid.srcObject = _camStream;
-          await new Promise(r => { vid.onloadedmetadata = r; });
-          await vid.play();
-        } catch (e2) {
-          $('modelLoading').style.display = 'block';
-          if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
-          if ($('mlHint')) $('mlHint').innerHTML = '<span style="color:var(--danger)">Izinkan akses kamera di pengaturan browser/Telegram.</span>';
-          return;
-        }
-      }
-
-      // ── MODE FOTO BUKTI (isSimple) ── tidak perlu AI
-      if (isSimple) {
-        $('modelLoading').style.display = 'none';
-        $('camVideoWrap').style.display = 'block';
-        $('camStatus').style.display = 'flex';
-        setCamStatus('ok', '📷', 'Kamera Siap', 'Arahkan ke dokumen/bukti lalu tekan Ambil Foto');
-        if (btnCap) btnCap.disabled = false;
+        $('modelLoading').style.display = 'block';
+        if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
+        if ($('mlHint')) $('mlHint').innerHTML = '<span style="color:var(--danger)">Izinkan akses kamera di pengaturan browser/Telegram.</span>';
         return;
       }
 
@@ -7400,6 +7411,94 @@ File di Google Drive juga akan dihapus.`)) return;
       if (_camStream) { _camStream.getTracks().forEach(t => t.stop()); _camStream = null; }
     }
 
+    /* ── BUKTI OVERLAY (Untuk Keterangan) ── */
+    async function openBuktiOverlay(onDone) {
+      _absenCallbackAfterCam = onDone;
+      _captureData = null;
+
+      $('buktiOverlay').classList.remove('hidden');
+      $('buktiPreviewCam').classList.remove('show');
+      
+      const btnCap = $('btnBuktiCapture');
+      if (btnCap) {
+        btnCap.disabled = true;
+        btnCap.innerHTML = '📸 Ambil Foto Bukti';
+      }
+
+      try {
+        _camStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
+        });
+        const vid = $('buktiVideo');
+        vid.srcObject = _camStream;
+        await new Promise(r => { vid.onloadedmetadata = r; });
+        await vid.play();
+        if (btnCap) btnCap.disabled = false;
+      } catch (e) {
+        // Fallback non-constraint
+        try {
+          _camStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const vid = $('buktiVideo');
+          vid.srcObject = _camStream;
+          await new Promise(r => { vid.onloadedmetadata = r; });
+          await vid.play();
+          if (btnCap) btnCap.disabled = false;
+        } catch (e2) {
+          alert('Gagal mengakses kamera: Pastikan izin kamera aktif.');
+        }
+      }
+    }
+
+    function closeBuktiOverlay() {
+      stopCamStream();
+      $('buktiOverlay').classList.add('hidden');
+      $('buktiPreviewCam').classList.remove('show');
+      $('buktiPreviewCamImg').src = '';
+      _absenCallbackAfterCam = null;
+      _captureData = null;
+    }
+
+    async function doBuktiCapture() {
+      if (_captureData) return;
+      _captureData = true;
+
+      const btnCap = $('btnBuktiCapture');
+      if (btnCap) {
+          btnCap.disabled = true;
+          btnCap.innerHTML = '<span class="spinner"></span> Memproses...';
+      }
+
+      const vid = $('buktiVideo');
+      const cnv = document.createElement('canvas');
+      cnv.width = vid.videoWidth; 
+      cnv.height = vid.videoHeight;
+      cnv.getContext('2d').drawImage(vid, 0, 0);
+      const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
+
+      stopCamStream();
+
+      // Tampilkan Preview Singkat
+      $('buktiPreviewCamImg').src = dataUrl;
+      $('buktiPreviewCam').classList.add('show');
+
+      const cb = _absenCallbackAfterCam;
+      _absenCallbackAfterCam = null;
+
+      setTimeout(async () => {
+        try {
+          if (typeof cb === 'function') {
+            await cb({ dataUrl });
+          } else if (cb?.onDone) {
+            await cb.onDone({ dataUrl });
+          }
+        } catch (err) {
+          console.error('[doBuktiCapture] callback error:', err);
+        } finally {
+          closeBuktiOverlay();
+        }
+      }, 800);
+    }
+
     function stopDetectLoop() {
       if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
       if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer = null; }
@@ -7473,6 +7572,21 @@ File di Google Drive juga akan dihapus.`)) return;
               _autoCaptured = true;
               setTimeout(doCapture, 400); 
             }
+        } else {
+            // Auto capture Mode Personal (Biasa) / Face Register
+            // Beri jeda sekitar 1.2 detik sebelum jepret, agar user bisa bersiap/tersenyum
+            if (!_autoCaptured && _modelsReady) {
+               _autoCaptured = true;
+               setTimeout(() => {
+                   // Pastikan wajah masih oke (tidak out of frame) saat detik terakhir
+                   if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
+                       doCapture();
+                   } else {
+                       // Batal auto-capture jika wajah hilang atau ditutup
+                       _autoCaptured = false;
+                   }
+               }, 1200);
+            }
         }
       };
       loop();
@@ -7500,8 +7614,8 @@ File di Google Drive juga akan dihapus.`)) return;
       cnv.getContext('2d').drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
-      // Matikan stream video agar hemat memori
-      stopCamStream();
+      // Matikan stream video agar hemat memori (Kecuali untuk Meja Absen yang butuh kamera terus menyala)
+      if (!window._isMejaMode) stopCamStream();
 
       // 1. Ekstrak AI Wajah (Wajib untuk daftar)
       let descriptor = null;
@@ -8323,9 +8437,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     function ambilFotoKeterangan() {
       $('lblKamera').textContent = 'Membuka kamera...';
-      openCamOverlay({
-        isSimple: true,
-        facingMode: 'environment', // gunakan kamera belakang untuk foto bukti
+      openBuktiOverlay({
         onDone: async (cap) => {
           if (!cap || !cap.dataUrl) {
             $('lblKamera').textContent = 'Ambil Foto';

@@ -7334,7 +7334,6 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function closeCamOverlay() {
-      // Jika mode meja absen sedang aktif, menekan silang berarti mengakhiri sesi Meja Absen
       if (window._isMejaMode) {
         stopMejaAbsen();
         return;
@@ -7343,12 +7342,20 @@ File di Google Drive juga akan dihapus.`)) return;
       _isFlashOn = false; 
       stopDetectLoop();
       stopCamStream();
+      
+      // Tutup Modal
       $('camOverlay').classList.add('hidden');
       setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+      
+      // KEMBALIKAN UI SEPERTI SEMULA (Agar saat dibuka lagi tidak nyangkut di Preview)
+      $('camVideoWrap').style.display = 'block';
+      $('camPreview').classList.remove('show');
+      $('camPreviewImg').src = '';
       
       const cb = _absenCallbackAfterCam;
       _absenCallbackAfterCam = null;
       _captureData = null;
+      
       if (cb && typeof cb === 'object' && typeof cb.onCancel === 'function') cb.onCancel();
     }
 
@@ -7511,23 +7518,36 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
       if (_captureData) return;
-      _captureData = true; // flag lock
+      _captureData = true; // Kunci agar tidak klik 2x
       stopDetectLoop();
 
-      setCamStatus('ok', '📸', 'Sedang Memproses...', 'Harap tetap diam');
+      // Ubah tombol jadi loading
+      const btnCap = $('btnCapture');
+      if (btnCap) {
+          btnCap.disabled = true;
+          btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
+      }
+      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
+
+      // Bekukan video & Ambil gambar
       const vid = $('camVideo');
       const cnv = document.createElement('canvas');
-      cnv.width = vid.videoWidth; cnv.height = vid.videoHeight;
+      cnv.width = vid.videoWidth; 
+      cnv.height = vid.videoHeight;
       cnv.getContext('2d').drawImage(vid, 0, 0);
       const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
+      // Matikan stream video agar hemat memori
+      stopCamStream();
+
+      // 1. Ekstrak AI Wajah (Wajib untuk daftar)
       let descriptor = null;
       if (_modelsReady) {
         const desc = await getFaceDescriptor(cnv);
         if (desc) descriptor = Array.from(desc);
       }
 
-      // Handle "Meja Absen" Matching (1:N)
+      // 2. Handle Continuous Scan (Meja Absen)
       if (window._isMejaMode) {
           if (_allFaceDescriptors.length > 0 && descriptor) {
             const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
@@ -7536,20 +7556,20 @@ File di Google Drive juga akan dihapus.`)) return;
             if (bestMatch.label !== 'unknown') {
               _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
               return; 
-            } else {
-               _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
-               return;
             }
-          } else {
-             _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
-             return;
           }
+          _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+          return;
       }
 
-      // --- LOGIKA UNTUK MANUAL (ABSEN DARI HP SENDIRI / DAFTAR WAJAH) ---
+      // 3. TAMPILKAN PREVIEW FOTO (SEMBUNYIKAN VIDEO)
+      $('camVideoWrap').style.display = 'none'; // Sembunyikan frame kamera
+      $('camStatus').style.display = 'none';    // Sembunyikan status
+      $('livenessMini').style.display = 'none';
+      
       let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
       
-      // Jika absen personal (Bukan Daftar Wajah), tampilkan match score
+      // Jika Absen Personal (bukan Daftar Wajah Admin), tampilkan persentase kecocokan
       if (!_absenCallbackAfterCam?.isRegister) {
           const ref = getFaceRef();
           if (ref && descriptor) {
@@ -7558,25 +7578,38 @@ File di Google Drive juga akan dihapus.`)) return;
             if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
             else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
           }
+      } else {
+          // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
+          if (!descriptor) {
+             match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
+          }
       }
 
-      _captureData = { dataUrl, descriptor, faceOk: true, livenessOk: true };
+      _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
 
+      // Render info ke preview card
       $('camPreviewImg').src = dataUrl;
       $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
       $('camPreview').classList.add('show');
-      stopCamStream();
 
-      // FIX 2: Simpan callback ke dalam variabel sementara sebelum memanggil closeCamOverlay!
-      setTimeout(() => {
-        const tempCallback = _absenCallbackAfterCam; 
-        closeCamOverlay(); // Fungsi ini akan mengosongkan _absenCallbackAfterCam
-        
-        // Panggil server menggunakan tempCallback
-        if (typeof tempCallback === 'function') {
-            tempCallback(_captureData);
-        } else if (tempCallback?.onDone) {
-            tempCallback.onDone(_captureData);
+      // 4. Eksekusi Pengiriman Data ke Server
+      const cb = _absenCallbackAfterCam;
+      
+      // Beri jeda 1 detik agar user melihat preview fotonya
+      setTimeout(async () => {
+        try {
+            // Tunggu proses API Server Selesai (await)
+            if (typeof cb === 'function') {
+                await cb(_captureData);
+            } else if (cb?.onDone) {
+                await cb.onDone(_captureData);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            // TUTUP KAMERA HANYA SETELAH DATA SELESAI DIKIRIM
+            closeCamOverlay(); 
+            if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan'; // Kembalikan teks tombol
         }
       }, 1000);
     }

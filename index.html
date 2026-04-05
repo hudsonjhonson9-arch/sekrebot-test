@@ -12518,29 +12518,35 @@ async function generateRekapPDF() {
               doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
             } catch(e) {}
             
+            // Baris 1: Nama Kabupaten
             doc.setFont('times', 'bold');
-            doc.setFontSize(12);
-            // Teks digeser sedikit ke kanan (X=115) untuk memberi ruang logo
-            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 16, { align: 'center' });
             doc.setFontSize(14);
-            doc.text('BADAN PERENCANAAN PEMBANGUNAN', 115, 23, { align: 'center' });
-            doc.setFont('times', 'normal');
-            doc.setFontSize(14);
-            doc.text('RISET DAN INOVASI DAERAH', 115, 23, { align: 'center' });
-            doc.setFont('times', 'normal');
-            doc.setFontSize(9);
-            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 29, { align: 'center' });
-            
-            doc.setLineWidth(0.7);
-            doc.line(15, 36, 195, 36);
-            doc.setLineWidth(0.2);
-            doc.line(15, 37, 195, 37);
+            doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', 115, 15, { align: 'center' });
 
+            // Baris 2: Nama Badan (Bagian Atas)
+            doc.setFontSize(18);
+            doc.text('BADAN PERENCANAAN PEMBANGUNAN', 115, 22, { align: 'center' });
+
+            // Baris 3: Nama Badan (Bagian Bawah - Diturunkan ke Y=28)
+            doc.text('RISET DAN INOVASI DAERAH', 115, 28, { align: 'center' });
+
+            // Baris 4: Alamat (Diturunkan ke Y=34)
+            doc.setFont('times', 'normal');
+            doc.setFontSize(12);
+            doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', 115, 34, { align: 'center' });
+
+            // Perbaikan Garis Pembatas (Diturunkan agar tidak menabrak alamat)
+            doc.setLineWidth(0.7);
+            doc.line(15, 37, 195, 37); 
+            doc.setLineWidth(0.2);
+            doc.line(15, 38, 195, 38);
+
+            // Judul Laporan (Juga diturunkan sedikit agar proporsional)
             doc.setFontSize(11);
             doc.setFont('times', 'bold');
-            doc.text('DAFTAR HADIR PEGAWAI', 105, 47, { align: 'center' });
+            doc.text('DAFTAR HADIR PEGAWAI', 105, 48, { align: 'center' });
             doc.setFont('times', 'normal');
-            doc.text(`Periode: ${tanggalLabel}`, 105, 53, { align: 'center' });
+            doc.text(`Periode: ${tanggalLabel}`, 105, 54, { align: 'center' });
           }
         }
       });

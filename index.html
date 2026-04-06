@@ -1571,9 +1571,9 @@
 
     /* Shimmer */
     .shimmer {
-      background: linear-gradient(90deg, rgba(255, 255, 255, .05) 25%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .05) 75%);
+      background: linear-gradient(90deg, rgba(255, 255, 255, .08) 25%, rgba(255, 255, 255, .18) 50%, rgba(255, 255, 255, .08) 75%);
       background-size: 200% 100%;
-      animation: shim 1.5s infinite;
+      animation: shim 1.2s infinite;
       border-radius: 6px
     }
 
@@ -9488,6 +9488,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const btn = $('btnRekapRefresh'); btn.disabled = true;
       const dlBtn = $('btnDownloadRekap'); if (dlBtn) dlBtn.disabled = true;
       $('rekapRefIcon').outerHTML = '<span class="spin-sm" id="rekapRefIcon"></span>';
+      showRekapToast('loading', '⏳ Memuat data rekap...');
       $('pegawaiList').innerHTML = shimmerRows(4);
       resetRekapStats();
       // Fetch hari libur, jam pegawai & jam periode secara paralel
@@ -11374,7 +11375,10 @@ File di Google Drive juga akan dihapus.`)) return;
         // ── Muat daftar admin dari server (dinamis, tanpa hardcode) ──
         if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
           ADMIN_IDS.length = 0;
-          jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
+          jam.admin_ids.forEach(id => {
+            const num = Number(id);
+            if (!isNaN(num) && num !== 0) ADMIN_IDS.push(num);
+          });
         }
         IS_ADMIN = ADMIN_IDS.includes(MY_ID);
         REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID || null;
@@ -11393,9 +11397,12 @@ File di Google Drive juga akan dihapus.`)) return;
       const panelAdmin = $('panel-admin');
       if (!panelAdmin) return;
       
-      // Re-evaluate IS_ADMIN in case MY_ID was not ready earlier
-      if (!MY_ID) MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
-      if (!IS_ADMIN && ADMIN_IDS.includes(MY_ID)) IS_ADMIN = true;
+      // Re-evaluate IS_ADMIN (force type Number for reliability)
+      if (!MY_ID || MY_ID === 0) MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
+      if (!IS_ADMIN && MY_ID !== 0 && ADMIN_IDS.includes(MY_ID)) IS_ADMIN = true;
+
+      // Also mark super-admin if they are the first in the list
+      const isSA = ADMIN_IDS.length > 0 && ADMIN_IDS[0] === MY_ID;
 
       if (!IS_ADMIN) {
         panelAdmin.style.display = 'none';

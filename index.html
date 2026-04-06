@@ -5281,7 +5281,7 @@
         <button class="filter-chip" onclick="filterLog('SAKIT', this)">🤒 Sakit</button>
         <button class="filter-chip" onclick="filterLog('TUGAS', this)">💼 Tugas</button>
         <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
-        <button class="filter-chip" onclick="filterLog('TANPA BERITA',  this)">❌ Tanpa Berita</button>
+        <button class="filter-chip" onclick="filterLog('TANPA BERITA',  this)">❌ TB</button>
         <button class="filter-chip" onclick="filterLog('LIBUR', this)">🎉 Libur</button>
       </div>
       <!-- ══ AKUMULASI WAKTU ══ -->
@@ -5465,7 +5465,7 @@
           <div class="rs-card rs-alpa">
             <div class="rs-num" id="rsAlpa">—</div>
             <div class="rs-ico">❌</div>
-            <div class="rs-lbl">Tanpa Berita</div>
+            <div class="rs-lbl">TB</div>
           </div>
         </div>
       </div>
@@ -9682,7 +9682,7 @@ File di Google Drive juga akan dihapus.`)) return;
           ${izin > 0 ? `<span class="pbar-item pb-izin"      >🙏 Izin</span>` : ''}
           ${sakit > 0 ? `<span class="pbar-item pb-sakit"     >🤒 Sakit</span>` : ''}
           ${tugas > 0 ? `<span class="pbar-item pb-tugas"     >💼 Tugas/DL</span>` : ''}
-          ${isAlpa ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ Tanpa Berita</span>` : ''}
+          ${isAlpa ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ TB</span>` : ''}
           ${terlambatMnt > 0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
           ${cepatMnt > 0 ? `<span class="pbar-item pb-luar-pulang" style="font-family:'JetBrains Mono',monospace">🏃 -${cepatMnt}m</span>` : ''}
         </div>
@@ -9776,7 +9776,7 @@ File di Google Drive juga akan dihapus.`)) return;
         ${izin > 0 ? `<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>` : ''}
         ${sakit > 0 ? `<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>` : ''}
         ${tugas > 0 ? `<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>` : ''}
-        ${(p.alpa || 0) > 0 ? `<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ Tanpa Berita: ${p.alpa}</span>` : ''}
+        ${(p.alpa || 0) > 0 ? `<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ${p.alpa}</span>` : ''}
         ${total === 0 && (p.alpa || 0) === 0 ? `<span class="pbar-item" style="background:rgba(255,255,255,.06);color:var(--muted)">❌ Tidak Ada Data</span>` : ''}
       </div>`;
 
@@ -9973,7 +9973,7 @@ File di Google Drive juga akan dihapus.`)) return;
           'Sakit': sakit,
           'Izin': izin,
           'Dinas Luar (DL)': tugas,
-          'Tanpa Berita': (p.alpa || 0),
+          'TB': (p.alpa || 0),
           'Keterangan': [
             masuk > 0 ? `M:${masuk}` : '',
             pulang > 0 ? `P:${pulang}` : '',
@@ -12907,7 +12907,7 @@ async function generateRekapPDF() {
       else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
       else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
       else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
-      else { ketStatus = 'TANPA BERITA'; stats.tanpaBerita++; }
+      else { ketStatus = 'TB'; stats.tanpaBerita++; }
 
       if (p.lambat > 0) stats.terlambat++;
 
@@ -12930,20 +12930,20 @@ async function generateRekapPDF() {
     doc.autoTable({
       startY: 60,
       margin: { top: 20, left: 10, right: 10 },
-      head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Keterangan']],
+      head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
       body: tableBody,
       theme: 'grid',
       headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
       styles: { font: 'times', fontSize: 7.5, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
       columnStyles: {
         0: { halign: 'center', cellWidth: 7 },
-        1: { cellWidth: 38 },
-        2: { cellWidth: 32 },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 40 },
         3: { halign: 'center', cellWidth: 16 },
         4: { cellWidth: 22, minCellHeight: 14 },
         5: { halign: 'center', cellWidth: 16 },
         6: { cellWidth: 22, minCellHeight: 14 },
-        7: { cellWidth: 42 }
+        7: { cellWidth: 27 }
       },
       didDrawCell: (data) => {
         if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
@@ -12960,7 +12960,7 @@ async function generateRekapPDF() {
               (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) :
               (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
 
-            if (jamVal && !['—', '-', 'Alpa', 'Tanpa Berita', 'Belum'].includes(jamVal.trim())) {
+            if (jamVal && !['—', '-', 'Alpa', 'Tanpa Berita', 'TB', 'Belum'].includes(jamVal.trim())) {
               try {
                 doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 18, 10, undefined, 'FAST');
               } catch (err) { }
@@ -13011,7 +13011,7 @@ async function generateRekapPDF() {
     doc.text('Ringkasan Kehadiran:', 15, currentY);
     doc.setFont('times', 'normal');
     doc.setFontSize(9);
-    const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Tanpa Berita: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
+    const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
     doc.text(statText, 15, currentY + 6);
 
     let footerY = currentY + 20;

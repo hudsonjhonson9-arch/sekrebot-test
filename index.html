@@ -12842,206 +12842,212 @@ async function generateRekapPDF() {
     return;
   }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'mm', [215, 330]); // Ukuran F4
-  const pageWidth = doc.internal.pageSize.width;
-  const dari = $('rekapDari').value;
-  const sampai = $('rekapSampai').value;
-  const isHarian = dari === sampai;
-  const tanggalLabel = isHarian
-    ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-    : `${dari} s.d. ${sampai}`;
-  
-  const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
-
-  showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
-
-  let sigMap = {};
   try {
-    const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-    const sigJson = sigRes.ok ? await sigRes.json() : {};
-    const sigData = sigJson.data || sigJson || [];
-    if (Array.isArray(sigData)) {
-      sigData.forEach(s => {
-        if (s.signature && s.signature.length > 100) { 
-          sigMap[String(s.telegram_id)] = s.signature;
-        }
-      });
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
+
+    // Gunakan array [lebar, tinggi] untuk F4 (215x330mm)
+    // Pastikan orientation 'p' (portrait)
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: [215, 330]
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const dari = $('rekapDari').value;
+    const sampai = $('rekapSampai').value;
+    const isHarian = dari === sampai;
+    const tanggalLabel = isHarian
+      ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : `${dari} s.d. ${sampai}`;
+
+    const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
+
+    showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
+
+    let sigMap = {};
+    try {
+      const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
+      const sigJson = sigRes.ok ? await sigRes.json() : {};
+      const sigData = sigJson.data || sigJson || [];
+      if (Array.isArray(sigData)) {
+        sigData.forEach(s => {
+          if (s.signature && s.signature.length > 100) {
+            sigMap[String(s.telegram_id)] = s.signature;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Gagal load paraf, lanjut tanpa paraf.");
     }
-  } catch (e) {
-    console.warn("Gagal load paraf, lanjut tanpa paraf.");
-  }
 
-  showRekapToast('loading', '⏳ Menyusun tabel absensi...');
+    showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
-  const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+    const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
-  // Statistik untuk ringkasan di bawah
-  const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, alpa: 0, terlambat: 0 };
+    // Statistik untuk ringkasan di bawah
+    const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, alpa: 0, terlambat: 0 };
 
-  // 3. Update Table Body: Tambahkan Jabatan & Keterangan
-  const tableBody = filteredPegawai.map((p, i) => {
-    const row = p.dataExcelRow || {};
-    const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
-    const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-    
-    // Logika Status & Keterangan
-    let ketStatus = '';
-    if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
-    else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
-    else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
-    else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
-    else { stats.alpa++; }
+    // 3. Update Table Body: Tambahkan Jabatan & Keterangan
+    const tableBody = filteredPegawai.map((p, i) => {
+      const row = p.dataExcelRow || {};
+      const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
+      const jamP = row['Jam Pulang'] || p.jamPulang || '—';
 
-    if (p.lambat > 0) stats.terlambat++;
+      // Logika Status & Keterangan
+      let ketStatus = '';
+      if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
+      else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
+      else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
+      else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
+      else { stats.alpa++; }
 
-    const logKet = p.logKet || '';
-    const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
+      if (p.lambat > 0) stats.terlambat++;
 
-    return [
-      i + 1,
-      `${p.nama}\nNIP. ${p.nip || '—'}`,
-      p.jabatan || '—',
-      jamM,
-      '', 
-      jamP,
-      '',
-      finalKet || '—'
-    ];
-  });
+      const logKet = p.logKet || '';
+      const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
 
-  // 4. Proses Tabel
-  doc.autoTable({
-    startY: 60,
-    margin: { top: 20, left: 10, right: 10 },
-    head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Keterangan']],
-    body: tableBody,
-    theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-    styles: { font: 'times', fontSize: 7.5, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 7 },
-      1: { cellWidth: 38 },
-      2: { cellWidth: 32 },
-      3: { halign: 'center', cellWidth: 16 },
-      4: { cellWidth: 22, minCellHeight: 14 }, 
-      5: { halign: 'center', cellWidth: 16 },
-      6: { cellWidth: 22, minCellHeight: 14 },
-      7: { cellWidth: 42 }
-    },
-    didDrawCell: (data) => {
-      // Indeks kolom berubah: Paraf Masuk jadi index 4, Paraf Pulang jadi index 6
-      if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
-        const peg = filteredPegawai[data.row.index];
-        const sig = sigMap[String(peg.id)];
-        
-        if (sig) {
-          const isParafMasuk = (data.column.index === 4);
-          const jamVal = isParafMasuk ? 
-             (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) : 
-             (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+      return [
+        i + 1,
+        `${p.nama}\nNIP. ${p.nip || '—'}`,
+        p.jabatan || '—',
+        jamM,
+        '',
+        jamP,
+        '',
+        finalKet || '—'
+      ];
+    });
 
-          if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
-            try {
-              // Ukuran paraf disesuaikan sedikit karena kolom lebih sempit
-              doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 22, 10, undefined, 'FAST');
-            } catch (err) {}
+    // 4. Proses Tabel
+    doc.autoTable({
+      startY: 60,
+      margin: { top: 20, left: 10, right: 10 },
+      head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Keterangan']],
+      body: tableBody,
+      theme: 'grid',
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
+      styles: { font: 'times', fontSize: 7.5, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 7 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 32 },
+        3: { halign: 'center', cellWidth: 16 },
+        4: { cellWidth: 22, minCellHeight: 14 },
+        5: { halign: 'center', cellWidth: 16 },
+        6: { cellWidth: 22, minCellHeight: 14 },
+        7: { cellWidth: 42 }
+      },
+      didDrawCell: (data) => {
+        if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
+          const peg = filteredPegawai[data.row.index];
+          const sig = sigMap[String(peg.id)];
+          if (sig) {
+            const isParafMasuk = (data.column.index === 4);
+            const jamVal = isParafMasuk ?
+              (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) :
+              (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+
+            if (jamVal && !['—', '-', 'Alpa', 'Belum'].includes(jamVal.trim())) {
+              try {
+                doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 18, 10, undefined, 'FAST');
+              } catch (err) { }
+            }
           }
         }
-      }
-    },
-    didDrawPage: (data) => {
-      if (data.pageNumber === 1) {
-        try {
-          doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-        } catch(e) {}
-        
-        doc.setFont('times', 'bold');
-        doc.setFontSize(14);
-        doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
-        doc.setFontSize(18);
-        doc.text('BADAN PERENCANAAN PEMBANGUNAN', pageWidth / 2 + 10, 22, { align: 'center' });
-        doc.text('RISET DAN INOVASI DAERAH', pageWidth / 2 + 10, 28, { align: 'center' });
-        doc.setFont('times', 'normal');
-        doc.setFontSize(12);
-        doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
+      },
+      didDrawPage: (data) => {
+        if (data.pageNumber === 1) {
+          try {
+            doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+          } catch (e) { }
 
-        doc.setLineWidth(0.7);
-        doc.line(15, 37, pageWidth - 15, 37); 
-        doc.setLineWidth(0.2);
-        doc.line(15, 38, pageWidth - 15, 38);
+          doc.setFont('times', 'bold');
+          doc.setFontSize(14);
+          doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
+          doc.setFontSize(18);
+          doc.text('BADAN PERENCANAAN PEMBANGUNAN', pageWidth / 2 + 10, 22, { align: 'center' });
+          doc.text('RISET DAN INOVASI DAERAH', pageWidth / 2 + 10, 28, { align: 'center' });
+          doc.setFont('times', 'normal');
+          doc.setFontSize(12);
+          doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
 
-        doc.setFontSize(11);
-        doc.setFont('times', 'bold');
-        doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
-        doc.setFont('times', 'normal');
-        doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
+          doc.setLineWidth(0.7);
+          doc.line(15, 37, pageWidth - 15, 37);
+          doc.setLineWidth(0.2);
+          doc.line(15, 38, pageWidth - 15, 38);
+
+          doc.setFontSize(11);
+          doc.setFont('times', 'bold');
+          doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
+          doc.setFont('times', 'normal');
+          doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
+        }
       }
+    });
+
+    // 5. Statistik Kehadiran & Footer
+    let currentY = doc.lastAutoTable.finalY + 10;
+    if (currentY + 60 > pageHeight) {
+      doc.addPage();
+      currentY = 20;
     }
-  });
 
-  // 5. Statistik Kehadiran & Footer
-  let currentY = doc.lastAutoTable.finalY + 10;
-  const pageHeight = doc.internal.pageSize.height;
+    // Box Statistik
+    doc.setFont('times', 'bold');
+    doc.setFontSize(10);
+    doc.text('Ringkasan Kehadiran:', 15, currentY);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(9);
+    const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Alpa: ${stats.alpa} | Terlambat: ${stats.terlambat}`;
+    doc.text(statText, 15, currentY + 6);
 
-  if (currentY + 60 > pageHeight) {
-    doc.addPage();
-    currentY = 20;
-  }
+    let footerY = currentY + 20;
+    if (footerY + 45 > pageHeight) {
+      doc.addPage();
+      footerY = 25;
+    }
 
-  // Box Statistik
-  doc.setFont('times', 'bold');
-  doc.setFontSize(10);
-  doc.text('Ringkasan Kehadiran:', 15, currentY);
-  doc.setFont('times', 'normal');
-  doc.setFontSize(9);
-  const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Alpa: ${stats.alpa} | Terlambat: ${stats.terlambat}`;
-  doc.text(statText, 15, currentY + 6);
+    doc.setFontSize(10);
+    doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, pageWidth - 75, footerY);
+    doc.text('Mengetahui,', pageWidth - 75, footerY + 6);
+    doc.text('Kepala Badan', pageWidth - 75, footerY + 11);
 
-  let footerY = currentY + 20;
+    const kaban = filteredPegawai[0];
+    const kabanSig = sigMap[String(kaban?.id)];
+    if (kabanSig) {
+      try { doc.addImage(kabanSig, 'PNG', pageWidth - 75, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
+    }
 
-  if (footerY + 45 > pageHeight) {
-    doc.addPage();
-    footerY = 25;
-  }
+    doc.setFont('times', 'bold');
+    doc.text(kaban?.nama || '__________________________', pageWidth - 75, footerY + 38);
+    doc.setFont('times', 'normal');
+    doc.text(`NIP. ${kaban?.nip || '..........................................'}`, pageWidth - 75, footerY + 43);
 
-  doc.setFontSize(10);
-  doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}`, pageWidth - 70, footerY);
-  doc.text('Mengetahui,', pageWidth - 70, footerY + 6);
-  doc.text('Kepala Badan', pageWidth - 70, footerY + 11);
+    // 6. Simpan & Kirim
+    const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
+    doc.save(fileName);
 
-  const kaban = filteredPegawai[0];
-  const kabanSig = sigMap[String(kaban?.id)];
-  if (kabanSig) {
-    try { doc.addImage(kabanSig, 'PNG', pageWidth - 70, footerY + 14, 35, 14, undefined, 'FAST'); } catch(e){}
-  }
-
-  doc.setFont('times', 'bold');
-  doc.text(kaban?.nama || '__________________________', pageWidth - 70, footerY + 38);
-  doc.setFont('times', 'normal');
-  doc.text(`NIP. ${kaban?.nip || '..........................................'}`, pageWidth - 70, footerY + 43);
-
-  // 6. Simpan & Kirim
-  const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
-  doc.save(fileName);
-  
-  showRekapToast('loading', '📤 Mengirim file ke Telegram...');
-  try {
+    showRekapToast('loading', '📤 Mengirim file ke Telegram...');
     const pdfBase64 = doc.output('datauristring').split(',')[1];
-    await apiFetch(P.kirimRekap, { 
-      method: 'POST', 
+    await apiFetch(P.kirimRekap, {
+      method: 'POST',
       body: JSON.stringify({
         chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
         pdf_base64: pdfBase64,
         namaFilePdf: fileName,
-        tanggal_label: tanggalLabel, // <-- Data ini dikirim ke n8n
+        tanggal_label: tanggalLabel,
         dari: dari,
         sampai: sampai
-      }) 
+      })
     });
     showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
+
   } catch (e) {
-    showRekapToast('fail', '❌ Gagal mengirim PDF ke Bot');
+    console.error('PDF Generation Error:', e);
+    showRekapToast('fail', '❌ Gagal membuat PDF: ' + (e.message || 'Error tidak diketahui'));
   }
 }
 

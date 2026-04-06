@@ -5688,11 +5688,52 @@
           <div id="liburAdminList" style="margin-top:10px"></div>
         </div>
 
-        <!-- 🌙 PERIODE KHUSUS ══ -->
         <div class="card" style="margin-top:12px">
           <div class="card-title">🌙 Periode Jam Khusus</div>
-          <div id="periodeAdminList" style="margin-bottom:10px"></div>
-          <button class="btn-admin" onclick="tambahJamPeriode()">➕ Tambah Periode</button>
+          <div id="periodeAdminList" style="margin-bottom:12px"></div>
+          
+          <!-- UI TAMBAH PERIODE (FORM) -->
+          <div id="periodeForm" style="display:none; background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; border:1px solid var(--border); margin-bottom:15px; animation:slideDown 0.3s ease">
+            <div style="font-size:10px; font-weight:800; color:var(--gold); margin-bottom:12px; letter-spacing:0.05em">PENDAFTARAN PERIODE BARU</div>
+            
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label">Nama Periode</label>
+              <input type="text" id="inPeriodeNama" class="form-input" placeholder="Cth: Ramadhan 2026..." />
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Dari Tanggal</label>
+                <input type="date" id="inPeriodeDari" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sampai Tanggal</label>
+                <input type="date" id="inPeriodeSampai" class="form-input" />
+              </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px">
+              <div class="form-group">
+                <label class="form-label">Jam Masuk</label>
+                <input type="time" id="inPeriodeMasuk" class="form-input" value="08:00" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Jam Pulang</label>
+                <input type="time" id="inPeriodePulang" class="form-input" value="14:30" />
+              </div>
+            </div>
+
+            <div id="periodeResult" style="display:none; margin-bottom:12px"></div>
+            
+            <div style="display:flex; flex-direction:column; gap:8px">
+              <button class="btn-admin" id="btnTambahPeriode" onclick="submitTambahPeriode()">
+                <span id="btnTambahPeriodeTxt">💾 Simpan Periode</span>
+              </button>
+              <button class="btn-admin" onclick="togglePeriodeForm(false)" style="background:transparent; border:none; color:var(--muted); font-size:10px; height:auto; padding:5px">Batal</button>
+            </div>
+          </div>
+
+          <button class="btn-admin" id="btnShowPeriodeForm" onclick="togglePeriodeForm(true)">➕ Tambah Periode</button>
         </div>
 
         <!-- 📸 FACE RECOGNITION ══ -->
@@ -11380,7 +11421,22 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
 
-    async function tambahJamPeriode() {
+    function togglePeriodeForm(show) {
+      const form = $('periodeForm');
+      const btn = $('btnShowPeriodeForm');
+      if (!form || !btn) return;
+      form.style.display = show ? 'block' : 'none';
+      btn.style.display = show ? 'none' : 'block';
+      if (show) {
+        // Init with default dates
+        const now = new Date();
+        const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0'), d = String(now.getDate()).padStart(2, '0');
+        $('inPeriodeDari').value = `${y}-${m}-${d}`;
+        $('inPeriodeSampai').value = `${y}-${m}-${d}`;
+      }
+    }
+
+    async function submitTambahPeriode() {
       const nama = ($('inPeriodeNama')?.value || '').trim();
       const dari = $('inPeriodeDari')?.value || '';
       const sampai = $('inPeriodeSampai')?.value || '';
@@ -11414,10 +11470,14 @@ File di Google Drive juga akan dihapus.`)) return;
         ['inPeriodeNama', 'inPeriodeDari', 'inPeriodeSampai', 'inPeriodeMasuk', 'inPeriodePulang'].forEach(id => { const el = $(id); if (el) el.value = ''; });
         $('periodePreview').style.display = 'none';
         showResult('periodeResult', 'periodeRIcon', 'periodeRTitle', 'periodeRMsg', 'success', '✅', 'Periode Tersimpan!', `🌙 ${nama} (${dari} s.d. ${sampai}) berhasil ditambahkan.`);
+        setTimeout(() => togglePeriodeForm(false), 2000);
         await loadJamPeriodeAdmin();
       } catch {
         showResult('periodeResult', 'periodeRIcon', 'periodeRTitle', 'periodeRMsg', 'warning', '⚠️', 'Gagal Menyimpan', 'Pastikan webhook jam-periode-add aktif di n8n.');
       } finally {
+        if (btn) { btn.disabled = false; $('btnTambahPeriodeTxt').textContent = '💾 Simpan Periode'; }
+      }
+    }
         if (btn) { setTimeout(() => { btn.disabled = false; $('btnTambahPeriodeTxt').textContent = 'Simpan Periode'; }, 2500); }
       }
     }

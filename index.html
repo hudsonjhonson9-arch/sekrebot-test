@@ -5590,6 +5590,7 @@
             <div id="pegawaiForm" style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px">
               <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px">➕ TAMBAH PEGAWAI</div>
               <input type="hidden" id="editPegawaiId">
+              <input type="hidden" id="editPegawaiOldNo">
               <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
@@ -10989,6 +10990,7 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!f) return;
       $('pegawaiFormTitle').textContent = '➕ TAMBAH PEGAWAI BARU';
       $('editPegawaiId').value = '';
+      $('editPegawaiOldNo').value = '';
       $('inPegawaiId').value = '';
       $('inPegawaiId').disabled = false;
       $('inPegawaiNama').value = '';
@@ -11025,6 +11027,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiId').disabled = true; // Telegram ID cannot be changed in edit
         $('inPegawaiNama').value = p.nama || p.Nama || '';
         $('inPegawaiNo').value = p.no || '';
+        $('editPegawaiOldNo').value = p.no || '';
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
@@ -11037,10 +11040,11 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function savePegawai() {
       const editId = $('editPegawaiId').value;
+      const oldNo = parseInt($('editPegawaiOldNo').value || 0);
       const isEdit = !!editId;
       const id = $('inPegawaiId').value;
       const nama = $('inPegawaiNama').value.trim();
-      const no = $('inPegawaiNo').value;
+      const no = parseInt($('inPegawaiNo').value || 0);
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
       const role = $('inPegawaiRole').value;
@@ -11053,6 +11057,59 @@ File di Google Drive juga akan dihapus.`)) return;
 
       $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
+        // === LOGIKA SHIFTING NOMOR (REORDERING) ===
+        if (no > 0 && (no !== oldNo || !isEdit)) {
+          try {
+            const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+            if (ur.ok) {
+              const ud = await ur.json();
+              const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID) && (u.id || u.ID) != id);
+              const updates = [];
+              
+              if (isEdit && oldNo > 0) {
+                if (no < oldNo) {
+                  // Geser Naik: [no, oldNo-1] -> +1
+                  users.forEach(u => {
+                    const uNo = parseInt(u.no || u.No || 0);
+                    if (uNo >= no && uNo < oldNo) updates.push({ ...u, newNo: uNo + 1 });
+                  });
+                } else {
+                  // Geser Turun: [oldNo+1, no] -> -1
+                  users.forEach(u => {
+                    const uNo = parseInt(u.no || u.No || 0);
+                    if (uNo > oldNo && uNo <= no) updates.push({ ...u, newNo: uNo - 1 });
+                  });
+                }
+              } else {
+                // Tambah Baru: [no, infinity] -> +1 (jika slot sudah terisi)
+                users.forEach(u => {
+                  const uNo = parseInt(u.no || u.No || 0);
+                  if (uNo >= no) updates.push({ ...u, newNo: uNo + 1 });
+                });
+              }
+
+              if (updates.length > 0) {
+                // Update semua pegawai yang tergeser
+                await Promise.all(updates.map(u => 
+                  apiFetch(P.userEdit, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      id: (u.id || u.ID),
+                      nama: (u.nama || u.Nama),
+                      no: u.newNo,
+                      nip: (u.nip || u.NIP || ''),
+                      jabatan: (u.jabatan || u.Jabatan || ''),
+                      role: (u.role || u.Role || 'USER'),
+                      status: (u.status || u.Status || 'AKTIF')
+                    })
+                  })
+                ));
+              }
+            }
+          } catch (err) { console.warn('Shifting reorder failed:', err); }
+        }
+        // ==========================================
+
         const path = isEdit ? P.userEdit : P.userAdd;
         const res = await apiFetch(path, {
           method: 'POST',

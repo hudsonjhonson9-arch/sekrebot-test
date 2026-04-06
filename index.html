@@ -5554,87 +5554,6 @@
           </button>
         </div>
 
-        <!-- ══ MANAJEMEN ADMIN ══ -->
-        <!-- ══ MANAJEMEN PEGAWAI ══ -->
-        <div class="card" style="margin-top:10px" id="pegawaiMgmtCard">
-          <div class="card-title">
-            <span>👥 Manajemen Pegawai</span>
-            <div style="display:flex;gap:6px">
-              <button class="btn-sm-admin" onclick="showAddPegawai()">➕ Tambah</button>
-              <button class="btn-sm-admin" onclick="loadPegawaiMgmt()">🔄</button>
-            </div>
-          </div>
-          <div class="radius-note">Kelola data pegawai (NIP, Jabatan, Status). Klik ✍️ untuk edit.</div>
-
-          <!-- Form Tambah/Edit (Hidden by default) -->
-          <div id="pegawaiForm"
-            style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px;animation:slideUp .3s ease">
-            <div id="pegawaiFormTitle"
-              style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase">
-              ➕ TAMBAH PEGAWAI BARU</div>
-            <input type="hidden" id="editPegawaiId">
-
-            <div class="form-group">
-              <label class="form-label">Telegram ID (Hanya Angka)</label>
-              <input id="inPegawaiId" type="number" class="form-input" placeholder="Contoh: 12345678"
-                style="font-family:'JetBrains Mono',monospace" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Nama Lengkap</label>
-              <input id="inPegawaiNama" type="text" class="form-input" placeholder="Nama tanpa gelar..." />
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <div>
-                <label class="form-label">NIP</label>
-                <input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." />
-              </div>
-              <div>
-                <label class="form-label">Jabatan</label>
-                <input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Jabatan..." />
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-              <div>
-                <label class="form-label">Role</label>
-                <select id="inPegawaiRole" class="form-input">
-                  <option value="USER">USER (Pegawai)</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="SUPERADMIN">SUPERADMIN</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Status</label>
-                <select id="inPegawaiStatus" class="form-input">
-                  <option value="AKTIF">AKTIF</option>
-                  <option value="NONAKTIF">NONAKTIF / PINDAH</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="result-card" id="pegawaiFormResult" style="display:none">
-              <div class="r-icon" id="pegawaiFormRIcon">✅</div>
-              <div class="r-title" id="pegawaiFormRTitle">—</div>
-              <div class="r-msg" id="pegawaiFormRMsg">—</div>
-            </div>
-
-            <div style="display:flex;gap:8px">
-              <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0">
-                <div class="btn-inner"><span>💾</span><span id="btnSavePegawaiTxt">Simpan Data</span></div>
-              </button>
-              <button class="btn-admin" onclick="hidePegawaiForm()"
-                style="flex:1;margin:0;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);box-shadow:none">
-                Batal
-              </button>
-            </div>
-          </div>
-
-          <!-- Daftar Pegawai -->
-          <div id="pegawaiMgmtList">
-            <div class="shimmer" style="height:50px;border-radius:10px"></div>
-            <div class="shimmer" style="height:50px;border-radius:10px;margin-top:6px"></div>
-          </div>
-        </div>
-
         <div class="card" style="margin-top:10px" id="adminMgmtCard">
           <div class="card-title">
             <span>👑 Manajemen Admin</span>
@@ -5775,26 +5694,97 @@
           </button>
         </div>
 
-        <!-- ══ WAJAH & TANDA TANGAN PEGAWAI (MERGED TABBED CARD) ══ -->
+        <!-- ══ MANAJEMEN PEGAWAI & BIOMETRIK (MERGED TABBED CARD) ══ -->
         <div class="card" style="margin-top:10px" id="adminFaceRegCard">
           <!-- Tab selector -->
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
             <div
               style="display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;padding:3px">
+              <button id="tabDataBtn" onclick="switchFaceSigTab('data')"
+                style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s">👥
+                Data</button>
               <button id="tabFaceBtn" onclick="switchFaceSigTab('face')"
-                style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s">📷
+                style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">📷
                 Wajah</button>
               <button id="tabSigBtn" onclick="switchFaceSigTab('sig')"
                 style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s">✍️
                 Tanda Tangan</button>
             </div>
-            <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm-admin" id="btnAdminAddData" onclick="showAddPegawai()" style="display:block">➕ Tambah</button>
+              <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
+            </div>
+          </div>
+
+          <!-- TAB: Data Pegawai -->
+          <div id="faceSigTabData">
+            <div class="radius-note" style="margin-bottom:10px">Kelola data profil pegawai (NIP, Jabatan, Role). Klik ✍️ untuk mengedit.</div>
+            
+            <!-- Form Tambah/Edit (Hidden by default) -->
+            <div id="pegawaiForm" style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px;animation:slideUp .3s ease">
+              <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase">➕ TAMBAH PEGAWAI BARU</div>
+              <input type="hidden" id="editPegawaiId">
+              
+              <div class="form-group">
+                <label class="form-label">Telegram ID (Hanya Angka)</label>
+                <input id="inPegawaiId" type="number" class="form-input" placeholder="Contoh: 12345678" style="font-family:'JetBrains Mono',monospace" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nama Lengkap</label>
+                <input id="inPegawaiNama" type="text" class="form-input" placeholder="Nama tanpa gelar..." />
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                <div>
+                  <label class="form-label">NIP</label>
+                  <input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." />
+                </div>
+                <div>
+                  <label class="form-label">Jabatan</label>
+                  <input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Jabatan..." />
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                <div>
+                  <label class="form-label">Role</label>
+                  <select id="inPegawaiRole" class="form-input">
+                    <option value="USER">USER (Pegawai)</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="SUPERADMIN">SUPERADMIN</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Status</label>
+                  <select id="inPegawaiStatus" class="form-input">
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="NONAKTIF">NONAKTIF / PINDAH</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="result-card" id="pegawaiFormResult" style="display:none">
+                <div class="r-icon" id="pegawaiFormRIcon">✅</div>
+                <div class="r-title" id="pegawaiFormRTitle">—</div>
+                <div class="r-msg" id="pegawaiFormRMsg">—</div>
+              </div>
+              
+              <div style="display:flex;gap:8px">
+                <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0">
+                  <div class="btn-inner"><span>💾</span><span id="btnSavePegawaiTxt">Simpan Data</span></div>
+                </button>
+                <button class="btn-admin" onclick="hidePegawaiForm()" style="flex:1;margin:0;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);box-shadow:none">Batal</button>
+              </div>
+            </div>
+
+            <!-- Daftar Pegawai -->
+            <div id="pegawaiMgmtList">
+              <div class="shimmer" style="height:50px;border-radius:10px"></div>
+              <div class="shimmer" style="height:50px;border-radius:10px;margin-top:6px"></div>
+            </div>
           </div>
 
           <!-- TAB: Wajah -->
-          <div id="faceSigTabFace">
-            <div class="radius-note" style="margin-bottom:10px">Daftarkan wajah pegawai secara langsung. Pilih pegawai
-              lalu ambil foto.</div>
+          <div id="faceSigTabFace" style="display:none">
+            <div class="radius-note" style="margin-bottom:10px">Daftarkan wajah pegawai secara langsung. Pilih pegawai lalu ambil foto.</div>
             <div class="form-group" style="margin-bottom:10px">
               <label class="form-label">👤 Pilih Pegawai</label>
               <select class="form-input" id="selectPegawaiFaceReg" style="font-size:12px">
@@ -5802,17 +5792,14 @@
               </select>
             </div>
             <button class="btn-admin" id="btnAdminCaptureFace" onclick="adminCaptureFace()" style="margin-bottom:10px">
-              <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan
-                  Wajah</span></div>
+              <div class="btn-inner"><span>📷</span><span id="btnAdminCaptureFaceTxt">Buka Kamera &amp; Daftarkan Wajah</span></div>
             </button>
             <div class="result-card" id="adminFaceRegResult" style="display:none">
               <div class="r-icon" id="adminFaceRegRIcon">📷</div>
               <div class="r-title" id="adminFaceRegRTitle">—</div>
               <div class="r-msg" id="adminFaceRegRMsg">—</div>
             </div>
-            <div
-              style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 7px">
-              📋 Status Wajah Semua Pegawai</div>
+            <div style="font-size:9px;font-weight:800;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:12px 0 7px">📋 Status Wajah Semua Pegawai</div>
             <div id="adminFaceRegList">
               <div class="shimmer" style="height:44px;border-radius:10px"></div>
               <div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>
@@ -5821,8 +5808,7 @@
 
           <!-- TAB: Tanda Tangan -->
           <div id="faceSigTabSig" style="display:none">
-            <div class="radius-note" style="margin-bottom:10px">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda
-              tangan digital untuk rekap PDF.</div>
+            <div class="radius-note" style="margin-bottom:10px">Pantau pegawai yang sudah &amp; belum mendaftarkan tanda tangan digital untuk rekap PDF.</div>
             <div id="adminSigList" style="margin-top:4px">
               <div class="shimmer" style="height:40px;border-radius:10px"></div>
               <div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>
@@ -6230,6 +6216,7 @@
           adminLoaded = true;
           loadKonfirmasiAdmin(); loadLiburAdmin();
           loadJamPeriodeAdmin(); loadAdminMgmt();
+          setTimeout(() => switchFaceSigTab('data'), 300); // Pastikan tabel pegawai termuat secara otomatis
           loadFaceStatusAdmin(); // muat status wajah semua pegawai
           // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
         }
@@ -11040,8 +11027,12 @@ File di Google Drive juga akan dihapus.`)) return;
           return;
         }
 
-        // Urutkan berdasarkan nama
-        users.sort((a, b) => (a.nama || a.Nama || '').localeCompare(b.nama || b.Nama || ''));
+        // Urutkan berdasarkan "no" (NIP/ID) secara numerik
+        users.sort((a, b) => {
+          const valA = String(a.nip || a.id || '0');
+          const valB = String(b.nip || b.id || '0');
+          return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+        });
 
         el.innerHTML = users.map(u => {
           const uid = String(u.id || u.ID || '');

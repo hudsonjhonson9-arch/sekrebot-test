@@ -12942,8 +12942,13 @@ async function generateRekapPDF() {
       },
       didDrawCell: (data) => {
         if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
-          const peg = filteredPegawai[data.row.index];
-          const sig = sigMap[String(peg.id)];
+          const rowIdx = data.row.index;
+          const peg = filteredPegawai[rowIdx];
+          if (!peg) return;
+
+          const uid = String(peg.id || peg.ID || peg.telegram_id || '');
+          const sig = sigMap[uid];
+
           if (sig) {
             const isParafMasuk = (data.column.index === 4);
             const jamVal = isParafMasuk ?

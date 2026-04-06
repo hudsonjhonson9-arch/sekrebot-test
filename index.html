@@ -10949,11 +10949,11 @@ File di Google Drive juga akan dihapus.`)) return;
           return;
         }
 
-        // Urutkan berdasarkan "no" (NIP/ID) secara numerik
+        // Urutkan berdasarkan "no" (No Pegawai) secara numerik
         users.sort((a, b) => {
-          const valA = String(a.nip || a.id || '0');
-          const valB = String(b.nip || b.id || '0');
-          return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
+          const valA = parseInt(a.no || a.No || 9999);
+          const valB = parseInt(b.no || b.No || 9999);
+          return valA - valB;
         });
 
         el.innerHTML = users.map(u => {
@@ -11794,11 +11794,18 @@ File di Google Drive juga akan dihapus.`)) return;
         const json = await res.json();
 
         // Response format: { ok, data: [...], total } — ambil dari data
-        const pegawai = Array.isArray(json)
+        const pegawai = (Array.isArray(json)
           ? json
           : Array.isArray(json.data)
             ? json.data
-            : [];
+            : []).filter(u => u.id || u.ID);
+
+        // Urutkan berdasarkan "no" secara numerik
+        pegawai.sort((a, b) => {
+          const valA = parseInt(a.no || a.No || 9999);
+          const valB = parseInt(b.no || b.No || 9999);
+          return valA - valB;
+        });
 
         if (!pegawai.length) {
           list.innerHTML = '<div style="text-align:center;padding:16px;font-size:11px;color:var(--muted)">Tidak ada data pegawai</div>';
@@ -12068,12 +12075,11 @@ File di Google Drive juga akan dihapus.`)) return;
         const ud = ur.ok ? await ur.json() : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
-        // Urutkan berdasarkan No Pegawai / NIP / No urut secara cerdas (mendukung angka & teks campuran)
+        // Urutkan berdasarkan No Pegawai (no) secara numerik
         users.sort((a, b) => {
-          let noA = String(a.no_pegawai || a.No_Pegawai || a.NIP || a.nip || a.No || a.no || a.ID_Pegawai || a.id || '').trim();
-          let noB = String(b.no_pegawai || b.No_Pegawai || b.NIP || b.nip || b.No || b.no || b.ID_Pegawai || b.id || '').trim();
-          
-          return noA.localeCompare(noB, undefined, { numeric: true, sensitivity: 'base' });
+          const valA = parseInt(a.no || a.No || 9999);
+          const valB = parseInt(b.no || b.No || 9999);
+          return valA - valB;
         });
 
         // Populate select

@@ -6108,8 +6108,9 @@
         setTimeout(() => {
           if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();
           if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+          // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
-        }, 300);
+        }, 350);
       }
       // Auto-load tanda tangan saat buka tab profil
       if (tab === 'profil') {
@@ -11977,9 +11978,13 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Desktop Mode ── */
     let _desktopModeOn = false;
 
+    let _desktopModeInitialized = false;
     function initDesktopMode() {
-      try { _desktopModeOn = localStorage.getItem('bapperida_desktop_mode') === '1'; } catch (_) { }
-      _applyDesktopMode(_desktopModeOn);
+      if (!_desktopModeInitialized) {
+        try { _desktopModeOn = localStorage.getItem('bapperida_desktop_mode') === '1'; } catch (_) { }
+        _desktopModeInitialized = true;
+      }
+      _applyDesktopMode(_desktopModeOn || false);
     }
 
     function _applyDesktopMode(on) {
@@ -12024,9 +12029,8 @@ File di Google Drive juga akan dihapus.`)) return;
       });
       // Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
+        // Desktop mode card exists in configuration section, ensure its state is synced
         initDesktopMode();
-        _applyDesktopMode(_desktopModeOn);
-        // Tampilkan desktop mode card untuk semua admin
         const dmCard = $('desktopModeCard');
         if (dmCard) dmCard.style.display = 'block';
       }

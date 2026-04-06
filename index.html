@@ -12968,7 +12968,7 @@ async function generateRekapPDF() {
     // 4. Proses Tabel
     doc.autoTable({
       startY: 60,
-      margin: { top: 20, left: 10, right: 10 },
+      margin: { top: 20, left: 10, right: 10, bottom: 20},
       head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
       body: tableBody,
       theme: 'grid',

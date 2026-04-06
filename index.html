@@ -1281,13 +1281,18 @@
       font-size: 14px;
       font-weight: 800;
       cursor: pointer;
-      transition: transform .15s;
-      box-shadow: 0 4px 18px rgba(124, 58, 237, .3);
-      margin-bottom: 8px
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 18px rgba(124, 58, 237, .25);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .btn-admin:active {
-      transform: scale(.97)
+      transform: scale(.97);
+      box-shadow: 0 2px 10px rgba(124, 58, 237, .2);
     }
 
     .btn-admin:disabled {
@@ -1303,29 +1308,35 @@
       gap: 7px
     }
 
-    .btn-refresh {
+    .btn-refresh, .btn-sm-admin {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 5px 11px;
-      border-radius: 9px;
-      border: 1px solid var(--border);
-      background: var(--gold-dim);
+      gap: 5px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(201, 168, 76, .2);
+      background: rgba(201, 168, 76, .08);
       color: var(--gold);
       font-family: inherit;
       font-size: 10px;
       font-weight: 700;
-      cursor: pointer
+      cursor: pointer;
+      transition: all .2s;
     }
 
-    .btn-refresh:disabled {
-      opacity: .5;
-      cursor: not-allowed
+    .btn-refresh:hover, .btn-sm-admin:hover {
+      background: rgba(201, 168, 76, .15);
+      border-color: rgba(201, 168, 76, .4);
     }
 
-    .btn-sm-admin:disabled {
+    .btn-refresh:active, .btn-sm-admin:active {
+      transform: scale(.96);
+    }
+
+    .btn-refresh:disabled, .btn-sm-admin:disabled {
       opacity: .5;
-      cursor: not-allowed
+      cursor: not-allowed;
+      transform: none;
     }
 
     /* Admin Sub-Navigation */
@@ -5409,11 +5420,11 @@
       <div id="admin-section-ops" class="admin-section">
         <!-- ══ KONFIRMASI KETERANGAN ══ -->
         <div class="card">
-          <div class="card-title">
-            <span>📋 Konfirmasi Keterangan Pegawai</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:800;color:var(--white)">📋 KONFIRMASI KETERANGAN PEGAWAI</div>
             <button class="btn-sm-admin" onclick="loadKonfirmasiAdmin()">🔄</button>
           </div>
-          <div class="radius-note">Persetujuan untuk izin, sakit, atau tugas luar yang pending.</div>
+          <div class="radius-note" style="margin-bottom:12px">Persetujuan untuk izin, sakit, atau tugas luar yang pending.</div>
           <div id="konfirmasiAdminList">
             <div class="shimmer" style="height:80px;border-radius:12px"></div>
             <div class="shimmer" style="height:80px;border-radius:12px;margin-top:8px"></div>
@@ -5468,15 +5479,15 @@
       <div id="admin-section-user" class="admin-section" style="display:none">
         <!-- ══ MANAJEMEN PEGAWAI & BIOMETRIK (Combined Tabbed Card) ══ -->
         <div class="card" id="adminFaceRegCard">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
-            <div style="display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:22px;padding:3px">
-              <button id="tabDataBtn" onclick="switchFaceSigTab('data')" style="padding:5px 14px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:10px;font-weight:800;cursor:pointer">👥 Data</button>
-              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')" style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer">📷 Wajah</button>
-              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')" style="padding:5px 14px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer">✍️ Tanda Tangan</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;gap:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:22px;padding:3px">
+              <button id="tabDataBtn" onclick="switchFaceSigTab('data')" style="padding:6px 12px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:9px;font-weight:800;cursor:pointer">👥 Data</button>
+              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')" style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">📷 Wajah</button>
+              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')" style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✍️ TTD</button>
             </div>
             <div style="display:flex;gap:6px">
               <button class="btn-sm-admin" id="btnAdminAddData" onclick="showAddPegawai()">➕ Tambah</button>
-              <button class="btn-sm-admin" onclick="refreshFaceSigTab()">🔄</button>
+              <button class="btn-sm-admin" onclick="refreshFaceSigTab()" title="Refresh">🔄</button>
             </div>
           </div>
           
@@ -5512,15 +5523,18 @@
 
         <!-- 👑 MANAJEMEN ADMIN ══ -->
         <div class="card" id="adminMgmtCard" style="margin-top:12px">
-          <div class="card-title"><span>👑 Manajemen Admin</span><button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div style="font-size:11px;font-weight:800;color:var(--white)">👑 MANAJEMEN ADMIN</div>
+            <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
+          </div>
           <div id="adminMgmtList" style="margin-bottom:12px"></div>
-          <div style="background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px">
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <input id="inputAdminTgId" type="number" class="form-input" placeholder="Telegram ID" style="flex:1" />
-              <input id="inputAdminNama" type="text" class="form-input" placeholder="Nama" style="flex:1" />
+          <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:15px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
             </div>
-            <select id="inputAdminRole" class="form-input" style="margin-bottom:10px"><option value="admin">Admin</option><option value="superadmin">Super Admin</option></select>
-            <button class="btn-admin" onclick="tambahAdmin()">Tambah Hak Akses</button>
+            <div class="form-group"><label class="form-label" style="font-size:9px">Level Akses</label><select id="inputAdminRole" class="form-input"><option value="admin">Admin</option><option value="superadmin">Super Admin</option></select></div>
+            <button class="btn-admin" onclick="tambahAdmin()" style="margin:0">Tambah Hak Akses</button>
           </div>
         </div>
       </div>
@@ -5529,8 +5543,8 @@
       <div id="admin-section-config" class="admin-section" style="display:none">
         <!-- 🗺️ LOKASI ══ -->
         <div class="card">
-          <div class="card-title">🗺️ Lokasi Presensi</div>
-          <div id="adminMap" style="height:180px;border-radius:12px;margin-bottom:10px"></div>
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">🗺️ LOKASI PRESENSI</div>
+          <div id="adminMap" style="height:180px;border-radius:12px;margin-bottom:10px;border:1px solid var(--border)"></div>
           <div class="map-coords" style="margin-bottom:12px">
              <div class="map-coord-item">Lat: <span id="pinLat">—</span></div>
              <div class="map-coord-item">Lon: <span id="pinLon">—</span></div>
@@ -5543,7 +5557,7 @@
 
         <!-- ⏰ JAM & HARI LIBUR ══ -->
         <div class="card" style="margin-top:12px">
-          <div class="card-title">⏰ Pengaturan Jam Global</div>
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">⏰ PENGATURAN JAM GLOBAL</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
             <input type="time" id="inputJamMasuk" class="form-input" />
             <input type="time" id="inputJamPulang" class="form-input" />
@@ -5569,19 +5583,19 @@
 
         <!-- 📸 FACE RECOGNITION ══ -->
         <div class="card" style="margin-top:12px">
-          <div class="card-title">📸 Face Verification Switch</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.04);padding:14px;border-radius:12px">
-            <div id="faceToggleLabel">Memuat status...</div>
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">📸 FACE VERIFICATION SWITCH</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
+            <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
             <div id="faceToggleSwitch" onclick="toggleFaceRecognition()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer"><div id="faceToggleKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
           </div>
-          <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:10px">💾 Terapkan Perubahan</button>
+          <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
         <!-- 🖥️ MODE DESKTOP ══ -->
         <div class="card" style="margin-top:12px" id="desktopModeCard">
-          <div class="card-title">🖥️ Tampilan Mode Desktop</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.06);padding:14px;border-radius:12px">
-            <div id="desktopModeLabel">Memuat...</div>
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">🖥️ TAMPILAN MODE DESKTOP</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.04);padding:14px;border:1px solid rgba(96,165,250,.1);border-radius:12px">
+            <div id="desktopModeLabel" style="font-size:12px;font-weight:700">Memuat...</div>
             <div id="desktopModeSwitch" onclick="toggleDesktopMode()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer"><div id="desktopModeKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
           </div>
         </div>
@@ -5893,6 +5907,11 @@
       document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = $('btn-nav-' + sectionId);
       if (activeBtn) activeBtn.classList.add('active');
+      
+      // Fix Leaflet Map rendering if switching to Config
+      if (sectionId === 'config' && typeof adminMap !== 'undefined' && adminMap) {
+        setTimeout(() => adminMap.invalidateSize(), 50);
+      }
       
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }

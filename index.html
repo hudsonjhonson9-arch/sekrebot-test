@@ -5612,14 +5612,13 @@
           </div>
           
           <div id="faceSigTabFace" style="display:none">
-            <div class="admin-face-header" style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:12px; border:1px solid var(--border)">
+            <div class="admin-face-header" style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px">
               <div style="flex:1">
-                <div class="admin-face-title">📸 PENDAFTARAN WAJAH PEGAWAI</div>
-                <div style="font-size:8px; color:var(--muted); margin-top:2px">Pilih pegawai untuk mendaftarkan biometric wajah baru</div>
+                <div class="admin-face-title" style="display:flex; align-items:center; gap:6px">📸 PENDAFTARAN WAJAH PEGAWAI</div>
+                <div style="font-size:9px; color:var(--muted); margin-top:3px">Pilih pegawai untuk mendaftarkan biometric baru</div>
               </div>
-              <div style="display:flex; gap:6px">
-                <button class="btn-sm-admin" onclick="loadAdminFaceReg()" title="Refresh Data">🔄</button>
-              </div>
+              <button class="btn-sm-admin" onclick="loadAdminFaceReg()" 
+                style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.2); color:var(--gold); font-size:14px; cursor:pointer" title="Refresh Data">🔄</button>
             </div>
 
             <div class="form-group" style="margin-bottom:12px">

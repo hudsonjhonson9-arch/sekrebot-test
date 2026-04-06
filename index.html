@@ -6211,6 +6211,7 @@
     /* ════ TABS ════ */
     function getAllTabs() { return IS_ADMIN ? ['absen', 'ket', 'rekap', 'profil', 'admin'] : ['absen', 'ket', 'rekap', 'profil']; }
     function switchTab(tab) {
+      window.scrollTo(0, 0);
       const T = getAllTabs();
       document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', T[i] === tab));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));

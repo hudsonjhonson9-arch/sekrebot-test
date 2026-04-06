@@ -5590,7 +5590,6 @@
             <div id="pegawaiForm" style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px">
               <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px">➕ TAMBAH PEGAWAI</div>
               <input type="hidden" id="editPegawaiId">
-              <input type="hidden" id="editPegawaiOldNo">
               <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
@@ -10990,7 +10989,6 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!f) return;
       $('pegawaiFormTitle').textContent = '➕ TAMBAH PEGAWAI BARU';
       $('editPegawaiId').value = '';
-      $('editPegawaiOldNo').value = '';
       $('inPegawaiId').value = '';
       $('inPegawaiId').disabled = false;
       $('inPegawaiNama').value = '';
@@ -11027,7 +11025,6 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiId').disabled = true; // Telegram ID cannot be changed in edit
         $('inPegawaiNama').value = p.nama || p.Nama || '';
         $('inPegawaiNo').value = p.no || '';
-        $('editPegawaiOldNo').value = p.no || '';
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
@@ -11039,13 +11036,11 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function savePegawai() {
-      const btnTxt = $('btnSavePegawaiTxt');
       const editId = $('editPegawaiId').value;
-      const oldNo = parseInt($('editPegawaiOldNo').value || 0);
       const isEdit = !!editId;
       const id = $('inPegawaiId').value;
       const nama = $('inPegawaiNama').value.trim();
-      const no = parseInt($('inPegawaiNo').value || 0);
+      const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
       const role = $('inPegawaiRole').value;
@@ -11056,12 +11051,12 @@ File di Google Drive juga akan dihapus.`)) return;
         return;
       }
 
-      btnTxt.textContent = 'Menyimpan...';
+      $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ id, nama, no, oldNo, nip, jabatan, role, status })
+          body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
         });
         const d = await res.json();
         
@@ -11074,9 +11069,8 @@ File di Google Drive juga akan dihapus.`)) return;
         }
       } catch (e) {
         showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
-      } finally {
-        btnTxt.textContent = 'Simpan Data';
       }
+      $('btnSavePegawaiTxt').textContent = 'Simpan Data';
     }
 
     async function deletePegawai(uid, nama) {

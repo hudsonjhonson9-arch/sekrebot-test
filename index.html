@@ -5592,9 +5592,13 @@
               <input type="hidden" id="editPegawaiId">
               <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                <div class="form-group"><label class="form-label" style="font-size:9px">NIP / No Pegawai</label><input id="inPegawaiNip" type="text" class="form-input" placeholder="Gunakan ID jika tidak ada NIP" /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Contoh: Staff IT..." /></div>
+              </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">Role Aben</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Status Aktif</label><select id="inPegawaiStatus" class="form-input"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Status Akun</label><select id="inPegawaiStatus" class="form-input"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select></div>
               </div>
               <div class="result-card" id="pegawaiFormResult" style="display:none;margin-bottom:12px"></div>
               <div style="display:flex;gap:8px">
@@ -10953,8 +10957,8 @@ File di Google Drive juga akan dihapus.`)) return;
               ${isAktif ? '👤' : '💤'}
             </div>
             <div style="flex:1; min-width:0; margin-left:2px">
-              <div class="face-adm-name" style="font-size:12px; margin-bottom:1px">${nama}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.4)">${nip} · ${jab}</div>
+              <div class="face-adm-name" style="font-size:12px; margin-bottom:1px; color:#fff">${nama}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab}</div>
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
               <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>

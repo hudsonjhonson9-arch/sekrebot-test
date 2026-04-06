@@ -5555,6 +5555,86 @@
         </div>
 
         <!-- ══ MANAJEMEN ADMIN ══ -->
+        <!-- ══ MANAJEMEN PEGAWAI ══ -->
+        <div class="card" style="margin-top:10px" id="pegawaiMgmtCard">
+          <div class="card-title">
+            <span>👥 Manajemen Pegawai</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm-admin" onclick="showAddPegawai()">➕ Tambah</button>
+              <button class="btn-sm-admin" onclick="loadPegawaiMgmt()">🔄</button>
+            </div>
+          </div>
+          <div class="radius-note">Kelola data pegawai (NIP, Jabatan, Status). Klik ✍️ untuk edit.</div>
+
+          <!-- Form Tambah/Edit (Hidden by default) -->
+          <div id="pegawaiForm"
+            style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px;animation:slideUp .3s ease">
+            <div id="pegawaiFormTitle"
+              style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px;letter-spacing:.04em;text-transform:uppercase">
+              ➕ TAMBAH PEGAWAI BARU</div>
+            <input type="hidden" id="editPegawaiId">
+
+            <div class="form-group">
+              <label class="form-label">Telegram ID (Hanya Angka)</label>
+              <input id="inPegawaiId" type="number" class="form-input" placeholder="Contoh: 12345678"
+                style="font-family:'JetBrains Mono',monospace" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nama Lengkap</label>
+              <input id="inPegawaiNama" type="text" class="form-input" placeholder="Nama tanpa gelar..." />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <div>
+                <label class="form-label">NIP</label>
+                <input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." />
+              </div>
+              <div>
+                <label class="form-label">Jabatan</label>
+                <input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Jabatan..." />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+              <div>
+                <label class="form-label">Role</label>
+                <select id="inPegawaiRole" class="form-input">
+                  <option value="USER">USER (Pegawai)</option>
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="SUPERADMIN">SUPERADMIN</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Status</label>
+                <select id="inPegawaiStatus" class="form-input">
+                  <option value="AKTIF">AKTIF</option>
+                  <option value="NONAKTIF">NONAKTIF / PINDAH</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="result-card" id="pegawaiFormResult" style="display:none">
+              <div class="r-icon" id="pegawaiFormRIcon">✅</div>
+              <div class="r-title" id="pegawaiFormRTitle">—</div>
+              <div class="r-msg" id="pegawaiFormRMsg">—</div>
+            </div>
+
+            <div style="display:flex;gap:8px">
+              <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0">
+                <div class="btn-inner"><span>💾</span><span id="btnSavePegawaiTxt">Simpan Data</span></div>
+              </button>
+              <button class="btn-admin" onclick="hidePegawaiForm()"
+                style="flex:1;margin:0;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);box-shadow:none">
+                Batal
+              </button>
+            </div>
+          </div>
+
+          <!-- Daftar Pegawai -->
+          <div id="pegawaiMgmtList">
+            <div class="shimmer" style="height:50px;border-radius:10px"></div>
+            <div class="shimmer" style="height:50px;border-radius:10px;margin-top:6px"></div>
+          </div>
+        </div>
+
         <div class="card" style="margin-top:10px" id="adminMgmtCard">
           <div class="card-title">
             <span>👑 Manajemen Admin</span>
@@ -6036,6 +6116,9 @@
       adminList: isTest ? '/webhook-test/admin-list' : '/webhook/admin-list',
       adminAdd: isTest ? '/webhook-test/admin-add' : '/webhook/admin-add',
       adminDel: isTest ? '/webhook-test/admin-delete' : '/webhook/admin-delete',
+      userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
+      userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
+      userDel: isTest ? '/webhook-test/user-delete' : '/webhook/user-delete',
       signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
       signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
       signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
@@ -10940,6 +11023,152 @@ File di Google Drive juga akan dihapus.`)) return;
        Endpoint: gunakan user-list webhook untuk read,
                  dan endpoint khusus admin-list untuk write
        ════════════════════════════════════════════════════════ */
+
+    async function loadPegawaiMgmt() {
+      const el = $('pegawaiMgmtList');
+      if (!el) return;
+      el.innerHTML = `<div class="shimmer" style="height:40px;border-radius:10px"></div><div class="shimmer" style="height:40px;border-radius:10px;margin-top:6px"></div>`;
+      try {
+        const res = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+        if (!res.ok) throw new Error('Refresh failed');
+        const ud = await res.json();
+        const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID));
+        
+        if (!users.length) {
+          el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada data pegawai</div></div>`;
+          return;
+        }
+
+        // Urutkan berdasarkan nama
+        users.sort((a, b) => (a.nama || a.Nama || '').localeCompare(b.nama || b.Nama || ''));
+
+        el.innerHTML = users.map(u => {
+          const uid = String(u.id || u.ID || '');
+          const nama = u.nama || u.Nama || u.username || 'Tanpa Nama';
+          const nip = u.nip || u.NIP || '—';
+          const jab = u.jabatan || u.Jabatan || '—';
+          const status = (u.status || u.Status || 'AKTIF').toUpperCase();
+          const isAktif = status === 'AKTIF';
+          
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;margin-bottom:7px">
+            <div style="width:32px;height:32px;border-radius:8px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:14px">${isAktif ? '👤' : '💤'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px">${nip} · ${jab}</div>
+            </div>
+            <div style="display:flex;gap:5px">
+              <button onclick="editPegawai('${uid.replace(/'/g, "\\'")}')" style="background:var(--admin-dim);border:1px solid rgba(167,139,250,.3);color:var(--admin);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px">✍️</button>
+              <button onclick="deletePegawai('${uid.replace(/'/g, "\\\\'")}', '${nama.replace(/'/g, "\\\\'")}')" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px">🗑</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data pegawai</div></div>`;
+      }
+    }
+
+    function showAddPegawai() {
+      const f = $('pegawaiForm');
+      if (!f) return;
+      $('pegawaiFormTitle').textContent = '➕ TAMBAH PEGAWAI BARU';
+      $('editPegawaiId').value = '';
+      $('inPegawaiId').value = '';
+      $('inPegawaiId').disabled = false;
+      $('inPegawaiNama').value = '';
+      $('inPegawaiNip').value = '';
+      $('inPegawaiJabatan').value = '';
+      $('inPegawaiRole').value = 'USER';
+      $('inPegawaiStatus').value = 'AKTIF';
+      $('pegawaiFormResult').style.display = 'none';
+      f.style.display = 'block';
+      f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hidePegawaiForm() {
+      const f = $('pegawaiForm');
+      if (f) f.style.display = 'none';
+      $('pegawaiFormResult').style.display = 'none';
+    }
+
+    async function editPegawai(uid) {
+      const f = $('pegawaiForm');
+      if (!f) return;
+      try {
+        // Find existing data in list (to avoid extra fetch)
+        // Or fetch single if needed. For now, try logic: fetch all or find in cache
+        const ur = await apiFetch(P.userList + '?user_id=' + uid, { method: 'GET' });
+        if (!ur.ok) return;
+        const res = await ur.json();
+        const p = res.single ? res : (res.data ? res.data[0] : null);
+        if (!p) return;
+
+        $('pegawaiFormTitle').textContent = '✍️ EDIT DATA PEGAWAI';
+        $('editPegawaiId').value = uid;
+        $('inPegawaiId').value = uid;
+        $('inPegawaiId').disabled = true; // Telegram ID cannot be changed in edit
+        $('inPegawaiNama').value = p.nama || p.Nama || '';
+        $('inPegawaiNip').value = p.nip || p.NIP || '';
+        $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
+        $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
+        $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
+        
+        f.style.display = 'block';
+        f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (e) { console.error('Edit error:', e); }
+    }
+
+    async function savePegawai() {
+      const editId = $('editPegawaiId').value;
+      const isEdit = !!editId;
+      const id = $('inPegawaiId').value;
+      const nama = $('inPegawaiNama').value.trim();
+      const nip = $('inPegawaiNip').value.trim();
+      const jabatan = $('inPegawaiJabatan').value.trim();
+      const role = $('inPegawaiRole').value;
+      const status = $('inPegawaiStatus').value;
+
+      if (!id || !nama) {
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'warning', '⚠️', 'Data Kurang', 'ID Telegram dan Nama wajib diisi.');
+        return;
+      }
+
+      $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
+      try {
+        const path = isEdit ? P.userEdit : P.userAdd;
+        const res = await apiFetch(path, {
+          method: 'POST',
+          body: JSON.stringify({ id, nama, nip, jabatan, role, status })
+        });
+        const d = await res.json();
+        
+        if (!res.ok || d.ok === false) {
+          showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan data pegawai.');
+        } else {
+          showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'success', '✅', 'Berhasil', isEdit ? 'Data pegawai diperbarui.' : 'Pegawai baru ditambahkan.');
+          setTimeout(hidePegawaiForm, 1000);
+          loadPegawaiMgmt();
+        }
+      } catch (e) {
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
+      }
+      $('btnSavePegawaiTxt').textContent = 'Simpan Data';
+    }
+
+    async function deletePegawai(uid, nama) {
+      if (!confirm(`Hapus pegawai "${nama}" (${uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
+      try {
+        const res = await apiFetch(P.userDel, {
+          method: 'POST',
+          body: JSON.stringify({ id: uid })
+        });
+        const d = await res.json();
+        if (d.ok !== false) {
+           loadPegawaiMgmt();
+        } else {
+           alert('Gagal: ' + (d.message || 'Error server'));
+        }
+      } catch (e) { alert('Server error'); }
+    }
 
     async function loadAdminMgmt() {
       const el = $('adminMgmtList');

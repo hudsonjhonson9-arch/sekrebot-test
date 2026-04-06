@@ -5511,9 +5511,35 @@
           </div>
           
           <div id="faceSigTabFace" style="display:none">
-            <div class="form-group"><select class="form-input" id="selectPegawaiFaceReg"><option value="">— Pilih Pegawai —</option></select></div>
-            <button class="btn-admin" onclick="adminCaptureFace()">📷 Ambil Foto Wajah</button>
-            <div id="adminFaceRegList" style="margin-top:12px"></div>
+            <div class="admin-face-header" style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:12px; border:1px solid var(--border)">
+              <div style="flex:1">
+                <div class="admin-face-title">📸 PENDAFTARAN WAJAH PEGAWAI</div>
+                <div style="font-size:8px; color:var(--muted); margin-top:2px">Pilih pegawai untuk mendaftarkan biometric wajah baru</div>
+              </div>
+              <div style="display:flex; gap:6px">
+                <button class="btn-sm-admin" onclick="loadAdminFaceReg()" title="Refresh Data">🔄</button>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:12px">
+              <label class="form-label" style="font-size:9px">Target Pegawai</label>
+              <div style="display:flex; gap:8px">
+                <select class="form-input" id="selectPegawaiFaceReg" style="flex:1"><option value="">— Pilih Pegawai —</option></select>
+                <button class="btn-admin" onclick="adminCaptureFace()" style="margin:0; padding:0 15px; width:auto; font-size:10px; background:var(--gold)">📷 Daftar</button>
+              </div>
+            </div>
+
+            <div class="divider" style="margin:16px 0 10px 0; font-size:8px"><span>GALERI WAJAH PEGAWAI</span></div>
+            <div id="adminFaceGallery" class="face-gallery-grid">
+              <!-- Grid gallery akan diisi di sini -->
+              <div class="shimmer" style="height:100px; border-radius:12px"></div>
+              <div class="shimmer" style="height:100px; border-radius:12px"></div>
+              <div class="shimmer" style="height:100px; border-radius:12px"></div>
+            </div>
+
+            <div id="adminFaceRegList" style="margin-top:20px; display:none">
+              <!-- fallback list view jika diperlukan -->
+            </div>
           </div>
           
           <div id="faceSigTabSig" style="display:none">
@@ -6791,12 +6817,20 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function _writeFaceRefLocal(uid, faceData) {
+      if (!uid) return;
       try {
+        // Jangan simpan dataUrl (foto base64) di localStorage untuk hemat ruang
+        const storageData = { ...faceData };
+        delete storageData.dataUrl;
+        delete storageData.foto_base64;
+
         const raw = localStorage.getItem(FACE_STORE_KEY);
         const data = raw ? JSON.parse(raw) : {};
-        data[uid] = faceData;
+        data[uid] = storageData;
         localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
       } catch (_) { }
+
+      // Tetap simpan lengkap di RAM cache untuk tampilan saat ini
       if (!window._faceRefCache) window._faceRefCache = {};
       window._faceRefCache[uid] = faceData;
     }
@@ -6846,6 +6880,46 @@ File di Google Drive juga akan dihapus.`)) return;
       return null;
     }
 
+    async function syncFaceToServer(uid, dataUrl, descriptorArray, nama, savedAt) {
+      if (!uid || uid === 'null' || uid === '') return false;
+      const payload = {
+        user_id: uid,
+        nama: nama || 'Pegawai',
+        foto_base64: dataUrl,
+        face_descriptor: descriptorArray,
+        saved_at: savedAt || new Date().toISOString(),
+        savedBy: MY_ID,
+        savedByName: (tgUser && tgUser.first_name) || 'System'
+      };
+
+      try {
+        const res = await apiFetch(P.faceRegister, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          try {
+            const json = await res.json();
+            // Upate local cache (memory only for image)
+            _writeFaceRefLocal(uid, {
+              dataUrl: json.dataUrl || dataUrl,
+              descriptor: descriptorArray,
+              savedAt: payload.saved_at
+            });
+            // Refresh Admin Gallery if in admin view
+            if (typeof loadAdminFaceReg === 'function' && IS_ADMIN) {
+              loadAdminFaceReg();
+            }
+            return true;
+          } catch (_) { return true; }
+        }
+        return false;
+      } catch (e) {
+        console.warn('Sync face server error:', e);
+        return false;
+      }
+    }
+
     async function saveFaceRef(dataUrl, descriptor) {
       try {
         const uid = String(MY_ID || '');
@@ -6863,35 +6937,12 @@ File di Google Drive juga akan dihapus.`)) return;
           return false;
         }
 
-        const faceData = { dataUrl, descriptor: descriptorToSave, savedAt };
-        _writeFaceRefLocal(uid, faceData);
-        _sendFaceToServer(dataUrl, savedAt, descriptorToSave);
-        return true;
-      } catch (_) { return false; }
-    }
-
-    function _sendFaceToServer(dataUrl, savedAt, descriptorArray) {
-      const uid = String(MY_ID || '');
-      if (!uid || uid === 'null' || uid === '') return;
-      apiFetch(P.faceRegister, {
-        method: 'POST',
-        body: JSON.stringify({
-          user_id: uid,
-          foto_base64: dataUrl,
-          face_descriptor: descriptorArray,  // 128-d face embedding
-          histogram: null,              // deprecated, kept for backward compat
-          saved_at: savedAt
-        })
-      }).then(async res => {
-        if (res && res.ok) {
-          try {
-            const json = await res.json();
-            if (json && json.dataUrl) {
-              _writeFaceRefLocal(uid, { dataUrl: json.dataUrl, descriptor: descriptorArray, savedAt });
-            }
-          } catch (_) { }
+        const ok = await syncFaceToServer(uid, dataUrl, descriptorToSave, tgUser.first_name, savedAt);
+        if (ok) {
+          updateProfilFaceUI();
         }
-      }).catch(e => console.warn('Face register server error:', e));
+        return ok;
+      } catch (_) { return false; }
     }
 
     async function loadFaceFromServer() {
@@ -11885,69 +11936,54 @@ File di Google Drive juga akan dihapus.`)) return;
           console.warn('[Admin] Failed to load supplemental face/sig maps:', err);
         }
 
+        const galleryEl = $('adminFaceGallery');
+        if (!galleryEl) return;
+
         if (!users.length) {
-          listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
+          galleryEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
           return;
         }
 
-        listEl.innerHTML = users.map(u => {
+        galleryEl.innerHTML = users.map(u => {
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
-          const sigData = sigMap[uid];
           const faceData = faceMap[uid];
-          // facePhoto: diambil dari face-get-all (sudah include face_photo setelah fix n8n)
           const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64 || faceData.face_photo)) || u.face_photo || null;
           const hasFace = !!(u.has_face || faceData || facePhoto);
-          const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
-          const tglRaw = (faceData && (faceData.savedAt || faceData.saved_at)) || null;
-          let tgl = null;
-          if (tglRaw) {
-            try { tgl = new Date(tglRaw).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }); } catch (_) { }
-          }
 
-          return `<div class="face-adm-item">
-        <div class="face-adm-thumb" id="faceAdmThumb_${uid}">
-          ${facePhoto
-              ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='👤'">`
+          return `
+            <div class="face-gallery-item ${hasFace ? 'has-face' : ''}" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
+              <div class="face-gallery-status"></div>
+              <div class="face-gallery-img-wrap">
+                ${facePhoto
+              ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">`
               : '👤'}
-        </div>
-        <div class="face-adm-info">
-          <div class="face-adm-name">${nama}</div>
-          <div class="face-adm-status">
-            ${hasFace
-              ? `<span style="color:var(--success)">📷 Wajah: OK${tgl ? ' (' + tgl + ')' : ''}</span>`
-              : `<span style="color:var(--muted)">📷 Wajah: Belum</span>`}
-            <span style="font-size:10px;color:var(--muted)"> · </span>
-            ${hasSig
-              ? `<span style="color:var(--success)">✍️ TTD: OK</span>`
-              : `<span style="color:var(--danger)">✍️ TTD: Belum</span>`}
-          </div>
-          <div style="font-size:8px;color:var(--muted);margin-top:2px">ID: ${uid}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:4px">
-          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
-            ${hasFace ? '🔄 Wajah' : '📷 Wajah'}
-          </button>
-          <button class="face-adm-btn" style="padding:4px 8px;font-size:9px;background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
-            ${hasSig ? '🔄 TTD' : '✍️ TTD'}
-          </button>
-        </div>
-      </div>`;
+              </div>
+              <div class="face-gallery-name">${nama}</div>
+            </div>`;
         }).join('');
 
+        if (listEl) {
+          listEl.innerHTML = '';
+          listEl.style.display = 'none';
+        }
       } catch (e) {
         const errMsg = e?.message || 'Koneksi gagal';
-        listEl.innerHTML = `
-          <div class="empty-state" style="padding:16px">
-            <div class="empty-icon">🔌</div>
-            <div class="empty-text">Gagal memuat pegawai</div>
-            <div class="empty-sub" style="margin-bottom:12px">${errMsg}</div>
-            <button onclick="loadAdminFaceReg()"
-              style="padding:8px 18px;border-radius:10px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.4);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">
-              🔄 Coba Lagi
-            </button>
-          </div>`;
+        const galleryEl = $('adminFaceGallery');
+        if (galleryEl) {
+          galleryEl.innerHTML = `
+            <div class="empty-state" style="grid-column:1/-1;padding:16px">
+              <div class="empty-icon">🔌</div>
+              <div class="empty-text">Gagal memuat galeri wajah</div>
+              <div class="empty-sub" style="margin-bottom:12px">${errMsg}</div>
+              <button onclick="loadAdminFaceReg()"
+                style="padding:8px 18px;border-radius:10px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.4);color:var(--gold);font-size:11px;font-weight:700;cursor:pointer">
+                🔄 Coba Lagi
+              </button>
+            </div>`;
+        }
         // Also reset the select dropdown
+        const selectEl = $('selectPegawaiFaceReg');
         if (selectEl) selectEl.innerHTML = '<option value="">— Pilih Pegawai —</option>';
       }
     }
@@ -12003,22 +12039,7 @@ File di Google Drive juga akan dihapus.`)) return;
         }
         const descriptorArray = Array.from(descriptor);
 
-        // Save to local cache for 1:N matching
-        _writeFaceRefLocal(uid, { dataUrl, descriptor: descriptorArray, savedAt });
-
-        // Sync to server (n8n face-register)
-        const payload = {
-          user_id: uid,
-          nama: nama || 'Pegawai',
-          foto_base64: dataUrl,
-          face_descriptor: descriptorArray,
-          saved_at: savedAt,
-          savedBy: MY_ID,
-          savedByName: tgUser.first_name || 'Admin'
-        };
-
-        const res = await apiFetch(P.faceRegister, { method: 'POST', body: JSON.stringify(payload) });
-        const ok = res.ok;
+        const ok = await syncFaceToServer(uid, dataUrl, descriptorArray, nama, savedAt);
 
         showResult('adminFaceRegResult', 'adminFaceRegRIcon', 'adminFaceRegRTitle', 'adminFaceRegRMsg',
           ok ? 'success' : 'warning',

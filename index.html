@@ -5592,14 +5592,16 @@
               <input type="hidden" id="editPegawaiId">
               <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                <input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP" />
-                <input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Jabatan" />
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+                <div class="form-group"><label class="form-label" style="font-size:9px">Role Aben</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Status Aktif</label><select id="inPegawaiStatus" class="form-input"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select></div>
               </div>
-              <div class="result-card" id="pegawaiFormResult" style="display:none"></div>
+              <div class="result-card" id="pegawaiFormResult" style="display:none;margin-bottom:12px"></div>
               <div style="display:flex;gap:8px">
-                <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0">Simpan</button>
-                <button class="btn-admin" onclick="hidePegawaiForm()" style="flex:1;margin:0;background:transparent;border:1px solid var(--border)">Batal</button>
+                <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0;height:42px">
+                  <span id="btnSavePegawaiTxt">💾 Simpan Data</span>
+                </button>
+                <button class="btn-admin" onclick="hidePegawaiForm()" style="flex:1;margin:0;height:42px;background:transparent;border:1px solid var(--border)">Batal</button>
               </div>
             </div>
             <div id="pegawaiMgmtList"></div>
@@ -10946,15 +10948,17 @@ File di Google Drive juga akan dihapus.`)) return;
           const status = (u.status || u.Status || 'AKTIF').toUpperCase();
           const isAktif = status === 'AKTIF';
           
-          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;margin-bottom:7px">
-            <div style="width:32px;height:32px;border-radius:8px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:14px">${isAktif ? '👤' : '💤'}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
-              <div style="font-size:9px;color:var(--muted);margin-top:2px">${nip} · ${jab}</div>
+          return `<div class="face-adm-item" style="padding:10px 12px; margin-bottom:8px">
+            <div class="face-adm-thumb" style="width:36px; height:36px; border-radius:10px; background:rgba(255,184,0,0.1); display:flex; align-items:center; justify-content:center; font-size:16px">
+              ${isAktif ? '👤' : '💤'}
             </div>
-            <div style="display:flex;gap:5px">
-              <button onclick="editPegawai('${uid.replace(/'/g, "\\'")}')" style="background:var(--admin-dim);border:1px solid rgba(167,139,250,.3);color:var(--admin);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px">✍️</button>
-              <button onclick="deletePegawai('${uid.replace(/'/g, "\\\\'")}', '${nama.replace(/'/g, "\\\\'")}')" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#ef4444;width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px">🗑</button>
+            <div style="flex:1; min-width:0; margin-left:2px">
+              <div class="face-adm-name" style="font-size:12px; margin-bottom:1px">${nama}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.4)">${nip} · ${jab}</div>
+            </div>
+            <div style="display:flex; gap:6px; margin-left:10px">
+              <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
+              <button onclick="deletePegawai('${uid}', '${nama.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">🗑</button>
             </div>
           </div>`;
         }).join('');

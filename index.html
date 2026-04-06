@@ -11058,74 +11058,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
       btnTxt.textContent = 'Menyimpan...';
       try {
-        // === LOGIKA SHIFTING NOMOR (REORDERING) ===
-        if (no > 0 && (no !== oldNo || !isEdit)) {
-          try {
-            const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
-            if (ur.ok) {
-              const ud = await ur.json();
-              const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID) && (u.id || u.ID) != id);
-              const updates = [];
-              
-              if (isEdit && oldNo > 0) {
-                if (no < oldNo) {
-                  // Geser Naik: [no, oldNo-1] -> +1
-                  users.forEach(u => {
-                    const uNo = parseInt(u.no || u.No || 0);
-                    if (uNo >= no && uNo < oldNo) updates.push({ ...u, newNo: uNo + 1 });
-                  });
-                } else {
-                  // Geser Turun: [oldNo+1, no] -> -1
-                  users.forEach(u => {
-                    const uNo = parseInt(u.no || u.No || 0);
-                    if (uNo > oldNo && uNo <= no) updates.push({ ...u, newNo: uNo - 1 });
-                  });
-                }
-              } else {
-                // Tambah Baru: [no, infinity] -> +1 (jika slot sudah terisi)
-                users.forEach(u => {
-                  const uNo = parseInt(u.no || u.No || 0);
-                  if (uNo >= no) updates.push({ ...u, newNo: uNo + 1 });
-                });
-              }
-
-              if (updates.length > 0) {
-                // Urutkan agar tidak bentrok (jika geser +1, kerjakan dari yang terbesar)
-                if (no < oldNo || !isEdit) {
-                  updates.sort((a,b) => parseInt(b.no||b.No||0) - parseInt(a.no||a.No||0));
-                } else {
-                  updates.sort((a,b) => parseInt(a.no||a.No||0) - parseInt(b.no||b.No||0));
-                }
-
-                // Lakukan update satu per satu agar tidak membebani server
-                for (const u of updates) {
-                  const uId = (u.id || u.ID);
-                  const uOldNo = (u.no || u.No);
-                  btnTxt.textContent = `Geser No ${uOldNo}...`;
-                  await apiFetch(P.userEdit, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                      id: uId,
-                      nama: (u.nama || u.Nama),
-                      no: u.newNo,
-                      nip: (u.nip || u.NIP || ''),
-                      jabatan: (u.jabatan || u.Jabatan || ''),
-                      role: (u.role || u.Role || 'USER'),
-                      status: (u.status || u.Status || 'AKTIF')
-                    })
-                  });
-                }
-                btnTxt.textContent = 'Menyimpan...';
-              }
-            }
-          } catch (err) { console.warn('Shifting reorder skipped/failed:', err); }
-        }
-        // ==========================================
-
         const path = isEdit ? P.userEdit : P.userAdd;
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
+          body: JSON.stringify({ id, nama, no, oldNo, nip, jabatan, role, status })
         });
         const d = await res.json();
         

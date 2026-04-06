@@ -869,93 +869,105 @@
       white-space: nowrap
     }
 
-    /* ══ ADMIN FACE GALLERY ══ */
-    .face-gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-      gap: 12px;
-      margin-top: 15px;
-      width: 100%;
-    }
-
-    .face-gallery-item {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 10px 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
-      cursor: pointer;
-      position: relative;
-      min-width: 0; /* important for ellipsis */
-    }
-
-    .face-gallery-item:active {
-      transform: scale(0.95);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .face-gallery-img-wrap {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      overflow: hidden;
-      border: 2px solid var(--border);
-      background: var(--navy);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-
-    .face-gallery-item.has-face .face-gallery-img-wrap {
-      border-color: var(--success);
-      box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
-    }
-
-    .face-gallery-name {
-      font-size: 9px;
-      font-weight: 700;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      width: 100%;
-      color: var(--white);
-      padding: 0 4px;
-    }
-
-    .face-gallery-status {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--muted);
-      border: 1.5px solid var(--navy);
-    }
-
-    .face-gallery-item.has-face .face-gallery-status {
-      background: var(--success);
-    }
-
-    .admin-face-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
     .admin-face-title {
       font-size: 10px;
       font-weight: 800;
       color: var(--white);
       letter-spacing: 0.05em;
+    }
+
+    /* ══ ADMIN FACE & SIG LIST ══ */
+    .face-adm-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+    }
+
+    .face-adm-item:active {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .face-adm-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .face-adm-item.has-face .face-adm-thumb {
+      border-color: var(--success);
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.1);
+    }
+
+    .face-adm-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .face-adm-name {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .face-adm-status {
+      font-size: 8px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .face-adm-pill {
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 7px;
+      text-transform: uppercase;
+    }
+
+    .pill-ok { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .pill-no { background: rgba(255, 255, 255, 0.05); color: var(--muted); }
+
+    .face-adm-btn {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+      color: var(--gold);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 9px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .face-adm-btn:active {
+      transform: scale(0.95);
+    }
+
+    .admin-section {
+      padding-top: 5px;
     }
 
     .face-match-badge {
@@ -5618,17 +5630,11 @@
               </div>
             </div>
 
-            <div class="divider" style="margin:16px 0 10px 0; font-size:8px"><span>GALERI WAJAH PEGAWAI</span></div>
-            <div id="adminFaceGallery" class="face-gallery-grid">
-              <!-- Grid gallery akan diisi di sini -->
-              <div class="shimmer" style="height:100px; border-radius:12px"></div>
-              <div class="shimmer" style="height:100px; border-radius:12px"></div>
+            <div class="divider" style="margin:16px 0 10px 0; font-size:8px"><span>DAFTAR WAJAH & TANDA TANGAN</span></div>
+            <div id="adminFaceRegList" style="margin-top:12px">
               <div class="shimmer" style="height:100px; border-radius:12px"></div>
             </div>
-
-            <div id="adminFaceRegList" style="margin-top:20px; display:none">
-              <!-- fallback list view jika diperlukan -->
-            </div>
+            <div id="adminFaceGallery" style="display:none"></div>
           </div>
           
           <div id="faceSigTabSig" style="display:none">
@@ -7041,12 +7047,13 @@ File di Google Drive juga akan dihapus.`)) return;
         const res = await apiFetch(`${P.faceGet}?user_id=${uid}`, { method: 'GET' });
         if (!res || !res.ok) return;
         const json = await res.json();
-        const dataUrl = json.dataUrl || json.foto_base64 || null;
-        // Support 'face_histogram' (Supabase), 'face_descriptor' (Internal), and 'descriptor' (Legacy)
+        // n8n returns 'face_photo' but the frontend expects 'dataUrl' for consistency
+        const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
-        const savedAt = json.saved_at || json.savedAt || new Date().toISOString();
-        if (dataUrl) {
-          _writeFaceRefLocal(uid, { dataUrl, descriptor, savedAt });
+        const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
+        
+        if (photo) {
+          _writeFaceRefLocal(uid, { dataUrl: photo, descriptor, savedAt });
           updateProfilFaceUI();
           updateFaceRegUI();
         }
@@ -12025,37 +12032,47 @@ File di Google Drive juga akan dihapus.`)) return;
           console.warn('[Admin] Failed to load supplemental face/sig maps:', err);
         }
 
-        const galleryEl = $('adminFaceGallery');
-        if (!galleryEl) return;
+        const listEl = $('adminFaceRegList');
+        if (!listEl) return;
 
         if (!users.length) {
-          galleryEl.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
+          listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
           return;
         }
 
-        galleryEl.innerHTML = users.map(u => {
+        listEl.innerHTML = users.map(u => {
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
+          const sigData = sigMap[uid];
           const faceData = faceMap[uid];
           const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64 || faceData.face_photo)) || u.face_photo || null;
           const hasFace = !!(u.has_face || faceData || facePhoto);
+          const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
 
           return `
-            <div class="face-gallery-item ${hasFace ? 'has-face' : ''}" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')">
-              <div class="face-gallery-status"></div>
-              <div class="face-gallery-img-wrap">
+            <div class="face-adm-item ${hasFace ? 'has-face' : ''}">
+              <div class="face-adm-thumb">
                 ${facePhoto
               ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">`
               : '👤'}
               </div>
-              <div class="face-gallery-name">${nama}</div>
+              <div class="face-adm-info">
+                <div class="face-adm-name">${nama}</div>
+                <div class="face-adm-status">
+                  <span class="face-adm-pill ${hasFace ? 'pill-ok' : 'pill-no'}">📷 ${hasFace ? 'OK' : 'BELUM'}</span>
+                  <span class="face-adm-pill ${hasSig ? 'pill-ok' : 'pill-no'}">✍️ ${hasSig ? 'OK' : 'BELUM'}</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px">
+                <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')">📷 Wajah</button>
+                <button class="face-adm-btn" style="background:rgba(167,139,250,.1); border-color:rgba(167,139,250,0.3); color:var(--admin)" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')">✍️ TTD</button>
+              </div>
             </div>`;
         }).join('');
 
-        if (listEl) {
-          listEl.innerHTML = '';
-          listEl.style.display = 'none';
-        }
+        if (listEl) listEl.style.display = 'block';
+        const galleryEl = $('adminFaceGallery');
+        if (galleryEl) galleryEl.style.display = 'none';
       } catch (e) {
         const errMsg = e?.message || 'Koneksi gagal';
         const galleryEl = $('adminFaceGallery');

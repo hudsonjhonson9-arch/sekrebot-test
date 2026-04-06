@@ -5873,13 +5873,28 @@
     // Dipanggil oleh _applyAdminUI() setelah ADMIN_IDS dimuat dari server
     function setupAdminTab() {
       const existing = document.querySelector('.tab[data-tab="admin"]');
-      if (existing) return; // sudah ada, skip
+      if (existing) return; 
       const btn = document.createElement('button');
       btn.className = 'tab admin-tab';
       btn.setAttribute('data-tab', 'admin');
       btn.innerHTML = '⚙️ Admin';
       btn.onclick = () => switchTab('admin');
       $('tabsBar').appendChild(btn);
+    }
+
+    function switchAdminSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+      // Show Target
+      const target = $('admin-section-' + sectionId);
+      if (target) target.style.display = 'block';
+      
+      // Update Button State
+      document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = $('btn-nav-' + sectionId);
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     // Sembunyikan panel admin dulu sampai ADMIN_IDS dimuat
     if ($('panel-admin')) $('panel-admin').style.display = 'none';
@@ -5901,16 +5916,15 @@
       if (tab === 'profil' && !dokumenLoaded) loadDokumen();
       if (tab === 'rekap' && !rekapLoaded) loadRekap();
       if (tab === 'admin' && IS_ADMIN) {
+        switchAdminSection('ops'); // Reset to default section
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
           adminLoaded = true;
           loadKonfirmasiAdmin(); loadLiburAdmin();
           loadJamPeriodeAdmin(); loadAdminMgmt();
-          setTimeout(() => switchFaceSigTab('data'), 300); // Pastikan tabel pegawai termuat secara otomatis
-          loadFaceStatusAdmin(); // muat status wajah semua pegawai
-          // loadFaceToggle sudah dipanggil saat startup — tidak perlu dipanggil ulang di sini
+          setTimeout(() => switchFaceSigTab('data'), 300);
+          loadFaceStatusAdmin();
         }
-        // Muat data face reg, tanda tangan, dan extended admin UI
         setTimeout(() => {
           if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();
           if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();

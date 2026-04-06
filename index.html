@@ -5601,7 +5601,11 @@
                 <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
                 <div class="form-group"><label class="form-label" style="font-size:9px">Status Akun</label><select id="inPegawaiStatus" class="form-input"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select></div>
               </div>
-              <div class="result-card" id="pegawaiFormResult" style="display:none;margin-bottom:12px"></div>
+              <div class="result-card" id="pegawaiFormResult" style="display:none;margin-bottom:12px">
+                <div class="r-icon" id="pegawaiFormRIcon"></div>
+                <div class="r-title" id="pegawaiFormRTitle"></div>
+                <div class="r-msg" id="pegawaiFormRMsg"></div>
+              </div>
               <div style="display:flex;gap:8px">
                 <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0;height:42px">
                   <span id="btnSavePegawaiTxt">💾 Simpan Data</span>

@@ -9416,12 +9416,12 @@ File di Google Drive juga akan dihapus.`)) return;
         if (nip && map[id].nip === '—') map[id].nip = nip;
         const jam = toMenit(jamStr);
         if (jenis === 'MASUK') { map[id].masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
-        else if (jenis === 'DI LUAR JAM MASUK') {
+        else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
           map[id].di_luar_masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
           if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
         }
         else if (jenis === 'PULANG') { map[id].pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
-        else if (jenis === 'DI LUAR JAM PULANG') {
+        else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
           map[id].di_luar_pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
           if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
         }
@@ -9442,11 +9442,11 @@ File di Google Drive juga akan dihapus.`)) return;
         const jamStr = getField(r, 'Jam', 'jam') || '';
         const jam = toMenit(jamStr);
         if (jenis === 'MASUK') { map[id].all_masuk++; }
-        else if (jenis === 'DI LUAR JAM MASUK') {
+        else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
           map[id].all_di_luar_masuk++;
           if (jam !== null && jam > getMasukBatas(id, tglA)) map[id].all_menit_terlambat += (jam - getMasukBatas(id, tglA));
         }
-        else if (jenis === 'DI LUAR JAM PULANG') {
+        else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
           map[id].all_di_luar_pulang++;
           if (jam !== null && jam < getPulangBatas(id, tglA)) map[id].all_menit_lebih_awal += (getPulangBatas(id, tglA) - jam);
         }

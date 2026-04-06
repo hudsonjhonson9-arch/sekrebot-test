@@ -9456,6 +9456,26 @@ File di Google Drive juga akan dihapus.`)) return;
         else if (jenis === 'TANPA BERITA') { map[id].all_alpa++; }
       });
 
+      // Special handling: Calculate "Periode Alpa" counts for each employee
+      // if not provided by n8n.
+      if (rows.length > 0) {
+        // Find HK dates in period
+        const rangeDates = [];
+        let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
+        while (dCur <= dEnd) {
+          const t = dCur.toISOString().split('T')[0], dy = dCur.getDay();
+          if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) rangeDates.push(t);
+          dCur.setDate(dCur.getDate() + 1);
+        }
+        // Check presence per employee per date
+        const rowSet = new Set(rows.map(r => String(getField(r, 'ID', 'id')) + '|' + normToISO(getField(r, 'Tanggal', 'tanggal'))));
+        Object.keys(map).forEach(uid => {
+          let c = 0;
+          rangeDates.forEach(tgl => { if (!rowSet.has(uid + '|' + tgl)) c++; });
+          map[uid].alpa = c; // count for this period
+        });
+      }
+
       const pegawai = Object.values(map).map(p => {
         // Discipline calculation
         const totalEntries = p.masuk + p.di_luar_masuk;
@@ -9479,15 +9499,19 @@ File di Google Drive juga akan dihapus.`)) return;
           // Period HH:MM
           akkLambatHHMM: toHHMM(p.menit_terlambat),
           akkCepatHHMM: toHHMM(p.menit_lebih_awal),
-          totalAkkHHMM: toHHMM(p.menit_terlambat + p.menit_lebih_awal),
-          totalAkkMenit: p.menit_terlambat + p.menit_lebih_awal,
+          akkAlpaHHMM: toHHMM((p.alpa || 0) * 450),
+          totalAkkHHMM: toHHMM(p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450)),
+          totalAkkMenit: p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450),
+          // Estimated jamHadir for fallback (Work hours minus penalties)
+          jamHadir: Math.max(0, ((HARI_KERJA_PERIODE * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
           // Discipline period
           disiplinPct, disiplinLabel, disiplinLevel,
           // All-time HH:MM
           totalLambatAllHHMM: toHHMM(p.all_menit_terlambat),
           totalCepatAllHHMM: toHHMM(p.all_menit_lebih_awal),
-          totalAkkAllHHMM: toHHMM(p.all_menit_terlambat + p.all_menit_lebih_awal),
-          totalAkkAllMenit: p.all_menit_terlambat + p.all_menit_lebih_awal,
+          totalAlpaAllHHMM: toHHMM((p.all_alpa || 0) * 450),
+          totalAkkAllHHMM: toHHMM(p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450)),
+          totalAkkAllMenit: p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450),
           disiplinAllPct,
           // Legacy
           akumulasi_terlambat: p.menit_terlambat > 0 ? toHHMM(p.menit_terlambat) + ' terlambat' : '',
@@ -9702,11 +9726,12 @@ File di Google Drive juga akan dihapus.`)) return;
                 + '<span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>'
                 + (aLambat !== '00:00' ? '<span class="akk-badge akk-lambat">⏰ Lambat: ' + aLambat + '</span>' : '')
                 + (aCepat !== '00:00' ? '<span class="akk-badge akk-cepat">🏃 Cepat: ' + aCepat + '</span>' : '')
+                + (p.akkAlpaHHMM !== '00:00' ? '<span class="akk-badge" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ' + p.akkAlpaHHMM + '</span>' : '')
                 + (aTotal !== '00:00' ? '<span class="akk-badge akk-total">Σ Total: ' + aTotal + '</span>' : '')
                 + (p.all_izin > 0 ? '<span class="akk-badge" style="background:rgba(245,158,11,.1);color:var(--warning)">🙏 ' + p.all_izin + '×</span>' : '')
                 + (p.all_sakit > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">🤒 ' + p.all_sakit + '×</span>' : '')
                 + (p.all_tugas > 0 ? '<span class="akk-badge" style="background:rgba(139,92,246,.1);color:#a78bfa">💼 ' + p.all_tugas + '×</span>' : '')
-                + (p.all_alpa > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ ' + p.all_alpa + '×</span>' : '')
+                + (p.all_alpa > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ TB All: ' + p.all_alpa + '×</span>' : '')
                 + '</div>';
             })()}
       </div>`;
@@ -9795,11 +9820,12 @@ File di Google Drive juga akan dihapus.`)) return;
         <span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>
         ${allLambatHHMM !== '00:00' ? `<span class="akk-badge akk-lambat">⏰ Lambat: ${allLambatHHMM}</span>` : ''}
         ${allCepatHHMM !== '00:00' ? `<span class="akk-badge akk-cepat">🏃 Cepat: ${allCepatHHMM}</span>` : ''}
+        ${p.totalAlpaAllHHMM !== '00:00' ? `<span class="akk-badge" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ${p.totalAlpaAllHHMM}</span>` : ''}
         <span class="akk-badge akk-total">Σ Total: ${allTotalHHMM}</span>
         ${p.all_izin > 0 ? `<span class="akk-badge" style="background:rgba(245,158,11,.1);color:var(--warning)">🙏 ${p.all_izin}×</span>` : ''}
         ${p.all_sakit > 0 ? `<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">🤒 ${p.all_sakit}×</span>` : ''}
         ${p.all_tugas > 0 ? `<span class="akk-badge" style="background:rgba(139,92,246,.1);color:#a78bfa">💼 ${p.all_tugas}×</span>` : ''}
-        ${p.all_alpa > 0 ? `<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ ${p.all_alpa}×</span>` : ''}
+        ${p.all_alpa > 0 ? `<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ TB All: ${p.all_alpa}×</span>` : ''}
       </div>` : '';
 
         // ── Info jam batas ──

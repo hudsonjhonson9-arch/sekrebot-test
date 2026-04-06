@@ -5592,9 +5592,10 @@
               <input type="hidden" id="editPegawaiId">
               <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">NIP / No Pegawai</label><input id="inPegawaiNip" type="text" class="form-input" placeholder="Gunakan ID jika tidak ada NIP" /></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Contoh: Staff IT..." /></div>
+              <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
+                <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">NIP</label><input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
@@ -10864,6 +10865,13 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Cache jenis seragam dari server (cegah double-fetch dengan loadSeragamTypeAdmin) ── */
     let _seragamTypeRawCache = null;
 
+    function hidePegawaiForm() {
+      $('pegawaiForm').style.display = 'none';
+      $('inPegawaiNo').value = '';
+      $('inPegawaiId').value = '';
+      $('inPegawaiNama').value = '';
+    }
+
     /* ── Helper: apply raw rows dari server ke SERAGAM_OPTIONS ── */
     function _applySeragamTypeRows(rows) {
       if (!Array.isArray(rows) || !rows.length) return;
@@ -11015,6 +11023,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiId').value = uid;
         $('inPegawaiId').disabled = true; // Telegram ID cannot be changed in edit
         $('inPegawaiNama').value = p.nama || p.Nama || '';
+        $('inPegawaiNo').value = p.no || '';
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
@@ -11030,6 +11039,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const isEdit = !!editId;
       const id = $('inPegawaiId').value;
       const nama = $('inPegawaiNama').value.trim();
+      const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
       const role = $('inPegawaiRole').value;
@@ -11045,7 +11055,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const path = isEdit ? P.userEdit : P.userAdd;
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ id, nama, nip, jabatan, role, status })
+          body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
         });
         const d = await res.json();
         

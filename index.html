@@ -6185,6 +6185,19 @@
     let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
     let adminLoaded = false; // guard: cegah reload semua fungsi admin tiap tab dibuka
 
+    // ── IDENTITY MONITOR (Startup Scan) ──
+    const _idIntrvl = setInterval(() => {
+      const curId = String(tg.initDataUnsafe?.user?.id || '0');
+      if (curId !== '0') MY_ID = curId;
+      if (ADMIN_IDS.length > 0) {
+        if (!IS_ADMIN && MY_ID !== '0' && ADMIN_IDS.includes(MY_ID)) {
+          IS_ADMIN = true;
+          _applyAdminUI();
+        }
+      }
+    }, 2500);
+    setTimeout(() => { clearInterval(_idIntrvl); }, 15000);
+
     /* ════ KONSTANTA ════ */
     const TZ = 'Asia/Makassar';
     const H_ID = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -11399,8 +11412,12 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!panelAdmin) return;
       
       // Re-evaluate IS_ADMIN (force String for 100% Reliable match)
-      if (!MY_ID || MY_ID === '0') MY_ID = String(tg.initDataUnsafe?.user?.id || '0');
-      if (!IS_ADMIN && MY_ID !== '0' && ADMIN_IDS.map(String).includes(MY_ID)) IS_ADMIN = true;
+      if (tg?.initDataUnsafe?.user?.id) MY_ID = String(tg.initDataUnsafe.user.id);
+      if (!IS_ADMIN && MY_ID !== '0' && ADMIN_IDS.includes(MY_ID)) IS_ADMIN = true;
+
+      // Update Debug UI
+      const idDebug = $('idDebugDisplay');
+      if (idDebug) idDebug.innerText = `ID: ${MY_ID} | Role: ${IS_ADMIN?'Admin':'Pegawai'}`;
 
       // Also mark super-admin if they are the first in the list
       const isSA = ADMIN_IDS.length > 0 && String(ADMIN_IDS[0]) === MY_ID;

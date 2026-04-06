@@ -4724,10 +4724,10 @@
 
     <!-- Tabs -->
     <div class="tabs" id="tabsBar">
-      <button class="tab active" onclick="switchTab('absen')">📍 Absen</button>
-      <button class="tab" onclick="switchTab('ket')">📝 Keterangan</button>
-      <button class="tab" onclick="switchTab('rekap')">📊 Rekap</button>
-      <button class="tab" onclick="switchTab('profil')">👤 Profil</button>
+      <button class="tab active" data-tab="absen" onclick="switchTab('absen')">📍 Absen</button>
+      <button class="tab" data-tab="ket" onclick="switchTab('ket')">📝 Keterangan</button>
+      <button class="tab" data-tab="rekap" onclick="switchTab('rekap')">📊 Rekap</button>
+      <button class="tab" data-tab="profil" onclick="switchTab('profil')">👤 Profil</button>
     </div>
 
     <!-- ══ TAB ABSEN ══ -->
@@ -5499,7 +5499,19 @@
           </div>
           <div class="rs-card rs-alpa">
             <div class="rs-num" id="rsAlpa">—</div>
-<div class="panel" id="panel-admin">
+            <div class="rs-ico">🔴</div>
+            <div class="rs-lbl">Alpa</div>
+          </div>
+        </div>
+      </div>
+      <div id="rekapContent" class="rekap-content">
+        <div id="pegawaiList" class="pegawai-list"></div>
+      </div>
+      <div class="footer" style="margin-top:12px">Data dari Supabase via n8n</div>
+    </div>
+
+    <!-- ══ TAB ADMIN (DASHBOARD) ══ -->
+    <div class="panel" id="panel-admin">
       <div id="admin-main-dashboard">
         <div class="admin-header-card">
           <div class="admin-badge">⚡ AKSES ADMIN</div>
@@ -5749,6 +5761,93 @@
             <button id="tabSigBtn" onclick="switchFaceSigTab('sig')" class="btn-sm-admin" style="flex:1">✍️ Sign</button>
           </div>
           <div id="faceSigTabFace">
+            <div style="margin-bottom:10px">
+              <label class="form-label">Daftarkan Wajah Pegawai</label>
+              <div style="display:flex;gap:8px">
+                <select id="selectPegawaiFaceReg" class="form-input" style="flex:1">
+                  <option value="">— Pilih Pegawai —</option>
+                </select>
+                <button class="btn-sm-admin" onclick="loadAdminFaceReg()" style="width:40px">🔄</button>
+              </div>
+            </div>
+            <div id="adminFaceRegList" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:5px">
+               <!-- Rendered by JS -->
+            </div>
+          </div>
+          <div id="faceSigTabSig" style="display:none">
+            <div id="adminSigRegList" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:5px">
+               <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: HARI LIBUR -->
+      <div class="admin-sub-panel" id="admin-view-libur">
+        <div class="admin-sub-header">
+          <button class="btn-back-dash" onclick="closeAdminSubPanel()">✕</button>
+          <div class="admin-sub-title-wrap">
+            <div class="admin-sub-title">Hari Libur</div>
+            <div class="admin-sub-desc">Atur kalender libur nasional dan lokal</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="form-group"><label class="form-label">Nama Libur</label><input type="text" id="inputNamaLibur" class="form-input" placeholder="e.g. Idul Fitri"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div><label class="form-label">Mulai</label><input type="date" id="inputTglLiburMulai" class="form-input"/></div>
+            <div><label class="form-label">Selesai</label><input type="date" id="inputTglLiburSelesai" class="form-input"/></div>
+          </div>
+          <div id="liburResult"></div>
+          <button class="btn-admin" id="btnTambahLibur" onclick="handleTambahLibur()">Tambah Hari Libur</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>📅 Daftar Libur</span><button class="btn-sm-admin" onclick="loadLiburAdmin()">🔄</button></div>
+          <div id="adminLiburList"></div>
+        </div>
+      </div>
+
+      <!-- VIEW: MANAJEMEN ADMIN -->
+      <div class="admin-sub-panel" id="admin-view-users">
+        <div class="admin-sub-header">
+          <button class="btn-back-dash" onclick="closeAdminSubPanel()">✕</button>
+          <div class="admin-sub-title-wrap">
+            <div class="admin-sub-title">Akses Admin</div>
+            <div class="admin-sub-desc">Kelola user yang memiliki akses dashboard ini</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">Telegram ID Baru</label>
+            <div style="display:flex;gap:8px">
+              <input type="number" id="inAdminId" class="form-input" placeholder="ID User..."/>
+              <button class="btn-sm-admin" onclick="handleTambahAdmin()" style="width:80px">Tambah</button>
+            </div>
+          </div>
+          <div id="adminMgmtMsg"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span>👑 Moderator Aktif</span><button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button></div>
+          <div id="adminMgmtList"></div>
+        </div>
+      </div>
+
+      <!-- VIEW: MEJA ABSEN (Super Admin) -->
+      <div class="admin-sub-panel" id="admin-view-meja">
+        <div class="admin-sub-header">
+          <button class="btn-back-dash" onclick="closeAdminSubPanel()">✕</button>
+          <div class="admin-sub-title-wrap">
+            <div class="admin-sub-title">Meja Absen</div>
+            <div class="admin-sub-desc">Auto-scan wajah kecepatan tinggi</div>
+          </div>
+        </div>
+        <div class="card">
+          <div id="mejaAbsenStatus" style="font-size:11px;text-align:center;padding:15px;border:1px dashed var(--border);border-radius:12px;color:var(--muted)">
+            Gunakan mode ini untuk absensi masal di satu titik perangkat.
+          </div>
+          <button class="btn-admin" onclick="openMejaAbsen()" style="margin-top:12px;background:var(--gold);color:var(--navy)">
+            Buka Kamera Meja Absen
+          </button>
+        </div>
       </div>
 
       <!-- ══ MODE DESKTOP (ADMIN) ══ -->
@@ -6096,6 +6195,7 @@
       btn.setAttribute('data-tab', 'admin');
       btn.innerHTML = '⚙️ Admin';
       btn.onclick = () => switchTab('admin');
+      btn.style.display = 'none'; // Sembunyikan awal (biar _applyAdminUI yang nentuin)
       $('tabsBar').appendChild(btn);
     }
     // Sembunyikan panel admin dulu sampai ADMIN_IDS dimuat
@@ -6283,8 +6383,10 @@
     function getAllTabs() { return IS_ADMIN ? ['absen', 'ket', 'rekap', 'profil', 'admin'] : ['absen', 'ket', 'rekap', 'profil']; }
     function switchTab(tab) {
       window.scrollTo(0, 0); // Reset scroll position globally
-      const T = getAllTabs();
-      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', T[i] === tab));
+      document.querySelectorAll('.tab').forEach(t => {
+        const dt = t.getAttribute('data-tab');
+        t.classList.toggle('active', dt === tab);
+      });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const el = $('panel-' + tab); if (el) el.classList.add('active');
       

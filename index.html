@@ -9839,7 +9839,6 @@ File di Google Drive juga akan dihapus.`)) return;
       const btn = $('btnDownloadRekap');
       btn.disabled = true;
       btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
-      showRekapToast('loading', '<span class="spin-sm"></span> &nbsp;Mengirim rekap ke Telegram...');
 
       // Helper konversi jam string → menit
       const toMenitDl = w => { const [h, m] = (w || '').replace(/\s.*/, '').split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; };
@@ -12842,12 +12841,17 @@ async function generateRekapPDF() {
     return;
   }
 
+  const btn = $('btnDownloadPDF');
+  const originalHtml = btn.innerHTML;
+
   try {
+    // UI: Loading State
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
+
     const { jsPDF } = window.jspdf;
     if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
 
-    // Gunakan array [lebar, tinggi] untuk F4 (215x330mm)
-    // Pastikan orientation 'p' (portrait)
     const doc = new jsPDF({
       orientation: 'p',
       unit: 'mm',
@@ -12865,8 +12869,6 @@ async function generateRekapPDF() {
 
     const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-    showRekapToast('loading', '⏳ Mengambil data tanda tangan...');
-
     let sigMap = {};
     try {
       const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
@@ -12882,8 +12884,6 @@ async function generateRekapPDF() {
     } catch (e) {
       console.warn("Gagal load paraf, lanjut tanpa paraf.");
     }
-
-    showRekapToast('loading', '⏳ Menyusun tabel absensi...');
 
     const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
@@ -13035,7 +13035,6 @@ async function generateRekapPDF() {
     const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
     doc.save(fileName);
 
-    showRekapToast('loading', '📤 Mengirim file ke Telegram...');
     const pdfBase64 = doc.output('datauristring').split(',')[1];
     await apiFetch(P.kirimRekap, {
       method: 'POST',
@@ -13053,6 +13052,10 @@ async function generateRekapPDF() {
   } catch (e) {
     console.error('PDF Generation Error:', e);
     showRekapToast('fail', '❌ Gagal membuat PDF: ' + (e.message || 'Error tidak diketahui'));
+  } finally {
+    // Reset Button
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 

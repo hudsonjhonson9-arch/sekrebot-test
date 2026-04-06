@@ -9195,7 +9195,9 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!dari || !sampai) return;
       rekapLoaded = false;
       const btn = $('btnRekapRefresh'); btn.disabled = true;
-      const dlBtn = $('btnDownloadRekap'); if (dlBtn) dlBtn.disabled = true;
+      const dlBtn = $('btnDownloadRekap'), pdfBtn = $('btnDownloadPDF');
+      if (dlBtn) dlBtn.disabled = true;
+      if (pdfBtn) pdfBtn.disabled = true;
       $('rekapRefIcon').outerHTML = '<span class="spin-sm" id="rekapRefIcon"></span>';
       $('pegawaiList').innerHTML = shimmerRows(4);
       resetRekapStats();
@@ -9321,6 +9323,7 @@ File di Google Drive juga akan dihapus.`)) return;
       } finally {
         btn.disabled = false;
         if (dlBtn) dlBtn.disabled = false;
+        if (pdfBtn) pdfBtn.disabled = false;
         const s = $('rekapRefIcon'); if (s) s.outerHTML = '<span id="rekapRefIcon">🔄</span>';
       }
     }

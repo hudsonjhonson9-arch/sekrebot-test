@@ -11419,6 +11419,49 @@ File di Google Drive juga akan dihapus.`)) return;
         `📅 ${dari ? fmtD(dari) : '—'} s.d. ${sampai ? fmtD(sampai) : '—'}<br>` +
         `🟢 Masuk ≤ ${masuk || '—'} &nbsp;·&nbsp; 🔵 Pulang ≥ ${pulang || '—'}`;
     }
+    let _faceSigCurrentTab = 'data';
+    function switchFaceSigTab(tab) {
+      _faceSigCurrentTab = tab;
+      const dataTab = $('faceSigTabData');
+      const faceTab = $('faceSigTabFace');
+      const sigTab = $('faceSigTabSig');
+      const btnData = $('tabDataBtn');
+      const btnFace = $('tabFaceBtn');
+      const btnSig = $('tabSigBtn');
+      const btnAdd = $('btnAdminAddData');
+      if (!dataTab || !faceTab || !sigTab) return;
+
+      // Reset visibiliti & styling
+      [dataTab, faceTab, sigTab].forEach(p => p.style.display = 'none');
+      [btnData, btnFace, btnSig].forEach(b => {
+        if (b) { b.style.background = 'transparent'; b.style.color = 'var(--muted)'; b.style.fontWeight = '700'; }
+      });
+      if (btnAdd) btnAdd.style.display = 'none';
+
+      if (tab === 'data') {
+        dataTab.style.display = 'block';
+        if (btnData) { btnData.style.background = 'var(--gold)'; btnData.style.color = 'var(--bg)'; btnData.style.fontWeight = '800'; }
+        if (btnAdd) btnAdd.style.display = 'block';
+        // Auto fetch list jika belum ada isi
+        loadPegawaiMgmt();
+      } else if (tab === 'face') {
+        faceTab.style.display = 'block';
+        if (btnFace) { btnFace.style.background = 'var(--gold)'; btnFace.style.color = 'var(--bg)'; btnFace.style.fontWeight = '800'; }
+        if ($('adminFaceRegList') && $('adminFaceRegList').children.length <= 2) loadAdminFaceReg();
+      } else if (tab === 'sig') {
+        sigTab.style.display = 'block';
+        if (btnSig) { btnSig.style.background = 'var(--gold)'; btnSig.style.color = 'var(--bg)'; btnSig.style.fontWeight = '800'; }
+        if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+      }
+    }
+
+    function refreshFaceSigTab() {
+      if (_faceSigCurrentTab === 'data') loadPegawaiMgmt();
+      else if (_faceSigCurrentTab === 'face') loadAdminFaceReg();
+      else if (_faceSigCurrentTab === 'sig') {
+        if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+      }
+    }
 
     async function loadJamPeriodeAdmin() {
       const list = $('periodeAdminList');
@@ -11532,43 +11575,6 @@ File di Google Drive juga akan dihapus.`)) return;
         await loadJamPeriodeAdmin();
       } catch {
         showResult('periodeResult', 'periodeRIcon', 'periodeRTitle', 'periodeRMsg', 'warning', '⚠️', 'Gagal Hapus', 'Pastikan webhook jam-periode-delete aktif di n8n.');
-      }
-    }
-
-    /* ════ WAJAH + TANDA TANGAN TAB (MERGED CARD) ════ */
-
-    let _faceSigCurrentTab = 'face';
-
-    function switchFaceSigTab(tab) {
-      _faceSigCurrentTab = tab;
-      const faceTab = $('faceSigTabFace');
-      const sigTab = $('faceSigTabSig');
-      const btnFace = $('tabFaceBtn');
-      const btnSig = $('tabSigBtn');
-      if (!faceTab || !sigTab) return;
-
-      if (tab === 'face') {
-        faceTab.style.display = 'block';
-        sigTab.style.display = 'none';
-        if (btnFace) { btnFace.style.background = 'var(--gold)'; btnFace.style.color = 'var(--bg)'; btnFace.style.fontWeight = '800'; }
-        if (btnSig) { btnSig.style.background = 'transparent'; btnSig.style.color = 'var(--muted)'; btnSig.style.fontWeight = '700'; }
-        // Load face data jika belum
-        if ($('adminFaceRegList') && $('adminFaceRegList').children.length <= 2) loadAdminFaceReg();
-      } else {
-        faceTab.style.display = 'none';
-        sigTab.style.display = 'block';
-        if (btnSig) { btnSig.style.background = 'var(--gold)'; btnSig.style.color = 'var(--bg)'; btnSig.style.fontWeight = '800'; }
-        if (btnFace) { btnFace.style.background = 'transparent'; btnFace.style.color = 'var(--muted)'; btnFace.style.fontWeight = '700'; }
-        // Load sig data
-        if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
-      }
-    }
-
-    function refreshFaceSigTab() {
-      if (_faceSigCurrentTab === 'face') {
-        loadAdminFaceReg();
-      } else {
-        if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
       }
     }
 
@@ -12906,7 +12912,10 @@ async function generateRekapPDF() {
   const doc = new jsPDF('p', 'mm', 'a4');
   const dari = $('rekapDari').value;
   const sampai = $('rekapSampai').value;
-  const tanggalLabel = (dari === sampai ? dari : `${dari} s.d. ${sampai}`);
+  const isHarian = dari === sampai;
+  const tanggalLabel = isHarian
+    ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+    : `${dari} s.d. ${sampai}`;
   
   const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
@@ -13055,7 +13064,10 @@ async function generateRekapPDF() {
       body: JSON.stringify({
         chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
         pdf_base64: pdfBase64,
-        namaFilePdf: fileName
+        namaFilePdf: fileName,
+        tanggal_label: tanggalLabel, // <-- Data ini dikirim ke n8n
+        dari: dari,
+        sampai: sampai
       }) 
     });
     showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');

@@ -6181,7 +6181,7 @@
     const tgUser = tg?.initDataUnsafe?.user || {};
     if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
     // IS_ADMIN dievaluasi ulang setelah ADMIN_IDS dimuat dari server
-    let MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
+    let MY_ID = String(tg.initDataUnsafe?.user?.id || '0');
     let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
     let adminLoaded = false; // guard: cegah reload semua fungsi admin tiap tab dibuka
 
@@ -10123,8 +10123,10 @@ File di Google Drive juga akan dihapus.`)) return;
       }
 
       const btn = $('btnDownloadRekap');
+      if (!btn) return;
       btn.disabled = true;
-      btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
+      const oldHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
       showRekapToast('loading', '<span class="spin-sm"></span> &nbsp;Mengirim rekap ke Telegram...');
 
       // Helper konversi jam string → menit
@@ -10306,7 +10308,7 @@ File di Google Drive juga akan dihapus.`)) return;
         showRekapToast('fail', '🔌 Gagal mengirim. Pastikan n8n & bot Telegram aktif.');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '📤 Kirim';
+        btn.innerHTML = oldHtml;
       }
     }
 
@@ -11376,8 +11378,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
           ADMIN_IDS.length = 0;
           jam.admin_ids.forEach(id => {
-            const num = Number(id);
-            if (!isNaN(num) && num !== 0) ADMIN_IDS.push(num);
+            if (id) ADMIN_IDS.push(String(id));
           });
         }
         IS_ADMIN = ADMIN_IDS.includes(MY_ID);
@@ -11397,12 +11398,12 @@ File di Google Drive juga akan dihapus.`)) return;
       const panelAdmin = $('panel-admin');
       if (!panelAdmin) return;
       
-      // Re-evaluate IS_ADMIN (force type Number for reliability)
-      if (!MY_ID || MY_ID === 0) MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
-      if (!IS_ADMIN && MY_ID !== 0 && ADMIN_IDS.includes(MY_ID)) IS_ADMIN = true;
+      // Re-evaluate IS_ADMIN (force String for 100% Reliable match)
+      if (!MY_ID || MY_ID === '0') MY_ID = String(tg.initDataUnsafe?.user?.id || '0');
+      if (!IS_ADMIN && MY_ID !== '0' && ADMIN_IDS.map(String).includes(MY_ID)) IS_ADMIN = true;
 
       // Also mark super-admin if they are the first in the list
-      const isSA = ADMIN_IDS.length > 0 && ADMIN_IDS[0] === MY_ID;
+      const isSA = ADMIN_IDS.length > 0 && String(ADMIN_IDS[0]) === MY_ID;
 
       if (!IS_ADMIN) {
         panelAdmin.style.display = 'none';
@@ -12973,9 +12974,20 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
 async function generateRekapPDF() {
+  const btn = $('btnGeneratePDF');
+  const oldHtml = btn ? btn.innerHTML : '📄 Tarik PDF';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin-sm"></span> Menyusun PDF...';
+  }
+
+  // Identity Monitor Fallback (Double check admin for Super Admin)
+  if (!IS_ADMIN) _applyAdminUI();
+
   // 1. Validasi Awal
   if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
     showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
+    if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
     return;
   }
 

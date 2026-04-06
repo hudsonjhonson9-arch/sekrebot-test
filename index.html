@@ -5504,6 +5504,19 @@
           </div>
         </div>
       </div>
+
+      <!-- ── BUTTON EXPORT REKAP (Grid 2 Kolom) ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;padding:0 2px">
+        <button class="btn-admin" id="btnDownloadRekap" onclick="downloadRekap()" 
+          style="background:linear-gradient(135deg, #6366f1, #8b5cf6);color:white;border:none;box-shadow:0 4px 12px rgba(99,102,241,0.25);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;height:46px;border-radius:12px">
+          <span>📊</span> Excel Rekap
+        </button>
+        <button class="btn-admin" id="btnGeneratePDF" onclick="generateRekapPDF()"
+          style="background:linear-gradient(135deg, #a855f7, #d946ef);color:white;border:none;box-shadow:0 4px 12px rgba(168,85,247,0.25);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:700;height:46px;border-radius:12px">
+          <span>📄</span> Tarik PDF
+        </button>
+      </div>
+
       <div id="rekapContent" class="rekap-content">
         <div id="pegawaiList" class="pegawai-list"></div>
       </div>
@@ -6167,8 +6180,8 @@
     const tg = window.Telegram?.WebApp;
     const tgUser = tg?.initDataUnsafe?.user || {};
     if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
-    const MY_ID = tgUser.id ? Number(tgUser.id) : null;
     // IS_ADMIN dievaluasi ulang setelah ADMIN_IDS dimuat dari server
+    let MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
     let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
     let adminLoaded = false; // guard: cegah reload semua fungsi admin tiap tab dibuka
 
@@ -11379,6 +11392,11 @@ File di Google Drive juga akan dihapus.`)) return;
     function _applyAdminUI() {
       const panelAdmin = $('panel-admin');
       if (!panelAdmin) return;
+      
+      // Re-evaluate IS_ADMIN in case MY_ID was not ready earlier
+      if (!MY_ID) MY_ID = Number(tg.initDataUnsafe?.user?.id || 0);
+      if (!IS_ADMIN && ADMIN_IDS.includes(MY_ID)) IS_ADMIN = true;
+
       if (!IS_ADMIN) {
         panelAdmin.style.display = 'none';
         // Sembunyikan tombol tab admin jika ada
@@ -11393,6 +11411,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if ($('adminWelcomeTitle') && userProfile) {
           $('adminWelcomeTitle').textContent = `Halo, ${userProfile.Nama.split(' ')[0]} 👋`;
         }
+        
         // Buat tombol tab admin jika belum ada, lalu tampilkan
         setupAdminTab();
         const btn = document.querySelector('.tab[data-tab="admin"]');

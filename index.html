@@ -13021,20 +13021,21 @@ async function generateRekapPDF() {
     }
 
     doc.setFontSize(10);
-    doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, pageWidth / 2, footerY, { align: 'center' });
-    doc.text('Mengetahui,', pageWidth / 2, footerY + 6, { align: 'center' });
-    doc.text('Kepala Badan', pageWidth / 2, footerY + 11, { align: 'center' });
+    const signatureX = pageWidth - 60; // Posisi di sisi kanan
+    doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
+    doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
+    doc.text('Kepala Badan', signatureX, footerY + 11, { align: 'center' });
 
     const kaban = filteredPegawai[0];
     const kabanSig = sigMap[String(kaban?.id)];
     if (kabanSig) {
-      try { doc.addImage(kabanSig, 'PNG', (pageWidth / 2) - 15, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
+      try { doc.addImage(kabanSig, 'PNG', signatureX - 15, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
     }
 
     doc.setFont('times', 'bold');
-    doc.text(kaban?.nama || '__________________________', pageWidth / 2, footerY + 38, { align: 'center' });
+    doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
     doc.setFont('times', 'normal');
-    doc.text(`NIP. ${kaban?.nip || '..........................................'}`, pageWidth / 2, footerY + 43, { align: 'center' });
+    doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
 
     // 6. Simpan & Kirim
     const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;

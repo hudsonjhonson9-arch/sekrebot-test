@@ -921,10 +921,9 @@
       font-size: 11px;
       font-weight: 800;
       color: var(--white);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       margin-bottom: 2px;
+      line-height: 1.3;
+      word-break: break-word;
     }
 
     .face-adm-status {
@@ -6055,7 +6054,7 @@
       if (tab === 'profil' && !dokumenLoaded) loadDokumen();
       if (tab === 'rekap' && !rekapLoaded) loadRekap();
       if (tab === 'admin' && IS_ADMIN) {
-        switchAdminSection('ops'); // Reset to default section
+        // Remove forced section reset to 'ops' to preserve user context
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
           adminLoaded = true;

@@ -11275,7 +11275,7 @@ File di Google Drive juga akan dihapus.`)) return;
           return;
         }
 
-        // Untuk tampilkan nama & role, fetch dari user-list
+        // Untuk tampilkan nama, fetch dari user-list
         let namaMap = {};
         try {
           const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
@@ -11286,9 +11286,6 @@ File di Google Drive juga akan dihapus.`)) return;
               const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
               if (uid) {
                 namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
-                // Simpan role ke map global
-                const role = (u.role || u.Role || 'admin').toLowerCase().replace(/\s/g, '');
-                window._adminRoleMap[uid] = role;
               }
             });
           }
@@ -11297,6 +11294,7 @@ File di Google Drive juga akan dihapus.`)) return;
         el.innerHTML = ids.map(id => {
           const nama = namaMap[id] || `ID: ${id}`;
           const isMe = id === MY_ID;
+          // Role diambil dari window._adminRoleMap yang diisi oleh _getJamAbsen()
           const roleRaw = window._adminRoleMap[id] || 'admin';
           const isSuperAdmin = roleRaw === 'superadmin';
 
@@ -11402,7 +11400,18 @@ File di Google Drive juga akan dihapus.`)) return;
       if (_jamAbsenPromise) return _jamAbsenPromise;
       _jamAbsenPromise = apiFetch(P.jamAbsen, { method: 'GET' })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-        .then(d => { _jamAbsenCache = d.data || d; return _jamAbsenCache; })
+        .then(d => {
+          _jamAbsenCache = d.data || d;
+          // Sinkronisasi role ke map global dari admin_list (bukan user_list)
+          if (_jamAbsenCache.admin_roles) {
+            Object.entries(_jamAbsenCache.admin_roles).forEach(([uid, role]) => {
+              window._adminRoleMap[uid] = role;
+            });
+            // Re-apply admin UI jika role saya berubah (misal baru login)
+            if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
+          }
+          return _jamAbsenCache;
+        })
         .catch(e => { _jamAbsenPromise = null; return Promise.reject(e); });
       return _jamAbsenPromise;
     }

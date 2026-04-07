@@ -9890,88 +9890,72 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // ── Kehadiran vs hari kerja ──
         const hariHadir = (p.masuk || 0) + (p.lambat || p.di_luar_masuk || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0);
+        const hadirPct = hariKerjaPeriode > 0 ? Math.min(100, Math.round(hariHadir / hariKerjaPeriode * 100)) : 0;
+        const hadirColor = hadirPct >= 90 ? 'var(--success)' : hadirPct >= 75 ? 'var(--info)' : hadirPct >= 60 ? 'var(--warning)' : 'var(--danger)';
 
-        // ── Bar disiplin masuk (tepat/terlambat) ──
-        const disiplinBar = dPct !== null ? `
-      <div class="disiplin-bar-wrap">
-        <div class="disiplin-bar-row">
-          <span class="disiplin-bar-label">🎯 Disiplin Masuk (Periode)</span>
-          <span style="font-size:9px;color:${dColor};font-weight:700">${dPct}% — ${dLabel}</span>
-        </div>
-        <div class="disiplin-bar-bg"><div class="disiplin-bar-fill" style="width:${dPct}%;background:${dColor}"></div></div>
-        ${dAllPct !== null ? `<div style="font-size:9px;color:var(--muted);margin-top:3px">Keseluruhan: <span style="color:${dColor};font-weight:700">${dAllPct}%</span></div>` : ''}
-      </div>` : '';
+        const totalEntries = masuk + pulang + pulangLuar + luarMasuk + luarPulang + izin + sakit + tugas;
 
-        // ── Bar kehadiran vs hari kerja ──
-        const kehadiranBar = hadirPct !== null ? `
-      <div class="disiplin-bar-wrap" style="margin-top:6px">
-        <div class="disiplin-bar-row">
-          <span class="disiplin-bar-label">📅 Kehadiran (${hariHadir}/${hariKerjaPeriode} hari kerja)</span>
-          <span style="font-size:9px;color:${hadirColor};font-weight:700">${hadirPct}%</span>
-        </div>
-        <div class="disiplin-bar-bg"><div class="disiplin-bar-fill" style="width:${hadirPct}%;background:${hadirColor}"></div></div>
-      </div>` : '';
+        // ── All-Time Footer ──
+        const allTimeFooter = mAllTotal > 0 || p.all_alpa > 0 ? `
+          <div class="rekap-footer-all">
+            <span class="all-time-title">📈 Ringkasan Seluruh Waktu</span>
+            <div class="all-time-badges">
+              ${p.totalLambatAllHHMM && p.totalLambatAllHHMM !== '00:00' ? `<span class="badge-all">⏰ Lambat: ${p.totalLambatAllHHMM}</span>` : ''}
+              ${p.totalCepatAllHHMM && p.totalCepatAllHHMM !== '00:00' ? `<span class="badge-all">🏃 Cepat: ${p.totalCepatAllHHMM}</span>` : ''}
+              ${p.all_alpa > 0 ? `<span class="badge-all" style="color:var(--danger)">❌ TB: ${p.all_alpa}×</span>` : ''}
+              ${dAllPct !== null ? `<span class="badge-all">🎯 Disiplin: ${dAllPct}%</span>` : ''}
+              ${p.all_izin > 0 ? `<span class="badge-all">🙏 Izin: ${p.all_izin}</span>` : ''}
+              ${p.all_sakit > 0 ? `<span class="badge-all">🤒 Sakit: ${p.all_sakit}</span>` : ''}
+              ${p.all_tugas > 0 ? `<span class="badge-all">💼 Tugas: ${p.all_tugas}</span>` : ''}
+            </div>
+          </div>
+        ` : '';
 
-        // ── Badge statistik periode — satu baris bersih, tanpa duplikasi ──
-        const badgePeriode = `
-        ${(function(){
-          const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
-          if (mAll === 0) return '';
-          const h = Math.floor(mAll / 60), m = mAll % 60;
-          const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
-          return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
-        })()}
-        ${masuk > 0 ? `<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>` : ''}
-        ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>` : ''}
-        ${pulang > 0 ? `<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>` : ''}
-        ${luarPulang > 0 ? `<span class="pbar-item pb-luar-pulang">🏃 Cepat: ${luarPulang}× <b>${akkCepatHHMM}</b></span>` : ''}
-        ${pulangLuar > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:#f59e0b">🏃 Lapangan: ${pulangLuar}</span>` : ''}
-        ${(luarMasuk + luarPulang) > 0 ? `<span class="pbar-item pb-total-akk">Σ Periode: ${totalAkkHHMM}</span>` : ''}
-        ${izin > 0 ? `<span class="pbar-item pb-izin">🙏 Izin: ${izin}</span>` : ''}
-        ${sakit > 0 ? `<span class="pbar-item pb-sakit">🤒 Sakit: ${sakit}</span>` : ''}
-        ${tugas > 0 ? `<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>` : ''}
-        ${(p.alpa || 0) > 0 ? `<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ${p.alpa}</span>` : ''}
-        ${total === 0 && (p.alpa || 0) === 0 ? `<span class="pbar-item" style="background:rgba(255,255,255,.06);color:var(--muted)">❌ Tidak Ada Data</span>` : ''}
-      </div>` ;
+        return `
+        <div class="rekap-card-v2">
+          <!-- TOP: Profile & Badge -->
+          <div class="pegawai-top" style="margin-bottom:12px">
+            <div class="pegawai-avatar" style="background:linear-gradient(135deg, var(--gold), #9b6e1a); box-shadow:0 2px 8px rgba(201,168,76,0.3)">${idx + 1}</div>
+            <div style="flex:1;min-width:0">
+              <div class="pegawai-name">${nama}</div>
+              ${jabatanStr}
+              <div class="pegawai-jabatan">NIP: ${nip} · ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+            </div>
+          </div>
 
-        // ── Akumulasi all-time (hanya jika ada data) ──
-        const allTimeBlock = allTotalMenit > 0 ? `
-      <div class="akk-all-row">
-        <span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>
-        ${allLambatHHMM !== '00:00' ? `<span class="akk-badge akk-lambat">⏰ Lambat: ${allLambatHHMM}</span>` : ''}
-        ${allCepatHHMM !== '00:00' ? `<span class="akk-badge akk-cepat">🏃 Cepat: ${allCepatHHMM}</span>` : ''}
-        ${p.totalAlpaAllHHMM !== '00:00' ? `<span class="akk-badge" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ${p.totalAlpaAllHHMM}</span>` : ''}
-        <span class="akk-badge akk-total">Σ Total: ${allTotalHHMM}</span>
-        ${p.all_izin > 0 ? `<span class="akk-badge" style="background:rgba(245,158,11,.1);color:var(--warning)">🙏 ${p.all_izin}×</span>` : ''}
-        ${p.all_sakit > 0 ? `<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">🤒 ${p.all_sakit}×</span>` : ''}
-        ${p.all_tugas > 0 ? `<span class="akk-badge" style="background:rgba(139,92,246,.1);color:#a78bfa">💼 ${p.all_tugas}×</span>` : ''}
-        ${p.all_alpa > 0 ? `<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ TB All: ${p.all_alpa}×</span>` : ''}
-      </div>` : '';
+          <!-- HERO: Kehadiran & Disiplin -->
+          <div class="rekap-hero-section">
+            <div class="hero-metric-box">
+              <div class="hero-val" style="color:${hadirColor}">${hadirPct}%</div>
+              <div class="hero-lbl">Kehadiran</div>
+            </div>
+            <div class="hero-metric-box">
+              <div class="hero-val" style="color:${dColor}">${dPct}%</div>
+              <div class="hero-lbl">${dIcon} ${dLabel}</div>
+            </div>
+          </div>
 
-        // ── Info jam batas ──
-        const jamBatasStr = `
-      <div class="jam-pegawai-row">
-        <span class="jam-pgw-item">🟢 Masuk ≤ ${jamMasukBatas}</span>
-        <span class="jam-pgw-item">🔵 Pulang ≥ ${jamPulangBatas}</span>
-        ${customJamLabel ? `<span style="font-size:8px;color:var(--gold);font-weight:700">${customJamLabel}</span>` : ''}
-      </div>`;
+          <!-- HIGHLIGHT: Akumulasi Waktu -->
+          <div class="rekap-akk-highlight">
+            <div class="akk-h-time">${akkTotalWaktuFmt}</div>
+            <div class="akk-h-lbl">Akumulasi Jam (All-Time)</div>
+          </div>
 
-        return `<div class="pegawai-card">
-      <div class="pegawai-top">
-        <div class="pegawai-avatar">${idx + 1}</div>
-        <div style="flex:1;min-width:0">
-          <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
-          ${jabatanStr}
-          <div class="pegawai-jabatan">NIP: ${nip} · ${total} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
-        </div>
-        ${disiplinBlock}
-      </div>
-      ${badgePeriode}
-      ${disiplinBar}
-      ${kehadiranBar}
-      ${allTimeBlock}
-      ${jamBatasStr}
-    </div>`;
+          <!-- GRID: Statistik Periode -->
+          <div class="rekap-stats-grid">
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--success)">${masuk}</span><span class="stat-box-lbl">Masuk</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--info)">${pulang}</span><span class="stat-box-lbl">Pulang</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--warning)">${luarMasuk}</span><span class="stat-box-lbl">Lambat</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:#f59e0b">${luarPulang}</span><span class="stat-box-lbl">Cepat</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--warning)">${izin}</span><span class="stat-box-lbl">Izin</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--danger)">${sakit}</span><span class="stat-box-lbl">Sakit</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:#a78bfa">${tugas}</span><span class="stat-box-lbl">Tugas</span></div>
+            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--danger)">${p.alpa || 0}</span><span class="stat-box-lbl">TB/Alpa</span></div>
+          </div>
+
+          <!-- FOOTER: All Time -->
+          ${allTimeFooter}
+        </div>`;
       }).join('');
     }
 

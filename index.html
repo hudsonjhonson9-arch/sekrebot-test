@@ -9703,7 +9703,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
         <!-- ── BADGE STATUS BAWAH ── -->
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-          ${(luarMasuk + luarPulang) > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${luarMasuk + luarPulang}×</span>` : ''}
+          ${(function(){
+            const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
+            if (mAll === 0) return '';
+            const h = Math.floor(mAll / 60), m = mAll % 60;
+            const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
+            return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
+          })()}
           ${masuk > 0 ? `<span class="pbar-item pb-masuk"     >✅ Masuk</span>` : ''}
           ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${luarMasuk}×</span>` : ''}
           ${pulang > 0 ? `<span class="pbar-item pb-pulang"    >🔵 Pulang</span>` : ''}
@@ -9801,7 +9807,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // ── Badge statistik periode — satu baris bersih, tanpa duplikasi ──
         const badgePeriode = `
-        ${(luarMasuk + luarPulang) > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${luarMasuk + luarPulang}×</span>` : ''}
+        ${(function(){
+          const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
+          if (mAll === 0) return '';
+          const h = Math.floor(mAll / 60), m = mAll % 60;
+          const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
+          return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
+        })()}
         ${masuk > 0 ? `<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>` : ''}
         ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>` : ''}
         ${pulang > 0 ? `<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>` : ''}

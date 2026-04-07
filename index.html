@@ -5438,7 +5438,7 @@
           <div class="rs-card rs-luar">
             <div class="rs-num" id="rsLuar">—</div>
             <div class="rs-ico">⚠️</div>
-            <div class="rs-lbl">Luar Jam</div>
+            <div class="rs-lbl">Akumulasi Jam:</div>
           </div>
         </div>
         <!-- Label seksi -->
@@ -9703,6 +9703,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
         <!-- ── BADGE STATUS BAWAH ── -->
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
+          ${(luarMasuk + luarPulang) > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${luarMasuk + luarPulang}×</span>` : ''}
           ${masuk > 0 ? `<span class="pbar-item pb-masuk"     >✅ Masuk</span>` : ''}
           ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${luarMasuk}×</span>` : ''}
           ${pulang > 0 ? `<span class="pbar-item pb-pulang"    >🔵 Pulang</span>` : ''}
@@ -9800,7 +9801,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // ── Badge statistik periode — satu baris bersih, tanpa duplikasi ──
         const badgePeriode = `
-      <div class="pegawai-bar">
+        ${(luarMasuk + luarPulang) > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${luarMasuk + luarPulang}×</span>` : ''}
         ${masuk > 0 ? `<span class="pbar-item pb-masuk">✅ Masuk: ${masuk}</span>` : ''}
         ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Lambat: ${luarMasuk}× <b>${akkLambatHHMM}</b></span>` : ''}
         ${pulang > 0 ? `<span class="pbar-item pb-pulang">🔵 Pulang: ${pulang}</span>` : ''}
@@ -9812,7 +9813,7 @@ File di Google Drive juga akan dihapus.`)) return;
         ${tugas > 0 ? `<span class="pbar-item pb-tugas">💼 Tugas: ${tugas}</span>` : ''}
         ${(p.alpa || 0) > 0 ? `<span class="pbar-item" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ${p.alpa}</span>` : ''}
         ${total === 0 && (p.alpa || 0) === 0 ? `<span class="pbar-item" style="background:rgba(255,255,255,.06);color:var(--muted)">❌ Tidak Ada Data</span>` : ''}
-      </div>`;
+      </div>` ;
 
         // ── Akumulasi all-time (hanya jika ada data) ──
         const allTimeBlock = allTotalMenit > 0 ? `

@@ -7666,6 +7666,11 @@ let _blinkDetected = false;
 let _isEyeClosed = false;
 let _autoCaptured = false;
 
+// Variabel global untuk liveness
+let _blinkDetected = false;
+let _isEyeClosed = false;
+let _autoCaptured = false;
+
 function startDetectLoop() {
   const vid = $('camVideo');
   const wrap = $('camVideoWrap');
@@ -7675,128 +7680,143 @@ function startDetectLoop() {
   _isEyeClosed = false;
   _autoCaptured = false;
   
-  // Variabel untuk Kalibrasi Mata Dinamis
+  // Variabel untuk Kalibrasi Mata
   let _maxEar = 0;
   let _earHistory = [];
+  
+  // KUNCI PROSES (ANTI-STUCK FIX)
+  let _isDetecting = false; 
 
   const loop = async () => {
-    // Berhenti jika overlay ditutup
+    // 1. Kondisi Berhenti
     if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-    _detectLoop = requestAnimationFrame(loop);
-    
-    // Jangan lanjut deteksi jika sudah mau ambil foto
     if (_autoCaptured) return;
 
-    // 1. Deteksi Wajah & Landmark (Lebih sensitif: minConfidence 0.5)
-    const detection = await faceapi
-      .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
-      .withFaceLandmarks();
-
-    if (!detection) {
-      wrap.className = 'cam-video-wrap face-bad';
-      setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Posisikan wajah tepat di tengah');
+    // 2. CEGAH PENUMPUKAN PROSES (Mencegah Kamera Stuck/Freeze)
+    if (_isDetecting) {
+      _detectLoop = requestAnimationFrame(loop);
       return;
     }
-
-    const box = detection.detection.box;
-    const vidW = vid.videoWidth;
     
-    // 2. Validasi Jarak (Minimal 18% lebar layar, Maksimal 85%)
-    const minFaceWidth = vidW * 0.18; 
-    const maxFaceWidth = vidW * 0.85;
+    _isDetecting = true; // Kunci proses agar tidak ada scan ganda
 
-    if (box.width < minFaceWidth) {
-      wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke arah kamera');
-      return;
-    }
-    if (box.width > maxFaceWidth) {
-      wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '↔️', 'Terlalu Dekat', 'Mundur sedikit agar wajah pas');
-      return;
-    }
+    try {
+      const vidW = vid.videoWidth;
+      if (!vidW) throw new Error("Video belum siap");
 
-    // 3. Validasi Posisi Hidung (Tengah Layar)
-    const landmarks = detection.landmarks;
-    const nose = landmarks.getNose()[0];
-    const centerX = vidW / 2;
-    const distFromCenter = Math.abs(nose.x - centerX);
+      // 3. Deteksi Wajah
+      const detection = await faceapi
+        .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+        .withFaceLandmarks();
 
-    if (distFromCenter > (vidW * 0.25)) {
-      wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '↔️', 'Posisi Tidak Tengah', 'Geser wajah Anda ke tengah oval');
-      return;
-    }
-
-    // Posisi dan Jarak Sempurna
-    wrap.className = 'cam-video-wrap face-ok';
-    setCamStatus('ok', '✅', 'Posisi Mantap', 'Silakan lihat nilai di bawah...');
-
-    // 4. Hitung Eye Aspect Ratio (EAR)
-    const leftEye = landmarks.getLeftEye();
-    const rightEye = landmarks.getRightEye();
-
-    const getEAR = (eye) => {
-      const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-      const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-      const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-      return (v1 + v2) / (2.0 * h);
-    };
-
-    let rawEar = (getEAR(leftEye) + getEAR(rightEye)) / 2;
-
-    // Stabilisasi nilai mata (mengambil rata-rata 3 frame terakhir)
-    _earHistory.push(rawEar);
-    if (_earHistory.length > 3) _earHistory.shift();
-    const ear = _earHistory.reduce((a, b) => a + b, 0) / _earHistory.length;
-
-    // 5. Kalibrasi Mata Terbuka Maksimal
-    if (ear > _maxEar && ear < 0.45) {
-        _maxEar = ear; 
-    }
-
-    // 6. Tentukan Batas Kedip (15% di bawah mata terbuka, atau minimal 0.29)
-    let blinkThreshold = _maxEar > 0 ? _maxEar * 0.85 : 0.31;
-    if (blinkThreshold < 0.29) blinkThreshold = 0.29; 
-
-    const lsText = $('lsText');
-    const lsIcon = $('lsIcon');
-
-    // 7. Logika Kedipan Berurutan (Terbuka -> Tertutup -> Terbuka)
-    if (ear < blinkThreshold) { 
-      // Fase 1: Mata Tertutup
-      _isEyeClosed = true;
-      if (lsIcon) lsIcon.textContent = '😌';
-      if (lsText) {
-        lsText.textContent = `Buka mata Anda sekarang... (Val: ${ear.toFixed(2)})`;
-        lsText.style.color = 'var(--info)';
+      if (!detection) {
+        wrap.className = 'cam-video-wrap face-bad';
+        setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Posisikan wajah tepat di tengah');
+        throw new Error("Tidak ada wajah"); // Lompat ke finally
       }
-    } else if (ear >= blinkThreshold && _isEyeClosed) { 
-      // Fase 2: Mata Dibuka Kembali
-      _blinkDetected = true;
-      _isEyeClosed = false;
-    } else {
-      // Fase 0: Menunggu
-      if (lsIcon) lsIcon.textContent = '😐';
-      if (lsText && !_blinkDetected) {
-        lsText.textContent = `Harap Kedipkan Mata (Mata: ${ear.toFixed(2)} | Batas: ${blinkThreshold.toFixed(2)})`;
-        lsText.style.color = 'var(--gold)';
-      }
-    }
 
-    // 8. Eksekusi Pengambilan Foto Jika Berhasil Berkedip
-    if (_blinkDetected && !_autoCaptured) {
-      _autoCaptured = true; // Kunci agar tidak double capture
+      const box = detection.detection.box;
       
-      if (lsIcon) lsIcon.textContent = '😉';
-      if (lsText) { 
-        lsText.textContent = 'Liveness OK! Mengambil foto...'; 
-        lsText.style.color = 'var(--success)';
+      // 4. Validasi Jarak (Minimal 18% lebar layar, Maks 85%)
+      const minFaceWidth = vidW * 0.18; 
+      const maxFaceWidth = vidW * 0.85;
+
+      if (box.width < minFaceWidth) {
+        wrap.className = 'cam-video-wrap face-warn';
+        setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke arah kamera');
+        throw new Error("Terlalu jauh");
       }
-      setCamStatus('ok', '✅', 'Verifikasi Berhasil', 'Mohon tahan posisi Anda...');
+      if (box.width > maxFaceWidth) {
+        wrap.className = 'cam-video-wrap face-warn';
+        setCamStatus('warn', '↔️', 'Terlalu Dekat', 'Mundur sedikit agar wajah pas');
+        throw new Error("Terlalu dekat");
+      }
+
+      // Validasi Posisi Hidung
+      const landmarks = detection.landmarks;
+      const nose = landmarks.getNose()[0];
+      const centerX = vidW / 2;
+      const distFromCenter = Math.abs(nose.x - centerX);
+
+      if (distFromCenter > (vidW * 0.25)) {
+        wrap.className = 'cam-video-wrap face-warn';
+        setCamStatus('warn', '↔️', 'Posisi Tidak Tengah', 'Geser wajah Anda ke tengah oval');
+        throw new Error("Tidak di tengah");
+      }
+
+      wrap.className = 'cam-video-wrap face-ok';
+      setCamStatus('ok', '✅', 'Posisi Mantap', 'Silakan lihat nilai di bawah...');
+
+      // 5. Hitung Mata (EAR)
+      const leftEye = landmarks.getLeftEye();
+      const rightEye = landmarks.getRightEye();
+
+      const getEAR = (eye) => {
+        const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+        const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+        const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+        return (v1 + v2) / (2.0 * h);
+      };
+
+      let rawEar = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+
+      // Stabilisasi nilai mata (mengambil rata-rata 3 frame terakhir)
+      _earHistory.push(rawEar);
+      if (_earHistory.length > 3) _earHistory.shift();
+      const ear = _earHistory.reduce((a, b) => a + b, 0) / _earHistory.length;
+
+      // Kalibrasi Mata Terbuka Maksimal
+      if (ear > _maxEar && ear < 0.45) {
+          _maxEar = ear; 
+      }
+
+      // Tentukan Batas Kedip Dinamis
+      let blinkThreshold = _maxEar > 0 ? _maxEar * 0.85 : 0.31;
+      if (blinkThreshold < 0.29) blinkThreshold = 0.29; 
+
+      const lsText = $('lsText');
+      const lsIcon = $('lsIcon');
+
+      // 6. Logika Kedipan Berurutan
+      if (ear < blinkThreshold) { 
+        _isEyeClosed = true;
+        if (lsIcon) lsIcon.textContent = '😌';
+        if (lsText) {
+          lsText.textContent = `Buka mata Anda sekarang... (Val: ${ear.toFixed(2)})`;
+          lsText.style.color = 'var(--info)';
+        }
+      } else if (ear >= blinkThreshold && _isEyeClosed) { 
+        _blinkDetected = true;
+        _isEyeClosed = false;
+      } else {
+        if (lsIcon) lsIcon.textContent = '😐';
+        if (lsText && !_blinkDetected) {
+          lsText.textContent = `Harap Kedipkan Mata (Mata: ${ear.toFixed(2)} | Batas: ${blinkThreshold.toFixed(2)})`;
+          lsText.style.color = 'var(--gold)';
+        }
+      }
+
+      // 7. Eksekusi Pengambilan Foto
+      if (_blinkDetected && !_autoCaptured) {
+        _autoCaptured = true; 
+        if (lsIcon) lsIcon.textContent = '😉';
+        if (lsText) { 
+          lsText.textContent = 'Liveness OK! Mengambil foto...'; 
+          lsText.style.color = 'var(--success)';
+        }
+        setCamStatus('ok', '✅', 'Verifikasi Berhasil', 'Mohon tahan posisi Anda...');
+        
+        setTimeout(doCapture, 300);
+      }
       
-      // Beri jeda 300ms lalu ambil foto
-      setTimeout(doCapture, 300);
+    } catch (error) {
+      // Abaikan error seperti wajah tidak ketemu, lanjut ke frame berikutnya
+    } finally {
+      // PENTING: Buka kunci proses agar frame berikutnya bisa jalan
+      _isDetecting = false; 
+      if (!_autoCaptured) {
+        _detectLoop = requestAnimationFrame(loop);
+      }
     }
   };
   

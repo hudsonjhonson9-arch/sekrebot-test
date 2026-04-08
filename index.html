@@ -12242,9 +12242,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // Load semua data dasar secara paralel
     window._jamAbsenReady = Promise.all([
-      loadJamAbsen(),      // jam global + admin list
-      fetchJamPeriode(),   // periode khusus → langsung tersedia di tab Absen
-      loadTodayHistory(),  // riwayat hari ini
+      loadJamAbsen(),
+      fetchJamPeriode(),
+      loadUserProfile(),
+      loadTodayHistory(),
     ]).then(() => {
       // Update clock setelah semua jam siap (agar notif periode langsung benar)
       updateClock();

@@ -8436,6 +8436,7 @@ File di Google Drive juga akan dihapus.`)) return;
               $('btnAbsen').disabled = true;
               logLoaded = false;
               setTimeout(loadTodayHistory, 1500);
+              if (tg) setTimeout(() => tg.close(), 3500); // FIX: Close TG auto like success
             } else {
               showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
               setBtnL('btnAbsen', false, '🔄 Coba Lagi');
@@ -12177,6 +12178,17 @@ File di Google Drive juga akan dihapus.`)) return;
               try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (_) { }
             }
             const thumb = p.face_photo || null;
+            
+            // Tentukan Engine Type
+            let engineBadge = '';
+            if (p.face_histogram && p.face_histogram !== '') {
+               try {
+                  const arr = JSON.parse(p.face_histogram);
+                  if (arr.length === 1024 || arr.length === 512) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
+                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
+               } catch(e) {}
+            }
+
             html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
           <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:rgba(0,0,0,.3)">
             ${thumb
@@ -12186,7 +12198,7 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
-            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: ' + nip + ' · ' : ''}Terdaftar: ${tgl}</div>
+            <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: ' + nip + ' · ' : ''}Terdaftar: ${tgl}${engineBadge}</div>
           </div>
           <button onclick="resetFacePegawai('${uid}','${nama.replace(/'/g, "\'")}')"
             style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">
@@ -13074,7 +13086,17 @@ File di Google Drive juga akan dihapus.`)) return;
         const list = Array.isArray(data) ? data : (data.data || []);
 
         window._mejaUserMap = {};
-        _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
+        _allFaceDescriptors = list.filter(f => {
+          const rawDesc = f.face_histogram || f.descriptor;
+          if (!rawDesc) return false;
+          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+          // Filter out incompatible models
+          const isHuman = desc.length === 1024 || desc.length === 512;
+          const isFaceApi = desc.length === 128;
+          if (window._aiEngine === 'human' && !isHuman) return false;
+          if (window._aiEngine !== 'human' && !isFaceApi) return false;
+          return true;
+        }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
           const tid = String(f.telegram_id || f.id || '');
@@ -13448,6 +13470,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
       // Jika orang yang sama di-scan lagi dalam waktu kurang dari 20 detik, abaikan.
       if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
           console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
+          setTimeout(() => { _autoCaptured = false; }, 2000); // FIX: Memastikan loop deteksi bisa lanjut mengecek orang selanjutnya
           return;
       }
 

@@ -13514,7 +13514,6 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
     async function generateRekapPDF() {
-      // 1. Validasi Awal
       if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
@@ -13524,18 +13523,13 @@ File di Google Drive juga akan dihapus.`)) return;
       const originalHtml = btn.innerHTML;
 
       try {
-        // UI: Loading State
         btn.disabled = true;
         btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
 
         const { jsPDF } = window.jspdf;
         if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
 
-        const doc = new jsPDF({
-          orientation: 'p',
-          unit: 'mm',
-          format: [215, 330]
-        });
+        const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: [215, 330] });
 
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -13560,39 +13554,27 @@ File di Google Drive juga akan dihapus.`)) return;
               }
             });
           }
-        } catch (e) {
-          console.warn("Gagal load paraf, lanjut tanpa paraf.");
-        }
+        } catch (e) { console.warn("Gagal load paraf, lanjut tanpa paraf."); }
 
         const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
-
-        // Tambahkan tubel ke dalam stats
         const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tubel: 0, tanpaBerita: 0, terlambat: 0 };
 
-        // 3. Update Table Body: Tambahkan Jabatan & Keterangan
         const tableBody = filteredPegawai.map((p, i) => {
           const row = p.dataExcelRow || {};
           const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
           const jamP = row['Jam Pulang'] || p.jamPulang || '—';
-
-          // Ambil keterangan dari berbagai sumber
           const logKet = p.logKet || p.keterangan || row['Keterangan'] || '';
-          const statusPegawai = p.status || '';
-          const jabatanPegawai = p.jabatan || '';
           
-          // Cek apakah ada kata TUBEL
-          const isTubel = logKet.toUpperCase().includes('TUBEL') || 
-                          statusPegawai.toUpperCase() === 'TUBEL' || 
-                          jabatanPegawai.toUpperCase().includes('TUBEL');
+          // Membaca status TUBEL dari properti p (yg diset dari computeRekap atau jamMap harian)
+          const isTubel = (p.tubel > 0) || p.isTubel;
 
-          // Logika Status & Keterangan
           let ketStatus = '';
           let finalKet = '';
 
           if (isTubel) { 
             ketStatus = 'TUBEL'; 
             stats.tubel++; 
-            finalKet = 'TUBEL'; // Tulis TUBEL saja di PDF
+            finalKet = 'TUBEL'; 
           }
           else if (p.sakit > 0) { 
             ketStatus = 'SAKIT'; 
@@ -13633,7 +13615,6 @@ File di Google Drive juga akan dihapus.`)) return;
           ];
         });
 
-        // 4. Proses Tabel
         doc.autoTable({
           startY: 60,
           margin: { top: 20, left: 10, right: 10, bottom: 20 },
@@ -13677,10 +13658,7 @@ File di Google Drive juga akan dihapus.`)) return;
           },
           didDrawPage: (data) => {
             if (data.pageNumber === 1) {
-              try {
-                doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-              } catch (e) { }
-
+              try { doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST'); } catch (e) { }
               doc.setFont('times', 'bold');
               doc.setFontSize(14);
               doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
@@ -13690,12 +13668,10 @@ File di Google Drive juga akan dihapus.`)) return;
               doc.setFont('times', 'normal');
               doc.setFontSize(12);
               doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
-
               doc.setLineWidth(0.7);
               doc.line(15, 37, pageWidth - 15, 37);
               doc.setLineWidth(0.2);
               doc.line(15, 38, pageWidth - 15, 38);
-
               doc.setFontSize(11);
               doc.setFont('times', 'bold');
               doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
@@ -13705,14 +13681,9 @@ File di Google Drive juga akan dihapus.`)) return;
           }
         });
 
-        // 5. Statistik Kehadiran & Footer
         let currentY = doc.lastAutoTable.finalY + 10;
-        if (currentY + 60 > pageHeight) {
-          doc.addPage();
-          currentY = 20;
-        }
+        if (currentY + 60 > pageHeight) { doc.addPage(); currentY = 20; }
 
-        // Box Statistik (Ditambahkan Tubel)
         doc.setFont('times', 'bold');
         doc.setFontSize(10);
         doc.text('Ringkasan Kehadiran:', 15, currentY);
@@ -13722,13 +13693,10 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.text(statText, 15, currentY + 6);
 
         let footerY = currentY + 20;
-        if (footerY + 45 > pageHeight) {
-          doc.addPage();
-          footerY = 25;
-        }
+        if (footerY + 45 > pageHeight) { doc.addPage(); footerY = 25; }
 
         doc.setFontSize(10);
-        const signatureX = pageWidth - 60; // Posisi di sisi kanan
+        const signatureX = pageWidth - 60;
         doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
         doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
         doc.text('Kepala Badan', signatureX, footerY + 11, { align: 'center' });
@@ -13744,7 +13712,6 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.setFont('times', 'normal');
         doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
 
-        // 6. Simpan & Kirim
         const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
         doc.save(fileName);
 
@@ -13761,12 +13728,9 @@ File di Google Drive juga akan dihapus.`)) return;
           })
         });
         showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
-
       } catch (e) {
-        console.error('PDF Generation Error:', e);
         showRekapToast('fail', '❌ Gagal membuat PDF: ' + (e.message || 'Error tidak diketahui'));
       } finally {
-        // Reset Button
         btn.disabled = false;
         btn.innerHTML = originalHtml;
       }

@@ -7627,7 +7627,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
-    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js';
+    const FACE_API_CDN = 'https://unpkg.com/@vladmandic/face-api/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
@@ -7639,10 +7639,20 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadFaceApiScript() {
       if (window.faceapi) { _faceApiLoaded = true; return; }
-      await new Promise((resolve, reject) => {
+      return new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = FACE_API_CDN;
-        s.onload = resolve; s.onerror = reject;
+        s.async = false; // Execute in order
+        s.onload = () => {
+          // Double check global namespace
+          if (window.faceapi || typeof faceapi !== 'undefined') {
+            _faceApiLoaded = true;
+            resolve();
+          } else {
+            reject(new Error('Namespace faceapi tidak ditemukan setelah script dimuat'));
+          }
+        };
+        s.onerror = () => reject(new Error('Gagal mengunduh script face-api.js dari CDN'));
         document.head.appendChild(s);
       });
     }

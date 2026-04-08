@@ -5710,7 +5710,10 @@
         <div class="superadmin-section meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
           <div class="meja-badge">👑 Super Admin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
-          <div class="meja-sub">Scan wajah pegawai untuk absensi manual dari perangkat ini.</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+             <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
+             <div id="aiEngineBadge" style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">AI: Detecting...</div>
+          </div>
           <div class="meja-status-bar" id="mejaStatusBar">
             <div class="meja-status-dot" id="mejaStatusDot"></div>
             <div style="flex:1">
@@ -7640,6 +7643,17 @@ File di Google Drive juga akan dihapus.`)) return;
     let _humanLoaded = false;
     let HumanInstance = null;
 
+    function _refreshAiBadge() {
+      const b = $('aiEngineBadge');
+      if (!b) return;
+      const isHuman = window._aiEngine === 'human';
+      const eng = isHuman ? 'Human AI' : 'Face-API';
+      const dim = isHuman ? '1024-dim' : '128-dim';
+      b.textContent = `Mesin: ${eng} (${dim})`;
+      b.style.color = 'var(--info)';
+      b.style.opacity = '1';
+    }
+
     async function _loadFaceApiScript() {
       if (window.faceapi) { _faceApiLoaded = true; return; }
       return new Promise((resolve, reject) => {
@@ -7715,6 +7729,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
           _updateModelProgress(2, 80);
           _modelsReady = true;
+          _refreshAiBadge();
         } else {
           // DEFAULT: Face-API (vladmandic fork for better support)
           await _loadFaceApiScript();
@@ -7732,8 +7747,19 @@ File di Google Drive juga akan dihapus.`)) return;
             await nets[i].net.loadFromUri(FACE_API_MODELS);
             _updateModelProgress(i, 30);
           }
+
+          // ── PRE-WARM FACE-API ──
+          console.log('[AI] Menghangatkan Face-API (pre-warm)...');
+          try {
+            const dummyCanvas = document.createElement('canvas');
+            dummyCanvas.width = 100; dummyCanvas.height = 100;
+            if (window.faceapi) {
+              await window.faceapi.detectSingleFace(dummyCanvas).withFaceLandmarks().withFaceDescriptor();
+            }
+          } catch (e) { console.warn('[AI] Pre-warm skipped:', e.message); }
           
           _modelsReady = true;
+          _refreshAiBadge();
           _updateModelProgress(2, 10);
         }
 

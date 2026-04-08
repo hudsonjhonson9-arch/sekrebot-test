@@ -6294,12 +6294,22 @@
 
     /* ════ TELEGRAM ════ */
     const tg = window.Telegram?.WebApp;
-    const tgUser = tg?.initDataUnsafe?.user || {};
+    let tgUser = tg?.initDataUnsafe?.user || {};
     if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
-    const MY_ID = tgUser.id ? Number(tgUser.id) : null;
-    // IS_ADMIN dievaluasi ulang setelah ADMIN_IDS dimuat dari server
-    let IS_ADMIN = false; // diupdate oleh loadJamAbsen()
-    let adminLoaded = false; // guard: cegah reload semua fungsi admin tiap tab dibuka
+    let MY_ID = tgUser.id ? Number(tgUser.id) : null;
+
+    // Helper: Tunggu Telegram ID siap (retry 10x tiap 200ms)
+    async function waitForMyId(onReady) {
+      for (let i = 0; i < 15; i++) {
+        if (MY_ID) { onReady(MY_ID); return; }
+        // Cek ulang tgUser jika sebelumnya kosong
+        tgUser = tg?.initDataUnsafe?.user || {};
+        MY_ID = tgUser.id ? Number(tgUser.id) : null;
+        if (!MY_ID) await new Promise(r => setTimeout(r, 200));
+      }
+      // Fail-safe: jika tetap tidak ada, panggil saja (mungkin mode browser biasa)
+      onReady(MY_ID);
+    }
 
     /* ════ KONSTANTA ════ */
     const TZ = 'Asia/Makassar';
@@ -7289,12 +7299,12 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Extract descriptor from dataUrl (dengan retry 3x) ──
     async function getDescriptorFromDataUrl(dataUrl) {
-      if (!dataUrl || !window.faceapi) return null;
+      if (!dataUrl) return null;
       const extract = async () => {
         return new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          const timeout = setTimeout(() => resolve(null), 12000); // 12 detik
+          const timeout = setTimeout(() => resolve(null), 15000); // 15 detik
           img.onload = async () => {
             clearTimeout(timeout);
             const cnv = document.createElement('canvas');
@@ -7382,23 +7392,24 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function loadFaceFromServer() {
-      const uid = String(MY_ID || '');
-      if (!uid || uid === 'null' || uid === '') return;
-      try {
-        const res = await apiFetch(`${P.faceGet}?user_id=${uid}`, { method: 'GET' });
-        if (!res || !res.ok) return;
-        const json = await res.json();
-        // n8n returns 'face_photo' but the frontend expects 'dataUrl' for consistency
-        const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
-        const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
-        const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
+      waitForMyId(async (uid) => {
+        if (!uid) return;
+        const uidStr = String(uid);
+        try {
+          const res = await apiFetch(`${P.faceGet}?user_id=${uidStr}`, { method: 'GET' });
+          if (!res || !res.ok) return;
+          const json = await res.json();
+          const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
+          const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
+          const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
 
-        if (photo) {
-          _writeFaceRefLocal(uid, { dataUrl: photo, descriptor, savedAt });
-          updateProfilFaceUI();
-          updateFaceRegUI();
-        }
-      } catch (_) { }
+          if (photo) {
+            _writeFaceRefLocal(uidStr, { dataUrl: photo, descriptor, savedAt });
+            updateProfilFaceUI();
+            updateFaceRegUI();
+          }
+        } catch (_) { }
+      });
     }
 
     // ── Euclidean distance between two 128-d descriptors ──
@@ -7454,16 +7465,18 @@ File di Google Drive juga akan dihapus.`)) return;
       const thumb = $('faceRegThumb'), thumbEmpty = $('faceRegThumbEmpty');
       const status = $('faceRegStatus'), sub = $('faceRegSub');
       const btn = $('btnRegisterFace');
-      const hasDescriptor = ref && ref.descriptor && ref.descriptor.length === 128;
+      const descLen = (ref && ref.descriptor) ? (Array.isArray(ref.descriptor) ? ref.descriptor.length : 0) : 0;
+      const hasDescriptor = descLen >= 128; // Mendukung 128, 512, 1024
+      const isHuman = descLen >= 512;
       if (ref) {
         if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
         else { thumb.style.display = 'none'; }
         if (thumbEmpty) thumbEmpty.style.display = 'none';
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-        status.textContent = hasDescriptor ? '✅ Data Wajah AI Tersimpan' : '⚠️ Perlu Didaftarkan Ulang';
+        status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
         status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
-        sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI aktif` : `Format lama — daftarkan ulang untuk AI`;
+        sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
         btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
       } else {
         thumb.style.display = 'none';
@@ -7497,16 +7510,18 @@ File di Google Drive juga akan dihapus.`)) return;
       const sub = $('profilFaceSub');
       const btn = $('btnProfilRegFace');
       if (!status) return;
-      const hasDescriptor = ref && ref.descriptor && ref.descriptor.length === 128;
+      const descLen = (ref && ref.descriptor) ? (Array.isArray(ref.descriptor) ? ref.descriptor.length : 0) : 0;
+      const hasDescriptor = descLen >= 128;
+      const isHuman = descLen >= 512;
       if (ref) {
         if (thumb) { if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; } }
         if (empty) empty.style.display = 'none';
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-        status.textContent = hasDescriptor ? '✅ Data Wajah AI Tersimpan' : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
+        status.textContent = hasDescriptor ? (isHuman ? '🛡️ Face AI: Human' : '✅ Data Wajah AI Tersimpan') : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
         status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
         if (sub) sub.textContent = hasDescriptor
-          ? `Didaftarkan: ${tgl} · Face AI aktif untuk pengenalan absen`
+          ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Advanced' : 'Standard'} aktif`
           : `Daftarkan ulang untuk mengaktifkan AI Face Recognition`;
         if (btn) btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
       } else {
@@ -12308,8 +12323,9 @@ File di Google Drive juga akan dihapus.`)) return;
             if (histData && histData !== '' && histData !== '[]') {
               try {
                 const arr = typeof histData === 'string' ? JSON.parse(histData) : histData;
-                if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
-                else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
+                const dLen = Array.isArray(arr) ? arr.length : 0;
+                if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
+                else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
               } catch (e) { }
             }
 
@@ -12589,8 +12605,9 @@ File di Google Drive juga akan dihapus.`)) return;
           if (histD && histD !== '' && histD !== '[]') {
             try {
               const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
-              if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-              else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+              const dLen = Array.isArray(arr) ? arr.length : 0;
+              if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+              else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
             } catch (e) { }
           }
 
@@ -13224,9 +13241,10 @@ File di Google Drive juga akan dihapus.`)) return;
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
           const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+          const dLen = Array.isArray(desc) ? desc.length : 0;
           // Filter out incompatible models
-          const isHuman = desc.length === 1024 || desc.length === 512;
-          const isFaceApi = desc.length === 128;
+          const isHuman = dLen >= 512;
+          const isFaceApi = dLen === 128;
           if (window._aiEngine === 'human' && !isHuman) return false;
           if (window._aiEngine !== 'human' && !isFaceApi) return false;
           return true;

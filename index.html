@@ -7400,7 +7400,8 @@ File di Google Drive juga akan dihapus.`)) return;
     const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
-    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/gh/vladmandic/human-models/models/';
+    // Model ditarik dari JSDelivr (lebih cepat daripada GitHub langsung)
+    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
     
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
     let _faceApiLoaded = false;
@@ -7429,53 +7430,75 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Terpadu: Muat Model AI (face-api atau Human) ──
     async function loadAIModels() {
-      if (_modelsReady) return true;
-      if (_modelLoading) {
-        while (_modelLoading) await new Promise(r => setTimeout(r, 200));
-        return _modelsReady;
-      }
-      _modelLoading = true;
-      try {
-        if (window._aiEngine === 'human') {
-          await _loadHumanScript();
-          const config = {
-            face: {
-              enabled: true,
-              detector: { enabled: true, rotation: true },
-              mesh: { enabled: true },
-              iris: { enabled: true },
-              description: { enabled: true },
-              liveness: { enabled: true },
-              antispoof: { enabled: true }
-            },
-            body: { enabled: false }, hand: { enabled: false }, object: { enabled: false }, gesture: { enabled: false },
-            modelBasePath: HUMAN_MODELS
-          };
-          HumanInstance = new window.Human(config);
-          _updateModelProgress(0, 10);
-          await HumanInstance.load();
-          _updateModelProgress(2, 90);
-          _modelsReady = true;
-        } else {
-          // Default: face-api.js
-          await _loadFaceApiScript();
-          _updateModelProgress(0, 10);
-          await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
-          _updateModelProgress(1, 10);
-          await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
-          _updateModelProgress(2, 5);
-          await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
-          _modelsReady = true;
-          _updateModelProgress(2, 34);
-        }
-        console.log(`[AI Engine] ${window._aiEngine} ready`);
-      } catch (e) {
-        console.error('AI load error:', e);
-        _modelsReady = false;
-      }
-      _modelLoading = false;
-      return _modelsReady;
+  if (_modelsReady) return true;
+  if (_modelLoading) return false;
+  _modelLoading = true;
+
+  try {
+    const engine = window._aiEngine || 'faceapi';
+    console.log(`[AI] Memuat Engine: ${engine}...`);
+
+    if (engine === 'human') {
+      await _loadHumanScript();
+      
+      const config = {
+        backend: 'webgl', // Paksa pakai GPU agar ringan
+        modelBasePath: HUMAN_MODELS,
+        face: {
+          enabled: true,
+          detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
+          mesh: { enabled: true, modelPath: 'facemesh.json' },
+          iris: { enabled: false }, // Matikan fitur tak perlu
+          description: { enabled: true, modelPath: 'faceres.json' },
+          liveness: { enabled: true }
+        },
+        body: { enabled: false },
+        hand: { enabled: false },
+        object: { enabled: false },
+        gesture: { enabled: false }
+      };
+
+      HumanInstance = new window.Human(config);
+      _updateModelProgress(0, 20);
+      
+      // Proses download model AI (Bagian yang sering gagal)
+      await HumanInstance.load();
+      await HumanInstance.warmup(); // Pemanasan engine
+      
+      _updateModelProgress(2, 80);
+      _modelsReady = true;
+    } else {
+      // DEFAULT: Face-API
+      await _loadFaceApiScript();
+      _updateModelProgress(0, 30);
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
+      _updateModelProgress(1, 30);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
+      _modelsReady = true;
+      _updateModelProgress(2, 40);
     }
+
+    console.log(`[AI] ${engine} Berhasil Dimuat.`);
+    return true;
+
+  } catch (e) {
+    console.error('[AI] Gagal memuat engine:', e);
+    
+    // AUTO FALLBACK: Jika Human gagal, paksa balik ke Face-API
+    if (window._aiEngine === 'human') {
+      console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
+      window._aiEngine = 'faceapi';
+      _modelLoading = false;
+      return await loadAIModels(); 
+    }
+    
+    _modelsReady = false;
+    _modelLoading = false;
+    alert('Gagal memuat model AI. Pastikan koneksi internet stabil dan reload halaman.');
+    return false;
+  }
+}
 
     // Proxy for backward compatibility if any
     async function loadFaceApiModels() { return loadAIModels(); }

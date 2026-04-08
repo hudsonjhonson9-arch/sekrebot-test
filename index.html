@@ -13413,9 +13413,32 @@ async function generateRekapPDF() {
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
     // 4. Handler Pencocokan & Cek Status (AJAX ke Webhook)
-  async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+  // Tambahkan dua variabel ini di bagian paling atas script (di luar fungsi) 
+// agar tracker tetap tersimpan selama aplikasi terbuka.
+let _lastMejaId = null;
+let _lastMejaTime = 0;
+
+async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+      const sekarang = Date.now();
+
+      // 1. SISTEM ANTI-SPAM (COOLDOWN)
+      // Jika orang yang sama di-scan lagi dalam waktu kurang dari 20 detik, abaikan.
+      if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
+          console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
+          return;
+      }
+
+      // 2. LOCK PROSES
       if (window._mejaProcessing) return;
       window._mejaProcessing = true;
+
+      // 3. STOP DETEKSI SEGERA
+      // Matikan deteksi wajah agar tidak menumpuk saat proses kirim data
+      stopDetectLoop();
+
+      // Update tracker terakhir
+      _lastMejaId = telegramId;
+      _lastMejaTime = sekarang;
 
       const overlay = $('mejaOverlayResult');
       overlay.style.display = 'flex';
@@ -13438,11 +13461,9 @@ async function generateRekapPDF() {
               window._mejaProcessing = false;
               _autoCaptured = false;
               _captureData = null;
-              _blinkDetected = false;
               
               const vid = $('camVideo');
               if (vid && vid.paused) vid.play().catch(()=>{});
-
               startDetectLoop();
           }, 3000);
           return;
@@ -13483,20 +13504,17 @@ async function generateRekapPDF() {
         const d = await res.json().catch(() => ({}));
 
         if (res.ok && d.ok !== false && d.validasi?.is_valid !== false) {
-          // BERHASIL ABSEN BARU
           const jenis = d.jenis_absen || d.validasi?.jenis_absen || 'ABSEN BERHASIL';
           const ismasuk = jenis.toUpperCase().includes('MASUK');
           if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
           
           $('moIcon').textContent = '✅';
           $('moStatus').textContent = jenis.toUpperCase();
-          $('moStatus').style.color = '#4ade80'; // Success
+          $('moStatus').style.color = '#4ade80';
           $('moStatus').style.background = 'rgba(74,222,128,0.2)';
           $('moDetail').textContent = d.validasi?.keterangan || 'Data tercatat di server.';
           _setMejaStatus('active', '✅', `${user.nama} — ${jenis}`, 'Siap scan berikutnya...');
-          
         } else {
-          // GAGAL ATAU SUDAH ABSEN
           let errMsg = d.message || d.error || 'Ditolak Server';
           if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan; 
           
@@ -13516,30 +13534,25 @@ async function generateRekapPDF() {
         $('moStatus').textContent = 'KONEKSI TERPUTUS';
         $('moStatus').style.color = '#f87171';
         $('moStatus').style.background = 'rgba(248,113,113,0.2)';
-        $('moDetail').textContent = 'Gagal menghubungi server absen n8n';
+        $('moDetail').textContent = 'Gagal menghubungi server absen';
         _mejaCnt.gagal++;
         _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
       }
 
       _updateMejaCnt();
 
-      // Tahan overlay 3 detik agar admin dan pegawai bisa membaca, lalu reset otomatis
       setTimeout(() => {
         overlay.style.display = 'none';
         window._mejaProcessing = false;
         _autoCaptured = false;
         _captureData = null;
-        _blinkDetected = false;
         setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
         
-        // Browser mobile (iOS/Android) sering mem-pause video saat tertutup overlay penuh
-        // Pastikan video diputar paksa kembali sebelum mulai loop
         const vid = $('camVideo');
         if (vid && vid.paused) {
             vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
         }
-
-        startDetectLoop(); // Lanjut scan berikutnya
+        startDetectLoop(); 
       }, 3500);
     }
 

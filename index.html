@@ -12181,11 +12181,12 @@ File di Google Drive juga akan dihapus.`)) return;
             
             // Tentukan Engine Type
             let engineBadge = '';
-            if (p.face_histogram && p.face_histogram !== '') {
+            const histData = p.face_histogram || p.descriptor;
+            if (histData && histData !== '' && histData !== '[]') {
                try {
-                  const arr = JSON.parse(p.face_histogram);
-                  if (arr.length === 1024 || arr.length === 512) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
-                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
+                  const arr = typeof histData === 'string' ? JSON.parse(histData) : histData;
+                  if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
+                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
                } catch(e) {}
             }
 
@@ -12461,11 +12462,12 @@ File di Google Drive juga akan dihapus.`)) return;
           const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
           
           let engineBadge = '';
-          if (faceData && faceData.face_histogram && faceData.face_histogram !== '') {
+          const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
+          if (histD && histD !== '' && histD !== '[]') {
                try {
-                  const arr = JSON.parse(faceData.face_histogram);
-                  if (arr.length === 1024 || arr.length === 512) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:2px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+                  const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
+                  if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
                } catch(e) {}
           }
 

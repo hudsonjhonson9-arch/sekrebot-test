@@ -5287,7 +5287,10 @@
       <div class="profil-hero-card">
         <div class="profil-avatar-lg" id="profilAvatarLg">?</div>
         <div class="profil-info">
-          <div class="profil-nama" id="profilNama">—</div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start">
+            <div class="profil-nama" id="profilNama">—</div>
+            <button onclick="loadUserProfile(true)" style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8" title="Segarkan Data Profil">🔄</button>
+          </div>
           <div class="profil-jabatan" id="profilJabatan">—</div>
           <div class="profil-nip" id="profilNip">NIP —</div>
           <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">
@@ -6294,23 +6297,56 @@
 
     /* ════ TELEGRAM ════ */
     const tg = window.Telegram?.WebApp;
-    let tgUser = tg?.initDataUnsafe?.user || {};
-    if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
-    let MY_ID = tgUser.id ? Number(tgUser.id) : null;
+    let tgUser = {};
+    let MY_ID = null;
+
+    // 1. Prioritas Utama: Ambil dari Cache Logal (Instant pada Refresh)
+    try {
+      const cachedId = localStorage.getItem('tg_user_id_v5');
+      const cachedUser = localStorage.getItem('tg_user_obj_v5');
+      if (cachedId) {
+        MY_ID = Number(cachedId);
+        if (cachedUser) tgUser = JSON.parse(cachedUser);
+      }
+    } catch (e) { }
+
+    // 2. Sinkronkan dengan data asli Telegram
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      tg.setHeaderColor('#0a1628');
+      tg.setBackgroundColor('#0a1628');
+      const cur = tg.initDataUnsafe?.user;
+      if (cur?.id) {
+        MY_ID = Number(cur.id);
+        tgUser = cur;
+        try {
+          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          localStorage.setItem('tg_user_obj_v5', JSON.stringify(tgUser));
+        } catch (e) { }
+      }
+    }
+
     let IS_ADMIN = false;
     let adminLoaded = false;
 
-    // Helper: Tunggu Telegram ID siap (retry 15x tiap 200ms)
-    function waitForMyId() {
-      return new Promise(async (resolve) => {
-        for (let i = 0; i < 20; i++) {
-          if (MY_ID) { resolve(MY_ID); return; }
-          tgUser = tg?.initDataUnsafe?.user || {};
-          MY_ID = tgUser.id ? Number(tgUser.id) : null;
-          if (!MY_ID) await new Promise(r => setTimeout(r, 250));
+    // Helper: Tunggu Telegram ID siap (tapi sekarang instan jika ada cache)
+    async function waitForMyId() {
+      if (MY_ID) return Number(MY_ID);
+      for (let i = 0; i < 15; i++) {
+        const cur = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        if (cur?.id) {
+          MY_ID = Number(cur.id);
+          tgUser = cur;
+          try {
+            localStorage.setItem('tg_user_id_v5', String(MY_ID));
+            localStorage.setItem('tg_user_obj_v5', JSON.stringify(tgUser));
+          } catch (e) { }
+          return MY_ID;
         }
-        resolve(MY_ID);
-      });
+        await new Promise(r => setTimeout(r, 200));
+      }
+      return null;
     }
 
     /* ════ KONSTANTA ════ */
@@ -6574,26 +6610,59 @@
 
     /* ════ USER PROFILE ════ */
     let userProfile = null;
-    async function loadUserProfile() {
+    let _profileLoading = false;
+
+    async function loadUserProfile(isManual = false) {
+      if (_profileLoading) return;
+      _profileLoading = true;
       const uid = await waitForMyId();
-      if (!uid) { setUserFallback(); return; }
-      try {
-        const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const json = await res.json();
-        const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
-        if (d && (d.nama || d.Nama)) {
-          userProfile = {
-            nama: d.nama || d.Nama || '',
-            jabatan: d.jabatan || d.Jabatan || '',
-            nip: d.nip || d.NIP || '',
-            username: d.username || d.Username || tgUser.username || '',
-            status: d.status || d.Status || 'AKTIF',
-            role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, '')
-          };
-          applyProfile();
-        } else setUserFallback();
-      } catch { setUserFallback(); }
+      if (!uid) { _profileLoading = false; setUserFallback(); return; }
+
+      // Tampilkan loading jika manual refresh
+      if (isManual) {
+        setT('userJabatan', 'Memuat...');
+        setT('ketJabatan', 'Memuat...');
+      }
+
+      let attempt = 0;
+      const maxAttempts = 3;
+
+      while (attempt < maxAttempts) {
+        attempt++;
+        try {
+          const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
+          if (!res.ok) throw new Error('Network Error');
+          const json = await res.json();
+          const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
+
+          if (d && (d.nama || d.Nama)) {
+            userProfile = {
+              nama: d.nama || d.Nama || '',
+              jabatan: d.jabatan || d.Jabatan || '',
+              nip: d.nip || d.NIP || '',
+              username: d.username || d.Username || tgUser.username || '',
+              status: d.status || d.Status || 'AKTIF',
+              role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
+              tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
+              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
+            };
+            applyProfile();
+            _profileLoading = false;
+            return; // Berhasil
+          } else {
+            // Data kosong atau { ok: false }
+            if (attempt === maxAttempts) throw new Error('User not found');
+            await new Promise(r => setTimeout(r, 600)); // Tunggu sebentar sebelum coba lagi
+          }
+        } catch (err) {
+          console.warn(`[Profile] Gagal memuat (Attempt ${attempt}/${maxAttempts}):`, err.message);
+          if (attempt === maxAttempts) break;
+          await new Promise(r => setTimeout(r, 600));
+        }
+      }
+
+      _profileLoading = false;
+      setUserFallback();
     }
     function fullName() { return tgUser.first_name ? `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}` : 'Pengguna'; }
     function applyProfile() {
@@ -6834,6 +6903,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function setT(id, v) { const e = $(id); if (e) e.textContent = v; }
+    // Pemuatan data profil (sekarang akan lgsg jalan jika ada cache)
     loadUserProfile();
 
     /* ════ RIWAYAT HARI INI ════ */
@@ -7338,6 +7408,7 @@ File di Google Drive juga akan dihapus.`)) return;
         nama: nama || 'Pegawai',
         foto_base64: dataUrl,
         face_descriptor: descriptorArray,
+        face_model: window._aiEngine || 'faceapi',
         saved_at: savedAt || new Date().toISOString(),
         savedBy: MY_ID,
         savedByName: (tgUser && tgUser.first_name) || 'System'
@@ -7407,9 +7478,10 @@ File di Google Drive juga akan dihapus.`)) return;
         const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
+        const faceModel = json.face_model || (descriptor && JSON.parse(descriptor).length >= 512 ? 'human' : 'faceapi');
 
         if (photo) {
-          _writeFaceRefLocal(uidStr, { dataUrl: photo, descriptor, savedAt });
+          _writeFaceRefLocal(uidStr, { dataUrl: photo, descriptor, savedAt, faceModel });
           updateProfilFaceUI();
           updateFaceRegUI();
         }
@@ -7470,8 +7542,8 @@ File di Google Drive juga akan dihapus.`)) return;
       const status = $('faceRegStatus'), sub = $('faceRegSub');
       const btn = $('btnRegisterFace');
       const descLen = (ref && ref.descriptor) ? (Array.isArray(ref.descriptor) ? ref.descriptor.length : 0) : 0;
-      const hasDescriptor = descLen >= 128; // Mendukung 128, 512, 1024
-      const isHuman = descLen >= 512;
+      const hasDescriptor = descLen >= 128;
+      const isHuman = ref?.faceModel === 'human' || descLen >= 512;
       if (ref) {
         if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
         else { thumb.style.display = 'none'; }
@@ -7584,15 +7656,17 @@ File di Google Drive juga akan dihapus.`)) return;
           await _loadHumanScript();
 
           const config = {
-            backend: 'webgl', // Paksa pakai GPU agar ringan
+            backend: 'webgl',
             modelBasePath: HUMAN_MODELS,
+            filter: { enabled: true, equalization: true },
             face: {
               enabled: true,
               detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
-              mesh: { enabled: true, modelPath: 'facemesh.json' },
-              iris: { enabled: false }, // Matikan fitur tak perlu
-              description: { enabled: true, modelPath: 'faceres.json' },
-              liveness: { enabled: true }
+              mesh: { enabled: false }, // DIET: Matikan mesh 3D
+              iris: { enabled: false }, // DIET: Matikan deteksi mata detail
+              description: { enabled: true, modelPath: 'faceres.json' }, // WAJIB untuk rekognisi
+              emotion: { enabled: false },
+              liveness: { enabled: false } // DIET: Liveness standar cukup
             },
             body: { enabled: false },
             hand: { enabled: false },
@@ -8041,8 +8115,26 @@ File di Google Drive juga akan dihapus.`)) return;
       // 2. Handle Continuous Scan (Meja Absen)
       if (window._isMejaMode) {
         if (_allFaceDescriptors.length > 0 && descriptor) {
-          const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-          const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
+          let bestMatch = { label: 'unknown', distance: 1.0 };
+
+          if (window._aiEngine === 'human') {
+            // Manual Matching for 1024-d / 512-d
+            let minDict = 999;
+            for (const item of _allFaceDescriptors) {
+              const dist = euclideanDistance(item.descriptor, descriptor);
+              if (dist < minDict) {
+                minDict = dist;
+                bestMatch = { label: item.id, distance: dist };
+              }
+            }
+            // Threshold for Human is usually around 0.4 - 0.5 depending on quantization
+            if (minDict > 0.55) bestMatch.label = 'unknown';
+          } else {
+            // Face-API Standard Matcher
+            const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+            const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+            bestMatch = { label: res.label, distance: res.distance };
+          }
 
           if (bestMatch.label !== 'unknown') {
             _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
@@ -12606,14 +12698,22 @@ File di Google Drive juga akan dihapus.`)) return;
           const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
 
           let engineBadge = '';
-          const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
-          if (histD && histD !== '' && histD !== '[]') {
-            try {
-              const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
-              const dLen = Array.isArray(arr) ? arr.length : 0;
-              if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-              else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-            } catch (e) { }
+          const faceModel = (faceData && faceData.face_model) || u.face_model || null;
+          if (faceModel === 'human') {
+            engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+          } else if (faceModel === 'faceapi') {
+            engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+          } else {
+            // Fallback to length check if column is missing
+            const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
+            if (histD && histD !== '' && histD !== '[]') {
+              try {
+                const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
+                const dLen = Array.isArray(arr) ? arr.length : 0;
+                if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+                else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+              } catch (e) { }
+            }
           }
 
           const faceS = hasFace ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
@@ -13247,11 +13347,13 @@ File di Google Drive juga akan dihapus.`)) return;
           if (!rawDesc) return false;
           const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
           const dLen = Array.isArray(desc) ? desc.length : 0;
-          // Filter out incompatible models
-          const isHuman = dLen >= 512;
-          const isFaceApi = dLen === 128;
-          if (window._aiEngine === 'human' && !isHuman) return false;
-          if (window._aiEngine !== 'human' && !isFaceApi) return false;
+          
+          // Cross-model matching logic:
+          // Jika data di DB adalah Face-API (128), tapi engine sekarang Human -> Sembunyikan (atau tampilkan badge)
+          // Kecuali jika kita implementasi auto-convert (future improvement)
+          const isHumanData = (f.face_model === 'human' || dLen >= 512);
+          if (window._aiEngine === 'human' && !isHumanData) return false;
+          if (window._aiEngine !== 'human' && isHumanData) return false;
           return true;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
@@ -13261,7 +13363,12 @@ File di Google Drive juga akan dihapus.`)) return;
             nama: f.nama || f.Nama || tid,
             nip: f.nip || f.NIP || '-'
           };
-          return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+          // Bridge untuk Human (Manual Match) vs Face-API (LabeledFaceDescriptors)
+          if (window._aiEngine === 'human') {
+            return { id: tid, descriptor: desc };
+          } else {
+            return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+          }
         });
 
         if (!_allFaceDescriptors.length) {

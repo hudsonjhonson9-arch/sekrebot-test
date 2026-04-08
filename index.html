@@ -7661,28 +7661,35 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Loop deteksi wajah (rAF) ── */
     /* ════ ENHANCED LIVENESS SYSTEM ════ */
-let _blinkCount = 0;
+// Variabel global untuk liveness
+let _blinkDetected = false;
 let _isEyeClosed = false;
-let _lastLivenessAction = Date.now();
-let _headMovementDetected = false;
-let _initialNosePos = null;
+let _autoCaptured = false;
 
 function startDetectLoop() {
   const vid = $('camVideo');
   const wrap = $('camVideoWrap');
   
+  // Reset state saat kamera baru dibuka
   _blinkDetected = false;
-  _blinkCount = 0;
   _isEyeClosed = false;
+  _autoCaptured = false;
+  
+  // Variabel untuk Kalibrasi Mata Dinamis
+  let _maxEar = 0;
+  let _earHistory = [];
 
   const loop = async () => {
+    // Berhenti jika overlay ditutup
     if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
     _detectLoop = requestAnimationFrame(loop);
+    
+    // Jangan lanjut deteksi jika sudah mau ambil foto
     if (_autoCaptured) return;
 
-    // 1. Deteksi wajah dengan opsi yang lebih sensitif
+    // 1. Deteksi Wajah & Landmark (Lebih sensitif: minConfidence 0.5)
     const detection = await faceapi
-      .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })) 
+      .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
       .withFaceLandmarks();
 
     if (!detection) {
@@ -7694,26 +7701,22 @@ function startDetectLoop() {
     const box = detection.detection.box;
     const vidW = vid.videoWidth;
     
-    // --- TINGKATKAN LOGIKA JARAK (DISTANCE) ---
-    // Di foto Anda, wajah sudah besar. Kita turunkan syarat minimum lebar wajah
-    // dari 0.25 (25%) menjadi 0.18 (18%) agar tidak gampang dibilang "Terlalu Jauh"
+    // 2. Validasi Jarak (Minimal 18% lebar layar, Maksimal 85%)
     const minFaceWidth = vidW * 0.18; 
-    const maxFaceWidth = vidW * 0.85; // Batas jika terlalu dekat (mencegah distorsi)
+    const maxFaceWidth = vidW * 0.85;
 
     if (box.width < minFaceWidth) {
       wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke kamera');
+      setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke arah kamera');
       return;
     }
-    
     if (box.width > maxFaceWidth) {
       wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '↔️', 'Terlalu Dekat', 'Mundur sedikit agar wajah terlihat penuh');
+      setCamStatus('warn', '↔️', 'Terlalu Dekat', 'Mundur sedikit agar wajah pas');
       return;
     }
 
-    // --- TINGKATKAN LOGIKA POSISI (CENTERING) ---
-    // Cek apakah hidung ada di area tengah layar (toleransi 20% dari pusat)
+    // 3. Validasi Posisi Hidung (Tengah Layar)
     const landmarks = detection.landmarks;
     const nose = landmarks.getNose()[0];
     const centerX = vidW / 2;
@@ -7721,15 +7724,15 @@ function startDetectLoop() {
 
     if (distFromCenter > (vidW * 0.25)) {
       wrap.className = 'cam-video-wrap face-warn';
-      setCamStatus('warn', '↔️', 'Posisi Tidak Tengah', 'Geser wajah ke tengah oval');
+      setCamStatus('warn', '↔️', 'Posisi Tidak Tengah', 'Geser wajah Anda ke tengah oval');
       return;
     }
 
-    // JIKA POSISI & JARAK SUDAH OK
+    // Posisi dan Jarak Sempurna
     wrap.className = 'cam-video-wrap face-ok';
-    setCamStatus('ok', '✅', 'Posisi Mantap', 'Silakan KEDIPKAN mata Anda...');
+    setCamStatus('ok', '✅', 'Posisi Mantap', 'Silakan lihat nilai di bawah...');
 
-    // --- LOGIKA KEDIP (LIVENESS) ---
+    // 4. Hitung Eye Aspect Ratio (EAR)
     const leftEye = landmarks.getLeftEye();
     const rightEye = landmarks.getRightEye();
 
@@ -7740,97 +7743,170 @@ function startDetectLoop() {
       return (v1 + v2) / (2.0 * h);
     };
 
-    const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+    let rawEar = (getEAR(leftEye) + getEAR(rightEye)) / 2;
 
-    // --- PERBAIKAN THRESHOLD KEDIP ---
-    // AI sering membaca mata tertutup di angka 0.24 - 0.28
-    // Mata terbuka biasanya di atas 0.30
-    
-    if (ear < 0.28) { 
-      // Sistem mendeteksi mata tertutup / menyipit
-      _isEyeClosed = true;
-      if ($('lsIcon')) $('lsIcon').textContent = '😌';
-      if ($('lsText')) {
-        $('lsText').textContent = 'Buka mata Anda sekarang...';
-        $('lsText').style.color = 'var(--info)'; // Beri warna biru agar user tahu AI merespon
-      }
-    } else if (ear >= 0.29 && _isEyeClosed) { 
-      // Mata kembali terbuka setelah sebelumnya tertutup
-      _blinkDetected = true;
-      _isEyeClosed = false;
+    // Stabilisasi nilai mata (mengambil rata-rata 3 frame terakhir)
+    _earHistory.push(rawEar);
+    if (_earHistory.length > 3) _earHistory.shift();
+    const ear = _earHistory.reduce((a, b) => a + b, 0) / _earHistory.length;
+
+    // 5. Kalibrasi Mata Terbuka Maksimal
+    if (ear > _maxEar && ear < 0.45) {
+        _maxEar = ear; 
     }
 
-    if (_blinkDetected && !_autoCaptured) {
-      _autoCaptured = true; // Kunci agar tidak mengambil foto 2x
-      
-      if ($('lsIcon')) $('lsIcon').textContent = '😉';
-      if ($('lsText')) { 
-        $('lsText').textContent = 'Liveness OK! Mengambil foto...'; 
-        $('lsText').style.color = 'var(--success)';
+    // 6. Tentukan Batas Kedip (15% di bawah mata terbuka, atau minimal 0.29)
+    let blinkThreshold = _maxEar > 0 ? _maxEar * 0.85 : 0.31;
+    if (blinkThreshold < 0.29) blinkThreshold = 0.29; 
+
+    const lsText = $('lsText');
+    const lsIcon = $('lsIcon');
+
+    // 7. Logika Kedipan Berurutan (Terbuka -> Tertutup -> Terbuka)
+    if (ear < blinkThreshold) { 
+      // Fase 1: Mata Tertutup
+      _isEyeClosed = true;
+      if (lsIcon) lsIcon.textContent = '😌';
+      if (lsText) {
+        lsText.textContent = `Buka mata Anda sekarang... (Val: ${ear.toFixed(2)})`;
+        lsText.style.color = 'var(--info)';
       }
-      setCamStatus('ok', '✅', 'Verifikasi Berhasil', 'Mohon tahan posisi...');
+    } else if (ear >= blinkThreshold && _isEyeClosed) { 
+      // Fase 2: Mata Dibuka Kembali
+      _blinkDetected = true;
+      _isEyeClosed = false;
+    } else {
+      // Fase 0: Menunggu
+      if (lsIcon) lsIcon.textContent = '😐';
+      if (lsText && !_blinkDetected) {
+        lsText.textContent = `Harap Kedipkan Mata (Mata: ${ear.toFixed(2)} | Batas: ${blinkThreshold.toFixed(2)})`;
+        lsText.style.color = 'var(--gold)';
+      }
+    }
+
+    // 8. Eksekusi Pengambilan Foto Jika Berhasil Berkedip
+    if (_blinkDetected && !_autoCaptured) {
+      _autoCaptured = true; // Kunci agar tidak double capture
       
-      // Percepat pengambilan foto (300ms) agar wajah tidak keburu goyang
+      if (lsIcon) lsIcon.textContent = '😉';
+      if (lsText) { 
+        lsText.textContent = 'Liveness OK! Mengambil foto...'; 
+        lsText.style.color = 'var(--success)';
+      }
+      setCamStatus('ok', '✅', 'Verifikasi Berhasil', 'Mohon tahan posisi Anda...');
+      
+      // Beri jeda 300ms lalu ambil foto
       setTimeout(doCapture, 300);
     }
   };
+  
   loop();
 }
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-    if (_captureData) return;
-    _captureData = true;
-    stopDetectLoop();
+  if (_captureData) return;
+  _captureData = true; // Kunci pengaman
+  stopDetectLoop();
 
-    const vid = $('camVideo');
-    const cnv = document.createElement('canvas');
-    
-    // Gunakan resolusi tinggi untuk capture (HD)
-    cnv.width = 720; 
-    cnv.height = 960; 
-    const ctx = cnv.getContext('2d');
+  // Ubah tombol jadi loading
+  const btnCap = $('btnCapture');
+  if (btnCap) {
+      btnCap.disabled = true;
+      btnCap.innerHTML = '<span class="spinner"></span> Memproses Foto...';
+  }
+  setCamStatus('ok', '📸', 'Mengekstrak Wajah...', 'Harap tunggu');
 
-    // Flip horizontal agar hasil foto sama dengan preview (mirror)
-    ctx.translate(cnv.width, 0);
-    ctx.scale(-1, 1);
-    
-    // Ambil frame dari video
-    ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
-    
-    // Kompresi kualitas di 0.8 untuk keseimbangan detail & size
-    const dataUrl = cnv.toDataURL('image/jpeg', 0.8);
+  // 1. Ambil Gambar dari Video (Resolusi HD)
+  const vid = $('camVideo');
+  const cnv = document.createElement('canvas');
+  cnv.width = 720; 
+  cnv.height = 960; 
+  const ctx = cnv.getContext('2d');
+  
+  // Balikkan gambar (Mirror) agar sama dengan preview di layar
+  ctx.translate(cnv.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(vid, 0, 0, cnv.width, cnv.height);
+  
+  // Kompresi ke format JPEG (kualitas 80% untuk performa jaringan)
+  const dataUrl = cnv.toDataURL('image/jpeg', 0.8);
 
-    if (!window._isMejaMode) stopCamStream();
+  // Matikan kamera agar hemat baterai (kecuali mode admin Meja Absen)
+  if (!window._isMejaMode) stopCamStream();
 
-    // Tampilkan preview
-    $('camVideoWrap').style.display = 'none';
-    $('camStatus').style.display = 'none';
-    if ($('livenessMini')) $('livenessMini').style.display = 'none';
-    
-    $('camPreviewImg').src = dataUrl;
-    $('camPreview').classList.add('show');
+  // 2. Ekstrak AI Wajah (Untuk dicocokkan dengan data terdaftar)
+  let descriptor = null;
+  if (_modelsReady) {
+    const desc = await getFaceDescriptor(cnv);
+    if (desc) descriptor = Array.from(desc);
+  }
 
-    // Callback ke sistem absen
-    const cb = _absenCallbackAfterCam;
-    setTimeout(async () => {
-        _absenCallbackAfterCam = null;
-        const descriptor = await getFaceDescriptor(cnv);
-        
-        const result = { 
-            dataUrl, 
-            descriptor: descriptor ? Array.from(descriptor) : null,
-            faceOk: !!descriptor, 
-            livenessOk: true 
-        };
+  // 3. Khusus Mode Meja Absen (Admin)
+  if (window._isMejaMode) {
+      if (_allFaceDescriptors.length > 0 && descriptor) {
+        const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.45);
+        const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
+        if (bestMatch.label !== 'unknown') {
+          _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+          return; 
+        }
+      }
+      _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+      return;
+  }
 
-        if (typeof cb === 'function') await cb(result);
-        else if (cb?.onDone) await cb.onDone(result);
-        
-        closeCamOverlay(false);
-    }, 1000);
+  // 4. Sembunyikan Kamera & Tampilkan PREVIEW FOTO
+  $('camVideoWrap').style.display = 'none'; 
+  $('camStatus').style.display = 'none';    
+  if ($('livenessMini')) $('livenessMini').style.display = 'none';
+  
+  let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
+  
+  // Cek persentase kecocokan wajah jika ini proses Absen (bukan daftar wajah)
+  if (!_absenCallbackAfterCam?.isRegister) {
+      const ref = getFaceRef();
+      if (ref && descriptor) {
+        const dist = euclideanDistance(ref.descriptor, descriptor);
+        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+        if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
+        else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+      }
+  } else {
+      if (!descriptor) match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
+  }
+
+  // Simpan data untuk dikirim ke GPS / Server
+  _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
+
+  // Render info ke layar
+  $('camPreviewImg').src = dataUrl;
+  $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
+  $('camPreview').classList.add('show');
+
+  // 5. EKSEKUSI PENGIRIMAN DATA (Kembali ke fungsi _doAbsenWithGPS)
+  const cb = _absenCallbackAfterCam;
+
+  // Jeda 1.5 detik agar pegawai bisa melihat hasil foto mereka sebelum tertutup
+  setTimeout(async () => {
+    try {
+      _absenCallbackAfterCam = null; // Hindari trigger cancel
+
+      // Panggil callback untuk mengambil GPS dan menembak webhook n8n
+      if (typeof cb === 'function') {
+        await cb(_captureData);
+      } else if (cb?.onDone) {
+        await cb.onDone(_captureData);
+      }
+    } catch (err) {
+      console.error('[doCapture] Error saat melanjutkan proses:', err);
+    } finally {
+      // Tutup overlay kamera
+      closeCamOverlay(false);
+      if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
+    }
+  }, 1500);
 }
-
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
       _livenessState = { faceOk: true, ch1: true, ch2: true };

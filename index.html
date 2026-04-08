@@ -7742,24 +7742,36 @@ function startDetectLoop() {
 
     const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
 
-    // Deteksi Kedipan (Sequence: Terbuka -> Tertutup -> Terbuka)
-    if (ear < 0.22) { // Mata tertutup
+    // --- PERBAIKAN THRESHOLD KEDIP ---
+    // AI sering membaca mata tertutup di angka 0.24 - 0.28
+    // Mata terbuka biasanya di atas 0.30
+    
+    if (ear < 0.28) { 
+      // Sistem mendeteksi mata tertutup / menyipit
       _isEyeClosed = true;
-    } else if (ear > 0.25 && _isEyeClosed) { // Mata dibuka kembali
+      if ($('lsIcon')) $('lsIcon').textContent = '😌';
+      if ($('lsText')) {
+        $('lsText').textContent = 'Buka mata Anda sekarang...';
+        $('lsText').style.color = 'var(--info)'; // Beri warna biru agar user tahu AI merespon
+      }
+    } else if (ear >= 0.29 && _isEyeClosed) { 
+      // Mata kembali terbuka setelah sebelumnya tertutup
       _blinkDetected = true;
       _isEyeClosed = false;
     }
 
-    if (_blinkDetected) {
+    if (_blinkDetected && !_autoCaptured) {
+      _autoCaptured = true; // Kunci agar tidak mengambil foto 2x
+      
       if ($('lsIcon')) $('lsIcon').textContent = '😉';
       if ($('lsText')) { 
-        $('lsText').textContent = 'Liveness OK! Memproses...'; 
+        $('lsText').textContent = 'Liveness OK! Mengambil foto...'; 
         $('lsText').style.color = 'var(--success)';
       }
+      setCamStatus('ok', '✅', 'Verifikasi Berhasil', 'Mohon tahan posisi...');
       
-      // Kunci deteksi dan ambil foto
-      _autoCaptured = true;
-      setTimeout(doCapture, 500);
+      // Percepat pengambilan foto (300ms) agar wajah tidak keburu goyang
+      setTimeout(doCapture, 300);
     }
   };
   loop();

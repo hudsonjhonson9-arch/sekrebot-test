@@ -7668,107 +7668,101 @@ let _headMovementDetected = false;
 let _initialNosePos = null;
 
 function startDetectLoop() {
-    const vid = $('camVideo');
-    const wrap = $('camVideoWrap');
+  const vid = $('camVideo');
+  const wrap = $('camVideoWrap');
+  
+  _blinkDetected = false;
+  _blinkCount = 0;
+  _isEyeClosed = false;
+
+  const loop = async () => {
+    if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+    _detectLoop = requestAnimationFrame(loop);
+    if (_autoCaptured) return;
+
+    // 1. Deteksi wajah dengan opsi yang lebih sensitif
+    const detection = await faceapi
+      .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })) 
+      .withFaceLandmarks();
+
+    if (!detection) {
+      wrap.className = 'cam-video-wrap face-bad';
+      setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Posisikan wajah tepat di tengah');
+      return;
+    }
+
+    const box = detection.detection.box;
+    const vidW = vid.videoWidth;
     
-    // Reset state setiap kali kamera dibuka
-    _blinkCount = 0;
-    _isEyeClosed = false;
-    _blinkDetected = false;
-    _autoCaptured = false;
-    _headMovementDetected = false;
-    _initialNosePos = null;
+    // --- TINGKATKAN LOGIKA JARAK (DISTANCE) ---
+    // Di foto Anda, wajah sudah besar. Kita turunkan syarat minimum lebar wajah
+    // dari 0.25 (25%) menjadi 0.18 (18%) agar tidak gampang dibilang "Terlalu Jauh"
+    const minFaceWidth = vidW * 0.18; 
+    const maxFaceWidth = vidW * 0.85; // Batas jika terlalu dekat (mencegah distorsi)
 
-    const loop = async () => {
-        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-        _detectLoop = requestAnimationFrame(loop);
-        if (_autoCaptured) return;
+    if (box.width < minFaceWidth) {
+      wrap.className = 'cam-video-wrap face-warn';
+      setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke kamera');
+      return;
+    }
+    
+    if (box.width > maxFaceWidth) {
+      wrap.className = 'cam-video-wrap face-warn';
+      setCamStatus('warn', '↔️', 'Terlalu Dekat', 'Mundur sedikit agar wajah terlihat penuh');
+      return;
+    }
 
-        // 1. Deteksi Wajah dengan Akurasi Tinggi
-        const detection = await faceapi
-            .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.7 })) // Naikkan ke 0.7
-            .withFaceLandmarks();
+    // --- TINGKATKAN LOGIKA POSISI (CENTERING) ---
+    // Cek apakah hidung ada di area tengah layar (toleransi 20% dari pusat)
+    const landmarks = detection.landmarks;
+    const nose = landmarks.getNose()[0];
+    const centerX = vidW / 2;
+    const distFromCenter = Math.abs(nose.x - centerX);
 
-        if (!detection) {
-            wrap.className = 'cam-video-wrap face-bad';
-            setCamStatus('bad', '😶', 'Wajah Tidak Terdeteksi', 'Posisikan wajah di dalam oval');
-            return;
-        }
+    if (distFromCenter > (vidW * 0.25)) {
+      wrap.className = 'cam-video-wrap face-warn';
+      setCamStatus('warn', '↔️', 'Posisi Tidak Tengah', 'Geser wajah ke tengah oval');
+      return;
+    }
 
-        const landmarks = detection.landmarks;
-        const nose = landmarks.getNose()[0]; // Ambil titik hidung untuk cek gerakan
+    // JIKA POSISI & JARAK SUDAH OK
+    wrap.className = 'cam-video-wrap face-ok';
+    setCamStatus('ok', '✅', 'Posisi Mantap', 'Silakan KEDIPKAN mata Anda...');
 
-        // 2. Validasi Jarak & Posisi (Oval Guide)
-        const box = detection.detection.box;
-        const vidW = vid.videoWidth;
-        const isTooFar = box.width < (vidW * 0.3);
-        const isOffCenter = (box.x < vidW * 0.05) || (box.x + box.width > vidW * 0.95);
+    // --- LOGIKA KEDIP (LIVENESS) ---
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
 
-        if (isTooFar) {
-            setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Mendekat ke arah kamera');
-            return;
-        }
-        if (isOffCenter) {
-            setCamStatus('warn', '↔️', 'Posisi Tidak Pas', 'Geser wajah ke tengah oval');
-            return;
-        }
-
-        // 3. Logika Liveness: Deteksi Kedipan Berurutan (Sequence)
-        // Menghitung EAR (Eye Aspect Ratio)
-        const leftEye = landmarks.getLeftEye();
-        const rightEye = landmarks.getRightEye();
-
-        const getEAR = (eye) => {
-            const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-            const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-            const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-            return (v1 + v2) / (2.0 * h);
-        };
-
-        const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
-
-        // Thresholding Kedipan (0.23 adalah standar industri untuk Face-API)
-        if (ear < 0.21) {
-            _isEyeClosed = true;
-        } else if (ear > 0.25 && _isEyeClosed) {
-            // Berhasil melakukan satu urutan: Terbuka -> Tertutup -> Terbuka
-            _blinkCount++;
-            _isEyeClosed = false;
-            console.log("Blink detected! Count:", _blinkCount);
-        }
-
-        // 4. Deteksi Micro-Movement (Mencegah Foto Statis/Kertas)
-        if (!_initialNosePos) {
-            _initialNosePos = { x: nose.x, y: nose.y };
-        } else {
-            const moveDist = Math.hypot(nose.x - _initialNosePos.x, nose.y - _initialNosePos.y);
-            if (moveDist > 2 && moveDist < 50) _headMovementDetected = true;
-        }
-
-        // 5. Final Verdict Liveness
-        // Syarat: Minimal 1 kedipan sempurna DAN ada sedikit gerakan kepala
-        if (_blinkCount >= 1 && _headMovementDetected) {
-            _blinkDetected = true;
-            setCamStatus('ok', '✅', 'Identitas Terverifikasi', 'Mohon jangan bergerak...');
-            wrap.className = 'cam-video-wrap face-ok';
-            
-            // Auto Capture jika valid
-            if (!_autoCaptured) {
-                _autoCaptured = true;
-                setTimeout(doCapture, 600);
-            }
-        } else {
-            // Instruksi interaktif
-            if (_blinkCount === 0) {
-                setCamStatus('ok', '👁️', 'Verifikasi Liveness', 'Silakan KEDIPKAN mata Anda');
-                if ($('lsText')) $('lsText').textContent = "Kedipkan Mata Anda";
-            } else if (!_headMovementDetected) {
-                setCamStatus('ok', '👋', 'Sedikit Lagi', 'Gerakkan kepala sedikit');
-                if ($('lsText')) $('lsText').textContent = "Gerakkan Kepala Sedikit";
-            }
-        }
+    const getEAR = (eye) => {
+      const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
+      const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
+      const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
+      return (v1 + v2) / (2.0 * h);
     };
-    loop();
+
+    const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+
+    // Deteksi Kedipan (Sequence: Terbuka -> Tertutup -> Terbuka)
+    if (ear < 0.22) { // Mata tertutup
+      _isEyeClosed = true;
+    } else if (ear > 0.25 && _isEyeClosed) { // Mata dibuka kembali
+      _blinkDetected = true;
+      _isEyeClosed = false;
+    }
+
+    if (_blinkDetected) {
+      if ($('lsIcon')) $('lsIcon').textContent = '😉';
+      if ($('lsText')) { 
+        $('lsText').textContent = 'Liveness OK! Memproses...'; 
+        $('lsText').style.color = 'var(--success)';
+      }
+      
+      // Kunci deteksi dan ambil foto
+      _autoCaptured = true;
+      setTimeout(doCapture, 500);
+    }
+  };
+  loop();
 }
 
     /* ── Ambil foto (capture) ── */

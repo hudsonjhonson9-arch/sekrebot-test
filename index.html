@@ -7699,7 +7699,7 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgpu', // Prefer webgpu for performance
+            backend: 'webgl', // webgl is more widely supported than webgpu
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -7772,9 +7772,12 @@ File di Google Drive juga akan dihapus.`)) return;
         // AUTO FALLBACK
         if (window._aiEngine === 'human') {
           console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
+          _setMejaStatus('idle', '⚠️', 'Fallback ke Face-API', 'Human.js tidak didukung di browser ini.');
           window._aiEngine = 'faceapi';
           _modelLoading = false;
           _modelsReady = false;
+          // Notify user of the switch
+          setTimeout(() => alert('⚠️ Human.js gagal dimuat pada perangkat ini. Sistem otomatis beralih ke Face-API sebagai cadangan.'), 100);
           return await loadAIModels();
         }
 

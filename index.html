@@ -7510,32 +7510,36 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
       let refDesc = ref.descriptor;
+      // Handle stringified descriptor from DB
+      if (typeof refDesc === 'string') {
+        try { refDesc = JSON.parse(refDesc); } catch(e) { refDesc = null; }
+      }
+
       const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
       const capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
 
       if (refDesc && capturedDescArr) {
-        const dist = euclideanDistance(refDesc, capturedDescArr);
-        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
-        let label, cls;
-        if (dist <= 0.45) { label = `✅ Dikenali ${score}%`; cls = 'face-match-ok'; }
-        else if (dist <= 0.55) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-        else if (dist <= 0.65) { label = `⚠️ Kurang Jelas ${score}%`; cls = 'face-match-warn'; }
-        else { label = `❌ Tidak Dikenali ${score}%`; cls = 'face-match-warn'; }
-        return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
-      }
-
-      // refDesc belum ada → re-extract dari foto referensi
-      if (!refDesc && ref.dataUrl && capturedDescArr) {
-        const reExtracted = await getDescriptorFromDataUrl(ref.dataUrl);
-        if (reExtracted) {
-          const reArr = Array.from(reExtracted);
-          _writeFaceRefLocal(String(MY_ID || ''), { ...ref, descriptor: reArr });
-          const dist = euclideanDistance(reArr, capturedDescArr);
-          const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
-          if (dist <= 0.55) return { score, label: `✅ Dikenali ${score}%`, cls: 'face-match-ok', capturedDescriptor: capturedDescArr, distance: dist };
-          if (dist <= 0.65) return { score, label: `⚠️ Kurang Jelas ${score}%`, cls: 'face-match-warn', capturedDescriptor: capturedDescArr, distance: dist };
-          return { score, label: `❌ Tidak Dikenali ${score}%`, cls: 'face-match-warn', capturedDescriptor: capturedDescArr, distance: dist };
+        if (refDesc.length !== capturedDescArr.length) {
+          return { 
+            score: 0, 
+            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`, 
+            cls: 'face-match-warn', 
+            capturedDescriptor: capturedDescArr,
+            needsUpdate: true
+          };
         }
+        const dist = euclideanDistance(refDesc, capturedDescArr);
+        // Threshold adjusted for 128 (faceapi) vs 512/1024 (human)
+        const threshold = refDesc.length >= 512 ? 0.6 : 0.45;
+        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
+        
+        let label, cls;
+        if (dist <= threshold) { label = `✅ Dikenali ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= threshold + 0.1) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= threshold + 0.2) { label = `⚠️ Kurang Jelas ${score}%`; cls = 'face-match-warn'; }
+        else { label = `❌ Tidak Dikenali ${score}%`; cls = 'face-match-warn'; }
+        
+        return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
       return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
@@ -7617,10 +7621,9 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
-    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
-    const FACE_API_MODELS = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js';
+    const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
-    // Model ditarik dari JSDelivr (lebih cepat daripada GitHub langsung)
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
 
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
@@ -7660,19 +7663,20 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (engine === 'human') {
           await _loadHumanScript();
+          _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl',
+            backend: 'webgpu', // Prefer webgpu for performance
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
               enabled: true,
               detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
-              mesh: { enabled: false }, // DIET: Matikan mesh 3D
-              iris: { enabled: false }, // DIET: Matikan deteksi mata detail
-              description: { enabled: true, modelPath: 'faceres.json' }, // WAJIB untuk rekognisi
+              mesh: { enabled: false },
+              iris: { enabled: false },
+              description: { enabled: true, modelPath: 'faceres.json' }, // 512-dim default
               emotion: { enabled: false },
-              liveness: { enabled: false } // DIET: Liveness standar cukup
+              liveness: { enabled: false }
             },
             body: { enabled: false },
             hand: { enabled: false },
@@ -7683,22 +7687,35 @@ File di Google Drive juga akan dihapus.`)) return;
           HumanInstance = new window.Human(config);
           _updateModelProgress(0, 20);
 
-          // Proses download model AI (Bagian yang sering gagal)
-          await HumanInstance.load();
-          await HumanInstance.warmup(); // Pemanasan engine
+          // Timeout 15s for model load
+          const loadPromise = HumanInstance.load();
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
+          
+          await Promise.race([loadPromise, timeoutPromise]);
+          await HumanInstance.warmup();
 
           _updateModelProgress(2, 80);
           _modelsReady = true;
         } else {
-          // DEFAULT: Face-API
+          // DEFAULT: Face-API (vladmandic fork for better support)
           await _loadFaceApiScript();
-          _updateModelProgress(0, 30);
-          await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
-          _updateModelProgress(1, 30);
-          await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
-          await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
+          _updateModelProgress(0, 20);
+          
+          // Enhanced loader with individual net error check
+          const nets = [
+            { net: faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
+            { net: faceapi.nets.faceLandmark68Net, name: 'Landmarks' },
+            { net: faceapi.nets.faceRecognitionNet, name: 'Recognition' }
+          ];
+
+          for (let i = 0; i < nets.length; i++) {
+            console.log(`[AI] Loading ${nets[i].name}...`);
+            await nets[i].net.loadFromUri(FACE_API_MODELS);
+            _updateModelProgress(i, 30);
+          }
+          
           _modelsReady = true;
-          _updateModelProgress(2, 40);
+          _updateModelProgress(2, 10);
         }
 
         console.log(`[AI] ${engine} Berhasil Dimuat.`);
@@ -7707,17 +7724,20 @@ File di Google Drive juga akan dihapus.`)) return;
       } catch (e) {
         console.error('[AI] Gagal memuat engine:', e);
 
-        // AUTO FALLBACK: Jika Human gagal, paksa balik ke Face-API
+        // AUTO FALLBACK
         if (window._aiEngine === 'human') {
           console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
           window._aiEngine = 'faceapi';
           _modelLoading = false;
+          _modelsReady = false;
           return await loadAIModels();
         }
 
         _modelsReady = false;
         _modelLoading = false;
-        alert('Gagal memuat model AI. Pastikan koneksi internet stabil dan reload halaman.');
+        // Detailed error for debugging
+        const errHint = e.message.includes('timeout') ? 'Koneksi lambat' : 'Asset model tidak ditemukan';
+        alert(`Gagal memuat model AI (${errHint}). Pastikan koneksi internet stabil dan reload halaman.`);
         return false;
       }
     }
@@ -13352,29 +13372,41 @@ File di Google Drive juga akan dihapus.`)) return;
         _allFaceDescriptors = list.filter(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
-          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+          let desc;
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { return false; }
           const dLen = Array.isArray(desc) ? desc.length : 0;
           
-          // Cross-model matching logic:
-          // Jika data di DB adalah Face-API (128), tapi engine sekarang Human -> Sembunyikan (atau tampilkan badge)
-          // Kecuali jika kita implementasi auto-convert (future improvement)
+          // Enhanced Matching logic for 1024 dimensions
           const isHumanData = (f.face_model === 'human' || dLen >= 512);
-          if (window._aiEngine === 'human' && !isHumanData) return false;
-          if (window._aiEngine !== 'human' && isHumanData) return false;
-          return true;
+          const isFaceApiData = (f.face_model === 'faceapi' || dLen === 128);
+          
+          // Allow all for visibility, we handle mismatch in matching loop
+          return dLen === 128 || dLen === 512 || dLen === 1024;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
-          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
+          let desc;
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
+          const dLen = desc.length;
+
           window._mejaUserMap[tid] = {
             nama: f.nama || f.Nama || tid,
-            nip: f.nip || f.NIP || '-'
+            nip: f.nip || f.NIP || '-',
+            engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
+            dim: dLen
           };
-          // Bridge untuk Human (Manual Match) vs Face-API (LabeledFaceDescriptors)
+
+          // Bridge for Human vs Face-API
           if (window._aiEngine === 'human') {
             return { id: tid, descriptor: desc };
           } else {
-            return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+            // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
+            if (dLen === 128) {
+              return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+            } else {
+              // Fallback for non-128 descriptors in face-api mode
+              return { id: tid, descriptor: desc, skipFaceApi: true };
+            }
           }
         });
 

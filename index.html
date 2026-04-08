@@ -6297,18 +6297,20 @@
     let tgUser = tg?.initDataUnsafe?.user || {};
     if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0a1628'); tg.setBackgroundColor('#0a1628'); }
     let MY_ID = tgUser.id ? Number(tgUser.id) : null;
+    let IS_ADMIN = false;
+    let adminLoaded = false;
 
-    // Helper: Tunggu Telegram ID siap (retry 10x tiap 200ms)
-    async function waitForMyId(onReady) {
-      for (let i = 0; i < 15; i++) {
-        if (MY_ID) { onReady(MY_ID); return; }
-        // Cek ulang tgUser jika sebelumnya kosong
-        tgUser = tg?.initDataUnsafe?.user || {};
-        MY_ID = tgUser.id ? Number(tgUser.id) : null;
-        if (!MY_ID) await new Promise(r => setTimeout(r, 200));
-      }
-      // Fail-safe: jika tetap tidak ada, panggil saja (mungkin mode browser biasa)
-      onReady(MY_ID);
+    // Helper: Tunggu Telegram ID siap (retry 15x tiap 200ms)
+    function waitForMyId() {
+      return new Promise(async (resolve) => {
+        for (let i = 0; i < 20; i++) {
+          if (MY_ID) { resolve(MY_ID); return; }
+          tgUser = tg?.initDataUnsafe?.user || {};
+          MY_ID = tgUser.id ? Number(tgUser.id) : null;
+          if (!MY_ID) await new Promise(r => setTimeout(r, 250));
+        }
+        resolve(MY_ID);
+      });
     }
 
     /* ════ KONSTANTA ════ */
@@ -6573,26 +6575,25 @@
     /* ════ USER PROFILE ════ */
     let userProfile = null;
     async function loadUserProfile() {
-      waitForMyId(async (uid) => {
-        if (!uid) { setUserFallback(); return; }
-        try {
-          const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
-          if (!res.ok) throw 0;
-          const json = await res.json();
-          const d = Array.isArray(json) ? (json[0] || {}) : (json.data ? json.data[0] : json);
-          if (d && (d.nama || d.Nama)) {
-            userProfile = {
-              nama: d.nama || d.Nama || '',
-              jabatan: d.jabatan || d.Jabatan || '',
-              nip: d.nip || d.NIP || '',
-              username: d.username || d.Username || tgUser.username || '',
-              status: d.status || d.Status || 'AKTIF',
-              role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, '')
-            };
-            applyProfile();
-          } else setUserFallback();
-        } catch { setUserFallback(); }
-      });
+      const uid = await waitForMyId();
+      if (!uid) { setUserFallback(); return; }
+      try {
+        const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
+        if (!res.ok) throw 0;
+        const json = await res.json();
+        const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
+        if (d && (d.nama || d.Nama)) {
+          userProfile = {
+            nama: d.nama || d.Nama || '',
+            jabatan: d.jabatan || d.Jabatan || '',
+            nip: d.nip || d.NIP || '',
+            username: d.username || d.Username || tgUser.username || '',
+            status: d.status || d.Status || 'AKTIF',
+            role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, '')
+          };
+          applyProfile();
+        } else setUserFallback();
+      } catch { setUserFallback(); }
     }
     function fullName() { return tgUser.first_name ? `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}` : 'Pengguna'; }
     function applyProfile() {
@@ -6852,36 +6853,35 @@ File di Google Drive juga akan dihapus.`)) return;
 
     let _todayLoading = false;
     async function loadTodayHistory() {
-      waitForMyId(async (uid) => {
-        if (_todayLoading) return;
-        _todayLoading = true;
-        const el = $('todayList');
-        if (!el) return;
-        el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
-                    <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
-        try {
-          const todayStr = fmtD(nowWITA());
-          const res = await apiFetch(`${P.log}?user_id=${uid || ''}&tanggal=${todayStr}`, { method: 'GET' });
-          if (!res.ok) throw 0;
-          const json = await res.json();
-          let rows = parseRows(json);
-          rows = rows.filter(r => {
-            const rowUid = Number(getField(r, 'ID', 'id'));
-            const tgl = getField(r, 'Tanggal', 'tanggal');
-            const byMe = uid ? (rowUid === uid) : true;
-            return byMe && tgl === todayStr;
-          });
-          rows.sort((a, b) => {
-            const ja = getField(a, 'Jam', 'jam'), jb = getField(b, 'Jam', 'jam');
-            return ja.localeCompare(jb);
-          });
-          renderTodayHistory(rows);
-        } catch (e) {
-          el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
-        } finally {
-          _todayLoading = false;
-        }
-      });
+      const uid = await waitForMyId();
+      if (_todayLoading) return;
+      _todayLoading = true;
+      const el = $('todayList');
+      if (!el) return;
+      el.innerHTML = `<div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
+                  <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
+      try {
+        const todayStr = fmtD(nowWITA());
+        const res = await apiFetch(`${P.log}?user_id=${uid || ''}&tanggal=${todayStr}`, { method: 'GET' });
+        if (!res.ok) throw 0;
+        const json = await res.json();
+        let rows = parseRows(json);
+        rows = rows.filter(r => {
+          const rowUid = Number(getField(r, 'ID', 'id'));
+          const tgl = getField(r, 'Tanggal', 'tanggal');
+          const byMe = uid ? (rowUid === uid) : true;
+          return byMe && tgl === todayStr;
+        });
+        rows.sort((a, b) => {
+          const ja = getField(a, 'Jam', 'jam'), jb = getField(b, 'Jam', 'jam');
+          return ja.localeCompare(jb);
+        });
+        renderTodayHistory(rows);
+      } catch (e) {
+        el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
+      } finally {
+        _todayLoading = false;
+      }
     }
     function getTodayBadge(jenis) {
       const j = (jenis || '').toUpperCase().trim();
@@ -7397,24 +7397,23 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function loadFaceFromServer() {
-      waitForMyId(async (uid) => {
-        if (!uid) return;
-        const uidStr = String(uid);
-        try {
-          const res = await apiFetch(`${P.faceGet}?user_id=${uidStr}`, { method: 'GET' });
-          if (!res || !res.ok) return;
-          const json = await res.json();
-          const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
-          const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
-          const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
+      const uid = await waitForMyId();
+      if (!uid) return;
+      const uidStr = String(uid);
+      try {
+        const res = await apiFetch(`${P.faceGet}?user_id=${uidStr}`, { method: 'GET' });
+        if (!res || !res.ok) return;
+        const json = await res.json();
+        const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
+        const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
+        const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
 
-          if (photo) {
-            _writeFaceRefLocal(uidStr, { dataUrl: photo, descriptor, savedAt });
-            updateProfilFaceUI();
-            updateFaceRegUI();
-          }
-        } catch (_) { }
-      });
+        if (photo) {
+          _writeFaceRefLocal(uidStr, { dataUrl: photo, descriptor, savedAt });
+          updateProfilFaceUI();
+          updateFaceRegUI();
+        }
+      } catch (_) { }
     }
 
     // ── Euclidean distance between two 128-d descriptors ──
@@ -11686,29 +11685,28 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function loadJamAbsen() {
-      waitForMyId(async (uid) => {
-        try {
-          const jam = await _getJamAbsen();
-          if (jam.masuk) { const m = toMenitStr(jam.masuk); if (m !== null) JAM_MASUK_MENIT = m; }
-          if (jam.pulang) { const m = toMenitStr(jam.pulang); if (m !== null) JAM_PULANG_MENIT = m; }
+      const uid = await waitForMyId();
+      try {
+        const jam = await _getJamAbsen();
+        if (jam.masuk) { const m = toMenitStr(jam.masuk); if (m !== null) JAM_MASUK_MENIT = m; }
+        if (jam.pulang) { const m = toMenitStr(jam.pulang); if (m !== null) JAM_PULANG_MENIT = m; }
 
-          // ── Muat daftar admin dari server (dinamis, tanpa hardcode) ──
-          if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
-            ADMIN_IDS.length = 0;
-            jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
-          }
-          IS_ADMIN = ADMIN_IDS.includes(uid);
-          REKAP_CHAT_ID = ADMIN_IDS[0] || uid || null;
-          _applyAdminUI();
-          if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
-
-          try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
-          updateClock();
-          initJamAdminUI();
-        } catch (e) {
-          initJamAdminUI();
+        // ── Muat daftar admin dari server (dinamis, tanpa hardcode) ──
+        if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
+          ADMIN_IDS.length = 0;
+          jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
         }
-      });
+        IS_ADMIN = ADMIN_IDS.includes(uid);
+        REKAP_CHAT_ID = ADMIN_IDS[0] || uid || null;
+        _applyAdminUI();
+        if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
+
+        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
+        updateClock();
+        initJamAdminUI();
+      } catch (e) {
+        initJamAdminUI();
+      }
     }
 
     function _applyAdminUI() {

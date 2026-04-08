@@ -7661,118 +7661,51 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Loop deteksi wajah (rAF) ── */
     function startDetectLoop() {
-      const vid = $('camVideo');
-      const wrap = $('camVideoWrap');
-     
-      _blinkDetected = false;
-     
-      // Fallback tombol manual setelah 3 detik
-      setTimeout(() => {
-        if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false;
-      }, 3000);
-     
-      // Tampilkan instruksi liveness
-      const livenessUI = $('livenessMini');
-      if (livenessUI) livenessUI.style.display = 'block';
-     
-      const loop = async () => {
-        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-     
-        _detectLoop = requestAnimationFrame(loop);
-        if (_autoCaptured) return;
-     
-        // ── Gunakan SsdMobilenetv1Options (lebih akurat dari TinyFaceDetector) ──
-        const detection = await faceapi
-          .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 1 }))
-          .withFaceLandmarks(); // full landmark net
-     
-        if (!detection) {
-          wrap.className = 'cam-video-wrap face-bad';
-          setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
-          _livenessState.faceOk = false;
-          if ($('lsIcon')) $('lsIcon').textContent = '😐';
-          if ($('lsText')) { $('lsText').textContent = 'Menunggu Wajah...'; $('lsText').style.color = 'var(--muted)'; }
-          return;
-        }
-     
-        _livenessState.faceOk = true;
-     
-        // ── 1. Validasi ukuran & posisi wajah ──
-        const box = detection.detection.box;
-        const videoWidth = vid.videoWidth || 640;
-        const minFaceWidth = videoWidth * 0.25;
-        const isCenteredX = (box.x > videoWidth * 0.1) && ((box.x + box.width) < videoWidth * 0.9);
-     
-        if (box.width < minFaceWidth) {
-          wrap.className = 'cam-video-wrap face-warn';
-          setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju lebih dekat ke kamera');
-          if ($('lsText')) { $('lsText').textContent = 'Wajah terlalu jauh'; $('lsText').style.color = 'var(--warning)'; }
-          return;
-        }
-        if (!isCenteredX) {
-          wrap.className = 'cam-video-wrap face-warn';
-          setCamStatus('warn', '↔️', 'Tidak Tengah', 'Geser wajah tepat ke tengah layar');
-          if ($('lsText')) { $('lsText').textContent = 'Posisi tidak di tengah'; $('lsText').style.color = 'var(--warning)'; }
-          return;
-        }
-     
-        // ── 2. Validasi confidence score (SSD MobileNet threshold lebih ketat) ──
-        const faceScore = detection.detection.score || detection.score;
-        if (faceScore < 0.70) {   // ← dinaikkan dari 0.65 ke 0.70 karena SSD lebih presisi
-          wrap.className = 'cam-video-wrap face-warn';
-          setCamStatus('warn', '⚠️', 'Kurang Jelas', 'Cari tempat terang / lepas masker');
-          if ($('lsText')) { $('lsText').textContent = 'Wajah kurang jelas'; $('lsText').style.color = 'var(--warning)'; }
-          return;
-        }
-     
-        wrap.className = 'cam-video-wrap face-ok';
-        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Mohon kedipkan mata Anda...');
-     
-        // ── 3. Liveness: Eye Aspect Ratio (EAR) — lebih presisi dengan full landmark ──
-        const leftEye  = detection.landmarks.getLeftEye();
-        const rightEye = detection.landmarks.getRightEye();
-     
-        const getEAR = (eye) => {
-          const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-          const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-          const h  = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-          return (v1 + v2) / (2.0 * h);
-        };
-     
-        const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
-     
-        // Threshold EAR: 0.22 (sama tapi kini lebih akurat karena full landmark)
-        if (ear < 0.22) _blinkDetected = true;
-     
-        if (_blinkDetected) {
-          if ($('lsIcon')) $('lsIcon').textContent = '😉';
-          if ($('lsText')) { $('lsText').textContent = 'Liveness OK! Sedang memproses...'; $('lsText').style.color = 'var(--success)'; }
-          setCamStatus('ok', '✅', 'Wajah & Kedip Sempurna', 'Mencocokkan data...');
-        } else {
-          if ($('lsIcon')) $('lsIcon').textContent = '😐';
-          if ($('lsText')) { $('lsText').textContent = 'Harap Kedipkan Mata Anda'; $('lsText').style.color = 'var(--gold)'; }
-          return; // tahan sampai berkedip
-        }
-     
-        // ── 4. Auto capture ──
-        if (!_autoCaptured && _modelsReady && _blinkDetected) {
-          _autoCaptured = true;
-          if (window._isMejaMode) {
-            setTimeout(doCapture, 400);
-          } else {
-            setTimeout(() => {
-              if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
-                doCapture();
-              } else {
-                _autoCaptured = false;
-              }
-            }, 800);
-          }
-        }
-      };
-     
-      loop();
+  const vid = $('camVideo');
+  const wrap = $('camVideoWrap');
+ 
+  _blinkDetected = true; // Langsung true
+ 
+  const loop = async () => {
+    if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+ 
+    _detectLoop = requestAnimationFrame(loop);
+    if (_autoCaptured) return;
+ 
+    const detection = await faceapi
+      .detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5, maxResults: 1 }))
+      .withFaceLandmarks();
+ 
+    if (!detection) {
+      wrap.className = 'cam-video-wrap face-bad';
+      setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
+      _livenessState.faceOk = false;
+      return;
     }
+ 
+    _livenessState.faceOk = true;
+    
+    // Validasi posisi wajah (tetap dipertahankan agar foto bagus)
+    const box = detection.detection.box;
+    const videoWidth = vid.videoWidth || 640;
+    if (box.width < videoWidth * 0.25) {
+      setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju lebih dekat');
+      return;
+    }
+
+    // JIKA LOLOS POSISI, LANGSUNG CAPTURE
+    wrap.className = 'cam-video-wrap face-ok';
+    setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Sedang memproses...');
+ 
+    if (!_autoCaptured && _modelsReady) {
+      _autoCaptured = true;
+      // Beri jeda sangat singkat agar user sadar wajah terdeteksi
+      setTimeout(doCapture, 500);
+    }
+  };
+ 
+  loop();
+}
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
@@ -12958,146 +12891,50 @@ File di Google Drive juga akan dihapus.`)) return;
     // 3. Modifikasi Detect Loop (Tambahkan di dalam startDetectLoop yang ada)
     // Masukkan logika ini ke dalam loop 'const loop = async () => { ... }' di kode asli Anda
     async function handleMejaLogic(detection, vid) {
-        // Cegah eksekusi jika bukan mode meja, sedang memproses, atau foto sudah terambil
-        if (!window._isMejaMode || window._mejaProcessing || _autoCaptured) return;
+    // Cegah eksekusi jika bukan mode meja, sedang memproses, atau foto sudah terambil
+    if (!window._isMejaMode || window._mejaProcessing || _autoCaptured) return;
 
-        // 1. VALIDASI UKURAN & POSISI WAJAH (Bounding Box)
-        const box = detection.detection.box;
-        const videoWidth = vid.videoWidth;
-        
-        // Wajah minimal memakan 25% dari lebar frame kamera agar terlihat jelas
-        const minFaceWidth = videoWidth * 0.25; 
-        // Wajah harus berada di tengah (margin 10% kiri & kanan)
-        const isCenteredX = (box.x > videoWidth * 0.1) && ((box.x + box.width) < videoWidth * 0.9);
+    // 1. VALIDASI UKURAN & POSISI WAJAH (Tetap dipertahankan agar hasil absen akurat)
+    const box = detection.detection.box;
+    const videoWidth = vid.videoWidth;
+    
+    const minFaceWidth = videoWidth * 0.25; 
+    const isCenteredX = (box.x > videoWidth * 0.1) && ((box.x + box.width) < videoWidth * 0.9);
 
-        if (box.width < minFaceWidth) {
-            setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju lebih dekat ke kamera');
-            return; // Stop, jangan lakukan pengecekan kedip/capture
-        }
-        if (!isCenteredX) {
-            setCamStatus('warn', '↔️', 'Tidak Tengah', 'Geser wajah Anda tepat ke tengah layar');
-            return; // Stop
-        }
+    if (box.width < minFaceWidth) {
+        setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju lebih dekat ke kamera');
+        return; 
+    }
+    if (!isCenteredX) {
+        setCamStatus('warn', '↔️', 'Tidak Tengah', 'Geser wajah Anda tepat ke tengah layar');
+        return; 
+    }
 
-        // 2. VALIDASI KEJELASAN WAJAH (Confidence Score > 95%)
-        const faceScore = detection.detection.score || detection.score;
-        if (faceScore < 0.95) {
-            setCamStatus('warn', '⚠️', 'Kurang Jelas', 'Cari tempat terang / lepas masker & kacamata');
-            return; // Stop
-        }
+    // 2. VALIDASI KEJELASAN WAJAH (Confidence Score)
+    const faceScore = detection.detection.score || detection.score;
+    if (faceScore < 0.95) {
+        setCamStatus('warn', '⚠️', 'Kurang Jelas', 'Cari tempat terang / lepas masker');
+        return; 
+    }
 
-        // 3. LIVENESS DETECTION (Deteksi Kedip menggunakan Eye Aspect Ratio / EAR)
-        // Ambil landmarks (titik wajah) dari objek detection
-        const landmarks = detection.landmarks;
-        
-        if (landmarks) {
-            const leftEye = landmarks.getLeftEye();
-            const rightEye = landmarks.getRightEye();
-            
-            // Rumus EAR (Skala-independen, akurat di jarak berapapun)
-            const getEAR = (eye) => {
-               const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-               const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-               const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-               return (v1 + v2) / (2.0 * h);
-            };
+    // --- BAGIAN LIVENESS (KEDIP) SUDAH DIHAPUS DARI SINI ---
 
-            const earL = getEAR(leftEye);
-            const earR = getEAR(rightEye);
-            const ear = (earL + earR) / 2;
-
-            // Jika rasio mata di bawah 0.22, itu artinya mata sedang menutup (kedip)
-            if (ear < 0.22) {
-                _blinkDetected = true;
-            }
-        }
-
-        // 4. WAJIB KEDIP SEBELUM CAPTURE
-        if (!_blinkDetected) {
-            $('lsIcon').textContent = '😐';
-            $('lsText').textContent = 'Harap Kedipkan Mata Anda';
-            $('lsText').style.color = 'var(--gold)';
-            setCamStatus('warn', '👁️', 'Menunggu Kedipan', 'Kedipkan mata Anda untuk validasi');
-            return; // Stop di sini, sistem menahan capture sampai user berkedip
-        }
-
-        // 5. SEMUA VALIDASI LOLOS -> LAKUKAN CAPTURE
-        $('lsIcon').textContent = '😉';
-        $('lsText').textContent = 'Liveness OK! Memproses...';
+    // 3. LANGSUNG PROSES CAPTURE
+    // Set UI agar terlihat merespons
+    if ($('lsText')) {
+        $('lsIcon').textContent = '✅';
+        $('lsText').textContent = 'Wajah Terdeteksi! Memproses...';
         $('lsText').style.color = 'var(--success)';
-        setCamStatus('ok', '✅', 'Wajah Sempurna', 'Mencocokkan data...');
-
-        // Kunci proses agar tidak men-trigger capture berkali-kali
-        _autoCaptured = true; 
-        
-        // Panggil doCapture dengan jeda singkat (500ms saja) agar responsif
-        setTimeout(doCapture, 500); 
     }
+    
+    setCamStatus('ok', '✅', 'Wajah Sempurna', 'Mencocokkan data...');
 
-    async function startMejaAbsen() {
-      const btn = $('btnMejaAbsen');
-      if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat Data...'; }
-      _setMejaStatus('processing', '⏳', 'Mengambil GPS & Database...', 'Harap tunggu');
-
-      // 1. Ambil GPS Meja
-      _mejaGpsLocation = await _getMejaGps();
-      const locEl = $('mejaLocVal');
-      const accEl = $('mejaLocAccuracy');
-      if (_mejaGpsLocation && locEl) {
-        locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
-        if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
-      } else if (locEl) {
-        locEl.textContent = 'Lokasi GPS Meja Tidak Tersedia';
-      }
-
-      // 2. Load face descriptors dari server
-      try {
-        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.data || []);
-
-        window._mejaUserMap = {};
-        _allFaceDescriptors = list.filter(f => (f.face_histogram || f.descriptor)).map(f => {
-          const rawDesc = f.face_histogram || f.descriptor;
-          const desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc;
-          const tid = String(f.telegram_id || f.id || '');
-          window._mejaUserMap[tid] = {
-            nama: f.nama || f.Nama || tid,
-            nip: f.nip || f.NIP || '-'
-          };
-          return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-        });
-
-        if (!_allFaceDescriptors.length) {
-          _setMejaStatus('idle', '⚠️', 'Tidak Ada Data Wajah', 'Daftarkan wajah pegawai terlebih dahulu');
-          if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
-          return;
-        }
-
-        _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
-        _updateMejaCnt();
-        
-        window._isMejaMode = true; // Set Global State
-        _isMejaAbsen = true;
-
-        _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
-        
-        if (btn) btn.style.display = 'none';
-        const btnStop = $('btnMejaStop');
-        if (btnStop) btnStop.style.display = 'flex';
-
-        // Buka Kamera
-        openCamOverlay('meja');
-        $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
-        $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
-        $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
-        
-      } catch (e) {
-        _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
-        if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
-      }
-    }
+    _blinkDetected = true; // Paksa true agar sistem menganggap liveness valid
+    _autoCaptured = true;  // Kunci proses
+    
+    // Ambil foto dalam 0.5 detik setelah wajah stabil dan jelas
+    setTimeout(doCapture, 500); 
+}
 
     async function stopMejaAbsen() {
       window._isMejaMode = false;

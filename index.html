@@ -7719,7 +7719,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // ── 2. VALIDASI KEJELASAN (Confidence Score) ──
         const faceScore = detection.detection.score || detection.score;
-        if (faceScore < 0.85) { 
+        if (faceScore < 0.65) { 
             wrap.className = 'cam-video-wrap face-warn';
             setCamStatus('warn', '⚠️', 'Kurang Jelas', 'Cari tempat terang / lepas masker');
             $('lsText').textContent = 'Wajah kurang jelas';

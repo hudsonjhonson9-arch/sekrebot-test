@@ -696,7 +696,8 @@
     #buktiVideo {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* Agar tidak terlalu zoom (muat tanpa crop) */
+      object-fit: contain;
+      /* Agar tidak terlalu zoom (muat tanpa crop) */
       transform: none !important;
       background: #000;
     }
@@ -1403,7 +1404,8 @@
       gap: 7px
     }
 
-    .btn-refresh, .btn-sm-admin {
+    .btn-refresh,
+    .btn-sm-admin {
       display: flex;
       align-items: center;
       gap: 5px;
@@ -1419,16 +1421,19 @@
       transition: all .2s;
     }
 
-    .btn-refresh:hover, .btn-sm-admin:hover {
+    .btn-refresh:hover,
+    .btn-sm-admin:hover {
       background: rgba(201, 168, 76, .15);
       border-color: rgba(201, 168, 76, .4);
     }
 
-    .btn-refresh:active, .btn-sm-admin:active {
+    .btn-refresh:active,
+    .btn-sm-admin:active {
       transform: scale(.96);
     }
 
-    .btn-refresh:disabled, .btn-sm-admin:disabled {
+    .btn-refresh:disabled,
+    .btn-sm-admin:disabled {
       opacity: .5;
       cursor: not-allowed;
       transform: none;
@@ -1480,8 +1485,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* Spinner */
@@ -3373,14 +3385,16 @@
       position: relative;
       overflow: hidden;
     }
+
     .rekap-hero-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-bottom: 15px;
     }
+
     .hero-metric-box {
-      background: rgba(255,255,255,.03);
+      background: rgba(255, 255, 255, .03);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 10px;
@@ -3390,12 +3404,14 @@
       align-items: center;
       justify-content: center;
     }
+
     .hero-val {
       font-size: 18px;
       font-weight: 800;
       line-height: 1.1;
       margin-bottom: 4px;
     }
+
     .hero-lbl {
       font-size: 9px;
       font-weight: 700;
@@ -3403,29 +3419,34 @@
       text-transform: uppercase;
       letter-spacing: .05em;
     }
+
     .rekap-stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
       margin-bottom: 12px;
     }
+
     .stat-box-small {
-      background: rgba(255,255,255,.02);
+      background: rgba(255, 255, 255, .02);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 6px 4px;
       text-align: center;
       transition: all .2s;
     }
+
     .stat-box-small:hover {
-      background: rgba(255,255,255,.05);
-      border-color: rgba(255,255,255,.1);
+      background: rgba(255, 255, 255, .05);
+      border-color: rgba(255, 255, 255, .1);
     }
+
     .stat-box-val {
       font-size: 12px;
       font-weight: 800;
       display: block;
     }
+
     .stat-box-lbl {
       font-size: 8px;
       font-weight: 600;
@@ -3433,14 +3454,16 @@
       display: block;
       margin-top: 1px;
     }
+
     .rekap-akk-highlight {
-      background: linear-gradient(135deg, rgba(245,158,11,.15) 0%, rgba(245,158,11,.05) 100%);
-      border: 1px solid rgba(245,158,11,.3);
+      background: linear-gradient(135deg, rgba(245, 158, 11, .15) 0%, rgba(245, 158, 11, .05) 100%);
+      border: 1px solid rgba(245, 158, 11, .3);
       border-radius: 12px;
       padding: 12px;
       text-align: center;
       margin-bottom: 12px;
     }
+
     .akk-h-time {
       font-size: 20px;
       font-weight: 900;
@@ -3448,6 +3471,7 @@
       display: block;
       letter-spacing: -0.01em;
     }
+
     .akk-h-lbl {
       font-size: 10px;
       font-weight: 800;
@@ -3455,11 +3479,13 @@
       text-transform: uppercase;
       margin-top: 2px;
     }
+
     .rekap-footer-all {
-       border-top: 1px dashed var(--border);
-       padding-top: 12px;
-       margin-top: 5px;
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+      margin-top: 5px;
     }
+
     .all-time-title {
       font-size: 9px;
       font-weight: 800;
@@ -3469,19 +3495,21 @@
       text-transform: uppercase;
       letter-spacing: .05em;
     }
+
     .all-time-badges {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
     }
+
     .badge-all {
       font-size: 8px;
       font-weight: 700;
       padding: 2px 6px;
       border-radius: 4px;
-      background: rgba(255,255,255,.05);
+      background: rgba(255, 255, 255, .05);
       color: var(--muted);
-      border: 1px solid rgba(255,255,255,.1);
+      border: 1px solid rgba(255, 255, 255, .1);
     }
 
     @media (max-width: 480px) {
@@ -4938,7 +4966,7 @@
        KAMERA / FACE SCAN OVERLAY
        Muncul saat pegawai menekan tombol Absen
   ══════════════════════════════════════════════════ -->
-<!-- ════════════════════════════════════════════════════════
+    <!-- ════════════════════════════════════════════════════════
          KAMERA / FACE SCAN OVERLAY (REVISED)
     ════════════════════════════════════════════════════════ -->
     <div class="cam-overlay hidden" id="camOverlay">
@@ -4955,9 +4983,13 @@
         <div class="model-loading" id="modelLoading">
           <div style="width:100%;max-width:300px;text-align:center">
             <div style="font-size:28px;margin-bottom:10px">🧠</div>
-            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px" id="mlTitle">Memuat Model AI Deteksi Wajah</div>
-            <div style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
-              <div id="mlProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);border-radius:3px;transition:width .4s ease"></div>
+            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px" id="mlTitle">Memuat Model
+              AI Deteksi Wajah</div>
+            <div
+              style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+              <div id="mlProgressBar"
+                style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);border-radius:3px;transition:width .4s ease">
+              </div>
             </div>
             <div id="mlPercent" style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:10px">0%</div>
           </div>
@@ -4978,11 +5010,15 @@
           <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
 
           <!-- Overlay Hasil Meja Absen (Otomatis) -->
-          <div id="mejaOverlayResult" style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:slideUp 0.3s;">
-              <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
-              <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
-              <div id="moStatus" style="font-size:14px; font-weight:700; color:#fff; margin-top:5px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.1);">BERHASIL ABSEN</div>
-              <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:12px; line-height:1.4;">Jam 08:00 WITA</div>
+          <div id="mejaOverlayResult"
+            style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:slideUp 0.3s;">
+            <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
+            <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
+            <div id="moStatus"
+              style="font-size:14px; font-weight:700; color:#fff; margin-top:5px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.1);">
+              BERHASIL ABSEN</div>
+            <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:12px; line-height:1.4;">Jam 08:00
+              WITA</div>
           </div>
         </div>
 
@@ -4997,24 +5033,31 @@
 
         <!-- Face Recognition Reg Info -->
         <div id="faceRegCard" style="display:none;width:100%;max-width:320px;flex-shrink:0">
-            <div style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
-              <div style="display:flex;align-items:center;gap:9px">
-                <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
-                  <img id="faceRegThumb" src="" alt="" style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
-                  <span id="faceRegThumbEmpty">👤</span>
-                </div>
-                <div class="face-reg-info" style="flex:1;min-width:0">
-                  <div style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">🧠 Face Recognition</div>
-                  <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data wajah</div>
-                </div>
-                <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()" style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
+          <div
+            style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:9px">
+              <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
+                <img id="faceRegThumb" src="" alt=""
+                  style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
+                <span id="faceRegThumbEmpty">👤</span>
               </div>
+              <div class="face-reg-info" style="flex:1;min-width:0">
+                <div
+                  style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">
+                  🧠 Face Recognition</div>
+                <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data
+                  wajah</div>
+              </div>
+              <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()"
+                style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
             </div>
+          </div>
         </div>
 
         <!-- Liveness Sederhana -->
-        <div id="livenessMini" style="display:none; width:100%; max-width:320px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); padding:10px; border-radius:10px; text-align:center; font-size:12px; font-weight:700; color:var(--gold);">
-            <span id="lsIcon">🔍</span> <span id="lsText">Verifikasi Keaslian Wajah...</span>
+        <div id="livenessMini"
+          style="display:none; width:100%; max-width:320px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); padding:10px; border-radius:10px; text-align:center; font-size:12px; font-weight:700; color:var(--gold);">
+          <span id="lsIcon">🔍</span> <span id="lsText">Verifikasi Keaslian Wajah...</span>
         </div>
 
         <!-- Preview hasil foto (Hanya untuk absen personal) -->
@@ -5633,7 +5676,8 @@
 
       <!-- Sub-Navigation Admin -->
       <div class="admin-nav">
-        <button class="admin-nav-btn active" id="btn-nav-ops" onclick="switchAdminSection('ops')">🏢 Operasional</button>
+        <button class="admin-nav-btn active" id="btn-nav-ops" onclick="switchAdminSection('ops')">🏢
+          Operasional</button>
         <button class="admin-nav-btn" id="btn-nav-user" onclick="switchAdminSection('user')">👥 Kepegawaian</button>
         <button class="admin-nav-btn" id="btn-nav-config" onclick="switchAdminSection('config')">⚙️ Konfigurasi</button>
       </div>
@@ -5646,7 +5690,8 @@
             <div style="font-size:11px;font-weight:800;color:var(--white)">📋 KONFIRMASI KETERANGAN PEGAWAI</div>
             <button class="btn-sm-admin" onclick="loadKonfirmasiAdmin()">🔄</button>
           </div>
-          <div class="radius-note" style="margin-bottom:12px">Persetujuan untuk izin, sakit, atau tugas luar yang pending.</div>
+          <div class="radius-note" style="margin-bottom:12px">Persetujuan untuk izin, sakit, atau tugas luar yang
+            pending.</div>
           <div id="konfirmasiAdminList">
             <div class="shimmer" style="height:80px;border-radius:12px"></div>
             <div class="shimmer" style="height:80px;border-radius:12px;margin-top:8px"></div>
@@ -5672,19 +5717,22 @@
             <div style="font-size:18px">🖥️</div>
           </div>
           <div class="meja-loc-bar" id="mejaLocBar">
-             <span>📍</span> <span class="loc-val" id="mejaLocVal">Lokasi belum diambil</span>
-             <span id="mejaLocAccuracy" style="font-size:8px;color:var(--muted)"></span>
+            <span>📍</span> <span class="loc-val" id="mejaLocVal">Lokasi belum diambil</span>
+            <span id="mejaLocAccuracy" style="font-size:8px;color:var(--muted)"></span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-            <div style="text-align:center;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:8px">
+            <div
+              style="text-align:center;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15);border-radius:10px;padding:8px">
               <div style="font-size:18px;font-weight:800;color:var(--success)" id="mejaCntMasuk">0</div>
               <div style="font-size:8px;color:var(--muted);font-weight:700">✅ MASUK</div>
             </div>
-            <div style="text-align:center;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:8px">
+            <div
+              style="text-align:center;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:8px">
               <div style="font-size:18px;font-weight:800;color:var(--info)" id="mejaCntPulang">0</div>
               <div style="font-size:8px;color:var(--muted);font-weight:700">🔵 PULANG</div>
             </div>
-            <div style="text-align:center;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:8px">
+            <div
+              style="text-align:center;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:10px;padding:8px">
               <div style="font-size:18px;font-weight:800;color:var(--danger)" id="mejaCntGagal">0</div>
               <div style="font-size:8px;color:var(--muted);font-weight:700">❌ GAGAL</div>
             </div>
@@ -5693,7 +5741,8 @@
           <button class="btn-meja-start" id="btnMejaAbsen" onclick="startMejaAbsen()">
             <span>🖥️</span><span id="btnMejaText">Mulai Meja Absen</span>
           </button>
-          <button class="btn-meja-stop" id="btnMejaStop" onclick="stopMejaAbsen()" style="display:none">⏹️ Hentikan Sesi</button>
+          <button class="btn-meja-stop" id="btnMejaStop" onclick="stopMejaAbsen()" style="display:none">⏹️ Hentikan
+            Sesi</button>
         </div>
       </div>
 
@@ -5701,32 +5750,56 @@
       <div id="admin-section-user" class="admin-section" style="display:none">
         <!-- ══ MANAJEMEN PEGAWAI & BIOMETRIK (Combined Tabbed Card) ══ -->
         <div class="card" id="adminFaceRegCard">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;gap:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:22px;padding:3px">
-              <button id="tabDataBtn" onclick="switchFaceSigTab('data')" style="padding:6px 12px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:9px;font-weight:800;cursor:pointer">👥 Data</button>
-              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')" style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">📷 Wajah</button>
-              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')" style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✍️ TTD</button>
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div
+              style="display:flex;gap:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:22px;padding:3px">
+              <button id="tabDataBtn" onclick="switchFaceSigTab('data')"
+                style="padding:6px 12px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:9px;font-weight:800;cursor:pointer">👥
+                Data</button>
+              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')"
+                style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">📷
+                Wajah</button>
+              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')"
+                style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✍️
+                TTD</button>
             </div>
             <div style="display:flex;gap:6px">
               <button class="btn-sm-admin" id="btnAdminAddData" onclick="showAddPegawai()">➕ Tambah</button>
               <button class="btn-sm-admin" onclick="refreshFaceSigTab()" title="Refresh">🔄</button>
             </div>
           </div>
-          
+
           <div id="faceSigTabData">
-            <div id="pegawaiForm" style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px">
-              <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px">➕ TAMBAH PEGAWAI</div>
+            <div id="pegawaiForm"
+              style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px">
+              <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px">➕
+                TAMBAH PEGAWAI</div>
               <input type="hidden" id="editPegawaiId">
-              <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number" class="form-input" /></div>
-              <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
+              <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number"
+                  class="form-input" /></div>
+              <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama"
+                  type="text" class="form-input" /></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">NIP</label><input id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." /></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input
+                    id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">NIP</label><input
+                    id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." /></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input
+                    id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select id="inPegawaiRole" class="form-input"><option value="USER">USER</option><option value="ADMIN">ADMIN</option><option value="SUPERADMIN">SUPER ADMIN</option></select></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Status Akun</label><select id="inPegawaiStatus" class="form-input"><option value="AKTIF">AKTIF</option><option value="NONAKTIF">NONAKTIF</option></select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select
+                    id="inPegawaiRole" class="form-input">
+                    <option value="USER">USER</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="SUPERADMIN">SUPER ADMIN</option>
+                  </select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Status Akun</label><select
+                    id="inPegawaiStatus" class="form-input">
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="NONAKTIF">NONAKTIF</option>
+                  </select></div>
               </div>
               <div class="result-card" id="pegawaiFormResult" style="margin-bottom:12px">
                 <div class="r-icon" id="pegawaiFormRIcon"></div>
@@ -5737,37 +5810,47 @@
                 <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0;height:42px">
                   <span id="btnSavePegawaiTxt">💾 Simpan Data</span>
                 </button>
-                <button class="btn-admin" onclick="hidePegawaiForm()" style="flex:1;margin:0;height:42px;background:transparent;border:1px solid var(--border)">Batal</button>
+                <button class="btn-admin" onclick="hidePegawaiForm()"
+                  style="flex:1;margin:0;height:42px;background:transparent;border:1px solid var(--border)">Batal</button>
               </div>
             </div>
             <div id="pegawaiMgmtList"></div>
           </div>
-          
+
           <div id="faceSigTabFace" style="display:none">
-            <div class="admin-face-header" style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px">
+            <div class="admin-face-header"
+              style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px">
               <div style="flex:1">
-                <div class="admin-face-title" style="display:flex; align-items:center; gap:6px">📸 PENDAFTARAN WAJAH PEGAWAI</div>
-                <div style="font-size:9px; color:var(--muted); margin-top:3px">Pilih pegawai untuk mendaftarkan biometric baru</div>
+                <div class="admin-face-title" style="display:flex; align-items:center; gap:6px">📸 PENDAFTARAN WAJAH
+                  PEGAWAI</div>
+                <div style="font-size:9px; color:var(--muted); margin-top:3px">Pilih pegawai untuk mendaftarkan
+                  biometric baru</div>
               </div>
-              <button class="btn-sm-admin" onclick="loadAdminFaceReg()" 
-                style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.2); color:var(--gold); font-size:14px; cursor:pointer" title="Refresh Data">🔄</button>
+              <button class="btn-sm-admin" onclick="loadAdminFaceReg()"
+                style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.2); color:var(--gold); font-size:14px; cursor:pointer"
+                title="Refresh Data">🔄</button>
             </div>
 
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label" style="font-size:9px">Target Pegawai</label>
               <div style="display:flex; gap:8px">
-                <select class="form-input" id="selectPegawaiFaceReg" style="flex:1"><option value="">— Pilih Pegawai —</option></select>
-                <button class="btn-admin" onclick="adminCaptureFace()" style="margin:0; padding:0 15px; width:auto; font-size:10px; background:var(--gold)">📷 Daftar</button>
+                <select class="form-input" id="selectPegawaiFaceReg" style="flex:1">
+                  <option value="">— Pilih Pegawai —</option>
+                </select>
+                <button class="btn-admin" onclick="adminCaptureFace()"
+                  style="margin:0; padding:0 15px; width:auto; font-size:10px; background:var(--gold)">📷
+                  Daftar</button>
               </div>
             </div>
 
-            <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)"><span>📋 STATUS WAJAH SEMUA PEGAWAI</span></div>
+            <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)">
+              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span></div>
             <div id="adminFaceRegList" style="margin-top:12px">
               <div class="shimmer" style="height:100px; border-radius:12px"></div>
             </div>
             <div id="adminFaceGallery" style="display:none"></div>
           </div>
-          
+
           <div id="faceSigTabSig" style="display:none">
             <div id="adminSigList"></div>
           </div>
@@ -5775,17 +5858,26 @@
 
         <!-- 👑 MANAJEMEN ADMIN ══ -->
         <div class="card" id="adminMgmtCard" style="margin-top:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
             <div style="font-size:11px;font-weight:800;color:var(--white)">👑 MANAJEMEN ADMIN</div>
             <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
           </div>
           <div id="adminMgmtList" style="margin-bottom:12px"></div>
-          <div style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:15px">
+          <div
+            style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:15px">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram
+                  ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama
+                  Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." />
+              </div>
             </div>
-            <div class="form-group"><label class="form-label" style="font-size:9px">Level Akses</label><select id="inputAdminRole" class="form-input"><option value="admin">Admin</option><option value="superadmin">Super Admin</option></select></div>
+            <div class="form-group"><label class="form-label" style="font-size:9px">Level Akses</label><select
+                id="inputAdminRole" class="form-input">
+                <option value="admin">Admin</option>
+                <option value="superadmin">Super Admin</option>
+              </select></div>
             <button class="btn-admin" onclick="tambahAdmin()" style="margin:0">Tambah Hak Akses</button>
           </div>
         </div>
@@ -5795,13 +5887,17 @@
       <div id="admin-section-config" class="admin-section" style="display:none">
         <!-- 🗺️ LOKASI ══ -->
         <div class="card">
-          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">🗺️ LOKASI PRESENSI</div>
-          <div id="adminMap" style="height:180px;border-radius:12px;margin-bottom:10px;border:1px solid var(--border)"></div>
-          <div class="map-coords" style="margin-bottom:12px">
-             <div class="map-coord-item">Lat: <span id="pinLat">—</span></div>
-             <div class="map-coord-item">Lon: <span id="pinLon">—</span></div>
+          <div
+            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            🗺️ LOKASI PRESENSI</div>
+          <div id="adminMap" style="height:180px;border-radius:12px;margin-bottom:10px;border:1px solid var(--border)">
           </div>
-          <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..." style="margin-bottom:8px" />
+          <div class="map-coords" style="margin-bottom:12px">
+            <div class="map-coord-item">Lat: <span id="pinLat">—</span></div>
+            <div class="map-coord-item">Lon: <span id="pinLon">—</span></div>
+          </div>
+          <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..."
+            style="margin-bottom:8px" />
           <input type="number" class="form-input" id="radiusLokasi" value="100" style="margin-bottom:10px" />
           <button class="btn-admin" onclick="handleTambahLokasi()">📌 Daftarkan Titik</button>
           <div id="lokasiMgmtList" style="margin-top:12px"></div>
@@ -5809,19 +5905,22 @@
 
         <!-- ⏰ JAM & HARI LIBUR ══ -->
         <div class="card" style="margin-top:12px">
-          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">⏰ PENGATURAN JAM GLOBAL</div>
+          <div
+            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            ⏰ PENGATURAN JAM GLOBAL</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
             <input type="time" id="inputJamMasuk" class="form-input" />
             <input type="time" id="inputJamPulang" class="form-input" />
           </div>
           <button class="btn-admin" onclick="simpanJamAbsen()">💾 Update Jam</button>
-          
+
           <div class="divider" style="margin:15px 0"><span>HARI LIBUR</span></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
             <input type="date" id="inputTglLiburMulai" class="form-input" />
             <input type="date" id="inputTglLiburSelesai" class="form-input" />
           </div>
-          <input type="text" id="inputNamaLibur" class="form-input" placeholder="Keterangan libur..." style="margin-bottom:8px" />
+          <input type="text" id="inputNamaLibur" class="form-input" placeholder="Keterangan libur..."
+            style="margin-bottom:8px" />
           <button class="btn-admin" onclick="handleTambahLibur()">➕ Tambah Libur</button>
           <div id="liburAdminList" style="margin-top:10px"></div>
         </div>
@@ -5829,16 +5928,18 @@
         <div class="card" style="margin-top:12px">
           <div class="card-title">🌙 Periode Jam Khusus</div>
           <div id="periodeAdminList" style="margin-bottom:12px"></div>
-          
+
           <!-- UI TAMBAH PERIODE (FORM) -->
-          <div id="periodeForm" style="display:none; background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; border:1px solid var(--border); margin-bottom:15px; animation:slideDown 0.3s ease">
-            <div style="font-size:10px; font-weight:800; color:var(--gold); margin-bottom:12px; letter-spacing:0.05em">PENDAFTARAN PERIODE BARU</div>
-            
+          <div id="periodeForm"
+            style="display:none; background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; border:1px solid var(--border); margin-bottom:15px; animation:slideDown 0.3s ease">
+            <div style="font-size:10px; font-weight:800; color:var(--gold); margin-bottom:12px; letter-spacing:0.05em">
+              PENDAFTARAN PERIODE BARU</div>
+
             <div class="form-group" style="margin-bottom:12px">
               <label class="form-label">Nama Periode</label>
               <input type="text" id="inPeriodeNama" class="form-input" placeholder="Cth: Ramadhan 2026..." />
             </div>
-            
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
               <div class="form-group">
                 <label class="form-label">Dari Tanggal</label>
@@ -5849,7 +5950,7 @@
                 <input type="date" id="inPeriodeSampai" class="form-input" />
               </div>
             </div>
-            
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px">
               <div class="form-group">
                 <label class="form-label">Jam Masuk</label>
@@ -5862,12 +5963,13 @@
             </div>
 
             <div id="periodeResult" style="display:none; margin-bottom:12px"></div>
-            
+
             <div style="display:flex; flex-direction:column; gap:8px">
               <button class="btn-admin" id="btnTambahPeriode" onclick="submitTambahPeriode()">
                 <span id="btnTambahPeriodeTxt">💾 Simpan Periode</span>
               </button>
-              <button class="btn-admin" onclick="togglePeriodeForm(false)" style="background:transparent; border:none; color:var(--muted); font-size:10px; height:auto; padding:5px">Batal</button>
+              <button class="btn-admin" onclick="togglePeriodeForm(false)"
+                style="background:transparent; border:none; color:var(--muted); font-size:10px; height:auto; padding:5px">Batal</button>
             </div>
           </div>
 
@@ -5876,7 +5978,9 @@
 
         <!-- 🧠 AI ENGINE SETTINGS ══ -->
         <div class="card" style="margin-top:12px">
-          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">🧠 PENGATURAN MESIN AI</div>
+          <div
+            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            🧠 PENGATURAN MESIN AI</div>
           <div class="form-group">
             <label class="form-label" style="font-size:9px">Pilih Mesin Deteksi Wajah</label>
             <select id="selectAiEngine" class="form-input">
@@ -5884,32 +5988,51 @@
               <option value="human">Human Library (Advanced / Anti-Spoof)</option>
             </select>
           </div>
-          <div class="radius-note" style="margin-bottom:12px; font-size:9px">Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan saat pertama kali dijalankan.</div>
+          <div class="radius-note" style="margin-bottom:12px; font-size:9px">Human Library menawarkan liveness detection
+            yang lebih akurat (Antispoof) namun memerlukan download model tambahan saat pertama kali dijalankan.</div>
           <button class="btn-admin" onclick="simpanAiEngine()">💾 Simpan & Reload</button>
         </div>
 
         <!-- 📸 FACE RECOGNITION ══ -->
         <div class="card" style="margin-top:12px">
-          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">📸 FACE VERIFICATION SWITCH</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
+          <div
+            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            📸 FACE VERIFICATION SWITCH</div>
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
             <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
-            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer"><div id="faceToggleKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
+            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
+              style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
+              <div id="faceToggleKnob"
+                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
+              </div>
+            </div>
           </div>
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
         <!-- 🖥️ MODE DESKTOP ══ -->
         <div class="card" style="margin-top:12px" id="desktopModeCard">
-          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">🖥️ TAMPILAN MODE DESKTOP</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.04);padding:14px;border:1px solid rgba(96,165,250,.1);border-radius:12px">
+          <div
+            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            🖥️ TAMPILAN MODE DESKTOP</div>
+          <div
+            style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.04);padding:14px;border:1px solid rgba(96,165,250,.1);border-radius:12px">
             <div id="desktopModeLabel" style="font-size:12px;font-weight:700">Memuat...</div>
-            <div id="desktopModeSwitch" onclick="toggleDesktopMode()" style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer"><div id="desktopModeKnob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s"></div></div>
+            <div id="desktopModeSwitch" onclick="toggleDesktopMode()"
+              style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
+              <div id="desktopModeKnob"
+                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Compatibility Stubs -->
-      <div id="faceStatusAdminCard" style="display:none"><div id="faceStatusAdminList"></div></div>
+      <div id="faceStatusAdminCard" style="display:none">
+        <div id="faceStatusAdminList"></div>
+      </div>
       <div id="adminSigCard" style="display:none"></div>
     </div>
 
@@ -6195,7 +6318,7 @@
     // Dipanggil oleh _applyAdminUI() setelah ADMIN_IDS dimuat dari server
     function setupAdminTab() {
       const existing = document.querySelector('.tab[data-tab="admin"]');
-      if (existing) return; 
+      if (existing) return;
       const btn = document.createElement('button');
       btn.className = 'tab admin-tab';
       btn.setAttribute('data-tab', 'admin');
@@ -6210,17 +6333,17 @@
       // Show Target
       const target = $('admin-section-' + sectionId);
       if (target) target.style.display = 'block';
-      
+
       // Update Button State
       document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
       const activeBtn = $('btn-nav-' + sectionId);
       if (activeBtn) activeBtn.classList.add('active');
-      
+
       // Fix Leaflet Map rendering if switching to Config
       if (sectionId === 'config' && typeof adminMap !== 'undefined' && adminMap) {
         setTimeout(() => adminMap.invalidateSize(), 50);
       }
-      
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -6258,7 +6381,7 @@
           loadJamPeriodeAdmin(); loadAdminMgmt();
           setTimeout(() => switchFaceSigTab('data'), 300);
           loadFaceStatusAdmin();
-          
+
           // Initialize AI Engine Selector
           if ($('selectAiEngine')) {
             $('selectAiEngine').value = window._aiEngine || 'faceapi';
@@ -6481,7 +6604,7 @@
       // ── Badge profil besar (dinamis) ──
       const pb = $('profilStatusBadge');
       if (pb) { pb.textContent = `${stEmoji} ${st}`; pb.className = `profil-badge ${stCls === 's-aktif' ? 'aktif-badge' : stCls === 's-nonaktif' ? 'nonaktif-badge' : 'ket-status-badge'}`; }
-      
+
       // Update global role map for current user
       if (MY_ID && p.role) {
         window._adminRoleMap[MY_ID] = p.role;
@@ -7269,7 +7392,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();
-        
+
         if (photo) {
           _writeFaceRefLocal(uid, { dataUrl: photo, descriptor, savedAt });
           updateProfilFaceUI();
@@ -7402,7 +7525,7 @@ File di Google Drive juga akan dihapus.`)) return;
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
     // Model ditarik dari JSDelivr (lebih cepat daripada GitHub langsung)
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
-    
+
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
     let _faceApiLoaded = false;
     let _humanLoaded = false;
@@ -7430,75 +7553,75 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Terpadu: Muat Model AI (face-api atau Human) ──
     async function loadAIModels() {
-  if (_modelsReady) return true;
-  if (_modelLoading) return false;
-  _modelLoading = true;
+      if (_modelsReady) return true;
+      if (_modelLoading) return false;
+      _modelLoading = true;
 
-  try {
-    const engine = window._aiEngine || 'faceapi';
-    console.log(`[AI] Memuat Engine: ${engine}...`);
+      try {
+        const engine = window._aiEngine || 'faceapi';
+        console.log(`[AI] Memuat Engine: ${engine}...`);
 
-    if (engine === 'human') {
-      await _loadHumanScript();
-      
-      const config = {
-        backend: 'webgl', // Paksa pakai GPU agar ringan
-        modelBasePath: HUMAN_MODELS,
-        face: {
-          enabled: true,
-          detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
-          mesh: { enabled: true, modelPath: 'facemesh.json' },
-          iris: { enabled: false }, // Matikan fitur tak perlu
-          description: { enabled: true, modelPath: 'faceres.json' },
-          liveness: { enabled: true }
-        },
-        body: { enabled: false },
-        hand: { enabled: false },
-        object: { enabled: false },
-        gesture: { enabled: false }
-      };
+        if (engine === 'human') {
+          await _loadHumanScript();
 
-      HumanInstance = new window.Human(config);
-      _updateModelProgress(0, 20);
-      
-      // Proses download model AI (Bagian yang sering gagal)
-      await HumanInstance.load();
-      await HumanInstance.warmup(); // Pemanasan engine
-      
-      _updateModelProgress(2, 80);
-      _modelsReady = true;
-    } else {
-      // DEFAULT: Face-API
-      await _loadFaceApiScript();
-      _updateModelProgress(0, 30);
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
-      _updateModelProgress(1, 30);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
-      _modelsReady = true;
-      _updateModelProgress(2, 40);
+          const config = {
+            backend: 'webgl', // Paksa pakai GPU agar ringan
+            modelBasePath: HUMAN_MODELS,
+            face: {
+              enabled: true,
+              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
+              mesh: { enabled: true, modelPath: 'facemesh.json' },
+              iris: { enabled: false }, // Matikan fitur tak perlu
+              description: { enabled: true, modelPath: 'faceres.json' },
+              liveness: { enabled: true }
+            },
+            body: { enabled: false },
+            hand: { enabled: false },
+            object: { enabled: false },
+            gesture: { enabled: false }
+          };
+
+          HumanInstance = new window.Human(config);
+          _updateModelProgress(0, 20);
+
+          // Proses download model AI (Bagian yang sering gagal)
+          await HumanInstance.load();
+          await HumanInstance.warmup(); // Pemanasan engine
+
+          _updateModelProgress(2, 80);
+          _modelsReady = true;
+        } else {
+          // DEFAULT: Face-API
+          await _loadFaceApiScript();
+          _updateModelProgress(0, 30);
+          await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
+          _updateModelProgress(1, 30);
+          await faceapi.nets.faceLandmark68Net.loadFromUri(FACE_API_MODELS);
+          await faceapi.nets.faceRecognitionNet.loadFromUri(FACE_API_MODELS);
+          _modelsReady = true;
+          _updateModelProgress(2, 40);
+        }
+
+        console.log(`[AI] ${engine} Berhasil Dimuat.`);
+        return true;
+
+      } catch (e) {
+        console.error('[AI] Gagal memuat engine:', e);
+
+        // AUTO FALLBACK: Jika Human gagal, paksa balik ke Face-API
+        if (window._aiEngine === 'human') {
+          console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
+          window._aiEngine = 'faceapi';
+          _modelLoading = false;
+          return await loadAIModels();
+        }
+
+        _modelsReady = false;
+        _modelLoading = false;
+        alert('Gagal memuat model AI. Pastikan koneksi internet stabil dan reload halaman.');
+        return false;
+      }
     }
-
-    console.log(`[AI] ${engine} Berhasil Dimuat.`);
-    return true;
-
-  } catch (e) {
-    console.error('[AI] Gagal memuat engine:', e);
-    
-    // AUTO FALLBACK: Jika Human gagal, paksa balik ke Face-API
-    if (window._aiEngine === 'human') {
-      console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
-      window._aiEngine = 'faceapi';
-      _modelLoading = false;
-      return await loadAIModels(); 
-    }
-    
-    _modelsReady = false;
-    _modelLoading = false;
-    alert('Gagal memuat model AI. Pastikan koneksi internet stabil dan reload halaman.');
-    return false;
-  }
-}
 
     // Proxy for backward compatibility if any
     async function loadFaceApiModels() { return loadAIModels(); }
@@ -7651,7 +7774,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       $('buktiOverlay').classList.remove('hidden');
       $('buktiPreviewCam').classList.remove('show');
-      
+
       const btnCap = $('btnBuktiCapture');
       if (btnCap) {
         btnCap.disabled = true;
@@ -7697,13 +7820,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
       const btnCap = $('btnBuktiCapture');
       if (btnCap) {
-          btnCap.disabled = true;
-          btnCap.innerHTML = '<span class="spinner"></span> Memproses...';
+        btnCap.disabled = true;
+        btnCap.innerHTML = '<span class="spinner"></span> Memproses...';
       }
 
       const vid = $('buktiVideo');
       const cnv = document.createElement('canvas');
-      cnv.width = vid.videoWidth; 
+      cnv.width = vid.videoWidth;
       cnv.height = vid.videoHeight;
       const ctx = cnv.getContext('2d');
       ctx.drawImage(vid, 0, 0);
@@ -7744,7 +7867,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const cnv = $('camCanvas');
       const ctx = cnv.getContext('2d');
       const wrap = $('camVideoWrap');
-      
+
       _blinkDetected = false;
       _livenessScore = 0;
       _livenessHistory = [];
@@ -7752,8 +7875,8 @@ File di Google Drive juga akan dihapus.`)) return;
       _isLive = false;
 
       // Munculkan tombol capture manual lebih cepat (3 detik) untuk mode Daftar Wajah/Absen biasa
-      setTimeout(() => { 
-          if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
+      setTimeout(() => {
+        if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false;
       }, 3000);
 
       const loop = async () => {
@@ -7780,81 +7903,81 @@ File di Google Drive juga akan dihapus.`)) return;
           wrap.className = 'cam-video-wrap face-bad';
           setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
           _livenessState.faceOk = false;
-          if(window._isMejaMode) {
-              $('lsIcon').textContent = '😐';
-              $('lsText').textContent = 'Menunggu Wajah...';
-              $('lsText').style.color = 'var(--muted)';
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '😐';
+            $('lsText').textContent = 'Menunggu Wajah...';
+            $('lsText').style.color = 'var(--muted)';
           }
           return;
         }
 
         _livenessState.faceOk = true;
         wrap.className = 'cam-video-wrap face-ok';
-        
+
         // --- LIVENESS LOGIC ---
         if (window._aiEngine === 'human') {
-            _isLive = detection._isHumanLive;
+          _isLive = detection._isHumanLive;
         } else {
-            // Passive Liveness Logic for face-api.js
-            const landmarks = detection.landmarks.positions;
-            if (_lastLandmarks) {
-                let totalDist = 0;
-                for (let i = 0; i < landmarks.length; i++) {
-                    totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
-                }
-                const avgDist = totalDist / landmarks.length;
-                if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5; 
-
-                const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
-                const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
-                const ratio = eyeDist / faceWidth;
-                
-                if (_livenessHistory.length > 5) {
-                    const prevRatio = _livenessHistory[_livenessHistory.length - 1];
-                    const diff = Math.abs(ratio - prevRatio);
-                    if (diff > 0.001) _livenessScore += 2;
-                }
-                _livenessHistory.push(ratio);
-                if (_livenessHistory.length > 30) _livenessHistory.shift();
+          // Passive Liveness Logic for face-api.js
+          const landmarks = detection.landmarks.positions;
+          if (_lastLandmarks) {
+            let totalDist = 0;
+            for (let i = 0; i < landmarks.length; i++) {
+              totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
             }
-            _lastLandmarks = landmarks;
-            if (_livenessScore > 25) _isLive = true;
+            const avgDist = totalDist / landmarks.length;
+            if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
+
+            const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
+            const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
+            const ratio = eyeDist / faceWidth;
+
+            if (_livenessHistory.length > 5) {
+              const prevRatio = _livenessHistory[_livenessHistory.length - 1];
+              const diff = Math.abs(ratio - prevRatio);
+              if (diff > 0.001) _livenessScore += 2;
+            }
+            _livenessHistory.push(ratio);
+            if (_livenessHistory.length > 30) _livenessHistory.shift();
+          }
+          _lastLandmarks = landmarks;
+          if (_livenessScore > 25) _isLive = true;
         }
 
         if (_isLive) {
-            setCamStatus('ok', '✅', 'Wajah Terverifikasi', window._isMejaMode ? 'Sedang mencocokkan...' : 'Posisikan wajah & Tekan tombol');
-            if(window._isMejaMode) {
-                $('lsIcon').textContent = '🛡️';
-                $('lsText').textContent = 'Passive Liveness Approved';
-                $('lsText').style.color = 'var(--success)';
-            }
+          setCamStatus('ok', '✅', 'Wajah Terverifikasi', window._isMejaMode ? 'Sedang mencocokkan...' : 'Posisikan wajah & Tekan tombol');
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '🛡️';
+            $('lsText').textContent = 'Passive Liveness Approved';
+            $('lsText').style.color = 'var(--success)';
+          }
         } else {
-            setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
-            if(window._isMejaMode) {
-                $('lsIcon').textContent = '🔍';
-                $('lsText').textContent = 'Sedang Memverifikasi Identitas...';
-                $('lsText').style.color = 'var(--gold)';
-            }
+          setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '🔍';
+            $('lsText').textContent = 'Sedang Memverifikasi Identitas...';
+            $('lsText').style.color = 'var(--gold)';
+          }
         }
 
         // Auto capture Meja Mode
         if (window._isMejaMode) {
-            if (!_autoCaptured && _modelsReady && _isLive) {
-              _autoCaptured = true;
-              setTimeout(doCapture, 400); 
-            }
+          if (!_autoCaptured && _modelsReady && _isLive) {
+            _autoCaptured = true;
+            setTimeout(doCapture, 400);
+          }
         } else {
-            // Auto capture Mode Personal
-            if (!_autoCaptured && _modelsReady && _isLive) {
-               _autoCaptured = true;
-               setTimeout(() => {
-                   if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
-                       doCapture();
-                   } else {
-                       _autoCaptured = false;
-                   }
-               }, 800);
-            }
+          // Auto capture Mode Personal
+          if (!_autoCaptured && _modelsReady && _isLive) {
+            _autoCaptured = true;
+            setTimeout(() => {
+              if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
+                doCapture();
+              } else {
+                _autoCaptured = false;
+              }
+            }, 800);
+          }
         }
       };
       loop();
@@ -7869,15 +7992,15 @@ File di Google Drive juga akan dihapus.`)) return;
       // Ubah tombol jadi loading
       const btnCap = $('btnCapture');
       if (btnCap) {
-          btnCap.disabled = true;
-          btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
+        btnCap.disabled = true;
+        btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
       }
       setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
 
       // Bekukan video & Ambil gambar
       const vid = $('camVideo');
       const cnv = document.createElement('canvas');
-      cnv.width = vid.videoWidth; 
+      cnv.width = vid.videoWidth;
       cnv.height = vid.videoHeight;
       const ctx = cnv.getContext('2d');
       // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
@@ -7898,40 +8021,40 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 2. Handle Continuous Scan (Meja Absen)
       if (window._isMejaMode) {
-          if (_allFaceDescriptors.length > 0 && descriptor) {
-            const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-            const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
-            
-            if (bestMatch.label !== 'unknown') {
-              _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
-              return; 
-            }
+        if (_allFaceDescriptors.length > 0 && descriptor) {
+          const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+          const bestMatch = faceMatcher.findBestMatch(new Float32Array(descriptor));
+
+          if (bestMatch.label !== 'unknown') {
+            _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+            return;
           }
-          _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
-          return;
+        }
+        _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+        return;
       }
 
       // 3. TAMPILKAN PREVIEW FOTO (SEMBUNYIKAN VIDEO)
       $('camVideoWrap').style.display = 'none'; // Sembunyikan frame kamera
       $('camStatus').style.display = 'none';    // Sembunyikan status
       $('livenessMini').style.display = 'none';
-      
+
       let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
-      
+
       // Jika Absen Personal (bukan Daftar Wajah Admin), tampilkan persentase kecocokan
       if (!_absenCallbackAfterCam?.isRegister) {
-          const ref = getFaceRef();
-          if (ref && descriptor) {
-            const dist = euclideanDistance(ref.descriptor, descriptor);
-            const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-            if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
-            else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
-          }
+        const ref = getFaceRef();
+        if (ref && descriptor) {
+          const dist = euclideanDistance(ref.descriptor, descriptor);
+          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+          if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
+          else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+        }
       } else {
-          // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
-          if (!descriptor) {
-             match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
-          }
+        // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
+        if (!descriptor) {
+          match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
+        }
       }
 
       _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
@@ -9968,13 +10091,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
         <!-- ── BADGE STATUS BAWAH ── -->
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-          ${(function(){
-            const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
-            if (mAll === 0) return '';
-            const h = Math.floor(mAll / 60), m = mAll % 60;
-            const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
-            return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
-          })()}
+          ${(function () {
+              const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
+              if (mAll === 0) return '';
+              const h = Math.floor(mAll / 60), m = mAll % 60;
+              const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
+              return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
+            })()}
           ${masuk > 0 ? `<span class="pbar-item pb-masuk"     >✅ Masuk</span>` : ''}
           ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${luarMasuk}×</span>` : ''}
           ${pulang > 0 ? `<span class="pbar-item pb-pulang"    >🔵 Pulang</span>` : ''}
@@ -10013,7 +10136,7 @@ File di Google Drive juga akan dihapus.`)) return;
            TAMPILAN RANGE — KARTU PREMIUM (V2)
            ───────────────────────────────────────── */
         const mAllTotal = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
-        const akkTotalWaktuFmt = (function() {
+        const akkTotalWaktuFmt = (function () {
           const h = Math.floor(mAllTotal / 60), m = mAllTotal % 60;
           return h > 0 ? `${h}j ${m}m` : `${m}m`;
         })();
@@ -11229,7 +11352,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!res.ok) throw new Error('Refresh failed');
         const ud = await res.json();
         const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID));
-        
+
         if (!users.length) {
           el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada data pegawai</div></div>`;
           return;
@@ -11249,7 +11372,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const jab = u.jabatan || u.Jabatan || '—';
           const status = (u.status || u.Status || 'AKTIF').toUpperCase();
           const isAktif = status === 'AKTIF';
-          
+
           return `<div class="face-adm-item" style="padding:10px 12px; margin-bottom:8px">
             <div class="face-adm-thumb" style="width:36px; height:36px; border-radius:10px; background:rgba(255,184,0,0.1); display:flex; align-items:center; justify-content:center; font-size:16px">
               ${isAktif ? '👤' : '💤'}
@@ -11315,7 +11438,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
         $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
-        
+
         f.style.display = 'block';
         f.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } catch (e) { console.error('Edit error:', e); }
@@ -11345,7 +11468,7 @@ File di Google Drive juga akan dihapus.`)) return;
           body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
         });
         const d = await res.json();
-        
+
         if (!res.ok || d.ok === false) {
           showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan data pegawai.');
         } else {
@@ -11368,9 +11491,9 @@ File di Google Drive juga akan dihapus.`)) return;
         });
         const d = await res.json();
         if (d.ok !== false) {
-           loadPegawaiMgmt();
+          loadPegawaiMgmt();
         } else {
-           alert('Gagal: ' + (d.message || 'Error server'));
+          alert('Gagal: ' + (d.message || 'Error server'));
         }
       } catch (e) { alert('Server error'); }
     }
@@ -12178,16 +12301,16 @@ File di Google Drive juga akan dihapus.`)) return;
               try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (_) { }
             }
             const thumb = p.face_photo || null;
-            
+
             // Tentukan Engine Type
             let engineBadge = '';
             const histData = p.face_histogram || p.descriptor;
             if (histData && histData !== '' && histData !== '[]') {
-               try {
-                  const arr = typeof histData === 'string' ? JSON.parse(histData) : histData;
-                  if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
-                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
-               } catch(e) {}
+              try {
+                const arr = typeof histData === 'string' ? JSON.parse(histData) : histData;
+                if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3)">🛡️ Human</span>';
+                else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3)">🤖 API</span>';
+              } catch (e) { }
             }
 
             html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
@@ -12460,15 +12583,15 @@ File di Google Drive juga akan dihapus.`)) return;
           const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64 || faceData.face_photo)) || u.face_photo || null;
           const hasFace = !!(u.has_face || faceData || facePhoto);
           const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
-          
+
           let engineBadge = '';
           const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
           if (histD && histD !== '' && histD !== '[]') {
-               try {
-                  const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
-                  if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-                  else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-               } catch(e) {}
+            try {
+              const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
+              if (arr.length >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+              else if (arr.length === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+            } catch (e) { }
           }
 
           const faceS = hasFace ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
@@ -13027,7 +13150,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _allFaceDescriptors = [];
     let _mejaGpsLocation = null;
     let _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
-    
+
     // Passive Liveness State
     let _livenessScore = 0;
     let _livenessHistory = [];
@@ -13126,12 +13249,12 @@ File di Google Drive juga akan dihapus.`)) return;
 
         _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
         _updateMejaCnt();
-        
+
         window._isMejaMode = true; // Set Global State
         _isMejaAbsen = true;
 
         _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
-        
+
         if (btn) btn.style.display = 'none';
         const btnStop = $('btnMejaStop');
         if (btnStop) btnStop.style.display = 'flex';
@@ -13141,7 +13264,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
         $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
         $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
-        
+
       } catch (e) {
         _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
         if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
@@ -13153,9 +13276,9 @@ File di Google Drive juga akan dihapus.`)) return;
       _isMejaAbsen = false;
       window._mejaProcessing = false;
       _allFaceDescriptors = [];
-      
+
       closeCamOverlay(false); // Mematikan kamera & stream (programmatic, bukan oleh user)
-      
+
       _setMejaStatus('idle', '🖥️', 'Sesi Dihentikan', 'Counter tersimpan di atas');
       const btnStart = $('btnMejaAbsen');
       const btnStop = $('btnMejaStop');
@@ -13164,231 +13287,231 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
-async function generateRekapPDF() {
-  // 1. Validasi Awal
-  if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
-    showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
-    return;
-  }
-
-  const btn = $('btnDownloadPDF');
-  const originalHtml = btn.innerHTML;
-
-  try {
-    // UI: Loading State
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
-
-    const { jsPDF } = window.jspdf;
-    if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
-
-    const doc = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: [215, 330]
-    });
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const dari = $('rekapDari').value;
-    const sampai = $('rekapSampai').value;
-    const isHarian = dari === sampai;
-    const tanggalLabel = isHarian
-      ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-      : `${dari} s.d. ${sampai}`;
-
-    const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
-
-    let sigMap = {};
-    try {
-      const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-      const sigJson = sigRes.ok ? await sigRes.json() : {};
-      const sigData = sigJson.data || sigJson || [];
-      if (Array.isArray(sigData)) {
-        sigData.forEach(s => {
-          if (s.signature && s.signature.length > 100) {
-            sigMap[String(s.telegram_id)] = s.signature;
-          }
-        });
+    async function generateRekapPDF() {
+      // 1. Validasi Awal
+      if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
+        showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
+        return;
       }
-    } catch (e) {
-      console.warn("Gagal load paraf, lanjut tanpa paraf.");
-    }
 
-    const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+      const btn = $('btnDownloadPDF');
+      const originalHtml = btn.innerHTML;
 
-    // Statistik untuk ringkasan di bawah
-    const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tanpaBerita: 0, terlambat: 0 };
+      try {
+        // UI: Loading State
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
 
-    // 3. Update Table Body: Tambahkan Jabatan & Keterangan
-    const tableBody = filteredPegawai.map((p, i) => {
-      const row = p.dataExcelRow || {};
-      const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
-      const jamP = row['Jam Pulang'] || p.jamPulang || '—';
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
 
-      // Logika Status & Keterangan
-      let ketStatus = '';
-      if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
-      else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
-      else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
-      else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
-      else { ketStatus = 'TB'; stats.tanpaBerita++; }
+        const doc = new jsPDF({
+          orientation: 'p',
+          unit: 'mm',
+          format: [215, 330]
+        });
 
-      if (p.lambat > 0) stats.terlambat++;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const dari = $('rekapDari').value;
+        const sampai = $('rekapSampai').value;
+        const isHarian = dari === sampai;
+        const tanggalLabel = isHarian
+          ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          : `${dari} s.d. ${sampai}`;
 
-      const logKet = p.logKet || '';
-      const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
+        const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
 
-      return [
-        i + 1,
-        `${p.nama}\nNIP. ${p.nip || '—'}`,
-        p.jabatan || '—',
-        jamM,
-        '',
-        jamP,
-        '',
-        finalKet || '—'
-      ];
-    });
+        let sigMap = {};
+        try {
+          const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
+          const sigJson = sigRes.ok ? await sigRes.json() : {};
+          const sigData = sigJson.data || sigJson || [];
+          if (Array.isArray(sigData)) {
+            sigData.forEach(s => {
+              if (s.signature && s.signature.length > 100) {
+                sigMap[String(s.telegram_id)] = s.signature;
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("Gagal load paraf, lanjut tanpa paraf.");
+        }
 
-    // 4. Proses Tabel
-    doc.autoTable({
-      startY: 60,
-      margin: { top: 20, left: 10, right: 10, bottom: 20},
-      head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
-      body: tableBody,
-      theme: 'grid',
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-      styles: { font: 'times', fontSize: 7.5, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 7 },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 40 },
-        3: { halign: 'center', cellWidth: 16 },
-        4: { cellWidth: 22, minCellHeight: 14 },
-        5: { halign: 'center', cellWidth: 16 },
-        6: { cellWidth: 22, minCellHeight: 14 },
-        7: { cellWidth: 27 }
-      },
-      didDrawCell: (data) => {
-        if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
-          const rowIdx = data.row.index;
-          const peg = filteredPegawai[rowIdx];
-          if (!peg) return;
+        const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
-          const uid = String(peg.id || peg.ID || peg.telegram_id || '');
-          const sig = sigMap[uid];
+        // Statistik untuk ringkasan di bawah
+        const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tanpaBerita: 0, terlambat: 0 };
 
-          if (sig) {
-            const isParafMasuk = (data.column.index === 4);
-            const jamVal = isParafMasuk ?
-              (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) :
-              (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+        // 3. Update Table Body: Tambahkan Jabatan & Keterangan
+        const tableBody = filteredPegawai.map((p, i) => {
+          const row = p.dataExcelRow || {};
+          const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
+          const jamP = row['Jam Pulang'] || p.jamPulang || '—';
 
-            if (jamVal && !['—', '-', 'Alpa', 'Alpha', 'Tanpa Berita', 'TB', 'Belum'].includes(jamVal.trim())) {
+          // Logika Status & Keterangan
+          let ketStatus = '';
+          if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
+          else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
+          else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
+          else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
+          else { ketStatus = 'TB'; stats.tanpaBerita++; }
+
+          if (p.lambat > 0) stats.terlambat++;
+
+          const logKet = p.logKet || '';
+          const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
+
+          return [
+            i + 1,
+            `${p.nama}\nNIP. ${p.nip || '—'}`,
+            p.jabatan || '—',
+            jamM,
+            '',
+            jamP,
+            '',
+            finalKet || '—'
+          ];
+        });
+
+        // 4. Proses Tabel
+        doc.autoTable({
+          startY: 60,
+          margin: { top: 20, left: 10, right: 10, bottom: 20 },
+          head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          body: tableBody,
+          theme: 'grid',
+          headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
+          styles: { font: 'times', fontSize: 7.5, cellPadding: 2, valign: 'middle', overflow: 'linebreak' },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 7 },
+            1: { cellWidth: 45 },
+            2: { cellWidth: 40 },
+            3: { halign: 'center', cellWidth: 16 },
+            4: { cellWidth: 22, minCellHeight: 14 },
+            5: { halign: 'center', cellWidth: 16 },
+            6: { cellWidth: 22, minCellHeight: 14 },
+            7: { cellWidth: 27 }
+          },
+          didDrawCell: (data) => {
+            if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
+              const rowIdx = data.row.index;
+              const peg = filteredPegawai[rowIdx];
+              if (!peg) return;
+
+              const uid = String(peg.id || peg.ID || peg.telegram_id || '');
+              const sig = sigMap[uid];
+
+              if (sig) {
+                const isParafMasuk = (data.column.index === 4);
+                const jamVal = isParafMasuk ?
+                  (peg.dataExcelRow?.['Jam Masuk'] || peg.jamMasuk) :
+                  (peg.dataExcelRow?.['Jam Pulang'] || peg.jamPulang);
+
+                if (jamVal && !['—', '-', 'Alpa', 'Alpha', 'Tanpa Berita', 'TB', 'Belum'].includes(jamVal.trim())) {
+                  try {
+                    doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 18, 10, undefined, 'FAST');
+                  } catch (err) { }
+                }
+              }
+            }
+          },
+          didDrawPage: (data) => {
+            if (data.pageNumber === 1) {
               try {
-                doc.addImage(sig, 'PNG', data.cell.x + 2, data.cell.y + 2, 18, 10, undefined, 'FAST');
-              } catch (err) { }
+                doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+              } catch (e) { }
+
+              doc.setFont('times', 'bold');
+              doc.setFontSize(14);
+              doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
+              doc.setFontSize(18);
+              doc.text('BADAN PERENCANAAN PEMBANGUNAN', pageWidth / 2 + 10, 22, { align: 'center' });
+              doc.text('RISET DAN INOVASI DAERAH', pageWidth / 2 + 10, 28, { align: 'center' });
+              doc.setFont('times', 'normal');
+              doc.setFontSize(12);
+              doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
+
+              doc.setLineWidth(0.7);
+              doc.line(15, 37, pageWidth - 15, 37);
+              doc.setLineWidth(0.2);
+              doc.line(15, 38, pageWidth - 15, 38);
+
+              doc.setFontSize(11);
+              doc.setFont('times', 'bold');
+              doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
+              doc.setFont('times', 'normal');
+              doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
             }
           }
+        });
+
+        // 5. Statistik Kehadiran & Footer
+        let currentY = doc.lastAutoTable.finalY + 10;
+        if (currentY + 60 > pageHeight) {
+          doc.addPage();
+          currentY = 20;
         }
-      },
-      didDrawPage: (data) => {
-        if (data.pageNumber === 1) {
-          try {
-            doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-          } catch (e) { }
 
-          doc.setFont('times', 'bold');
-          doc.setFontSize(14);
-          doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
-          doc.setFontSize(18);
-          doc.text('BADAN PERENCANAAN PEMBANGUNAN', pageWidth / 2 + 10, 22, { align: 'center' });
-          doc.text('RISET DAN INOVASI DAERAH', pageWidth / 2 + 10, 28, { align: 'center' });
-          doc.setFont('times', 'normal');
-          doc.setFontSize(12);
-          doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
+        // Box Statistik
+        doc.setFont('times', 'bold');
+        doc.setFontSize(10);
+        doc.text('Ringkasan Kehadiran:', 15, currentY);
+        doc.setFont('times', 'normal');
+        doc.setFontSize(9);
+        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
+        doc.text(statText, 15, currentY + 6);
 
-          doc.setLineWidth(0.7);
-          doc.line(15, 37, pageWidth - 15, 37);
-          doc.setLineWidth(0.2);
-          doc.line(15, 38, pageWidth - 15, 38);
-
-          doc.setFontSize(11);
-          doc.setFont('times', 'bold');
-          doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
-          doc.setFont('times', 'normal');
-          doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
+        let footerY = currentY + 20;
+        if (footerY + 45 > pageHeight) {
+          doc.addPage();
+          footerY = 25;
         }
+
+        doc.setFontSize(10);
+        const signatureX = pageWidth - 60; // Posisi di sisi kanan
+        doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
+        doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
+        doc.text('Kepala Badan', signatureX, footerY + 11, { align: 'center' });
+
+        const kaban = filteredPegawai[0];
+        const kabanSig = sigMap[String(kaban?.id)];
+        if (kabanSig) {
+          try { doc.addImage(kabanSig, 'PNG', signatureX - 15, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
+        }
+
+        doc.setFont('times', 'bold');
+        doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
+        doc.setFont('times', 'normal');
+        doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
+
+        // 6. Simpan & Kirim
+        const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
+        doc.save(fileName);
+
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        await apiFetch(P.kirimRekap, {
+          method: 'POST',
+          body: JSON.stringify({
+            chat_id: String(MY_ID || REKAP_CHAT_ID || ''),
+            pdf_base64: pdfBase64,
+            namaFilePdf: fileName,
+            tanggal_label: tanggalLabel,
+            dari: dari,
+            sampai: sampai
+          })
+        });
+        showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
+
+      } catch (e) {
+        console.error('PDF Generation Error:', e);
+        showRekapToast('fail', '❌ Gagal membuat PDF: ' + (e.message || 'Error tidak diketahui'));
+      } finally {
+        // Reset Button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
       }
-    });
-
-    // 5. Statistik Kehadiran & Footer
-    let currentY = doc.lastAutoTable.finalY + 10;
-    if (currentY + 60 > pageHeight) {
-      doc.addPage();
-      currentY = 20;
     }
-
-    // Box Statistik
-    doc.setFont('times', 'bold');
-    doc.setFontSize(10);
-    doc.text('Ringkasan Kehadiran:', 15, currentY);
-    doc.setFont('times', 'normal');
-    doc.setFontSize(9);
-    const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
-    doc.text(statText, 15, currentY + 6);
-
-    let footerY = currentY + 20;
-    if (footerY + 45 > pageHeight) {
-      doc.addPage();
-      footerY = 25;
-    }
-
-    doc.setFontSize(10);
-    const signatureX = pageWidth - 60; // Posisi di sisi kanan
-    doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
-    doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
-    doc.text('Kepala Badan', signatureX, footerY + 11, { align: 'center' });
-
-    const kaban = filteredPegawai[0];
-    const kabanSig = sigMap[String(kaban?.id)];
-    if (kabanSig) {
-      try { doc.addImage(kabanSig, 'PNG', signatureX - 15, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
-    }
-
-    doc.setFont('times', 'bold');
-    doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
-    doc.setFont('times', 'normal');
-    doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
-
-    // 6. Simpan & Kirim
-    const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
-    doc.save(fileName);
-
-    const pdfBase64 = doc.output('datauristring').split(',')[1];
-    await apiFetch(P.kirimRekap, {
-      method: 'POST',
-      body: JSON.stringify({
-        chat_id: String( MY_ID || REKAP_CHAT_ID || ''),
-        pdf_base64: pdfBase64,
-        namaFilePdf: fileName,
-        tanggal_label: tanggalLabel,
-        dari: dari,
-        sampai: sampai
-      })
-    });
-    showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
-
-  } catch (e) {
-    console.error('PDF Generation Error:', e);
-    showRekapToast('fail', '❌ Gagal membuat PDF: ' + (e.message || 'Error tidak diketahui'));
-  } finally {
-    // Reset Button
-    btn.disabled = false;
-    btn.innerHTML = originalHtml;
-  }
-}
 
     /* ════════════════════════════════════════════════════
        OFFLINE QUEUE SYNC ════ */
@@ -13469,20 +13592,20 @@ async function generateRekapPDF() {
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
     // 4. Handler Pencocokan & Cek Status (AJAX ke Webhook)
-  // Tambahkan dua variabel ini di bagian paling atas script (di luar fungsi) 
-// agar tracker tetap tersimpan selama aplikasi terbuka.
-let _lastMejaId = null;
-let _lastMejaTime = 0;
+    // Tambahkan dua variabel ini di bagian paling atas script (di luar fungsi) 
+    // agar tracker tetap tersimpan selama aplikasi terbuka.
+    let _lastMejaId = null;
+    let _lastMejaTime = 0;
 
-async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+    async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
       const sekarang = Date.now();
 
       // 1. SISTEM ANTI-SPAM (COOLDOWN)
       // Jika orang yang sama di-scan lagi dalam waktu kurang dari 20 detik, abaikan.
       if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
-          console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
-          setTimeout(() => { _autoCaptured = false; }, 2000); // FIX: Memastikan loop deteksi bisa lanjut mengecek orang selanjutnya
-          return;
+        console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
+        setTimeout(() => { _autoCaptured = false; }, 2000); // FIX: Memastikan loop deteksi bisa lanjut mengecek orang selanjutnya
+        return;
       }
 
       // 2. LOCK PROSES
@@ -13502,28 +13625,28 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
 
       // JIKA WAJAH TIDAK DIKENAL
       if (telegramId === 'unknown') {
-          $('moIcon').textContent = '❓';
-          $('moNama').textContent = 'TIDAK DIKENAL';
-          $('moStatus').textContent = 'WAJAH BELUM TERDAFTAR';
-          $('moStatus').style.color = 'var(--danger)';
-          $('moStatus').style.background = 'rgba(239,68,68,0.2)';
-          $('moDetail').textContent = 'Mulai ulang scan dalam 3 detik...';
-          
-          _mejaCnt.gagal++;
-          _updateMejaCnt();
-          _setMejaStatus('active', '⚠️', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
+        $('moIcon').textContent = '❓';
+        $('moNama').textContent = 'TIDAK DIKENAL';
+        $('moStatus').textContent = 'WAJAH BELUM TERDAFTAR';
+        $('moStatus').style.color = 'var(--danger)';
+        $('moStatus').style.background = 'rgba(239,68,68,0.2)';
+        $('moDetail').textContent = 'Mulai ulang scan dalam 3 detik...';
 
-          setTimeout(() => {
-              overlay.style.display = 'none';
-              window._mejaProcessing = false;
-              _autoCaptured = false;
-              _captureData = null;
-              
-              const vid = $('camVideo');
-              if (vid && vid.paused) vid.play().catch(()=>{});
-              startDetectLoop();
-          }, 3000);
-          return;
+        _mejaCnt.gagal++;
+        _updateMejaCnt();
+        _setMejaStatus('active', '⚠️', 'Wajah Tak Dikenal', 'Pegawai tidak terdaftar di sistem');
+
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          window._mejaProcessing = false;
+          _autoCaptured = false;
+          _captureData = null;
+
+          const vid = $('camVideo');
+          if (vid && vid.paused) vid.play().catch(() => { });
+          startDetectLoop();
+        }, 3000);
+        return;
       }
 
       // JIKA WAJAH DIKENAL
@@ -13564,7 +13687,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
           const jenis = d.jenis_absen || d.validasi?.jenis_absen || 'ABSEN BERHASIL';
           const ismasuk = jenis.toUpperCase().includes('MASUK');
           if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
-          
+
           $('moIcon').textContent = '✅';
           $('moStatus').textContent = jenis.toUpperCase();
           $('moStatus').style.color = '#4ade80';
@@ -13573,17 +13696,17 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
           _setMejaStatus('active', '✅', `${user.nama} — ${jenis}`, 'Siap scan berikutnya...');
         } else {
           let errMsg = d.message || d.error || 'Ditolak Server';
-          if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan; 
-          
+          if (d.validasi && d.validasi.keterangan) errMsg = d.validasi.keterangan;
+
           const isSudah = errMsg.toLowerCase().includes('sudah');
-          
+
           $('moIcon').textContent = isSudah ? 'ℹ️' : '❌';
           $('moStatus').textContent = isSudah ? 'SUDAH ABSEN' : 'GAGAL';
           $('moStatus').style.color = isSudah ? '#60a5fa' : '#f87171';
           $('moStatus').style.background = isSudah ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)';
           $('moDetail').textContent = errMsg;
 
-          if(!isSudah) _mejaCnt.gagal++;
+          if (!isSudah) _mejaCnt.gagal++;
           _setMejaStatus('active', isSudah ? 'ℹ️' : '⚠️', user.nama, errMsg);
         }
       } catch (e) {
@@ -13604,12 +13727,12 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
         _autoCaptured = false;
         _captureData = null;
         setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
-        
+
         const vid = $('camVideo');
         if (vid && vid.paused) {
-            vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
+          vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
         }
-        startDetectLoop(); 
+        startDetectLoop();
       }, 3500);
     }
 
@@ -13643,14 +13766,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
     // Auto-init Desktop Mode jika di layar laptop/PC
     setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (_) { } }, 1000);
 
-    // Patch v2: Background Pre-load
-    // Start downloading models after 4 seconds to avoid slowing down initial app load
-    setTimeout(() => {
-      console.log('[FaceAPI] Auto pre-loading models in background...');
-      loadFaceApiModels();
-    }, 4000);
-
-
+    // Model AI akan diunduh secara lazily saat user membuka kamera.
   </script>
 </body>
 

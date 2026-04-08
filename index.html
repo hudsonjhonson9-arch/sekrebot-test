@@ -6662,7 +6662,15 @@
       }
 
       _profileLoading = false;
-      setUserFallback();
+      // Hanya panggil fallback jika data benar-benar kosong (misal: pertama kali buka)
+      // Jika sebelumnya sudah berhasil load, pertahankan data lama agar tidak "hilang" (UX stabil)
+      if (!userProfile) {
+        setUserFallback();
+      } else if (isManual) {
+        // Jika manual refresh gagal, beri tahu user tapi jangan hapus data yang ada
+        applyProfile(); 
+        console.warn('[Profile] Manual refresh failed, preserving existing data.');
+      }
     }
     function fullName() { return tgUser.first_name ? `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}` : 'Pengguna'; }
     function applyProfile() {
@@ -6903,8 +6911,6 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function setT(id, v) { const e = $(id); if (e) e.textContent = v; }
-    // Pemuatan data profil (sekarang akan lgsg jalan jika ada cache)
-    loadUserProfile();
 
     /* ════ RIWAYAT HARI INI ════ */
     function parseRows(json) {

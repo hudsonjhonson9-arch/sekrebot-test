@@ -6443,7 +6443,10 @@
           if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
           // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
-        }, 350);
+        }, 50); // Reduced delay for better responsiveness
+        
+        // Immediate check as well
+        if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
       }
       // Auto-load tanda tangan saat buka tab profil
       if (tab === 'profil') {
@@ -7369,8 +7372,8 @@ File di Google Drive juga akan dihapus.`)) return;
           const res = await HumanInstance.detect(input);
           return (res.face && res.face.length > 0) ? res.face[0].embedding : null;
         } else if (window.faceapi) {
-          const detection = await faceapi
-            .detectSingleFace(input, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+          const detection = await window.faceapi
+            .detectSingleFace(input, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
             .withFaceLandmarks()
             .withFaceDescriptor();
           return detection ? detection.descriptor : null;
@@ -7627,8 +7630,8 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
-    const FACE_API_CDN = 'https://unpkg.com/@vladmandic/face-api/dist/face-api.js';
-    const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
+    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
+    const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
 
@@ -7719,9 +7722,9 @@ File di Google Drive juga akan dihapus.`)) return;
           
           // Enhanced loader with individual net error check
           const nets = [
-            { net: faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
-            { net: faceapi.nets.faceLandmark68Net, name: 'Landmarks' },
-            { net: faceapi.nets.faceRecognitionNet, name: 'Recognition' }
+            { net: window.faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
+            { net: window.faceapi.nets.faceLandmark68Net, name: 'Landmarks' },
+            { net: window.faceapi.nets.faceRecognitionNet, name: 'Recognition' }
           ];
 
           for (let i = 0; i < nets.length; i++) {
@@ -8030,7 +8033,7 @@ File di Google Drive juga akan dihapus.`)) return;
           }
         } else {
           // Default: face-api.js
-          const d = await faceapi.detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
+          const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
           if (d) detection = d;
         }
 
@@ -8173,7 +8176,7 @@ File di Google Drive juga akan dihapus.`)) return;
             if (minDict > 0.55) bestMatch.label = 'unknown';
           } else {
             // Face-API Standard Matcher
-            const faceMatcher = new faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+            const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
             const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
             bestMatch = { label: res.label, distance: res.distance };
           }
@@ -11838,6 +11841,14 @@ File di Google Drive juga akan dihapus.`)) return;
         try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
         updateClock();
         initJamAdminUI();
+        
+        // FIX: Jika sedang di tab admin saat data jam/admin dimuat, refresh UI admin
+        const activeTab = document.querySelector('.tab.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+        if (activeTab === 'admin' && IS_ADMIN) {
+           _applyAdminUIExtended();
+           // Trigger loading data admin jika baru pertama kali terbuka
+           if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+        }
       } catch (e) {
         initJamAdminUI();
       }
@@ -13421,8 +13432,8 @@ File di Google Drive juga akan dihapus.`)) return;
             return { id: tid, descriptor: desc };
           } else {
             // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
-            if (dLen === 128) {
-              return new faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+            if (dLen === 128 && window.faceapi) {
+              return new window.faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
             } else {
               // Fallback for non-128 descriptors in face-api mode
               return { id: tid, descriptor: desc, skipFaceApi: true };

@@ -7383,7 +7383,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     // ── Muat Model AI dengan Progress UI (Patch v2) ──
-    async function loadFaceApiModels() {
+    async function loadFaceApiModels() {async function loadFaceApiModels() {
       if (_modelsReady) return true;
       if (_modelLoading) {
         while (_modelLoading) await new Promise(r => setTimeout(r, 200));
@@ -7393,7 +7393,7 @@ File di Google Drive juga akan dihapus.`)) return;
       try {
         await _loadFaceApiScript();
 
-        // Menggunakan SSD Mobilenet V1 (Lebih akurat dibanding Tiny)
+        // Menggunakan SSD Mobilenet V1 (Jauh lebih akurat dari Tiny)
         _updateModelProgress(0, 10);
         await faceapi.nets.ssdMobilenetv1.loadFromUri(FACE_API_MODELS);
         
@@ -7405,7 +7405,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
         _modelsReady = true;
         _updateModelProgress(2, 34); 
-        console.log('[FaceAPI] Model SSD Mobilenet V1 Siap');
+        console.log('[FaceAPI] SSD Mobilenet V1 Ready');
       } catch (e) {
         console.error('face-api.js load error:', e);
         _modelsReady = false;
@@ -7651,66 +7651,50 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Loop deteksi wajah (rAF) ── */
-    function startDetectLoop() {
+    function startDetectLoop() {function startDetectLoop() {
       const vid = $('camVideo');
       const wrap = $('camVideoWrap');
-      
       _blinkDetected = false;
 
-      // Munculkan tombol capture manual lebih cepat (3 detik) sebagai fallback (cadangan)
+      // Munculkan tombol manual jika AI lambat (fallback)
       setTimeout(() => { 
           if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false; 
-      }, 3000);
+      }, 5000);
 
-      // WAJIB: Tampilkan panel instruksi Liveness (Kedip) untuk semua mode
-      const livenessUI = $('livenessMini');
-      if (livenessUI) livenessUI.style.display = 'block';
-
-      const loop = async () => {// GANTI BAGIAN LOOP DI DALAM startDetectLoop MENJADI INI:
-    const loop = async () => {
+      const loop = async () => {
         if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         _detectLoop = requestAnimationFrame(loop);
         if (_autoCaptured) return;
 
-        // Menggunakan SsdMobilenetv1Options (Bukan Tiny lagi)
+        // Deteksi menggunakan SSD Mobilenet
         const detection = await faceapi.detectSingleFace(vid, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
                                        .withFaceLandmarks(true);
 
         if (!detection) {
           wrap.className = 'cam-video-wrap face-bad';
           setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
-          _livenessState.faceOk = false;
-          $('lsIcon').textContent = '😐';
-          $('lsText').textContent = 'Menunggu Wajah...';
           return;
         }
 
-        _livenessState.faceOk = true;
-
-        // Validasi Bounding Box (Sama seperti sebelumnya)
+        // 1. VALIDASI POSISI & JARAK
         const box = detection.detection.box;
         const videoWidth = vid.videoWidth || 640;
         const minFaceWidth = videoWidth * 0.25; 
         const isCenteredX = (box.x > videoWidth * 0.05) && ((box.x + box.width) < videoWidth * 0.95);
 
         if (box.width < minFaceWidth) {
-            wrap.className = 'cam-video-wrap face-warn';
-            setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi');
+            setCamStatus('warn', '🔍', 'Terlalu Jauh', 'Maju sedikit lagi ke kamera');
             return;
         }
-
-        // Skor SSD biasanya stabil di 0.8 - 0.99
-        const faceScore = detection.detection.score;
-        if (faceScore < 0.5) { 
-            wrap.className = 'cam-video-wrap face-warn';
-            setCamStatus('warn', '⚠️', 'Kurang Jelas', 'Cari posisi yang lebih stabil');
+        if (!isCenteredX) {
+            setCamStatus('warn', '↔️', 'Tidak Tengah', 'Posisikan wajah di tengah oval');
             return;
         }
 
         wrap.className = 'cam-video-wrap face-ok';
-        setCamStatus('ok', '✅', 'Wajah Oke', 'Mohon kedipkan mata...');
+        setCamStatus('ok', '✅', 'Wajah Terdeteksi', 'Silakan KEDIPKAN MATA Anda');
 
-        // LOGIKA KEDIP (EAR)
+        // 2. DETEKSI KEDIP (EAR)
         const landmarks = detection.landmarks;
         const leftEye = landmarks.getLeftEye();
         const rightEye = landmarks.getRightEye();
@@ -7722,26 +7706,24 @@ File di Google Drive juga akan dihapus.`)) return;
         };
         const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
 
-        if (ear < 0.22) _blinkDetected = true; 
+        if (ear < 0.22) {
+            _blinkDetected = true; 
+        }
 
         if (_blinkDetected) {
             $('lsIcon').textContent = '😉';
             $('lsText').textContent = 'Liveness OK! Memproses...';
             $('lsText').style.color = 'var(--success)';
+            
+            // 3. AUTO CAPTURE
+            _autoCaptured = true;
+            setTimeout(doCapture, window._isMejaMode ? 400 : 800);
         } else {
             $('lsIcon').textContent = '😐';
             $('lsText').textContent = 'Harap Kedipkan Mata Anda';
             $('lsText').style.color = 'var(--gold)';
-            return; 
         }
-
-        // AUTO CAPTURE
-        if (!_autoCaptured && _modelsReady && _blinkDetected) {
-            _autoCaptured = true;
-            setTimeout(doCapture, window._isMejaMode ? 400 : 800);
-        }
-    };
-      
+      };
       loop();
     }
 

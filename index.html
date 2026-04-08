@@ -5746,6 +5746,24 @@
           </button>
           <button class="btn-meja-stop" id="btnMejaStop" onclick="stopMejaAbsen()" style="display:none">⏹️ Hentikan
             Sesi</button>
+
+          <!-- 🧠 AI ENGINE SETTINGS ══ -->
+          <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1)">
+            <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+              🧠 PENGATURAN MESIN AI
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label class="form-label" style="font-size:8px; opacity:0.7">Pilih Mesin Deteksi Wajah</label>
+              <select id="selectAiEngine" class="form-input" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
+                <option value="faceapi">face-api.js (Standard)</option>
+                <option value="human">Human Library (Advanced / Anti-Spoof)</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px; font-size:8px; opacity:0.6; line-height:1.4">
+              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan.
+            </div>
+            <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
+          </div>
         </div>
       </div>
 
@@ -5979,22 +5997,7 @@
           <button class="btn-admin" id="btnShowPeriodeForm" onclick="togglePeriodeForm(true)">➕ Tambah Periode</button>
         </div>
 
-        <!-- 🧠 AI ENGINE SETTINGS ══ -->
-        <div class="card" style="margin-top:12px">
-          <div
-            style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            🧠 PENGATURAN MESIN AI</div>
-          <div class="form-group">
-            <label class="form-label" style="font-size:9px">Pilih Mesin Deteksi Wajah</label>
-            <select id="selectAiEngine" class="form-input">
-              <option value="faceapi">face-api.js (Standard)</option>
-              <option value="human">Human Library (Advanced / Anti-Spoof)</option>
-            </select>
-          </div>
-          <div class="radius-note" style="margin-bottom:12px; font-size:9px">Human Library menawarkan liveness detection
-            yang lebih akurat (Antispoof) namun memerlukan download model tambahan saat pertama kali dijalankan.</div>
-          <button class="btn-admin" onclick="simpanAiEngine()">💾 Simpan & Reload</button>
-        </div>
+        <!-- (AI ENGINE SETTINGS MOVED TO MEJA ABSEN SECTION) -->
 
         <!-- 📸 FACE RECOGNITION ══ -->
         <div class="card" style="margin-top:12px">
@@ -7409,12 +7412,15 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function syncFaceToServer(uid, dataUrl, descriptorArray, nama, savedAt) {
       if (!uid || uid === 'null' || uid === '') return false;
+      const dLen = (descriptorArray && Array.isArray(descriptorArray)) ? descriptorArray.length : 0;
+      const actualModel = dLen >= 512 ? 'human' : 'faceapi';
+
       const payload = {
         user_id: uid,
         nama: nama || 'Pegawai',
         foto_base64: dataUrl,
         face_descriptor: descriptorArray,
-        face_model: window._aiEngine || 'faceapi',
+        face_model: actualModel, // Detect from dimension to avoid fallback-induced mismatch
         saved_at: savedAt || new Date().toISOString(),
         savedBy: MY_ID,
         savedByName: (tgUser && tgUser.first_name) || 'System'
@@ -7621,7 +7627,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
-    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.min.js';
+    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model';
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models@1.0.2/models/';
@@ -13346,6 +13352,10 @@ File di Google Drive juga akan dihapus.`)) return;
        di dalam startDetectLoop untuk akurasi yang lebih baik ════ */
 
     async function startMejaAbsen() {
+      // 0. RESET COUNTER (Hapus data sesi sebelumnya)
+      _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+      _updateMejaCnt();
+
       const btn = $('btnMejaAbsen');
       if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat Data...'; }
       _setMejaStatus('processing', '⏳', 'Mengambil GPS & Database...', 'Harap tunggu');
@@ -13415,9 +13425,6 @@ File di Google Drive juga akan dihapus.`)) return;
           if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
           return;
         }
-
-        _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
-        _updateMejaCnt();
 
         window._isMejaMode = true; // Set Global State
         _isMejaAbsen = true;

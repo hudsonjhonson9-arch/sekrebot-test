@@ -1657,23 +1657,21 @@
 
     /* Jenis pills */
     .jenis-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 10px;
       margin-bottom: 20px;
     }
 
     .jenis-pill {
-      flex: 0 1 calc(33.33% - 14px);
-      min-width: 100px;
-      padding: 12px 8px;
-      border-radius: 14px;
+      padding: 14px 10px;
+      border-radius: 16px;
       border: 1.5px solid var(--border);
       background: rgba(255, 255, 255, .03);
       color: var(--muted);
       font-family: inherit;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
@@ -1682,8 +1680,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Make the 5th item centered by occupying the full width or centering */
+    .jenis-pill:nth-child(5) {
+      grid-column: 1 / span 2;
+      width: calc(50% - 6px); /* Same size as others */
+      margin: 0 auto;
     }
 
     .jenis-pill:hover {
@@ -10081,24 +10086,41 @@ File di Google Drive juga akan dihapus.`)) return;
               const rLog = await apiFetch(`${P.log}?tanggal=${dari}`, { method: 'GET' });
               if (rLog.ok) { const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r => getField(r, 'Tanggal', 'tanggal') === dari); }
             }
-            // Bangun map: id → {jamMasuk, jamPulang, logKet}
+            // Bangun map: id → {jamMasuk, jamPulang, logKet, status flags}
             const jamMap = {};
             logHarian.forEach(r => {
               const id = String(getField(r, 'ID', 'id') || '').trim();
               if (!id) return;
-              const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
+              const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
               const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
               const ket = getField(r, 'Keterangan', 'keterangan') || '';
-              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '' };
+              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '', tubel:0, cuti:0, izin:0, sakit:0, tugas:0 };
+              
               if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') jamMap[id].jamMasuk = jam || '-';
-              if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') jamMap[id].jamPulang = jam || '-';
+              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') jamMap[id].jamPulang = jam || '-';
+              else if (j === 'TUBEL') jamMap[id].tubel = 1;
+              else if (j === 'CUTI') jamMap[id].cuti = 1;
+              else if (j === 'IZIN') jamMap[id].izin = 1;
+              else if (j === 'SAKIT') jamMap[id].sakit = 1;
+              else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
+              
               if (ket) jamMap[id].logKet = ket;
             });
             // Pasangkan ke pegawai
             pegawai = pegawai.map(p => {
               const id = String(p.id || '');
               const jm = jamMap[id];
-              return jm ? { ...p, jamMasuk: jm.jamMasuk, jamPulang: jm.jamPulang, logKet: jm.logKet } : p;
+              return jm ? { 
+                ...p, 
+                jamMasuk: jm.jamMasuk, 
+                jamPulang: jm.jamPulang, 
+                logKet: jm.logKet,
+                tubel: (p.tubel || 0) + jm.tubel,
+                cuti: (p.cuti || 0) + jm.cuti,
+                izin: (p.izin || 0) + jm.izin,
+                sakit: (p.sakit || 0) + jm.sakit,
+                tugas: (p.tugas || 0) + jm.tugas
+              } : p;
             });
           } catch (_) { }
         }
@@ -10763,7 +10785,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const mPulang = toMenitDl(jamPulang);
         const mLambat = (mMasuk !== null && mMasuk > mPgwMasuk) ? mMasuk - mPgwMasuk : 0;
         const mCepat = (mPulang !== null && mPulang < mPgwPulang) ? mPgwPulang - mPulang : 0;
-        const ket = izin > 0 ? 'Izin' : sakit > 0 ? 'Sakit' : tugas > 0 ? 'Tugas/DL' : (masuk + luarMasuk) === 0 ? 'TB' : 'Hadir';
+        const ket = tubel > 0 ? 'Tubel' : cuti > 0 ? 'Cuti' : izin > 0 ? 'Izin' : sakit > 0 ? 'Sakit' : tugas > 0 ? 'Tugas/DL' : (masuk + luarMasuk) === 0 ? 'TB' : 'Hadir';
 
         // Jam hadir aktual (hitung dari log masuk+pulang dalam periode)
         const jh = parseFloat(p.jamHadir || 0);
@@ -10776,11 +10798,13 @@ File di Google Drive juga akan dihapus.`)) return;
         const cepatMenit = mCepat;
         const terlambatStr = terlambatMenit > 0 ? `Terlambat ${terlambatMenit} menit` : '';
         const cepatStr = cepatMenit > 0 ? `Pulang cepat ${cepatMenit} menit` : '';
-        const statusKehadiran = izin > 0 ? 'Izin'
-          : sakit > 0 ? 'Sakit'
-            : tugas > 0 ? 'Tugas/DL'
-              : (masuk + luarMasuk) === 0 ? 'TB'
-                : 'Hadir';
+        const statusKehadiran = tubel > 0 ? 'Tubel'
+          : cuti > 0 ? 'Cuti'
+            : izin > 0 ? 'Izin'
+              : sakit > 0 ? 'Sakit'
+                : tugas > 0 ? 'Tugas/DL'
+                  : (masuk + luarMasuk) === 0 ? 'TB'
+                    : 'Hadir';
         const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
         const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
 
@@ -13824,7 +13848,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
         // Statistik untuk ringkasan di bawah
-        const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tanpaBerita: 0, terlambat: 0 };
+        const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tubel: 0, cuti: 0, tanpaBerita: 0, terlambat: 0 };
 
         // 3. Update Table Body: Tambahkan Jabatan & Keterangan
         const tableBody = filteredPegawai.map((p, i) => {
@@ -13834,7 +13858,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
           // Logika Status & Keterangan
           let ketStatus = '';
-          if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
+          if (p.tubel > 0) { ketStatus = 'TUBEL'; stats.tubel++; }
+          else if (p.cuti > 0) { ketStatus = 'CUTI'; stats.cuti++; }
+          else if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
           else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
           else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
           else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
@@ -13942,7 +13968,7 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.text('Ringkasan Kehadiran:', 15, currentY);
         doc.setFont('times', 'normal');
         doc.setFontSize(9);
-        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
+        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Tubel: ${stats.tubel} | Cuti: ${stats.cuti} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
         doc.text(statText, 15, currentY + 6);
 
         let footerY = currentY + 20;

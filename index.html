@@ -8421,35 +8421,6 @@ File di Google Drive juga akan dihapus.`)) return;
       }
     }
 
-      // Render info ke preview card
-      $('camPreviewImg').src = dataUrl;
-      $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
-      $('camPreview').classList.add('show');
-
-      // 4. Eksekusi Pengiriman Data ke Server
-      const cb = _absenCallbackAfterCam;
-
-      // Beri jeda 1.5 detik agar user bisa melihat preview foto
-      setTimeout(async () => {
-        try {
-          // Null-kan callback SEBELUM memanggil, agar closeCamOverlay tidak salah memanggil onCancel
-          _absenCallbackAfterCam = null;
-
-          if (typeof cb === 'function') {
-            await cb(_captureData);
-          } else if (cb?.onDone) {
-            await cb.onDone(_captureData);
-          }
-        } catch (err) {
-          console.error('[doCapture] callback error:', err);
-        } finally {
-          // Tutup overlay setelah data selesai diproses
-          closeCamOverlay(false); // false = bukan oleh user, tidak trigger onCancel
-          if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
-        }
-      }, 1500);
-    }
-
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
       _livenessState = { faceOk: true, ch1: true, ch2: true };

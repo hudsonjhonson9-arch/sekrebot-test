@@ -13513,7 +13513,6 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ PROFESSIONAL PDF REKAP ════ */
-    /* ════ PROFESSIONAL PDF REKAP ════ */
     async function generateRekapPDF() {
       // 1. Validasi Awal
       if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
@@ -13567,8 +13566,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
         const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
-        // 2. Statistik untuk ringkasan di bawah (Ditambahkan tubel)
-        const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tubel: 0, tanpaBerita: 0, terlambat: 0 };
+        // Statistik untuk ringkasan di bawah
+        const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tanpaBerita: 0, terlambat: 0 };
 
         // 3. Update Table Body: Tambahkan Jabatan & Keterangan
         const tableBody = filteredPegawai.map((p, i) => {
@@ -13576,12 +13575,11 @@ File di Google Drive juga akan dihapus.`)) return;
           const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
           const jamP = row['Jam Pulang'] || p.jamPulang || '—';
 
-          // Logika Status & Keterangan (Penambahan TUBEL)
+          // Logika Status & Keterangan
           let ketStatus = '';
           if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
           else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
           else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
-          else if (p.tubel > 0) { ketStatus = 'TUBEL'; stats.tubel++; } // <--- PENAMBAHAN TUBEL
           else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
           else { ketStatus = 'TB'; stats.tanpaBerita++; }
 
@@ -13687,9 +13685,7 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.text('Ringkasan Kehadiran:', 15, currentY);
         doc.setFont('times', 'normal');
         doc.setFontSize(9);
-        
-        // <--- TAMBAHAN TUBEL DI STATISTIK PDF --->
-        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Tubel: ${stats.tubel} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
+        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
         doc.text(statText, 15, currentY + 6);
 
         let footerY = currentY + 20;

@@ -6451,12 +6451,33 @@
 
     async function downloadHumanJsOffline() {
       const btn = $('btnDownloadHumanJs');
-      if(btn) { btn.innerHTML = '⏳ Mendownload... (Harap Tunggu)'; btn.disabled = true; }
+      if(btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
       try {
         const response = await fetch(HUMAN_CDN);
         if (!response.ok) throw new Error('Response tidak OK');
-        const blob = await response.blob();
-        await idb.set('master_data', { key: 'human_script', blob: blob });
+        
+        const contentLength = response.headers.get('content-length');
+        if (!contentLength) {
+          const blob = await response.blob();
+          await idb.set('master_data', { key: 'human_script', blob: blob });
+        } else {
+          const total = parseInt(contentLength, 10);
+          let loaded = 0;
+          const reader = response.body.getReader();
+          const chunks = [];
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            loaded += value.length;
+            const progress = Math.round((loaded / total) * 100);
+            if(btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
+          }
+          const blob = new Blob(chunks, { type: 'application/javascript' });
+          await idb.set('master_data', { key: 'human_script', blob: blob });
+        }
+        
         alert('✅ Human.js berhasil didownload dan disimpan ke penyimpanan lokal perangkat!');
         await checkHumanJsCache();
       } catch (err) {
@@ -7785,7 +7806,7 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl', // webgl is more widely supported than webgpu
+            backend: 'webgl', 
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -7803,7 +7824,23 @@ File di Google Drive juga akan dihapus.`)) return;
             gesture: { enabled: false }
           };
 
-          HumanInstance = new window.Human(config);
+          // Deteksi konstruktor yang benar (beberapa versi CDN membungkusnya dalam objek)
+          let HumanConstructor = window.Human;
+          if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
+          else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
+          
+          if (typeof HumanConstructor !== 'function') {
+            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor). Coba bersihkan Cache.');
+          }
+
+          HumanInstance = new HumanConstructor(config);
+          
+          // Paksa backend WebGL untuk menghindari error WebGPU yang belum siap di beberapa browser
+          if (HumanInstance.tf) {
+            await HumanInstance.tf.setBackend('webgl');
+            await HumanInstance.tf.ready();
+          }
+
           _updateModelProgress(0, 20);
 
           // Timeout 15s for model load

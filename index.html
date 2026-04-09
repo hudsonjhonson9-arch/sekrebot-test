@@ -8165,6 +8165,7 @@ File di Google Drive juga akan dihapus.`)) return;
       _livenessHistory = [];
       _lastLandmarks = null;
       _isLive = false;
+      window._lastLoopDescriptor = null; // Reset cache per sesi baru
 
       // Munculkan tombol capture manual lebih cepat (3 detik) untuk mode Daftar Wajah/Absen biasa
       setTimeout(() => {
@@ -8192,6 +8193,8 @@ File di Google Drive juga akan dihapus.`)) return;
                   landmarks: { positions: f.landmarks || [] },
                   _isHumanLive: isLive
                 };
+                // Cache descriptor untuk instant matching di doCapture()
+                window._lastLoopDescriptor = Array.from(f.embedding);
               }
             }
           } else if (window.faceapi) {
@@ -8317,9 +8320,10 @@ File di Google Drive juga akan dihapus.`)) return;
       // Matikan stream video agar hemat memori (Kecuali untuk Meja Absen yang butuh kamera terus menyala)
       if (!window._isMejaMode) stopCamStream();
 
-      // 1. Ekstrak AI Wajah (Wajib untuk daftar)
-      let descriptor = null;
-      if (_modelsReady) {
+      // 1. Ekstrak AI Wajah (Instan jika ada cache di loop)
+      let descriptor = window._lastLoopDescriptor || null;
+      if (!descriptor && _modelsReady) {
+        console.log('[Meja Speed] Cache Loop kosong, melakukan pemindaian ulang...');
         const desc = await getFaceDescriptor(cnv);
         if (desc) descriptor = Array.from(desc);
       }
@@ -8352,6 +8356,9 @@ File di Google Drive juga akan dihapus.`)) return;
                   minDict = dist;
                   bestMatch = { label: item.id, distance: dist };
                 }
+                
+                // Early Exit Optimization: Jika kemiripan sangat tinggi, berhenti mencari
+                if (dist < 0.20) break; 
               }
               
               if (minDict === 999) bestMatch.label = 'mismatch';

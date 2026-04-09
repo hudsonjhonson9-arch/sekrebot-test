@@ -8420,13 +8420,6 @@ File di Google Drive juga akan dihapus.`)) return;
         startDetectLoop(); 
       }
     }
-        // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
-        if (!descriptor) {
-          match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
-        }
-      }
-
-      _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
 
       // Render info ke preview card
       $('camPreviewImg').src = dataUrl;

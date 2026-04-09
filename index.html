@@ -5289,9 +5289,7 @@
         <div class="profil-info">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
             <div class="profil-nama" id="profilNama">—</div>
-            <button onclick="loadUserProfile(true)"
-              style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8"
-              title="Segarkan Data Profil">🔄</button>
+            <button onclick="loadUserProfile(true)" style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8" title="Segarkan Data Profil">🔄</button>
           </div>
           <div class="profil-jabatan" id="profilJabatan">—</div>
           <div class="profil-nip" id="profilNip">NIP —</div>
@@ -5713,10 +5711,8 @@
           <div class="meja-badge">👑 Super Admin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
-            <div id="aiEngineBadge"
-              style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">
-              AI: Detecting...</div>
+             <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
+             <div id="aiEngineBadge" style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">AI: Detecting...</div>
           </div>
           <div class="meja-status-bar" id="mejaStatusBar">
             <div class="meja-status-dot" id="mejaStatusDot"></div>
@@ -5756,40 +5752,30 @@
 
           <!-- 🧠 AI ENGINE SETTINGS ══ -->
           <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1)">
-            <div
-              style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
               🧠 PENGATURAN MESIN AI
             </div>
             <div class="form-group" style="margin-bottom:8px">
               <label class="form-label" style="font-size:8px; opacity:0.7">Pilih Mesin Deteksi Wajah</label>
-              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)"
-                style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
+              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
                 <option value="faceapi">face-api.js (Standard)</option>
                 <option value="human">Human Library (Advanced / Anti-Spoof)</option>
               </select>
             </div>
             <div style="margin-bottom:12px; font-size:8px; opacity:0.6; line-height:1.4">
-              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model
-              tambahan.
+              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan.
             </div>
 
-            <div id="humanJsCacheControl"
-              style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div id="humanJsCacheControl" style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:9px; color:var(--muted); font-weight:600;">Status Human.js Lokal:</span>
-                <span id="humanJsStatus"
-                  style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
+                <span id="humanJsStatus" style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
               </div>
-              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()"
-                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥
-                Download Library ke Perangkat (Offline)</button>
-              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()"
-                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️
-                Hapus File Cache Lokal</button>
+              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
+              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️ Hapus File Cache Lokal</button>
             </div>
 
-            <button class="btn-admin" onclick="simpanAiEngine()"
-              style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
+            <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
           </div>
         </div>
       </div>
@@ -5892,8 +5878,7 @@
             </div>
 
             <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)">
-              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span>
-            </div>
+              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span></div>
             <div id="adminFaceRegList" style="margin-top:12px">
               <div class="shimmer" style="height:100px; border-radius:12px"></div>
             </div>
@@ -6442,22 +6427,22 @@
       const statusEl = $('humanJsStatus');
       const btnEl = $('btnDownloadHumanJs');
       if (statusEl) statusEl.textContent = 'Memeriksa...';
-
+      
       if (cached && cached.blob) {
-        if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
-        if (btnEl) btnEl.style.display = 'none';
-        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
-        return true;
+         if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
+         if (btnEl) btnEl.style.display = 'none';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
+         return true;
       } else {
-        if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
-        if (btnEl) btnEl.style.display = 'flex';
-        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
-        return false;
+         if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
+         if (btnEl) btnEl.style.display = 'flex';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
+         return false;
       }
     }
 
     async function clearHumanJsCache() {
-      if (confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
+      if(confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
         await idb.delete('master_data', 'human_script');
         alert('File lokal berhasil dihapus!');
         await checkHumanJsCache();
@@ -6466,11 +6451,11 @@
 
     async function downloadHumanJsOffline() {
       const btn = $('btnDownloadHumanJs');
-      if (btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
+      if(btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
       try {
         const response = await fetch(HUMAN_CDN);
         if (!response.ok) throw new Error('Response tidak OK');
-
+        
         const contentLength = response.headers.get('content-length');
         if (!contentLength) {
           const blob = await response.blob();
@@ -6480,24 +6465,24 @@
           let loaded = 0;
           const reader = response.body.getReader();
           const chunks = [];
-
+          
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             chunks.push(value);
             loaded += value.length;
             const progress = Math.round((loaded / total) * 100);
-            if (btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
+            if(btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
           }
           const blob = new Blob(chunks, { type: 'application/javascript' });
           await idb.set('master_data', { key: 'human_script', blob: blob });
         }
-
+        
         alert('✅ Human.js berhasil didownload dan disimpan ke penyimpanan lokal perangkat!');
         await checkHumanJsCache();
       } catch (err) {
         alert('❌ Gagal mendownload Human.js: ' + err.message);
-        if (btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
+        if(btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
       }
     }
 
@@ -6548,7 +6533,7 @@
           // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
         }, 50); // Reduced delay for better responsiveness
-
+        
         // Immediate check as well
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
       }
@@ -6778,7 +6763,7 @@
         setUserFallback();
       } else if (isManual) {
         // Jika manual refresh gagal, beri tahu user tapi jangan hapus data yang ada
-        applyProfile();
+        applyProfile(); 
         console.warn('[Profile] Manual refresh failed, preserving existing data.');
       }
     }
@@ -7626,7 +7611,7 @@ File di Google Drive juga akan dihapus.`)) return;
       let refDesc = ref.descriptor;
       // Handle stringified descriptor from DB
       if (typeof refDesc === 'string') {
-        try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
+        try { refDesc = JSON.parse(refDesc); } catch(e) { refDesc = null; }
       }
 
       const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
@@ -7634,10 +7619,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
       if (refDesc && capturedDescArr) {
         if (refDesc.length !== capturedDescArr.length) {
-          return {
-            score: 0,
-            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`,
-            cls: 'face-match-warn',
+          return { 
+            score: 0, 
+            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`, 
+            cls: 'face-match-warn', 
             capturedDescriptor: capturedDescArr,
             needsUpdate: true
           };
@@ -7646,13 +7631,13 @@ File di Google Drive juga akan dihapus.`)) return;
         // Threshold adjusted for 128 (faceapi) vs 512/1024 (human)
         const threshold = refDesc.length >= 512 ? 0.6 : 0.45;
         const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
-
+        
         let label, cls;
         if (dist <= threshold) { label = `✅ Dikenali ${score}%`; cls = 'face-match-ok'; }
         else if (dist <= threshold + 0.1) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
         else if (dist <= threshold + 0.2) { label = `⚠️ Kurang Jelas ${score}%`; cls = 'face-match-warn'; }
         else { label = `❌ Tidak Dikenali ${score}%`; cls = 'face-match-warn'; }
-
+        
         return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
@@ -7778,16 +7763,16 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadHumanScript() {
       if (window.Human || (window.Human && window.Human.default)) { _humanLoaded = true; return; }
-
+      
       let srcToLoad = HUMAN_CDN;
-
+      
       try {
         const cached = await idb.get('master_data', 'human_script');
         if (cached && cached.blob) {
           srcToLoad = URL.createObjectURL(cached.blob);
           console.log('[AI] Memuat Human.js dari cache lokal (Offline)');
         }
-      } catch (e) {
+      } catch(e) {
         console.warn('[AI] Gagal membaca cache Human.js', e);
       }
 
@@ -7822,7 +7807,7 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl',
+            backend: 'webgl', 
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -7844,13 +7829,13 @@ File di Google Drive juga akan dihapus.`)) return;
           let HumanConstructor = window.Human;
           if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
           else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
-
+          
           if (typeof HumanConstructor !== 'function') {
             throw new Error('Gagal menemukan Class Human (window.Human bukan constructor). Coba bersihkan Cache.');
           }
 
           HumanInstance = new HumanConstructor(config);
-
+          
           // Paksa backend WebGL untuk menghindari error WebGPU yang belum siap di beberapa browser
           if (HumanInstance.tf) {
             await HumanInstance.tf.setBackend('webgl');
@@ -7862,7 +7847,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // Timeout 15s for model load
           const loadPromise = HumanInstance.load();
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
-
+          
           await Promise.race([loadPromise, timeoutPromise]);
           await HumanInstance.warmup();
 
@@ -7873,7 +7858,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // DEFAULT: Face-API (vladmandic fork for better support)
           await _loadFaceApiScript();
           _updateModelProgress(0, 20);
-
+          
           // Enhanced loader with individual net error check
           const nets = [
             { net: window.faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
@@ -7896,7 +7881,7 @@ File di Google Drive juga akan dihapus.`)) return;
               await window.faceapi.detectSingleFace(dummyCanvas).withFaceLandmarks().withFaceDescriptor();
             }
           } catch (e) { console.warn('[AI] Pre-warm skipped:', e.message); }
-
+          
           _modelsReady = true;
           _refreshAiBadge();
           _updateModelProgress(2, 10);
@@ -8190,7 +8175,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const loop = async () => {
         if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         if (window._stopLoop) return; // Kill switch aktif
-
+        
         try {
           let detection = null;
           if (window._aiEngine === 'human' && HumanInstance) {
@@ -8318,17 +8303,6 @@ File di Google Drive juga akan dihapus.`)) return;
         window._stopLoop = true; // Matikan loop deteksi seketika
         if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
 
-        // Safety Restart (jika stuck di layer ini lebih dari 8 detik)
-        const safetyTimer = setTimeout(() => {
-          if (window._mejaProcessing && !$('mejaOverlayResult').style.display === 'flex') {
-            console.warn('[Meja Safety] Proses identifikasi terlalu lama, me-reset...');
-            window._mejaProcessing = false;
-            window._stopLoop = false;
-            _autoCaptured = false;
-            startDetectLoop();
-          }
-        }, 8000);
-
         // UI: Sedang memproses
         const btnCap = $('btnCapture');
         if (btnCap) {
@@ -8360,41 +8334,58 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // 3. Logika Meja Absen (Continuous Scan)
         if (window._isMejaMode) {
+          console.group('%c [AI Audit] Identification Process ', 'background:#2563eb; color:#fff; padding:2px 5px; border-radius:3px;');
+          console.log('Engine:', window._aiEngine);
+          console.log('Total Candidates:', _allFaceDescriptors.length);
+
+          // Watchdog: Jika dalam 10 detik tidak ada hasil, paksa reset agar tidak stuck
+          const watchdog = setTimeout(() => {
+            if (window._mejaProcessing) {
+              console.warn('[AI Watchdog] Identification timed out. Resetting state...');
+              window._mejaProcessing = false;
+              window._stopLoop = false;
+              startDetectLoop();
+            }
+          }, 10000);
+
           let bestMatch = { label: 'unknown', distance: 1.0 };
           
           if (_allFaceDescriptors.length > 0 && descriptor) {
             if (window._aiEngine === 'human') {
-              console.log('[Meja Audit] Memulai pencocokan identitas...');
               let minDict = 999;
-              let candidates = [];
+              const auditData = [];
 
               for (const item of _allFaceDescriptors) {
                 if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
                 const dist = euclideanDistance(item.descriptor, descriptor);
                 
-                candidates.push({ id: item.id, dist: dist });
+                // Simpan untuk tabel audit (hanya 5 terbaik)
+                const user = window._mejaUserMap[item.id] || {};
+                auditData.push({ 
+                  id: item.id, 
+                  nama: user.nama || '?', 
+                  dist: dist,
+                  match: (Math.max(0, (1 - dist / 0.75) * 100)).toFixed(1) + '%'
+                });
 
                 if (dist < minDict) {
                   minDict = dist;
                   bestMatch = { label: item.id, distance: dist };
                 }
-                if (dist < 0.15) break; // Super confidence early exit
               }
 
-              // Diagnostic Log: Show top 5 closest matches
-              candidates.sort((a,b) => a.dist - b.dist);
-              const top5 = candidates.slice(0, 5).map(c => {
-                const u = window._mejaUserMap[c.id] || { nama: 'Unknown' };
-                return { Nama: u.nama, Dist: c.dist.toFixed(4), ID: c.id };
-              });
-              console.table(top5);
-              
+              // Urutkan dan tampilkan tabel audit ke konsole
+              auditData.sort((a,b) => a.dist - b.dist);
+              console.table(auditData.slice(0, 5));
+
               if (minDict === 999) {
-                console.warn('[Meja Audit] Tidak ada descriptor dengan dimensi yang cocok!');
+                console.warn('Result: MISMATCH (Dimension error)');
                 bestMatch.label = 'mismatch';
+              } else if (minDict > 0.75) {
+                console.log(`Result: UNKNOWN (Best dist ${minDict.toFixed(4)} > Threshold 0.75)`);
+                bestMatch.label = 'unknown';
               } else {
-                console.log(`[Meja Audit] Hasil terbaik: ${bestMatch.label} (Dist: ${minDict.toFixed(4)})`);
-                if (minDict > 0.75) bestMatch.label = 'unknown';
+                console.log(`%c Result: MATCH FOUND! (${bestMatch.label}) `, 'color:#4ade80; font-weight:bold;');
               }
               bestMatch.distance = minDict;
             } else {
@@ -8403,82 +8394,88 @@ File di Google Drive juga akan dihapus.`)) return;
                 const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
                 const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
                 bestMatch = { label: res.label, distance: res.distance };
-              } catch (e) { console.error(e); }
+                console.log('FaceAPI Result:', bestMatch);
+              } catch (e) { console.error('FaceAPI Match Error:', e); }
             }
+          } else {
+            console.warn('Result: NO FACE EXTRACTED (Check lighting/position)');
           }
+          
+          clearTimeout(watchdog);
+          console.groupEnd();
 
-        _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
-        return;
-      }
+          _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+          return;
+        }
 
         // 4. Logika Absen Personal / Daftar Wajah
         $('camVideoWrap').style.display = 'none';
-      $('camStatus').style.display = 'none';
-      $('livenessMini').style.display = 'none';
+        $('camStatus').style.display = 'none';
+        $('livenessMini').style.display = 'none';
 
-      const previewEl = $('camPreview');
-      if (previewEl) previewEl.classList.add('show');
-      const previewImg = $('camPreviewImg');
-      if (previewImg) previewImg.src = dataUrl;
-
-      const btnSend = $('btnAbsen');
-      if (btnSend) {
-        btnSend.disabled = false;
-        btnSend.classList.remove('hidden');
-      }
-
-      _captureData = {
-        dataUrl: dataUrl,
-        faceOk: true,
-        livenessOk: true,
-        descriptor: descriptor
-      };
-
-      setCamStatus('ok', '✅', 'Foto Berhasil Diambil', 'Silakan kirim absen Anda');
-
-    } catch (e) {
-      console.error('[AI] doCapture Error:', e);
-      // Recovery: Kembalikan status agar tidak stuck
-      window._mejaProcessing = false;
-      window._stopLoop = false;
-      startDetectLoop();
-    }
-    }
-    // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
-    if (!descriptor) {
-      match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
-    }
-      }
-
-    _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
-
-    // Render info ke preview card
-    $('camPreviewImg').src = dataUrl;
-    $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
-    $('camPreview').classList.add('show');
-
-    // 4. Eksekusi Pengiriman Data ke Server
-    const cb = _absenCallbackAfterCam;
-
-    // Beri jeda 1.5 detik agar user bisa melihat preview foto
-    setTimeout(async () => {
-      try {
-        // Null-kan callback SEBELUM memanggil, agar closeCamOverlay tidak salah memanggil onCancel
-        _absenCallbackAfterCam = null;
-
-        if (typeof cb === 'function') {
-          await cb(_captureData);
-        } else if (cb?.onDone) {
-          await cb.onDone(_captureData);
+        const previewEl = $('camPreview');
+        if (previewEl) previewEl.classList.add('show');
+        const previewImg = $('camPreviewImg');
+        if (previewImg) previewImg.src = dataUrl;
+        
+        const btnSend = $('btnAbsen');
+        if (btnSend) {
+          btnSend.disabled = false;
+          btnSend.classList.remove('hidden');
         }
-      } catch (err) {
-        console.error('[doCapture] callback error:', err);
-      } finally {
-        // Tutup overlay setelah data selesai diproses
-        closeCamOverlay(false); // false = bukan oleh user, tidak trigger onCancel
-        if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
+
+        _captureData = {
+          dataUrl: dataUrl,
+          faceOk: true,
+          livenessOk: true,
+          descriptor: descriptor
+        };
+
+        setCamStatus('ok', '✅', 'Foto Berhasil Diambil', 'Silakan kirim absen Anda');
+
+      } catch (e) {
+        console.error('[AI] doCapture Error:', e);
+        // Recovery: Kembalikan status agar tidak stuck
+        window._mejaProcessing = false;
+        window._stopLoop = false;
+        startDetectLoop(); 
       }
-    }, 1500);
+    }
+        // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
+        if (!descriptor) {
+          match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
+        }
+      }
+
+      _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
+
+      // Render info ke preview card
+      $('camPreviewImg').src = dataUrl;
+      $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
+      $('camPreview').classList.add('show');
+
+      // 4. Eksekusi Pengiriman Data ke Server
+      const cb = _absenCallbackAfterCam;
+
+      // Beri jeda 1.5 detik agar user bisa melihat preview foto
+      setTimeout(async () => {
+        try {
+          // Null-kan callback SEBELUM memanggil, agar closeCamOverlay tidak salah memanggil onCancel
+          _absenCallbackAfterCam = null;
+
+          if (typeof cb === 'function') {
+            await cb(_captureData);
+          } else if (cb?.onDone) {
+            await cb.onDone(_captureData);
+          }
+        } catch (err) {
+          console.error('[doCapture] callback error:', err);
+        } finally {
+          // Tutup overlay setelah data selesai diproses
+          closeCamOverlay(false); // false = bukan oleh user, tidak trigger onCancel
+          if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
+        }
+      }, 1500);
     }
 
     async function skipVerifikasi() {
@@ -12078,13 +12075,13 @@ File di Google Drive juga akan dihapus.`)) return;
         try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
         updateClock();
         initJamAdminUI();
-
+        
         // FIX: Jika sedang di tab admin saat data jam/admin dimuat, refresh UI admin
         const activeTab = document.querySelector('.tab.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
         if (activeTab === 'admin' && IS_ADMIN) {
-          _applyAdminUIExtended();
-          // Trigger loading data admin jika baru pertama kali terbuka
-          if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+           _applyAdminUIExtended();
+           // Trigger loading data admin jika baru pertama kali terbuka
+           if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
         }
       } catch (e) {
         initJamAdminUI();
@@ -13641,19 +13638,19 @@ File di Google Drive juga akan dihapus.`)) return;
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { return false; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { return false; }
           const dLen = Array.isArray(desc) ? desc.length : 0;
-
+          
           // Enhanced Matching logic for 1024 dimensions
           const isHumanData = (f.face_model === 'human' || dLen >= 512);
           const isFaceApiData = (f.face_model === 'faceapi' || dLen === 128);
-
+          
           // Allow all for visibility, we handle mismatch in matching loop
           return dLen === 128 || dLen === 512 || dLen === 1024;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { desc = []; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
           const dLen = desc.length;
 
@@ -14032,7 +14029,6 @@ File di Google Drive juga akan dihapus.`)) return;
     let _lastMejaTime = 0;
 
     async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
-      if (typeof safetyTimer !== 'undefined') clearTimeout(safetyTimer); // Matikan timer keamanan
       const sekarang = Date.now();
 
       // 1. SISTEM ANTI-SPAM (COOLDOWN)
@@ -14062,14 +14058,14 @@ File di Google Drive juga akan dihapus.`)) return;
       if (telegramId === 'unknown' || telegramId === 'mismatch' || telegramId === 'extraction_failed') {
         const isMismatch = (telegramId === 'mismatch');
         const isFailed = (telegramId === 'extraction_failed');
-
+        
         $('moIcon').textContent = isFailed ? '📷' : (isMismatch ? '⚠️' : '❓');
         $('moNama').textContent = isFailed ? 'GAGAL BACA WAJAH' : (isMismatch ? 'ENGINE BERBEDA' : 'TIDAK DIKENAL');
         $('moStatus').textContent = isFailed ? 'POSISI KURANG PAS' : (isMismatch ? 'HARAP DAFTAR ULANG WAJAH' : 'WAJAH BELUM TERDAFTAR');
-
+        
         $('moStatus').style.color = (isMismatch || isFailed) ? 'var(--gold)' : 'var(--danger)';
         $('moStatus').style.background = (isMismatch || isFailed) ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)';
-
+        
         const distStr = (distance && distance < 2) ? ` (Dist: ${distance.toFixed(4)})` : '';
         let detailMsg = isFailed ? 'Wajah tidak terbaca jelas.' : (isMismatch ? 'Data lama terdeteksi.' : 'Wajah tidak cocok.');
         $('moDetail').textContent = detailMsg + distStr + ' Scan ulang dalam 3 detik...';

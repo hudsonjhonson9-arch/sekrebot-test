@@ -1248,6 +1248,16 @@
       color: #a78bfa
     }
 
+    .tb-tubel {
+      background: rgba(99, 102, 241, .15);
+      color: #818cf8
+    }
+
+    .tb-cuti {
+      background: rgba(20, 184, 166, .15);
+      color: #2dd4bf
+    }
+
     .today-jam {
       font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
@@ -2381,6 +2391,24 @@
       color: #8b5cf6
     }
 
+    .rs-tubel {
+      border-color: rgba(99, 102, 241, .3);
+      background: rgba(99, 102, 241, .06)
+    }
+
+    .rs-tubel .rs-num {
+      color: #818cf8
+    }
+
+    .rs-cuti {
+      border-color: rgba(20, 184, 166, .3);
+      background: rgba(20, 184, 166, .06)
+    }
+
+    .rs-cuti .rs-num {
+      color: #2dd4bf
+    }
+
     .rs-alpa {
       border-color: rgba(239, 68, 68, .25);
       background: rgba(239, 68, 68, .1)
@@ -3348,6 +3376,16 @@
     .pb-tugas {
       background: rgba(167, 139, 250, .15);
       color: #a78bfa
+    }
+
+    .pb-tubel {
+      background: rgba(99, 102, 241, .15);
+      color: #818cf8
+    }
+
+    .pb-cuti {
+      background: rgba(20, 184, 166, .15);
+      color: #2dd4bf
     }
 
     /* ── Discipline badges ── */
@@ -5168,6 +5206,8 @@
           <button class="jenis-pill active" onclick="selectJenis('IZIN', this)">🙏 Izin</button>
           <button class="jenis-pill" onclick="selectJenis('SAKIT',this)">🤒 Sakit</button>
           <button class="jenis-pill" onclick="selectJenis('TUGAS',this)">💼 Tugas</button>
+          <button class="jenis-pill" onclick="selectJenis('TUBEL',this)">🎓 Tubel</button>
+          <button class="jenis-pill" onclick="selectJenis('CUTI',this)">🏖️ Cuti</button>
         </div>
 
         <!-- Izin Jam UI -->
@@ -5453,6 +5493,8 @@
         <button class="filter-chip" onclick="filterLog('IZIN',  this)">🙏 Izin</button>
         <button class="filter-chip" onclick="filterLog('SAKIT', this)">🤒 Sakit</button>
         <button class="filter-chip" onclick="filterLog('TUGAS', this)">💼 Tugas</button>
+        <button class="filter-chip" onclick="filterLog('TUBEL', this)">🎓 Tubel</button>
+        <button class="filter-chip" onclick="filterLog('CUTI', this)">🏖️ Cuti</button>
         <button class="filter-chip" onclick="filterLog('PULANG LUAR', this)">🏃 Lapangan</button>
         <button class="filter-chip" onclick="filterLog('TANPA BERITA',  this)">❌ TB</button>
         <button class="filter-chip" onclick="filterLog('LIBUR', this)">🎉 Libur</button>
@@ -5618,8 +5660,8 @@
         <div
           style="font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding:0 2px">
           📝 Keterangan</div>
-        <!-- Baris 2: Izin · Sakit · Tugas · TB — 4 kolom -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px">
+        <!-- Baris 2: Izin · Sakit · Tugas · TUBEL · CUTI · TB — 3 kolom x 2 baris -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
           <div class="rs-card rs-izin">
             <div class="rs-num" id="rsIzin">—</div>
             <div class="rs-ico">🙏</div>
@@ -5634,6 +5676,16 @@
             <div class="rs-num" id="rsTugas">—</div>
             <div class="rs-ico">💼</div>
             <div class="rs-lbl">Tugas</div>
+          </div>
+          <div class="rs-card rs-tubel">
+            <div class="rs-num" id="rsTubel">—</div>
+            <div class="rs-ico">🎓</div>
+            <div class="rs-lbl">Tubel</div>
+          </div>
+          <div class="rs-card rs-cuti">
+            <div class="rs-num" id="rsCuti">—</div>
+            <div class="rs-ico">🏖️</div>
+            <div class="rs-lbl">Cuti</div>
           </div>
           <div class="rs-card rs-alpa">
             <div class="rs-num" id="rsAlpa">—</div>
@@ -9867,13 +9919,17 @@ File di Google Drive juga akan dihapus.`)) return;
         const adaIzin = jenis.some(j => j.includes('IZIN'));
         const adaSakit = jenis.some(j => j.includes('SAKIT'));
         const adaTugas = jenis.some(j => j.includes('TUGAS'));
+        const adaTubel = jenis.some(j => j.includes('TUBEL'));
+        const adaCuti = jenis.some(j => j.includes('CUTI'));
         const adaLapangan = jenis.some(j => j === 'PULANG LUAR');
         const adaAlpa = jenis.some(j => j === 'TANPA BERITA');
-        const hadir = adaMasuk || adaIzin || adaSakit || adaTugas;
+        const hadir = adaMasuk || adaIzin || adaSakit || adaTugas || adaTubel || adaCuti;
         if (f === 'HADIR' && hadir) filtered.push(...rows);
         if (f === 'IZIN' && adaIzin) filtered.push(...rows);
         if (f === 'SAKIT' && adaSakit) filtered.push(...rows);
         if (f === 'TUGAS' && adaTugas) filtered.push(...rows);
+        if (f === 'TUBEL' && adaTubel) filtered.push(...rows);
+        if (f === 'CUTI' && adaCuti) filtered.push(...rows);
         if (f === 'PULANG LUAR' && adaLapangan) filtered.push(...rows);
         if (f === 'TB' && adaAlpa) filtered.push(...rows);
         if (f === 'LIBUR') {
@@ -10122,12 +10178,12 @@ File di Google Drive juga akan dihapus.`)) return;
           id,
           nama: u.nama || '—', nip: u.nip || '—', jabatan: u.jabatan || '', urutan: u.urutan ?? idx,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-          izin: 0, sakit: 0, tugas: 0,
+          izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
-          all_izin: 0, all_sakit: 0, all_tugas: 0, all_alpa: 0
+          all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
         };
       });
 
@@ -10143,7 +10199,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!map[id]) map[id] = {
           id, nama, nip, jabatan: '', urutan: 9999,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-          izin: 0, sakit: 0, tugas: 0,
+          izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
           // all-time (filled separately)
@@ -10169,6 +10225,8 @@ File di Google Drive juga akan dihapus.`)) return;
         else if (jenis === 'IZIN') { map[id].izin++; }
         else if (jenis === 'SAKIT') { map[id].sakit++; }
         else if (jenis === 'TUGAS') { map[id].tugas++; }
+        else if (jenis === 'TUBEL') { map[id].tubel++; }
+        else if (jenis === 'CUTI') { map[id].cuti++; }
       });
 
       // Process ALL-TIME rows (if provided)
@@ -10192,6 +10250,8 @@ File di Google Drive juga akan dihapus.`)) return;
         else if (jenis === 'IZIN') { map[id].all_izin++; }
         else if (jenis === 'SAKIT') { map[id].all_sakit++; }
         else if (jenis === 'TUGAS') { map[id].all_tugas++; }
+        else if (jenis === 'TUBEL') { map[id].all_tubel++; }
+        else if (jenis === 'CUTI') { map[id].all_cuti++; }
         else if (jenis === 'TANPA BERITA') { map[id].all_alpa++; }
       });
 
@@ -10267,7 +10327,9 @@ File di Google Drive juga akan dihapus.`)) return;
           luar: sum('di_luar_masuk') + sum('di_luar_pulang'),
           izin: sum('izin'),
           sakit: sum('sakit'),
-          tugas: sum('tugas')
+          tugas: sum('tugas'),
+          tubel: sum('tubel'),
+          cuti: sum('cuti')
         }
       };
     }
@@ -10360,13 +10422,15 @@ File di Google Drive juga akan dihapus.`)) return;
           if (izin > 0) { masukLabel = 'Izin'; masukColor = 'var(--warning)'; masukBg = 'rgba(245,158,11,.12)'; masukIcon = '🙏'; }
           else if (sakit > 0) { masukLabel = 'Sakit'; masukColor = 'var(--danger)'; masukBg = 'rgba(239,68,68,.12)'; masukIcon = '🤒'; }
           else if (tugas > 0) { masukLabel = 'Tugas'; masukColor = '#8b5cf6'; masukBg = 'rgba(139,92,246,.12)'; masukIcon = '💼'; }
+          else if (p.tubel > 0) { masukLabel = 'Tubel'; masukColor = '#6366f1'; masukBg = 'rgba(99,102,241,.12)'; masukIcon = '🎓'; }
+          else if (p.cuti > 0) { masukLabel = 'Cuti'; masukColor = '#14b8a6'; masukBg = 'rgba(20,184,166,.12)'; masukIcon = '🏖️'; }
           else if (!rawMasuk) { masukLabel = 'TB'; masukColor = 'var(--muted)'; masukBg = 'rgba(255,255,255,.04)'; masukIcon = '❌'; }
           else if (terlambatMnt > 0) { masukLabel = `Terlambat ${terlambatMnt}m`; masukColor = 'var(--warning)'; masukBg = 'rgba(245,158,11,.08)'; masukIcon = '⏰'; }
           else { masukLabel = 'Tepat Waktu'; masukColor = 'var(--success)'; masukBg = 'rgba(34,197,94,.08)'; masukIcon = '✅'; }
 
           // Label & warna jam pulang
           let pulangLabel = '', pulangColor = '', pulangIcon = '';
-          if (izin > 0 || sakit > 0 || tugas > 0) { pulangLabel = '—'; pulangColor = 'var(--muted)'; pulangIcon = '—'; }
+          if (izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0) { pulangLabel = '—'; pulangColor = 'var(--muted)'; pulangIcon = '—'; }
           else if (!rawPulang && !rawMasuk) { pulangLabel = 'Belum'; pulangColor = 'var(--muted)'; pulangIcon = '⏳'; }
           else if (!rawPulang) { pulangLabel = 'Belum Absen'; pulangColor = 'var(--warning)'; pulangIcon = '⏳'; }
           else if (cepatMnt > 0) { pulangLabel = `Cepat ${cepatMnt}m`; pulangColor = '#f97316'; pulangIcon = '🏃'; }
@@ -10375,9 +10439,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
           // Kehadiran overall status untuk warna border card
           const isHadir = (masuk + luarMasuk) > 0;
-          const isKet = izin > 0 || sakit > 0 || tugas > 0;
+          const isKet = izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0;
           const isAlpa = !isHadir && !isKet;
-          const cardBorderColor = isKet ? 'rgba(139,92,246,.25)'
+          const cardBorderColor = isKet ? (p.tubel > 0 ? 'rgba(99,102,241,.25)' : p.cuti > 0 ? 'rgba(20,184,166,.25)' : 'rgba(139,92,246,.25)')
             : isAlpa ? 'rgba(239,68,68,.2)'
               : terlambatMnt > 0 || cepatMnt > 0 ? 'rgba(245,158,11,.3)'
                 : 'rgba(34,197,94,.2)';
@@ -10412,7 +10476,7 @@ File di Google Drive juga akan dihapus.`)) return;
           <!-- JAM MASUK -->
           <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px">
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
-            ${izin > 0 || sakit > 0 || tugas > 0
+            ${izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${masukIcon}</div>
                  <div style="font-size:10px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
               : rawMasuk
@@ -10425,9 +10489,9 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>
 
           <!-- JAM PULANG -->
-          <div style="background:${izin > 0 || sakit > 0 || tugas > 0 ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${izin > 0 || sakit > 0 || tugas > 0 ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px">
+          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px">
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
-            ${izin > 0 || sakit > 0 || tugas > 0
+            ${isKet
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">—</div>
                  <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
               : rawPulang
@@ -10457,6 +10521,8 @@ File di Google Drive juga akan dihapus.`)) return;
           ${izin > 0 ? `<span class="pbar-item pb-izin"      >🙏 Izin</span>` : ''}
           ${sakit > 0 ? `<span class="pbar-item pb-sakit"     >🤒 Sakit</span>` : ''}
           ${tugas > 0 ? `<span class="pbar-item pb-tugas"     >💼 Tugas/DL</span>` : ''}
+          ${p.tubel > 0 ? `<span class="pbar-item pb-tubel"     >🎓 Tubel</span>` : ''}
+          ${p.cuti > 0 ? `<span class="pbar-item pb-cuti"      >🏖️ Cuti</span>` : ''}
           ${isAlpa ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ TB</span>` : ''}
           ${terlambatMnt > 0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
           ${cepatMnt > 0 ? `<span class="pbar-item pb-luar-pulang" style="font-family:'JetBrains Mono',monospace">🏃 -${cepatMnt}m</span>` : ''}
@@ -10477,6 +10543,8 @@ File di Google Drive juga akan dihapus.`)) return;
                 + (p.all_izin > 0 ? '<span class="akk-badge" style="background:rgba(245,158,11,.1);color:var(--warning)">🙏 ' + p.all_izin + '×</span>' : '')
                 + (p.all_sakit > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">🤒 ' + p.all_sakit + '×</span>' : '')
                 + (p.all_tugas > 0 ? '<span class="akk-badge" style="background:rgba(139,92,246,.1);color:#a78bfa">💼 ' + p.all_tugas + '×</span>' : '')
+                + (p.all_tubel > 0 ? '<span class="akk-badge" style="background:rgba(99,102,241,.1);color:#818cf8">🎓 ' + p.all_tubel + '×</span>' : '')
+                + (p.all_cuti > 0 ? '<span class="akk-badge" style="background:rgba(20,184,166,.1);color:#2dd4bf">🏖️ ' + p.all_cuti + '×</span>' : '')
                 + (p.all_alpa > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">❌ TB All: ' + p.all_alpa + '×</span>' : '')
                 + '</div>';
             })()}
@@ -10501,11 +10569,11 @@ File di Google Drive juga akan dihapus.`)) return;
         const dColor = dLevel === 4 ? 'var(--success)' : dLevel === 3 ? 'var(--info)' : dLevel === 2 ? 'var(--warning)' : 'var(--danger)';
 
         // ── Kehadiran vs hari kerja ──
-        const hariHadir = (p.masuk || 0) + (p.lambat || p.di_luar_masuk || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0);
+        const hariHadir = (p.masuk || 0) + (p.lambat || p.di_luar_masuk || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0) + (p.tubel || 0) + (p.cuti || 0);
         const hadirPct = hariKerjaPeriode > 0 ? Math.min(100, Math.round(hariHadir / hariKerjaPeriode * 100)) : 0;
         const hadirColor = hadirPct >= 90 ? 'var(--success)' : hadirPct >= 75 ? 'var(--info)' : hadirPct >= 60 ? 'var(--warning)' : 'var(--danger)';
 
-        const totalEntries = masuk + pulang + pulangLuar + luarMasuk + luarPulang + izin + sakit + tugas;
+        const totalEntries = masuk + pulang + pulangLuar + luarMasuk + luarPulang + izin + sakit + tugas + (p.tubel || 0) + (p.cuti || 0);
 
         // ── All-Time Footer ──
         const allTimeFooter = mAllTotal > 0 || p.all_alpa > 0 ? `
@@ -10519,6 +10587,8 @@ File di Google Drive juga akan dihapus.`)) return;
               ${p.all_izin > 0 ? `<span class="badge-all">🙏 Izin: ${p.all_izin}</span>` : ''}
               ${p.all_sakit > 0 ? `<span class="badge-all">🤒 Sakit: ${p.all_sakit}</span>` : ''}
               ${p.all_tugas > 0 ? `<span class="badge-all">💼 Tugas: ${p.all_tugas}</span>` : ''}
+              ${p.all_tubel > 0 ? `<span class="badge-all">🎓 Tubel: ${p.all_tubel}</span>` : ''}
+              ${p.all_cuti > 0 ? `<span class="badge-all">🏖️ Cuti: ${p.all_cuti}</span>` : ''}
             </div>
           </div>
         ` : '';

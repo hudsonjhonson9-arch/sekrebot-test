@@ -7641,11 +7641,10 @@ File di Google Drive juga akan dihapus.`)) return;
           };
         }
         const dist = euclideanDistance(refDesc, capturedDescArr);
-        // Unified threshold 0.5 as requested by user
-        const threshold = 0.5;
-        // Improved Score Calculation: 0.5 distance = 70% match, perfect = 100%
-        // Using a slightly more lenient curve for better UX
-        const score = Math.max(0, Math.round((1 - dist / 0.8) * 100));
+        // Sync with reference threshold: 0.55
+        const threshold = 0.55;
+        // Sync with reference score calculation (divisor 0.75)
+        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
         
         let label, cls;
         if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
@@ -8336,13 +8335,19 @@ File di Google Drive juga akan dihapus.`)) return;
       if (window._isMejaMode) {
         if (_allFaceDescriptors.length > 0 && descriptor) {
           let bestMatch = { label: 'unknown', similarity: 0 };
-          const threshold = 0.6; // Consistent 60% similarity threshold
+          const thresholdSim = 0.6; // Human Similarity Threshold
+          const thresholdDist = 0.55; // Face-API Distance Threshold
 
           if (window._aiEngine === 'human' && HumanInstance) {
             let maxSim = 0;
+            const currentDim = descriptor.length;
             for (const item of _allFaceDescriptors) {
+              // Strict Filter: Only match against same engine data
+              const mapped = window._mejaUserMap[item.id || item.label];
+              if (mapped && mapped.engine !== 'human') continue;
+
               const itemDesc = item.descriptor || (item.descriptors ? item.descriptors[0] : null);
-              if (!itemDesc) continue;
+              if (!itemDesc || (itemDesc.length !== currentDim && Math.abs(itemDesc.length - currentDim) > 1)) continue;
               
               const sim = HumanInstance.match.similarity(itemDesc, descriptor);
               if (sim > maxSim) {
@@ -8350,13 +8355,18 @@ File di Google Drive juga akan dihapus.`)) return;
                 bestMatch = { label: item.id || item.label, similarity: sim };
               }
             }
-            if (maxSim < threshold) bestMatch.label = 'unknown';
+            if (maxSim < thresholdSim) bestMatch.label = 'unknown';
           } else {
             // Face-API Standard Matcher
             try {
-              const validDescriptors = _allFaceDescriptors.filter(d => d.descriptors && d.label);
+              // Strict Filter: Only match against same engine data
+              const validDescriptors = _allFaceDescriptors.filter(d => {
+                const mapped = window._mejaUserMap[d.label];
+                return mapped && mapped.engine === 'faceapi' && d.descriptors;
+              });
+
               if (validDescriptors.length > 0) {
-                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, 1 - threshold);
+                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, thresholdDist);
                 const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
                 // Convert distance to similarity for consistent UI
                 bestMatch = { label: res.label, similarity: 1 - res.distance };
@@ -8367,8 +8377,6 @@ File di Google Drive juga akan dihapus.`)) return;
           }
 
           if (bestMatch.label !== 'unknown' && bestMatch.label !== 'Unknown') {
-            // Passing similarity as "distance" to maintain compatibility with existing _onMejaAbsenMatchFound arg signature
-            // though we'll update the function to handle it as similarity.
             _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.similarity);
             return;
           }

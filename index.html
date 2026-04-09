@@ -7595,10 +7595,15 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Euclidean distance between two 128-d descriptors ──
     function euclideanDistance(desc1, desc2) {
-      if (!desc1 || !desc2 || desc1.length !== desc2.length) return 999;
+      if (!desc1 || !desc2) return 999;
+      // Handle TypedArrays or standard Arrays
+      const d1 = Array.isArray(desc1) ? desc1 : Array.from(desc1);
+      const d2 = Array.isArray(desc2) ? desc2 : Array.from(desc2);
+      if (d1.length !== d2.length || d1.length === 0) return 999;
+      
       let sum = 0;
-      for (let i = 0; i < desc1.length; i++) {
-        const d = desc1[i] - desc2[i];
+      for (let i = 0; i < d1.length; i++) {
+        const d = d1[i] - d2[i];
         sum += d * d;
       }
       return Math.sqrt(sum);
@@ -7628,15 +7633,16 @@ File di Google Drive juga akan dihapus.`)) return;
           };
         }
         const dist = euclideanDistance(refDesc, capturedDescArr);
-        // Threshold adjusted for 128 (faceapi) vs 512/1024 (human)
-        const threshold = refDesc.length >= 512 ? 0.6 : 0.45;
-        const score = Math.max(0, Math.round((1 - dist / 1.0) * 100));
+        // Unified threshold 0.5 as requested by user
+        const threshold = 0.5;
+        // Improved Score Calculation: 0.5 distance = 70% match, perfect = 100%
+        // Using a slightly more lenient curve for better UX
+        const score = Math.max(0, Math.round((1 - dist / 0.8) * 100));
         
         let label, cls;
-        if (dist <= threshold) { label = `✅ Dikenali ${score}%`; cls = 'face-match-ok'; }
-        else if (dist <= threshold + 0.1) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-        else if (dist <= threshold + 0.2) { label = `⚠️ Kurang Jelas ${score}%`; cls = 'face-match-warn'; }
-        else { label = `❌ Tidak Dikenali ${score}%`; cls = 'face-match-warn'; }
+        if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+        else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
         
         return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
@@ -8322,27 +8328,23 @@ File di Google Drive juga akan dihapus.`)) return;
       if (window._isMejaMode) {
         if (_allFaceDescriptors.length > 0 && descriptor) {
           let bestMatch = { label: 'unknown', distance: 1.0 };
+          const currentDim = descriptor.length;
 
-          if (window._aiEngine === 'human') {
-            // Manual Matching for 1024-d / 512-d
-            let minDict = 999;
-            for (const item of _allFaceDescriptors) {
-              const dist = euclideanDistance(item.descriptor, descriptor);
-              if (dist < minDict) {
-                minDict = dist;
-                bestMatch = { label: item.id, distance: dist };
-              }
+          // Unified Loop for both engines with dimension awareness
+          let minDict = 999;
+          for (const item of _allFaceDescriptors) {
+            const itemDesc = item.descriptor;
+            if (!itemDesc || itemDesc.length !== currentDim) continue;
+
+            const dist = euclideanDistance(itemDesc, descriptor);
+            if (dist < minDict) {
+              minDict = dist;
+              bestMatch = { label: item.id, distance: dist };
             }
-            // Threshold for Human is usually around 0.4 - 0.5 depending on quantization
-            if (minDict > 0.55) bestMatch.label = 'unknown';
-          } else {
-            // Face-API Standard Matcher
-            const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-            const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-            bestMatch = { label: res.label, distance: res.distance };
           }
 
-          if (bestMatch.label !== 'unknown') {
+          // Threshold 0.5 as requested
+          if (minDict <= 0.5) {
             _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
             return;
           }
@@ -14009,7 +14011,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // JIKA WAJAH DIKENAL
       const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
-      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.55) * 100));
+      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.7) * 100));
 
       $('moIcon').textContent = '⏳';
       $('moNama').textContent = user.nama;

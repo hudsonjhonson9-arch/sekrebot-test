@@ -7196,8 +7196,16 @@ File di Google Drive juga akan dihapus.`)) return;
       const el = $(map[id]); if (el) el.innerHTML = loading ? `<span class="spinner"></span> ${txt}` : txt;
     }
     function showResult(cid, iid, tid, mid, type, icon, title, msg) {
-      $(cid).className = `result-card r-${type} show`;
-      $(iid).textContent = icon; $(tid).textContent = title; $(mid).textContent = msg;
+      const el = $(cid);
+      if (!el) {
+        console.warn(`[showResult] Element not found: ${cid}. Title: ${title}, Msg: ${msg}`);
+        return;
+      }
+      el.className = `result-card r-${type} show`;
+      const iEl = $(iid), tEl = $(tid), mEl = $(mid);
+      if (iEl) iEl.textContent = icon;
+      if (tEl) tEl.textContent = title;
+      if (mEl) mEl.textContent = msg;
     }
     function showGPS(lat, lon, acc, lokasi) {
       const n = nowWITA();
@@ -8328,23 +8336,35 @@ File di Google Drive juga akan dihapus.`)) return;
       if (window._isMejaMode) {
         if (_allFaceDescriptors.length > 0 && descriptor) {
           let bestMatch = { label: 'unknown', distance: 1.0 };
-          const currentDim = descriptor.length;
+          const threshold = 0.6; // Improved threshold for better reliability
 
-          // Unified Loop for both engines with dimension awareness
-          let minDict = 999;
-          for (const item of _allFaceDescriptors) {
-            const itemDesc = item.descriptor;
-            if (!itemDesc || itemDesc.length !== currentDim) continue;
+          if (window._aiEngine === 'human') {
+            let minDict = 999;
+            const currentDim = descriptor.length;
+            for (const item of _allFaceDescriptors) {
+              // Ensure we are accessing the descriptor correctly (Human engine stores it in .descriptor)
+              const itemDesc = item.descriptor || (item.descriptors ? item.descriptors[0] : null);
+              if (!itemDesc || (itemDesc.length !== currentDim && Math.abs(itemDesc.length - currentDim) > 1)) continue;
 
-            const dist = euclideanDistance(itemDesc, descriptor);
-            if (dist < minDict) {
-              minDict = dist;
-              bestMatch = { label: item.id, distance: dist };
+              const dist = euclideanDistance(itemDesc, descriptor);
+              if (dist < minDict) {
+                minDict = dist;
+                bestMatch = { label: item.id || item.label, distance: dist };
+              }
+            }
+            if (minDict > threshold) bestMatch.label = 'unknown';
+          } else {
+            // Restore Face-API Standard Matcher for 128-d
+            try {
+              const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, threshold);
+              const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+              bestMatch = { label: res.label, distance: res.distance };
+            } catch (e) {
+              console.error('[AI] FaceMatcher error:', e);
             }
           }
 
-          // Threshold 0.5 as requested
-          if (minDict <= 0.5) {
+          if (bestMatch.label !== 'unknown' && bestMatch.label !== 'Unknown') {
             _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
             return;
           }

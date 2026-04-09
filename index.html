@@ -7635,8 +7635,8 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
     const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
-    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/models/';
+    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js'; // FIX: v3.0.5 tidak ada, human.all.js tidak ada di v3
+    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/models/';
 
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
     let _faceApiLoaded = false;
@@ -7676,19 +7676,23 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadHumanScript() {
       if (window.Human) { _humanLoaded = true; return; }
-      // FIX: @vladmandic/human v3.x adalah ES Module — tidak bisa pakai <script> tag biasa
-      // karena window.Human tidak akan pernah ter-set. Gunakan dynamic import() sebagai gantinya.
-      try {
-        const module = await import(HUMAN_CDN);
-        // ES module bisa export sebagai default, .Human, atau root object
-        window.Human = module.default || module.Human || module;
-        if (!window.Human || typeof window.Human !== 'function') {
-          throw new Error('Class Human tidak ditemukan di dalam modul yang dimuat dari CDN.');
-        }
-        _humanLoaded = true;
-      } catch (e) {
-        throw new Error('Gagal memuat human.js via dynamic import: ' + e.message);
-      }
+      // dist/human.js adalah IIFE — gunakan <script> tag biasa (bukan dynamic import)
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = HUMAN_CDN;
+        s.crossOrigin = 'anonymous';
+        s.onload = () => {
+          if (typeof Human !== 'undefined') {
+            window.Human = Human; // pastikan tersedia di window
+            _humanLoaded = true;
+            resolve();
+          } else {
+            reject(new Error('Variabel Human tidak ditemukan setelah script dimuat'));
+          }
+        };
+        s.onerror = () => reject(new Error('Gagal memuat human.js dari CDN: ' + HUMAN_CDN));
+        document.head.appendChild(s);
+      });
     }
 
     // ── Terpadu: Muat Model AI (face-api atau Human) ──

@@ -7812,11 +7812,11 @@ File di Google Drive juga akan dihapus.`)) return;
             face: {
               enabled: true,
               detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
-              mesh: { enabled: false },
+              mesh: { enabled: true }, // Mesh is needed for better liveness
               iris: { enabled: false },
-              description: { enabled: true, modelPath: 'faceres.json' }, // 512-dim default
+              description: { enabled: true, modelPath: 'faceres.json' },
               emotion: { enabled: false },
-              liveness: { enabled: false }
+              liveness: { enabled: true } // Enable liveness
             },
             body: { enabled: false },
             hand: { enabled: false },
@@ -8177,9 +8177,12 @@ File di Google Drive juga akan dihapus.`)) return;
           const res = await HumanInstance.detect(vid);
           if (res.face && res.face.length > 0) {
             const f = res.face[0];
+            // f.live & f.real are available if liveness is enabled
+            // Threshold slightly lowered to 0.5 for better UX on mobile/webcams
+            const isLive = (f.live || 0) > 0.5 && (f.real || 0) > 0.5;
             detection = {
-              landmarks: { positions: f.landmarks },
-              _isHumanLive: (f.live > 0.6 && f.real > 0.6)
+              landmarks: { positions: f.landmarks || [] },
+              _isHumanLive: isLive
             };
           }
         } else {
@@ -8234,17 +8237,17 @@ File di Google Drive juga akan dihapus.`)) return;
         }
 
         if (_isLive) {
-          setCamStatus('ok', '✅', 'Wajah Terverifikasi', window._isMejaMode ? 'Sedang mencocokkan...' : 'Posisikan wajah & Tekan tombol');
+          setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
           if (window._isMejaMode) {
             $('lsIcon').textContent = '🛡️';
-            $('lsText').textContent = 'Passive Liveness Approved';
+            $('lsText').textContent = 'Wajah Terverifikasi Asli';
             $('lsText').style.color = 'var(--success)';
           }
         } else {
           setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
           if (window._isMejaMode) {
             $('lsIcon').textContent = '🔍';
-            $('lsText').textContent = 'Sedang Memverifikasi Identitas...';
+            $('lsText').textContent = 'Mengecek Keaslian Wajah...';
             $('lsText').style.color = 'var(--gold)';
           }
         }

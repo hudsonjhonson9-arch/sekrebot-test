@@ -8335,37 +8335,31 @@ File di Google Drive juga akan dihapus.`)) return;
       // 2. Handle Continuous Scan (Meja Absen)
       if (window._isMejaMode) {
         if (_allFaceDescriptors.length > 0 && descriptor) {
-          let bestMatch = { label: 'unknown', distance: 1.0 };
-          const threshold = 0.6; // Improved threshold for better reliability
+          let bestMatch = { label: 'unknown', similarity: 0 };
+          const threshold = 0.6; // Consistent 60% similarity threshold
 
-          if (window._aiEngine === 'human') {
-            let minDict = 999;
-            const currentDim = descriptor.length;
+          if (window._aiEngine === 'human' && HumanInstance) {
+            let maxSim = 0;
             for (const item of _allFaceDescriptors) {
-              // Ensure we are accessing the descriptor correctly (Human engine stores it in .descriptor)
               const itemDesc = item.descriptor || (item.descriptors ? item.descriptors[0] : null);
-              if (!itemDesc || (itemDesc.length !== currentDim && Math.abs(itemDesc.length - currentDim) > 1)) continue;
-
-              const dist = euclideanDistance(itemDesc, descriptor);
-              if (dist < minDict) {
-                minDict = dist;
-                bestMatch = { label: item.id || item.label, distance: dist };
+              if (!itemDesc) continue;
+              
+              const sim = HumanInstance.match.similarity(itemDesc, descriptor);
+              if (sim > maxSim) {
+                maxSim = sim;
+                bestMatch = { label: item.id || item.label, similarity: sim };
               }
             }
-            if (minDict > threshold) bestMatch.label = 'unknown';
+            if (maxSim < threshold) bestMatch.label = 'unknown';
           } else {
-            // Restore Face-API Standard Matcher for 128-d
+            // Face-API Standard Matcher
             try {
-              // FIX: FaceMatcher requires an array of ONLY LabeledFaceDescriptors.
-              // We must filter out any Human.js descriptors (plain objects) in the list.
-              const validDescriptors = _allFaceDescriptors.filter(d => d instanceof window.faceapi.LabeledFaceDescriptors);
-              
+              const validDescriptors = _allFaceDescriptors.filter(d => d.descriptors && d.label);
               if (validDescriptors.length > 0) {
-                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, threshold);
+                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, 1 - threshold);
                 const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-                bestMatch = { label: res.label, distance: res.distance };
-              } else {
-                console.warn('[AI] Tidak ada data wajah format Face-API untuk dicocokkan.');
+                // Convert distance to similarity for consistent UI
+                bestMatch = { label: res.label, similarity: 1 - res.distance };
               }
             } catch (e) {
               console.error('[AI] FaceMatcher error:', e);
@@ -8373,11 +8367,13 @@ File di Google Drive juga akan dihapus.`)) return;
           }
 
           if (bestMatch.label !== 'unknown' && bestMatch.label !== 'Unknown') {
-            _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+            // Passing similarity as "distance" to maintain compatibility with existing _onMejaAbsenMatchFound arg signature
+            // though we'll update the function to handle it as similarity.
+            _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.similarity);
             return;
           }
         }
-        _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+        _onMejaAbsenMatchFound('unknown', null, dataUrl, 0);
         return;
       }
 
@@ -14039,7 +14035,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // JIKA WAJAH DIKENAL
       const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
-      const score = Math.max(0, Math.round((1 - (distance || 0) / 0.7) * 100));
+      const score = Math.max(0, Math.round((distance || 0) * 100)); // Arg 'distance' is now passing similarity score (0-1)
 
       $('moIcon').textContent = '⏳';
       $('moNama').textContent = user.nama;

@@ -7406,6 +7406,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _detectLoop = null;
     let _liveMatchTimer = null; // interval untuk live face match di overlay kamera
     let _autoCaptured = false; // flag agar auto-capture hanya sekali per sesi
+    let _lastHumanScore = '0.00'; // Untuk debugging liveness score Human.js
     let _faceHistory = [];   // riwayat posisi hidung untuk deteksi geleng
     let _eyeHistory = [];   // riwayat eye aspect ratio untuk deteksi kedip
     let _noseYHistory = [];   // riwayat posisi hidung vertikal untuk deteksi angguk
@@ -8177,9 +8178,15 @@ File di Google Drive juga akan dihapus.`)) return;
           const res = await HumanInstance.detect(vid);
           if (res.face && res.face.length > 0) {
             const f = res.face[0];
-            // f.live & f.real are available if liveness is enabled
-            // Threshold slightly lowered to 0.5 for better UX on mobile/webcams
-            const isLive = (f.live || 0) > 0.5 && (f.real || 0) > 0.5;
+            // f.live, f.real, f.liveness are possible properties in Human 3.x
+            const liveScore = f.live || 0;
+            const realScore = f.real || 0;
+            const genericScore = f.liveness || 0;
+            
+            // Log for user to see on screen (using lsText)
+            _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
+
+            const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
             detection = {
               landmarks: { positions: f.landmarks || [] },
               _isHumanLive: isLive
@@ -8247,7 +8254,7 @@ File di Google Drive juga akan dihapus.`)) return;
           setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
           if (window._isMejaMode) {
             $('lsIcon').textContent = '🔍';
-            $('lsText').textContent = 'Mengecek Keaslian Wajah...';
+            $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
             $('lsText').style.color = 'var(--gold)';
           }
         }

@@ -7635,7 +7635,7 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
     const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js'; // FIX: v3.0.5 tidak ada, human.all.js tidak ada di v3
+    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js'; // FIX: v3.0.5 tdk ada, human.all.js tdk ada di v3
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/models/';
 
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
@@ -7676,15 +7676,16 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadHumanScript() {
       if (window.Human) { _humanLoaded = true; return; }
-      // dist/human.js adalah IIFE — gunakan <script> tag biasa (bukan dynamic import)
+      // dist/human.js adalah IIFE — gunakan script tag (var Human ter-set sebagai global)
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = HUMAN_CDN;
         s.crossOrigin = 'anonymous';
         s.onload = () => {
+          // IIFE mendeklarasikan "var Human" — di konteks browser jadi window.Human
           if (typeof Human !== 'undefined') {
-            window.Human = Human; // pastikan tersedia di window
-            _humanLoaded = true;
+            window.Human = Human;
+            _humanLoaded = true; // FIX: set flag setelah berhasil
             resolve();
           } else {
             reject(new Error('Variabel Human tidak ditemukan setelah script dimuat'));
@@ -7710,7 +7711,9 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl', // webgl is more widely supported than webgpu
+            // FIX: coba wasm dulu (lebih kompatibel di mobile), fallback ke cpu
+            backend: 'wasm',
+            wasmPath: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/',
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -7731,10 +7734,21 @@ File di Google Drive juga akan dihapus.`)) return;
           HumanInstance = new window.Human(config);
           _updateModelProgress(0, 20);
 
-          // Timeout 15s for model load
-          const loadPromise = HumanInstance.load();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
-          
+          // FIX: Timeout 90s (faceres.bin 6.7MB + blazeface.bin 527KB = ~8MB, koneksi mobile bisa lambat)
+          const loadPromise = HumanInstance.load().catch(async (e) => {
+            // FIX: Jika wasm gagal, coba webgl lalu cpu sebagai fallback backend
+            console.warn('[Human] Backend wasm gagal, mencoba webgl:', e.message);
+            HumanInstance.config.backend = 'webgl';
+            try {
+              await HumanInstance.load();
+            } catch (e2) {
+              console.warn('[Human] Backend webgl gagal, mencoba cpu:', e2.message);
+              HumanInstance.config.backend = 'cpu';
+              await HumanInstance.load();
+            }
+          });
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (90s) - model terlalu besar atau koneksi terlalu lambat')), 90000)); // FIX: 90s
+
           await Promise.race([loadPromise, timeoutPromise]);
           await HumanInstance.warmup();
 
@@ -7787,8 +7801,8 @@ File di Google Drive juga akan dihapus.`)) return;
           window._aiEngine = 'faceapi';
           _modelLoading = false;
           _modelsReady = false;
-          // Notify user of the switch
-          setTimeout(() => alert('⚠️ Human.js gagal dimuat pada perangkat ini. Sistem otomatis beralih ke Face-API sebagai cadangan.'), 100);
+          // FIX: Hapus alert popup — cukup log ke console, lanjut otomatis ke faceapi
+          console.warn('Human.js gagal dimuat, otomatis beralih ke Face-API.');
           return await loadAIModels();
         }
 

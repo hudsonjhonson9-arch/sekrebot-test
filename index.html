@@ -1657,24 +1657,39 @@
 
     /* Jenis pills */
     .jenis-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 12px
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
     }
 
     .jenis-pill {
-      padding: 8px 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: transparent;
+      flex: 0 1 calc(33.33% - 14px);
+      min-width: 100px;
+      padding: 12px 8px;
+      border-radius: 14px;
+      border: 1.5px solid var(--border);
+      background: rgba(255, 255, 255, .03);
       color: var(--muted);
       font-family: inherit;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       text-align: center;
-      transition: all .15s
+      transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .jenis-pill:hover {
+      background: rgba(255, 255, 255, .08);
+      border-color: var(--gold-dim);
+      transform: translateY(-2px);
     }
 
     .jenis-pill.active {
@@ -10095,6 +10110,8 @@ File di Google Drive juga akan dihapus.`)) return;
         $('rsIzin').textContent = ringkasan.izin ?? 0;
         $('rsSakit').textContent = ringkasan.sakit ?? 0;
         $('rsTugas').textContent = ringkasan.tugas ?? 0;
+        if($('rsTubel')) $('rsTubel').textContent = ringkasan.tubel ?? 0;
+        if($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
         $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
         const order = await orderPromise;
@@ -10194,7 +10211,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const nama = getField(r, 'Nama', 'nama') || '—';
         const nip = getField(r, 'NIP', 'nip') || '—';
         const tgl = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
-        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
+        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
         const jamStr = getField(r, 'Jam', 'jam') || '';
         if (!map[id]) map[id] = {
           id, nama, nip, jabatan: '', urutan: 9999,
@@ -10202,9 +10219,9 @@ File di Google Drive juga akan dihapus.`)) return;
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
-          // all-time (filled separately)
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
-          all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0
+          all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
+          all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
         };
         const curNama = getField(r, 'Nama', 'nama') || '';
         if (curNama.length > map[id].nama.length) map[id].nama = curNama;
@@ -10235,7 +10252,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const id = String(getField(r, 'ID', 'id') || '').trim();
         if (!id || !map[id]) return; // only process existing employees
         const tglA = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
-        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
+        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
         const jamStr = getField(r, 'Jam', 'jam') || '';
         const jam = toMenit(jamStr);
         if (jenis === 'MASUK') { map[id].all_masuk++; }
@@ -10380,6 +10397,8 @@ File di Google Drive juga akan dihapus.`)) return;
         const izin = p.izin || 0;
         const sakit = p.sakit || 0;
         const tugas = p.tugas || 0;
+        const tubel = p.tubel || 0;
+        const cuti = p.cuti || 0;
 
         const jabatanStr = jabatan
           ? `<div style="font-size:9px;color:var(--gold);margin-top:1px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${jabatan}</div>`
@@ -10723,6 +10742,8 @@ File di Google Drive juga akan dihapus.`)) return;
         const izin = p.izin || 0;
         const sakit = p.sakit || 0;
         const tugas = p.tugas || 0;
+        const tubel = p.tubel || 0;
+        const cuti = p.cuti || 0;
 
         // Jam per pegawai (prioritas: periode khusus → custom per-pegawai → global)
         const pgwId = String(p.id || '');

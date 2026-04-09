@@ -8324,33 +8324,47 @@ File di Google Drive juga akan dihapus.`)) return;
           let bestMatch = { label: 'unknown', distance: 1.0 };
 
           if (window._aiEngine === 'human') {
-            // Use Human's internal matching if available for higher accuracy
-            let minDict = 999;
-            for (const item of _allFaceDescriptors) {
-              if (item.descriptor.length !== descriptor.length) continue;
-              
-              let dist;
-              if (HumanInstance.match) {
-                 const m = HumanInstance.match(item.descriptor, descriptor);
-                 dist = m.distance;
-              } else {
-                 dist = euclideanDistance(item.descriptor, descriptor);
-              }
+            try {
+              let minDict = 999;
+              for (const item of _allFaceDescriptors) {
+                if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
+                
+                let dist;
+                try {
+                  if (HumanInstance.match) {
+                    const m = HumanInstance.match(item.descriptor, descriptor);
+                    dist = m.distance;
+                  } else {
+                    dist = euclideanDistance(item.descriptor, descriptor);
+                  }
+                } catch (err) {
+                  console.warn('Human matching error for item:', item.id, err);
+                  dist = euclideanDistance(item.descriptor, descriptor);
+                }
 
-              if (dist < minDict) {
-                minDict = dist;
-                bestMatch = { label: item.id, distance: dist };
+                if (dist < minDict) {
+                  minDict = dist;
+                  bestMatch = { label: item.id, distance: dist };
+                }
               }
+              
+              if (minDict === 999) bestMatch.label = 'mismatch';
+              else if (minDict > 0.75) bestMatch.label = 'unknown';
+              bestMatch.distance = minDict;
+            } catch (e) {
+              console.error('DoCapture matching error:', e);
+              bestMatch.label = 'unknown';
+              bestMatch.distance = 1.0;
             }
-            
-            if (minDict === 999) bestMatch.label = 'mismatch';
-            else if (minDict > 0.75) bestMatch.label = 'unknown';
-            bestMatch.distance = minDict;
           } else {
             // Face-API Standard Matcher
-            const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-            const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-            bestMatch = { label: res.label, distance: res.distance };
+            try {
+              const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+              const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+              bestMatch = { label: res.label, distance: res.distance };
+            } catch (e) {
+              console.error('FaceAPI matching error:', e);
+            }
           }
 
           if (bestMatch.label !== 'unknown') {

@@ -9779,24 +9779,19 @@ File di Google Drive juga akan dihapus.`)) return;
       $('rekapRefIcon').outerHTML = '<span class="spin-sm" id="rekapRefIcon"></span>';
       $('pegawaiList').innerHTML = shimmerRows(4);
       resetRekapStats();
-      // Fetch hari libur, jam pegawai & jam periode secara paralel
       if (!liburLoaded) fetchLiburForRekap();
       fetchJamPegawai();
-      await Promise.all([fetchJamPeriode(), window._jamAbsenReady]); // pastikan JAM & periode sudah siap
+      await Promise.all([fetchJamPeriode(), window._jamAbsenReady]);
       const isHarianLoad = dari === sampai;
       try {
         const orderPromise = fetchUserListOrder();
         let pegawai = [], ringkasan = {};
         let rekapOK = false;
 
-        // ── Selalu coba pakai n8n rekap (harian maupun range) ──
-        // n8n Hitung Rekap sudah mengurutkan sesuai user_list dan isi semua pegawai
         try {
-          // Kirim juga jam batas aktif (periode khusus atau global) + hari libur ke n8n
           const _jamReq = getJamForTanggal(dari);
           const jamMasukParam = _jamReq.masuk;
           const jamPulangParam = _jamReq.pulang;
-          // Hitung hari kerja di frontend (sudah punya hariLiburSet) lalu kirim ke n8n
           function _countHK(d1, d2) {
             let c = 0; const dd = new Date(d1 + 'T00:00:00'), ds = new Date(d2 + 'T00:00:00');
             while (dd <= ds) {
@@ -9816,7 +9811,6 @@ File di Google Drive juga akan dihapus.`)) return;
           }
         } catch (_) { }
 
-        // ── Fallback frontend jika n8n gagal ──
         if (!rekapOK) {
           let allRowsRaw = [], periodRowsRaw = [];
           try {
@@ -9833,35 +9827,31 @@ File di Google Drive juga akan dihapus.`)) return;
           ringkasan = computed.ringkasan;
         }
 
-        // ── Untuk mode HARIAN: enrich jam masuk/pulang aktual dari log ──
-        // n8n Hitung Rekap tidak menyimpan jam aktual karena aggregate —
-        // kita ambil dari P.log lalu pasangkan ke masing-masing pegawai
         if (isHarianLoad && rekapOK) {
           try {
-            // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
             let logHarian = allLogs.filter(r => getField(r, 'Tanggal', 'tanggal') === dari);
             if (!logHarian.length) {
               const rLog = await apiFetch(`${P.log}?tanggal=${dari}`, { method: 'GET' });
               if (rLog.ok) { const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r => getField(r, 'Tanggal', 'tanggal') === dari); }
             }
-            // Bangun map: id → {jamMasuk, jamPulang, logKet}
             const jamMap = {};
             logHarian.forEach(r => {
               const id = String(getField(r, 'ID', 'id') || '').trim();
               if (!id) return;
               const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
               const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
-              const ket = getField(r, 'Keterangan', 'keterangan') || '';
-              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '' };
+              const ket = getField(r, 'Keterangan', 'keterangan', 'Ket', 'ket') || '';
+              
+              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '', isTubel: false };
               if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') jamMap[id].jamMasuk = jam || '-';
               if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') jamMap[id].jamPulang = jam || '-';
+              if (j === 'TUBEL') jamMap[id].isTubel = true; // Tangkap status TUBEL
               if (ket) jamMap[id].logKet = ket;
             });
-            // Pasangkan ke pegawai
             pegawai = pegawai.map(p => {
               const id = String(p.id || '');
               const jm = jamMap[id];
-              return jm ? { ...p, jamMasuk: jm.jamMasuk, jamPulang: jm.jamPulang, logKet: jm.logKet } : p;
+              return jm ? { ...p, jamMasuk: jm.jamMasuk, jamPulang: jm.jamPulang, logKet: jm.logKet, isTubel: jm.isTubel } : p;
             });
           } catch (_) { }
         }
@@ -9876,7 +9866,6 @@ File di Google Drive juga akan dihapus.`)) return;
         $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
         const order = await orderPromise;
-        // Enrich jabatan dari user_list jika belum ada, lalu sort by urutan
         if (order.length > 0) {
           pegawai = pegawai.map(p => {
             const match = order.find(u =>
@@ -9926,10 +9915,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ COMPUTE REKAP (fallback) — v2 dengan all-time accumulation ════ */
     function computeRekap(rows, allRowsParam = null, userSeed = null) {
-      // Jam batas GLOBAL (default)
       const JAM_MASUK_BATAS = JAM_MASUK_MENIT;
       const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
-      // Helper: jam batas per pegawai + per tanggal (periode khusus mengalahkan per-pegawai yg mengalahkan global)
       function getMasukBatas(id, tgl) {
         if (tgl) { const p = getJamForTanggal(tgl); if (p.nama) return toMenit(p.masuk) ?? JAM_MASUK_BATAS; }
         return jamPegawaiMap[id]?.masukMenit ?? JAM_MASUK_BATAS;
@@ -9948,7 +9935,6 @@ File di Google Drive juga akan dihapus.`)) return;
 
       const map = {};
 
-      // Pre-populate dari userSeed agar semua pegawai tampil meski tidak absen
       (userSeed || []).forEach((u, idx) => {
         const id = String(u.id || '').trim();
         if (!id) return;
@@ -9956,16 +9942,15 @@ File di Google Drive juga akan dihapus.`)) return;
           id,
           nama: u.nama || '—', nip: u.nip || '—', jabatan: u.jabatan || '', urutan: u.urutan ?? idx,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-          izin: 0, sakit: 0, tugas: 0,
+          izin: 0, sakit: 0, tugas: 0, tubel: 0, // Ditambah tubel
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
-          all_izin: 0, all_sakit: 0, all_tugas: 0, all_alpa: 0
+          all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_alpa: 0
         };
       });
 
-      // Process periode (filtered rows)
       rows.forEach(r => {
         const id = String(getField(r, 'ID', 'id') || '').trim();
         if (!id) return;
@@ -9974,13 +9959,13 @@ File di Google Drive juga akan dihapus.`)) return;
         const tgl = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
         const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
         const jamStr = getField(r, 'Jam', 'jam') || '';
+        
         if (!map[id]) map[id] = {
           id, nama, nip, jabatan: '', urutan: 9999,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-          izin: 0, sakit: 0, tugas: 0,
+          izin: 0, sakit: 0, tugas: 0, tubel: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
-          // all-time (filled separately)
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0
         };
@@ -10003,13 +9988,13 @@ File di Google Drive juga akan dihapus.`)) return;
         else if (jenis === 'IZIN') { map[id].izin++; }
         else if (jenis === 'SAKIT') { map[id].sakit++; }
         else if (jenis === 'TUGAS') { map[id].tugas++; }
+        else if (jenis === 'TUBEL') { map[id].tubel++; map[id].isTubel = true; } // Hitung TUBEL
       });
 
-      // Process ALL-TIME rows (if provided)
-      const allRows = allRowsParam || rows; // fallback to same rows if no allRows
+      const allRows = allRowsParam || rows; 
       allRows.forEach(r => {
         const id = String(getField(r, 'ID', 'id') || '').trim();
-        if (!id || !map[id]) return; // only process existing employees
+        if (!id || !map[id]) return; 
         const tglA = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
         const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
         const jamStr = getField(r, 'Jam', 'jam') || '';
@@ -10026,31 +10011,27 @@ File di Google Drive juga akan dihapus.`)) return;
         else if (jenis === 'IZIN') { map[id].all_izin++; }
         else if (jenis === 'SAKIT') { map[id].all_sakit++; }
         else if (jenis === 'TUGAS') { map[id].all_tugas++; }
+        else if (jenis === 'TUBEL') { map[id].all_tubel++; }
         else if (jenis === 'TANPA BERITA') { map[id].all_alpa++; }
       });
 
-      // Special handling: Calculate "Periode Alpa" counts for each employee
-      // if not provided by n8n.
       if (rows.length > 0) {
-        // Find HK dates in period
         const rangeDates = [];
-        let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
+        let dCur = new Date($('rekapDari').value + 'T00:00:00'), dEnd = new Date($('rekapSampai').value + 'T00:00:00');
         while (dCur <= dEnd) {
           const t = dCur.toISOString().split('T')[0], dy = dCur.getDay();
           if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) rangeDates.push(t);
           dCur.setDate(dCur.getDate() + 1);
         }
-        // Check presence per employee per date
         const rowSet = new Set(rows.map(r => String(getField(r, 'ID', 'id')) + '|' + normToISO(getField(r, 'Tanggal', 'tanggal'))));
         Object.keys(map).forEach(uid => {
           let c = 0;
           rangeDates.forEach(tgl => { if (!rowSet.has(uid + '|' + tgl)) c++; });
-          map[uid].alpa = c; // count for this period
+          map[uid].alpa = c;
         });
       }
 
       const pegawai = Object.values(map).map(p => {
-        // Discipline calculation
         const totalEntries = p.masuk + p.di_luar_masuk;
         const disiplinPct = totalEntries > 0 ? Math.round((p.masuk / totalEntries) * 100) : null;
         let disiplinLabel = '', disiplinLevel = 0;
@@ -10060,35 +10041,40 @@ File di Google Drive juga akan dihapus.`)) return;
           else if (disiplinPct >= 60) { disiplinLabel = 'Cukup'; disiplinLevel = 2; }
           else { disiplinLabel = 'Kurang'; disiplinLevel = 1; }
         }
-        // All-time discipline
         const totalAll = p.all_masuk + p.all_di_luar_masuk;
         const disiplinAllPct = totalAll > 0 ? Math.round((p.all_masuk / totalAll) * 100) : null;
+        
+        // HARI_KERJA_PERIODE approximation based on UI Dates
+        function _countHK(d1, d2) {
+            let c = 0; const dd = new Date(d1 + 'T00:00:00'), ds = new Date(d2 + 'T00:00:00');
+            while (dd <= ds) {
+              const dy = dd.getDay(), t = dd.toISOString().split('T')[0];
+              if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) c++;
+              dd.setDate(dd.getDate() + 1);
+            }
+            return c;
+        }
+        const HKP = _countHK($('rekapDari').value, $('rekapSampai').value);
+
         return {
           ...p,
           lambat: p.di_luar_masuk,
           pulangCepat: p.di_luar_pulang,
           pulang_luar: p.pulang_luar || 0,
           luar: p.di_luar_masuk + p.di_luar_pulang,
-          // Period HH:MM
           akkLambatHHMM: toHHMM(p.menit_terlambat),
           akkCepatHHMM: toHHMM(p.menit_lebih_awal),
           akkAlpaHHMM: toHHMM((p.alpa || 0) * 450),
           totalAkkHHMM: toHHMM(p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450)),
           totalAkkMenit: p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450),
-          // Estimated jamHadir for fallback (Work hours minus penalties)
-          jamHadir: Math.max(0, ((HARI_KERJA_PERIODE * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
-          // Discipline period
+          jamHadir: Math.max(0, ((HKP * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
           disiplinPct, disiplinLabel, disiplinLevel,
-          // All-time HH:MM
           totalLambatAllHHMM: toHHMM(p.all_menit_terlambat),
           totalCepatAllHHMM: toHHMM(p.all_menit_lebih_awal),
           totalAlpaAllHHMM: toHHMM((p.all_alpa || 0) * 450),
           totalAkkAllHHMM: toHHMM(p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450)),
           totalAkkAllMenit: p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450),
-          disiplinAllPct,
-          // Legacy
-          akumulasi_terlambat: p.menit_terlambat > 0 ? toHHMM(p.menit_terlambat) + ' terlambat' : '',
-          akumulasi_lebih_awal: p.menit_lebih_awal > 0 ? toHHMM(p.menit_lebih_awal) + ' lebih awal' : ''
+          disiplinAllPct
         };
       });
       const sum = k => pegawai.reduce((s, p) => s + (p[k] || 0), 0);

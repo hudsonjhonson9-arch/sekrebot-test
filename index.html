@@ -8178,19 +8178,20 @@ File di Google Drive juga akan dihapus.`)) return;
           const res = await HumanInstance.detect(vid);
           if (res.face && res.face.length > 0) {
             const f = res.face[0];
-            // f.live, f.real, f.liveness are possible properties in Human 3.x
-            const liveScore = f.live || 0;
-            const realScore = f.real || 0;
-            const genericScore = f.liveness || 0;
-            
-            // Log for user to see on screen (using lsText)
-            _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
+            // Validasi keras: skor box > 0.7 dan lebar box > 80px (mencegah deteksi dinding)
+            const box = f.box || [0,0,0,0];
+            if ((f.score || 0) > 0.7 && box[2] > 80) {
+              const liveScore = f.live || 0;
+              const realScore = f.real || 0;
+              const genericScore = f.liveness || 0;
+              _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
 
-            const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
-            detection = {
-              landmarks: { positions: f.landmarks || [] },
-              _isHumanLive: isLive
-            };
+              const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+              detection = {
+                landmarks: { positions: f.landmarks || [] },
+                _isHumanLive: isLive
+              };
+            }
           }
         } else {
           // Default: face-api.js
@@ -8277,6 +8278,11 @@ File di Google Drive juga akan dihapus.`)) return;
               }
             }, 800);
           }
+        }
+
+        // Jalankan frame berikutnya HANYA setelah proses sekarang selesai
+        if ($('camOverlay') && !$('camOverlay').classList.contains('hidden')) {
+          _detectLoop = requestAnimationFrame(loop);
         }
       };
       loop();

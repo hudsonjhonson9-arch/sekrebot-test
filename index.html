@@ -8361,50 +8361,51 @@ File di Google Drive juga akan dihapus.`)) return;
         // 3. Logika Meja Absen (Continuous Scan)
         if (window._isMejaMode) {
           let bestMatch = { label: 'unknown', distance: 1.0 };
-
+          
           if (_allFaceDescriptors.length > 0 && descriptor) {
-            console.log('[Meja Audit] Memulai pencocokan identitas...');
-            let minDict = 999;
-            let candidates = [];
+            if (window._aiEngine === 'human') {
+              console.log('[Meja Audit] Memulai pencocokan identitas...');
+              let minDict = 999;
+              let candidates = [];
 
-            for (const item of _allFaceDescriptors) {
-              if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
-              const dist = euclideanDistance(item.descriptor, descriptor);
+              for (const item of _allFaceDescriptors) {
+                if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
+                const dist = euclideanDistance(item.descriptor, descriptor);
+                
+                candidates.push({ id: item.id, dist: dist });
 
-              candidates.push({ id: item.id, dist: dist });
-
-              if (dist < minDict) {
-                minDict = dist;
-                bestMatch = { label: item.id, distance: dist };
+                if (dist < minDict) {
+                  minDict = dist;
+                  bestMatch = { label: item.id, distance: dist };
+                }
+                if (dist < 0.15) break; // Super confidence early exit
               }
-              if (dist < 0.15) break; // Super confidence early exit
-            }
 
-            // Diagnostic Log: Show top 5 closest matches
-            candidates.sort((a, b) => a.dist - b.dist);
-            const top5 = candidates.slice(0, 5).map(c => {
-              const u = window._mejaUserMap[c.id] || { nama: 'Unknown' };
-              return { Nama: u.nama, Dist: c.dist.toFixed(4), ID: c.id };
-            });
-            console.table(top5);
-
-            if (minDict === 999) {
-              console.warn('[Meja Audit] Tidak ada descriptor dengan dimensi yang cocok!');
-              bestMatch.label = 'mismatch';
+              // Diagnostic Log: Show top 5 closest matches
+              candidates.sort((a,b) => a.dist - b.dist);
+              const top5 = candidates.slice(0, 5).map(c => {
+                const u = window._mejaUserMap[c.id] || { nama: 'Unknown' };
+                return { Nama: u.nama, Dist: c.dist.toFixed(4), ID: c.id };
+              });
+              console.table(top5);
+              
+              if (minDict === 999) {
+                console.warn('[Meja Audit] Tidak ada descriptor dengan dimensi yang cocok!');
+                bestMatch.label = 'mismatch';
+              } else {
+                console.log(`[Meja Audit] Hasil terbaik: ${bestMatch.label} (Dist: ${minDict.toFixed(4)})`);
+                if (minDict > 0.75) bestMatch.label = 'unknown';
+              }
+              bestMatch.distance = minDict;
             } else {
-              console.log(`[Meja Audit] Hasil terbaik: ${bestMatch.label} (Dist: ${minDict.toFixed(4)})`);
-              if (minDict > 0.75) bestMatch.label = 'unknown';
+              // Face-API Standard
+              try {
+                const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+                const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+                bestMatch = { label: res.label, distance: res.distance };
+              } catch (e) { console.error(e); }
             }
-            bestMatch.distance = minDict;
-          } else {
-            // Face-API Standard
-            try {
-              const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-              const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-              bestMatch = { label: res.label, distance: res.distance };
-            } catch (e) { console.error(e); }
           }
-        }
 
         _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
         return;
@@ -13874,10 +13875,7 @@ File di Google Drive juga akan dihapus.`)) return;
               doc.setFont('times', 'bold');
               doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
               doc.setFont('times', 'normal');
-              _captureData = null;
-              if (typeof safetyTimer !== 'undefined') clearTimeout(safetyTimer); // Clear safety timer jika sukses
-
-              const vid = $('camVideo'); doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
+              doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
             }
           }
         });
@@ -14034,6 +14032,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _lastMejaTime = 0;
 
     async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
+      if (typeof safetyTimer !== 'undefined') clearTimeout(safetyTimer); // Matikan timer keamanan
       const sekarang = Date.now();
 
       // 1. SISTEM ANTI-SPAM (COOLDOWN)

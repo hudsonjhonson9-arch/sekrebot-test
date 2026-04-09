@@ -8019,7 +8019,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function closeCamOverlay(triggeredByUser) {
-      if (window._isMejaMode) {
+      if (window._isMejaMode && triggeredByUser !== false) {
         stopMejaAbsen();
         return;
       }
@@ -8039,7 +8039,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // Kembalikan judul & panduan wajah untuk sesi berikutnya
       const titleEl = $('camHeaderTitle');
-      if (titleEl) titleEl.textContent = '📷 Verifikasi Wajah';
+      if (titleEl) {
+        if (titleEl) titleEl.textContent = '📷 Verifikasi Wajah';
+      }
       const faceGuideEl = $('faceGuideWrap');
       if (faceGuideEl) faceGuideEl.style.display = 'flex';
 
@@ -8178,14 +8180,14 @@ File di Google Drive juga akan dihapus.`)) return;
             const res = await HumanInstance.detect(vid);
             if (res.face && res.face.length > 0) {
               const f = res.face[0];
-              // Validasi box wajah (skor > 0.7 & lebar > 80px) untuk mencegah deteksi dinding
-              const box = f.box || [0,0,0,0];
-              if ((f.score || 0) > 0.7 && box[2] > 80) {
+              // Validasi lebih ketat (skor > 0.8 & box lebar > 100px)
+              const box = f.box || [0, 0, 0, 0];
+              if ((f.score || 0) > 0.8 && box[2] > 100) {
                 const liveScore = f.live || 0;
                 const realScore = f.real || 0;
                 const genericScore = f.liveness || 0;
                 _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
-                const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+                const isLive = (liveScore > 0.5 || realScore > 0.5 || genericScore > 0.5);
                 detection = {
                   landmarks: { positions: f.landmarks || [] },
                   _isHumanLive: isLive
@@ -8288,8 +8290,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-      if (_captureData) return;
-      _captureData = true; // Kunci agar tidak klik 2x
+      if (window._mejaProcessing) return;
+      window._mejaProcessing = true; 
       stopDetectLoop();
 
       // Ubah tombol jadi loading

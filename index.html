@@ -8356,9 +8356,17 @@ File di Google Drive juga akan dihapus.`)) return;
           } else {
             // Restore Face-API Standard Matcher for 128-d
             try {
-              const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, threshold);
-              const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-              bestMatch = { label: res.label, distance: res.distance };
+              // FIX: FaceMatcher requires an array of ONLY LabeledFaceDescriptors.
+              // We must filter out any Human.js descriptors (plain objects) in the list.
+              const validDescriptors = _allFaceDescriptors.filter(d => d instanceof window.faceapi.LabeledFaceDescriptors);
+              
+              if (validDescriptors.length > 0) {
+                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, threshold);
+                const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+                bestMatch = { label: res.label, distance: res.distance };
+              } else {
+                console.warn('[AI] Tidak ada data wajah format Face-API untuk dicocokkan.');
+              }
             } catch (e) {
               console.error('[AI] FaceMatcher error:', e);
             }

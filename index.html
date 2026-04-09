@@ -14013,16 +14013,20 @@ File di Google Drive juga akan dihapus.`)) return;
       overlay.style.display = 'flex';
 
       // JIKA WAJAH TIDAK DIKENAL
-      if (telegramId === 'unknown' || telegramId === 'mismatch') {
+      if (telegramId === 'unknown' || telegramId === 'mismatch' || telegramId === 'extraction_failed') {
         const isMismatch = (telegramId === 'mismatch');
-        $('moIcon').textContent = isMismatch ? '⚠️' : '❓';
-        $('moNama').textContent = isMismatch ? 'ENGINE BERBEDA' : 'TIDAK DIKENAL';
-        $('moStatus').textContent = isMismatch ? 'HARAP DAFTAR ULANG WAJAH' : 'WAJAH BELUM TERDAFTAR';
-        $('moStatus').style.color = isMismatch ? 'var(--gold)' : 'var(--danger)';
-        $('moStatus').style.background = isMismatch ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)';
+        const isFailed = (telegramId === 'extraction_failed');
         
-        const distStr = (distance && distance < 2) ? ` (Dist: ${distance.toFixed(2)})` : '';
-        $('moDetail').textContent = (isMismatch ? 'Data lama terdeteksi.' : 'Wajah tidak cocok.') + distStr + ' Scan ulang dalam 3 detik...';
+        $('moIcon').textContent = isFailed ? '📷' : (isMismatch ? '⚠️' : '❓');
+        $('moNama').textContent = isFailed ? 'GAGAL BACA WAJAH' : (isMismatch ? 'ENGINE BERBEDA' : 'TIDAK DIKENAL');
+        $('moStatus').textContent = isFailed ? 'POSISI KURANG PAS' : (isMismatch ? 'HARAP DAFTAR ULANG WAJAH' : 'WAJAH BELUM TERDAFTAR');
+        
+        $('moStatus').style.color = (isMismatch || isFailed) ? 'var(--gold)' : 'var(--danger)';
+        $('moStatus').style.background = (isMismatch || isFailed) ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)';
+        
+        const distStr = (distance && distance < 2) ? ` (Dist: ${distance.toFixed(4)})` : '';
+        let detailMsg = isFailed ? 'Wajah tidak terbaca jelas.' : (isMismatch ? 'Data lama terdeteksi.' : 'Wajah tidak cocok.');
+        $('moDetail').textContent = detailMsg + distStr + ' Scan ulang dalam 3 detik...';
 
         _mejaCnt.gagal++;
         _updateMejaCnt();

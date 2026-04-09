@@ -5771,7 +5771,8 @@
                 <span style="font-size:9px; color:var(--muted); font-weight:600;">Status Human.js Lokal:</span>
                 <span id="humanJsStatus" style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
               </div>
-              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
+              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
+              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️ Hapus File Cache Lokal</button>
             </div>
 
             <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
@@ -6430,11 +6431,21 @@
       if (cached && cached.blob) {
          if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
          if (btnEl) btnEl.style.display = 'none';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
          return true;
       } else {
          if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
          if (btnEl) btnEl.style.display = 'flex';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
          return false;
+      }
+    }
+
+    async function clearHumanJsCache() {
+      if(confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
+        await idb.delete('master_data', 'human_script');
+        alert('File lokal berhasil dihapus!');
+        await checkHumanJsCache();
       }
     }
 
@@ -7847,20 +7858,19 @@ File di Google Drive juga akan dihapus.`)) return;
         // AUTO FALLBACK
         if (window._aiEngine === 'human') {
           console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
-          _setMejaStatus('idle', '⚠️', 'Fallback ke Face-API', 'Human.js tidak didukung di browser ini.');
+          _setMejaStatus('idle', '⚠️', 'Fallback ke Face-API', e.message);
           window._aiEngine = 'faceapi';
           _modelLoading = false;
           _modelsReady = false;
           // Notify user of the switch
-          setTimeout(() => alert('⚠️ Human.js gagal dimuat pada perangkat ini. Sistem otomatis beralih ke Face-API sebagai cadangan.'), 100);
+          setTimeout(() => alert(`⚠️ Human.js gagal dimuat:\n"${e.message}"\n\nSistem otomatis beralih ke Face-API sebagai cadangan.`), 100);
           return await loadAIModels();
         }
 
         _modelsReady = false;
         _modelLoading = false;
         // Detailed error for debugging
-        const errHint = e.message.includes('timeout') ? 'Koneksi lambat' : 'Asset model tidak ditemukan';
-        alert(`Gagal memuat model AI (${errHint}). Pastikan koneksi internet stabil dan reload halaman.`);
+        alert(`Gagal memuat model AI:\n${e.message}\n\nPastikan koneksi internet stabil atau Hapus File Model lokal jika file sebelumnya gagal didownload utuh.`);
         return false;
       }
     }

@@ -8324,17 +8324,25 @@ File di Google Drive juga akan dihapus.`)) return;
           let bestMatch = { label: 'unknown', distance: 1.0 };
 
           if (window._aiEngine === 'human') {
-            // Manual Matching for 1024-d / 512-d
+            // Use Human's internal matching if available for higher accuracy
             let minDict = 999;
             for (const item of _allFaceDescriptors) {
-              const dist = euclideanDistance(item.descriptor, descriptor);
+              if (item.descriptor.length !== descriptor.length) continue;
+              
+              let dist;
+              if (HumanInstance.match) {
+                 const m = HumanInstance.match(item.descriptor, descriptor);
+                 dist = m.distance;
+              } else {
+                 dist = euclideanDistance(item.descriptor, descriptor);
+              }
+
               if (dist < minDict) {
                 minDict = dist;
                 bestMatch = { label: item.id, distance: dist };
               }
             }
-            // Threshold for Human is usually around 0.4 - 0.7 depending on environment
-            // Increased to 0.75 to be more lenient after re-registration failures
+            
             if (minDict === 999) bestMatch.label = 'mismatch';
             else if (minDict > 0.75) bestMatch.label = 'unknown';
             bestMatch.distance = minDict;
@@ -8350,7 +8358,7 @@ File di Google Drive juga akan dihapus.`)) return;
             return;
           }
         }
-        _onMejaAbsenMatchFound('unknown', null, dataUrl, 1.0);
+        _onMejaAbsenMatchFound('unknown', null, dataUrl, bestMatch.distance);
         return;
       }
 

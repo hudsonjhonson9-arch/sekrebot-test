@@ -8330,27 +8330,17 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 2. Handle Continuous Scan (Meja Absen)
       if (window._isMejaMode) {
+        let bestMatch = { label: 'unknown', distance: 1.0 };
+        
         if (_allFaceDescriptors.length > 0 && descriptor) {
-          let bestMatch = { label: 'unknown', distance: 1.0 };
-
           if (window._aiEngine === 'human') {
             try {
               let minDict = 999;
               for (const item of _allFaceDescriptors) {
                 if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
                 
-                let dist;
-                try {
-                  if (HumanInstance.match) {
-                    const m = HumanInstance.match(item.descriptor, descriptor);
-                    dist = m.distance;
-                  } else {
-                    dist = euclideanDistance(item.descriptor, descriptor);
-                  }
-                } catch (err) {
-                  console.warn('Human matching error for item:', item.id, err);
-                  dist = euclideanDistance(item.descriptor, descriptor);
-                }
+                // Gunakan euclideanDistance manual (pasti stabil dibanding HumanInstance.match)
+                const dist = euclideanDistance(item.descriptor, descriptor);
 
                 if (dist < minDict) {
                   minDict = dist;
@@ -8366,8 +8356,6 @@ File di Google Drive juga akan dihapus.`)) return;
               bestMatch.distance = minDict;
             } catch (e) {
               console.error('DoCapture matching error:', e);
-              bestMatch.label = 'unknown';
-              bestMatch.distance = 1.0;
             }
           } else {
             // Face-API Standard Matcher
@@ -8380,12 +8368,13 @@ File di Google Drive juga akan dihapus.`)) return;
             }
           }
 
-          if (bestMatch.label !== 'unknown') {
+          if (bestMatch.label !== 'unknown' && bestMatch.label !== 'mismatch') {
             _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
             return;
           }
         }
-        _onMejaAbsenMatchFound('unknown', null, dataUrl, bestMatch.distance);
+        
+        _onMejaAbsenMatchFound(bestMatch.label, null, dataUrl, bestMatch.distance);
         return;
       }
 

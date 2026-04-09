@@ -5757,7 +5757,7 @@
             </div>
             <div class="form-group" style="margin-bottom:8px">
               <label class="form-label" style="font-size:8px; opacity:0.7">Pilih Mesin Deteksi Wajah</label>
-              <select id="selectAiEngine" class="form-input" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
+              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
                 <option value="faceapi">face-api.js (Standard)</option>
                 <option value="human">Human Library (Advanced / Anti-Spoof)</option>
               </select>
@@ -5765,6 +5765,15 @@
             <div style="margin-bottom:12px; font-size:8px; opacity:0.6; line-height:1.4">
               Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan.
             </div>
+
+            <div id="humanJsCacheControl" style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:9px; color:var(--muted); font-weight:600;">Status Human.js Lokal:</span>
+                <span id="humanJsStatus" style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
+              </div>
+              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
+            </div>
+
             <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
           </div>
         </div>
@@ -6401,6 +6410,50 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    async function toggleHumanDownloadUI(val) {
+      const ctl = $('humanJsCacheControl');
+      if (!ctl) return;
+      if (val === 'human') {
+        ctl.style.display = 'block';
+        await checkHumanJsCache();
+      } else {
+        ctl.style.display = 'none';
+      }
+    }
+
+    async function checkHumanJsCache() {
+      const cached = await idb.get('master_data', 'human_script');
+      const statusEl = $('humanJsStatus');
+      const btnEl = $('btnDownloadHumanJs');
+      if (statusEl) statusEl.textContent = 'Memeriksa...';
+      
+      if (cached && cached.blob) {
+         if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
+         if (btnEl) btnEl.style.display = 'none';
+         return true;
+      } else {
+         if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
+         if (btnEl) btnEl.style.display = 'flex';
+         return false;
+      }
+    }
+
+    async function downloadHumanJsOffline() {
+      const btn = $('btnDownloadHumanJs');
+      if(btn) { btn.innerHTML = '⏳ Mendownload... (Harap Tunggu)'; btn.disabled = true; }
+      try {
+        const response = await fetch(HUMAN_CDN);
+        if (!response.ok) throw new Error('Response tidak OK');
+        const blob = await response.blob();
+        await idb.set('master_data', { key: 'human_script', blob: blob });
+        alert('✅ Human.js berhasil didownload dan disimpan ke penyimpanan lokal perangkat!');
+        await checkHumanJsCache();
+      } catch (err) {
+        alert('❌ Gagal mendownload Human.js: ' + err.message);
+        if(btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
+      }
+    }
+
     function simpanAiEngine() {
       const eng = $('selectAiEngine').value;
       localStorage.setItem('absen_ai_engine', eng);
@@ -6439,6 +6492,7 @@
           // Initialize AI Engine Selector
           if ($('selectAiEngine')) {
             $('selectAiEngine').value = window._aiEngine || 'faceapi';
+            toggleHumanDownloadUI(window._aiEngine || 'faceapi');
           }
         }
         setTimeout(() => {
@@ -7635,8 +7689,8 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
     const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js';
-    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/gh/vladmandic/human@3.3.6/models/';
+    const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/dist/human.all.js';
+    const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.0.5/models/';
 
     window._aiEngine = localStorage.getItem('absen_ai_engine') || 'faceapi';
     let _faceApiLoaded = false;
@@ -7675,21 +7729,32 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function _loadHumanScript() {
-      if (window.Human) { _humanLoaded = true; return; }
+      if (window.Human || (window.Human && window.Human.default)) { _humanLoaded = true; return; }
+      
+      let srcToLoad = HUMAN_CDN;
+      
+      try {
+        const cached = await idb.get('master_data', 'human_script');
+        if (cached && cached.blob) {
+          srcToLoad = URL.createObjectURL(cached.blob);
+          console.log('[AI] Memuat Human.js dari cache lokal (Offline)');
+        }
+      } catch(e) {
+        console.warn('[AI] Gagal membaca cache Human.js', e);
+      }
+
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = HUMAN_CDN;
-        s.crossOrigin = 'anonymous';
+        s.src = srcToLoad;
         s.onload = () => {
-          if (typeof Human !== 'undefined') {
-            window.Human = Human;
-            _humanLoaded = true;
-            resolve();
-          } else {
-            reject(new Error('Variabel Human tidak ditemukan setelah script dimuat'));
-          }
+          if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
+          if (window.Human) { _humanLoaded = true; resolve(); }
+          else reject(new Error('Namespace Human tidak ditemukan di script.'));
         };
-        s.onerror = () => reject(new Error('Gagal memuat human.js dari CDN: ' + HUMAN_CDN));
+        s.onerror = (e) => {
+          if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
+          reject(new Error('Gagal memuat Human.js dari ' + (srcToLoad.startsWith('blob:') ? 'Cache Lokal' : 'CDN')));
+        };
         document.head.appendChild(s);
       });
     }
@@ -7709,7 +7774,7 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl',
+            backend: 'webgl', // webgl is more widely supported than webgpu
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -7717,7 +7782,7 @@ File di Google Drive juga akan dihapus.`)) return;
               detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
               mesh: { enabled: false },
               iris: { enabled: false },
-              description: { enabled: true, modelPath: 'faceres.json' },
+              description: { enabled: true, modelPath: 'faceres.json' }, // 512-dim default
               emotion: { enabled: false },
               liveness: { enabled: false }
             },
@@ -7730,10 +7795,10 @@ File di Google Drive juga akan dihapus.`)) return;
           HumanInstance = new window.Human(config);
           _updateModelProgress(0, 20);
 
-          // Timeout 90s — faceres.bin 6.7MB butuh waktu di koneksi lambat
+          // Timeout 15s for model load
           const loadPromise = HumanInstance.load();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (90s)')), 90000));
-
+          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
+          
           await Promise.race([loadPromise, timeoutPromise]);
           await HumanInstance.warmup();
 
@@ -7786,7 +7851,8 @@ File di Google Drive juga akan dihapus.`)) return;
           window._aiEngine = 'faceapi';
           _modelLoading = false;
           _modelsReady = false;
-          console.warn('Human.js gagal, otomatis beralih ke Face-API.');
+          // Notify user of the switch
+          setTimeout(() => alert('⚠️ Human.js gagal dimuat pada perangkat ini. Sistem otomatis beralih ke Face-API sebagai cadangan.'), 100);
           return await loadAIModels();
         }
 

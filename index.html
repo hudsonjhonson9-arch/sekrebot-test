@@ -8174,6 +8174,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       const loop = async () => {
         if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        if (window._stopLoop) return; // Kill switch aktif
         
         try {
           let detection = null;
@@ -8193,8 +8194,10 @@ File di Google Drive juga akan dihapus.`)) return;
                   landmarks: { positions: f.landmarks || [] },
                   _isHumanLive: isLive
                 };
-                // Cache descriptor untuk instant matching di doCapture()
-                window._lastLoopDescriptor = Array.from(f.embedding);
+                // Cache descriptor (Safety check to prevent crash)
+                if (f.embedding) {
+                  window._lastLoopDescriptor = Array.from(f.embedding);
+                }
               }
             }
           } else if (window.faceapi) {
@@ -8294,107 +8297,107 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
       if (window._mejaProcessing) return;
-      window._mejaProcessing = true; 
-      stopDetectLoop();
+      window._mejaProcessing = true;
 
-      // Ubah tombol jadi loading
-      const btnCap = $('btnCapture');
-      if (btnCap) {
-        btnCap.disabled = true;
-        btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
-      }
-      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
+      try {
+        window._stopLoop = true; // Matikan loop deteksi seketika
+        if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
 
-      // Bekukan video & Ambil gambar
-      const vid = $('camVideo');
-      const cnv = document.createElement('canvas');
-      cnv.width = vid.videoWidth;
-      cnv.height = vid.videoHeight;
-      const ctx = cnv.getContext('2d');
-      // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
-      ctx.translate(cnv.width, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(vid, 0, 0);
-      const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
+        // UI: Sedang memproses
+        const btnCap = $('btnCapture');
+        if (btnCap) {
+          btnCap.disabled = true;
+          btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
+        }
+        setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
 
-      // Matikan stream video agar hemat memori (Kecuali untuk Meja Absen yang butuh kamera terus menyala)
-      if (!window._isMejaMode) stopCamStream();
+        // 1. Ambil Gambar dari Video
+        const vid = $('camVideo');
+        const cnv = document.createElement('canvas');
+        cnv.width = vid.videoWidth;
+        cnv.height = vid.videoHeight;
+        const ctx = cnv.getContext('2d');
+        ctx.translate(cnv.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(vid, 0, 0);
+        const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
-      // 1. Ekstrak AI Wajah (Instan jika ada cache di loop)
-      let descriptor = window._lastLoopDescriptor || null;
-      if (!descriptor && _modelsReady) {
-        console.log('[Meja Speed] Cache Loop kosong, melakukan pemindaian ulang...');
-        const desc = await getFaceDescriptor(cnv);
-        if (desc) descriptor = Array.from(desc);
-      }
+        // Hemat memori: matikan stream jika bukan mode meja
+        if (!window._isMejaMode) stopCamStream();
 
-      // 2. Handle Continuous Scan (Meja Absen)
-      if (window._isMejaMode) {
-        let bestMatch = { label: 'unknown', distance: 1.0 };
-        
-        if (_allFaceDescriptors.length > 0 && descriptor) {
-          if (window._aiEngine === 'human') {
-            try {
+        // 2. Ambil Descriptor (Identitas)
+        let descriptor = window._lastLoopDescriptor || null;
+        if (!descriptor && _modelsReady) {
+          const desc = await getFaceDescriptor(cnv);
+          if (desc) descriptor = Array.from(desc);
+        }
+
+        // 3. Logika Meja Absen (Continuous Scan)
+        if (window._isMejaMode) {
+          let bestMatch = { label: 'unknown', distance: 1.0 };
+          
+          if (_allFaceDescriptors.length > 0 && descriptor) {
+            if (window._aiEngine === 'human') {
               let minDict = 999;
               for (const item of _allFaceDescriptors) {
                 if (!item.descriptor || item.descriptor.length !== descriptor.length) continue;
-                
-                // Gunakan euclideanDistance manual (pasti stabil dibanding HumanInstance.match)
                 const dist = euclideanDistance(item.descriptor, descriptor);
-
                 if (dist < minDict) {
                   minDict = dist;
                   bestMatch = { label: item.id, distance: dist };
                 }
-                
-                // Early Exit Optimization: Jika kemiripan sangat tinggi, berhenti mencari
-                if (dist < 0.20) break; 
+                if (dist < 0.20) break; // Early exit
               }
-              
               if (minDict === 999) bestMatch.label = 'mismatch';
               else if (minDict > 0.75) bestMatch.label = 'unknown';
               bestMatch.distance = minDict;
-            } catch (e) {
-              console.error('DoCapture matching error:', e);
-            }
-          } else {
-            // Face-API Standard Matcher
-            try {
-              const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
-              const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
-              bestMatch = { label: res.label, distance: res.distance };
-            } catch (e) {
-              console.error('FaceAPI matching error:', e);
+            } else {
+              // Face-API Standard
+              try {
+                const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
+                const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+                bestMatch = { label: res.label, distance: res.distance };
+              } catch (e) { console.error(e); }
             }
           }
-
-          if (bestMatch.label !== 'unknown' && bestMatch.label !== 'mismatch') {
-            _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
-            return;
-          }
+          
+          _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.distance);
+          return;
         }
+
+        // 4. Logika Absen Personal / Daftar Wajah
+        $('camVideoWrap').style.display = 'none';
+        $('camStatus').style.display = 'none';
+        $('livenessMini').style.display = 'none';
+
+        const previewEl = $('camPreview');
+        if (previewEl) previewEl.classList.add('show');
+        const previewImg = $('camPreviewImg');
+        if (previewImg) previewImg.src = dataUrl;
         
-        _onMejaAbsenMatchFound(bestMatch.label, null, dataUrl, bestMatch.distance);
-        return;
-      }
-
-      // 3. TAMPILKAN PREVIEW FOTO (SEMBUNYIKAN VIDEO)
-      $('camVideoWrap').style.display = 'none'; // Sembunyikan frame kamera
-      $('camStatus').style.display = 'none';    // Sembunyikan status
-      $('livenessMini').style.display = 'none';
-
-      let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
-
-      // Jika Absen Personal (bukan Daftar Wajah Admin), tampilkan persentase kecocokan
-      if (!_absenCallbackAfterCam?.isRegister) {
-        const ref = getFaceRef();
-        if (ref && descriptor) {
-          const dist = euclideanDistance(ref.descriptor, descriptor);
-          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-          if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
-          else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+        const btnSend = $('btnAbsen');
+        if (btnSend) {
+          btnSend.disabled = false;
+          btnSend.classList.remove('hidden');
         }
-      } else {
+
+        _captureData = {
+          dataUrl: dataUrl,
+          faceOk: true,
+          livenessOk: true,
+          descriptor: descriptor
+        };
+
+        setCamStatus('ok', '✅', 'Foto Berhasil Diambil', 'Silakan kirim absen Anda');
+
+      } catch (e) {
+        console.error('[AI] doCapture Error:', e);
+        // Recovery: Kembalikan status agar tidak stuck
+        window._mejaProcessing = false;
+        window._stopLoop = false;
+        startDetectLoop(); 
+      }
+    }
         // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
         if (!descriptor) {
           match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };

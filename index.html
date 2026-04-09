@@ -8333,8 +8333,11 @@ File di Google Drive juga akan dihapus.`)) return;
                 bestMatch = { label: item.id, distance: dist };
               }
             }
-            // Threshold for Human is usually around 0.4 - 0.5 depending on quantization
-            if (minDict > 0.55) bestMatch.label = 'unknown';
+            // Threshold for Human is usually around 0.4 - 0.7 depending on environment
+            // Increased to 0.75 to be more lenient after re-registration failures
+            if (minDict === 999) bestMatch.label = 'mismatch';
+            else if (minDict > 0.75) bestMatch.label = 'unknown';
+            bestMatch.distance = minDict;
           } else {
             // Face-API Standard Matcher
             const faceMatcher = new window.faceapi.FaceMatcher(_allFaceDescriptors, 0.55);
@@ -13982,13 +13985,16 @@ File di Google Drive juga akan dihapus.`)) return;
       overlay.style.display = 'flex';
 
       // JIKA WAJAH TIDAK DIKENAL
-      if (telegramId === 'unknown') {
-        $('moIcon').textContent = '❓';
-        $('moNama').textContent = 'TIDAK DIKENAL';
-        $('moStatus').textContent = 'WAJAH BELUM TERDAFTAR';
-        $('moStatus').style.color = 'var(--danger)';
-        $('moStatus').style.background = 'rgba(239,68,68,0.2)';
-        $('moDetail').textContent = 'Mulai ulang scan dalam 3 detik...';
+      if (telegramId === 'unknown' || telegramId === 'mismatch') {
+        const isMismatch = (telegramId === 'mismatch');
+        $('moIcon').textContent = isMismatch ? '⚠️' : '❓';
+        $('moNama').textContent = isMismatch ? 'ENGINE BERBEDA' : 'TIDAK DIKENAL';
+        $('moStatus').textContent = isMismatch ? 'HARAP DAFTAR ULANG WAJAH' : 'WAJAH BELUM TERDAFTAR';
+        $('moStatus').style.color = isMismatch ? 'var(--gold)' : 'var(--danger)';
+        $('moStatus').style.background = isMismatch ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)';
+        
+        const distStr = (distance && distance < 2) ? ` (Dist: ${distance.toFixed(2)})` : '';
+        $('moDetail').textContent = (isMismatch ? 'Data lama terdeteksi.' : 'Wajah tidak cocok.') + distStr + ' Scan ulang dalam 3 detik...';
 
         _mejaCnt.gagal++;
         _updateMejaCnt();

@@ -7679,7 +7679,17 @@ File di Google Drive juga akan dihapus.`)) return;
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = HUMAN_CDN;
-        s.onload = resolve; s.onerror = reject;
+        s.crossOrigin = 'anonymous'; // FIX: Cegah CORS error dari CDN
+        s.onload = () => {
+          // FIX: Verifikasi namespace window.Human benar-benar ada setelah load
+          if (window.Human) {
+            _humanLoaded = true; // FIX: Set flag setelah berhasil dimuat
+            resolve();
+          } else {
+            reject(new Error('Namespace Human tidak ditemukan setelah script dimuat. CDN mungkin mengembalikan file yang salah.'));
+          }
+        };
+        s.onerror = () => reject(new Error('Gagal mengunduh script human.js dari CDN: ' + HUMAN_CDN)); // FIX: Pesan error deskriptif
         document.head.appendChild(s);
       });
     }

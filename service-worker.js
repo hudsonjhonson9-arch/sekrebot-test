@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bapperida-v5.4.3';
+const CACHE_NAME = 'bapperida-v5.1';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -31,9 +31,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+    // Only handle http/https requests
+    if (!event.request.url.startsWith('http')) {
+        return;
+    }
+
     // Avoid caching API requests to Supabase or other external dynamic APIs
-    if (event.request.url.includes('supabase.co') || event.request.method !== 'GET') {
-        return; // Let API calls bypass the cache directly
+    // Also skip non-GET requests
+    if (event.request.url.includes('supabase.co') || 
+        event.request.url.includes('mindcloud.my.id') || 
+        event.request.method !== 'GET') {
+        return; 
     }
 
     event.respondWith(
@@ -54,7 +62,8 @@ self.addEventListener('fetch', (event) => {
 
             // If not in cache, fetch from network
             return fetch(event.request).then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                // Cache responses from network (basic or cors for CDNs)
+                if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
                     const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, responseToCache);
@@ -62,8 +71,13 @@ self.addEventListener('fetch', (event) => {
                 }
                 return networkResponse;
             }).catch(() => {
-                // If offline and request fails, return offline fallback if needed
                 console.log('[Service Worker] Fetch failed; offline mode.');
+                // Return a generic offline fallback or a 503 status
+                return new Response('Internet sedang bermasalah atau Anda sedang offline.', {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: new Headers({ 'Content-Type': 'text/plain; charset=utf-8' })
+                });
             });
         })
     );

@@ -5821,7 +5821,7 @@
 
         <!-- ══ MEJA ABSEN (Admin Only) ══ -->
         <div class="meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
-          <div class="meja-badge">👑 Super Admin</div>
+          <div class="meja-badge">🛡️ Akses Terjamin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
             <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
@@ -8003,6 +8003,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _faceApiLoaded = false;
     let _humanLoaded = false;
     let HumanInstance = null;
+    let _isDetecting = false; // Flag Pengaman Loop Deteksi
 
     function _refreshAiBadge() {
       const b = $('aiEngineBadge');
@@ -8083,15 +8084,15 @@ File di Google Drive juga akan dihapus.`)) return;
           const config = {
             backend: 'webgl',
             modelBasePath: HUMAN_MODELS,
-            filter: { enabled: true, equalization: true },
+            filter: { enabled: false }, // Matikan filter berat untuk HP
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
-              mesh: { enabled: true }, // Mesh is needed for better liveness
+              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.15 },
+              mesh: { enabled: true },
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },
               emotion: { enabled: false },
-              liveness: { enabled: true } // Enable liveness
+              liveness: { enabled: true }
             },
             body: { enabled: false },
             hand: { enabled: false },
@@ -8099,21 +8100,26 @@ File di Google Drive juga akan dihapus.`)) return;
             gesture: { enabled: false }
           };
 
-          // Deteksi konstruktor yang benar (beberapa versi CDN membungkusnya dalam objek)
+          // Deteksi konstruktor yang benar
           let HumanConstructor = window.Human;
           if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
           else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
 
           if (typeof HumanConstructor !== 'function') {
-            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor). Coba bersihkan Cache.');
+            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor).');
           }
 
           HumanInstance = new HumanConstructor(config);
 
-          // Paksa backend WebGL untuk menghindari error WebGPU yang belum siap di beberapa browser
+          // Cek Backend
           if (HumanInstance.tf) {
-            await HumanInstance.tf.setBackend('webgl');
-            await HumanInstance.tf.ready();
+            try {
+              await HumanInstance.tf.setBackend('webgl');
+              await HumanInstance.tf.ready();
+            } catch (e) {
+              console.warn('[AI] WebGL gagal, fallback ke default backend');
+              // Biarkan Human memilih backend terbaik otomatis (wasm/cpu)
+            }
           }
 
           _updateModelProgress(0, 20);
@@ -8444,112 +8450,112 @@ File di Google Drive juga akan dihapus.`)) return;
       }, 3000);
 
       const loop = async () => {
-        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-        _detectLoop = requestAnimationFrame(loop);
+        if (!_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        if (_isDetecting) return; // Cegah tumpukan proses
+        _isDetecting = true;
 
-        let detection = null;
-        if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await HumanInstance.detect(vid);
-          if (res.face && res.face.length > 0) {
-            const f = res.face[0];
-            // f.live, f.real, f.liveness are possible properties in Human 3.x
-            const liveScore = f.live || 0;
-            const realScore = f.real || 0;
-            const genericScore = f.liveness || 0;
-
-            // Log for user to see on screen (using lsText)
-            _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
-
-            const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
-            detection = {
-              landmarks: { positions: f.landmarks || [] },
-              _isHumanLive: isLive
-            };
-          }
-        } else {
-          // Default: face-api.js
-          const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
-          if (d) detection = d;
-        }
-
-        if (!detection) {
-          wrap.className = 'cam-video-wrap face-bad';
-          setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
-          _livenessState.faceOk = false;
-          if (window._isMejaMode) {
-            $('lsIcon').textContent = '😐';
-            $('lsText').textContent = 'Menunggu Wajah...';
-            $('lsText').style.color = 'var(--muted)';
-          }
-          return;
-        }
-
-        _livenessState.faceOk = true;
-        wrap.className = 'cam-video-wrap face-ok';
-
-        // --- LIVENESS LOGIC ---
-        if (window._aiEngine === 'human') {
-          _isLive = detection._isHumanLive;
-        } else {
-          // Passive Liveness Logic for face-api.js
-          const landmarks = detection.landmarks.positions;
-          if (_lastLandmarks) {
-            let totalDist = 0;
-            for (let i = 0; i < landmarks.length; i++) {
-              totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
+        try {
+          let detection = null;
+          if (window._aiEngine === 'human' && HumanInstance) {
+            const res = await HumanInstance.detect(vid);
+            if (res.face && res.face.length > 0) {
+              const f = res.face[0];
+              const liveScore = f.live || 0;
+              const realScore = f.real || 0;
+              const genericScore = f.liveness || 0;
+              _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
+              const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+              detection = {
+                landmarks: { positions: f.landmarks || [] },
+                _isHumanLive: isLive
+              };
             }
-            const avgDist = totalDist / landmarks.length;
-            if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
+          } else {
+            const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
+            if (d) detection = d;
+          }
 
-            const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
-            const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
-            const ratio = eyeDist / faceWidth;
-
-            if (_livenessHistory.length > 5) {
-              const prevRatio = _livenessHistory[_livenessHistory.length - 1];
-              const diff = Math.abs(ratio - prevRatio);
-              if (diff > 0.001) _livenessScore += 2;
+          if (!detection) {
+            wrap.className = 'cam-video-wrap face-bad';
+            setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
+            _livenessState.faceOk = false;
+            if (window._isMejaMode) {
+              $('lsIcon').textContent = '😐';
+              $('lsText').textContent = 'Menunggu Wajah...';
+              $('lsText').style.color = 'var(--muted)';
             }
-            _livenessHistory.push(ratio);
-            if (_livenessHistory.length > 30) _livenessHistory.shift();
-          }
-          _lastLandmarks = landmarks;
-          if (_livenessScore > 25) _isLive = true;
-        }
+          } else {
+            _livenessState.faceOk = true;
+            wrap.className = 'cam-video-wrap face-ok';
 
-        if (_isLive) {
-          setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
-          if (window._isMejaMode) {
-            $('lsIcon').textContent = '🛡️';
-            $('lsText').textContent = 'Wajah Terverifikasi Asli';
-            $('lsText').style.color = 'var(--success)';
-          }
-        } else {
-          setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
-          if (window._isMejaMode) {
-            $('lsIcon').textContent = '🔍';
-            $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
-            $('lsText').style.color = 'var(--gold)';
-          }
-        }
+            if (window._aiEngine === 'human') {
+              _isLive = detection._isHumanLive;
+            } else {
+              const landmarks = detection.landmarks.positions;
+              if (_lastLandmarks) {
+                let totalDist = 0;
+                for (let i = 0; i < landmarks.length; i++) {
+                  totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
+                }
+                const avgDist = totalDist / landmarks.length;
+                if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
 
-        // Auto capture Meja Mode
-        if (window._isMejaMode) {
-          if (!_autoCaptured && _modelsReady && _isLive) {
-            _autoCaptured = true;
-            setTimeout(doCapture, 400);
-          }
-        } else {
-          // Auto capture Mode Personal
-          if (!_autoCaptured && _modelsReady && _isLive) {
-            _autoCaptured = true;
-            setTimeout(() => {
-              if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
-                doCapture();
-              } else {
-                _autoCaptured = false;
+                const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
+                const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
+                const ratio = eyeDist / faceWidth;
+
+                if (_livenessHistory.length > 5) {
+                  const prevRatio = _livenessHistory[_livenessHistory.length - 1];
+                  const diff = Math.abs(ratio - prevRatio);
+                  if (diff > 0.001) _livenessScore += 2;
+                }
+                _livenessHistory.push(ratio);
+                if (_livenessHistory.length > 30) _livenessHistory.shift();
               }
-            }, 800);
+              _lastLandmarks = landmarks;
+              if (_livenessScore > 25) _isLive = true;
+            }
+
+            if (_isLive) {
+              setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
+              if (window._isMejaMode) {
+                $('lsIcon').textContent = '🛡️';
+                $('lsText').textContent = 'Wajah Terverifikasi Asli';
+                $('lsText').style.color = 'var(--success)';
+              }
+            } else {
+              setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
+              if (window._isMejaMode) {
+                $('lsIcon').textContent = '🔍';
+                $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
+                $('lsText').style.color = 'var(--gold)';
+              }
+            }
+
+            if (window._isMejaMode) {
+              if (!_autoCaptured && _modelsReady && _isLive) {
+                _autoCaptured = true;
+                setTimeout(doCapture, 400);
+              }
+            } else {
+              if (!_autoCaptured && _modelsReady && _isLive) {
+                _autoCaptured = true;
+                setTimeout(() => {
+                  if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
+                    doCapture();
+                  } else {
+                    _autoCaptured = false;
+                  }
+                }, 800);
+              }
+            }
+          }
+        } catch (e) {
+          console.error('[AI] Loop Error:', e);
+        } finally {
+          _isDetecting = false;
+          if ($('camOverlay') && !$('camOverlay').classList.contains('hidden')) {
+            _detectLoop = requestAnimationFrame(loop);
           }
         }
       };
@@ -8616,7 +8622,9 @@ File di Google Drive juga akan dihapus.`)) return;
                 bestMatch = { label: item.id || item.label, similarity: sim };
               }
             }
-            if (maxSim < thresholdSim) bestMatch.label = 'unknown';
+            // Threshold for Human Desktop Mode (0.6 is good for mobile, 0.55 for desktop/tablets)
+            const deskThreshold = 0.58;
+            if (maxSim < deskThreshold) bestMatch.label = 'unknown';
           } else {
             // Face-API Standard Matcher
             try {

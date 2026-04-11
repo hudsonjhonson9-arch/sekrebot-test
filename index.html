@@ -5123,8 +5123,8 @@
                 <div
                   style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">
                   🧠 Face Recognition</div>
-                <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data
-                  wajah</div>
+                <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data wajah</div>
+                <div id="faceRegSub" style="font-size:8px;color:var(--muted)">Daftarkan wajah untuk login AI</div>
               </div>
               <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()"
                 style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
@@ -7935,29 +7935,47 @@ File di Google Drive juga akan dihapus.`)) return;
     function updateFaceRegUI() {
       const ref = getFaceRef();
       const card = $('faceRegCard'); if (!card) return;
-      const thumb = $('faceRegThumb'), thumbEmpty = $('faceRegThumbEmpty');
-      const status = $('faceRegStatus'), sub = $('faceRegSub');
+      const thumb = $('faceRegThumb');
+      const thumbEmpty = $('faceRegThumbEmpty');
+      const status = $('faceRegStatus');
+      const sub = $('faceRegSub');
       const btn = $('btnRegisterFace');
+      
       const descLen = (ref && ref.descriptor) ? (Array.isArray(ref.descriptor) ? ref.descriptor.length : 0) : 0;
       const hasDescriptor = descLen >= 128;
       const isHuman = ref?.faceModel === 'human' || descLen >= 512;
+
       if (ref) {
-        if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
-        else { thumb.style.display = 'none'; }
+        if (thumb && ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
+        else if (thumb) { thumb.style.display = 'none'; }
         if (thumbEmpty) thumbEmpty.style.display = 'none';
+        
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-        status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
-        status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
-        sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
-        btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
+        
+        if (status) {
+          status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
+          status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+        }
+        if (sub) {
+          sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
+        }
+        if (btn) {
+          btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
+        }
       } else {
-        thumb.style.display = 'none';
+        if (thumb) thumb.style.display = 'none';
         if (thumbEmpty) thumbEmpty.style.display = 'flex';
-        status.textContent = 'Belum ada data wajah';
-        status.style.color = 'var(--muted)';
-        sub.textContent = 'Daftarkan wajah untuk pengenalan AI otomatis';
-        btn.textContent = '📷 Daftarkan';
+        if (status) {
+          status.textContent = 'Belum ada data wajah';
+          status.style.color = 'var(--muted)';
+        }
+        if (sub) {
+          sub.textContent = 'Daftarkan wajah untuk pengenalan AI otomatis';
+        }
+        if (btn) {
+          btn.textContent = '📷 Daftarkan';
+        }
       }
     }
 

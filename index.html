@@ -10281,6 +10281,8 @@ File di Google Drive juga akan dihapus.`)) return;
           if (ua !== ub) return ua - ub;
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
+        window.userListOrder = pegawai; // Save globally for saveLog() reference
+
 
         lastRekapPegawai = pegawai;
         rekapLoaded = true;

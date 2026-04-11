@@ -1680,7 +1680,8 @@
       text-align: center;
       transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
-      flex-direction: row; /* Icon and text on same line */
+      flex-direction: row;
+      /* Icon and text on same line */
       align-items: center;
       justify-content: center;
       gap: 6px;
@@ -1688,7 +1689,8 @@
     }
 
     .jenis-pill span {
-      font-size: 15px; /* Icon size */
+      font-size: 15px;
+      /* Icon size */
     }
 
     .jenis-pill:hover {
@@ -3455,7 +3457,7 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       animation: slideUp .4s ease;
     }
-    
+
     .rekap-card-v2:hover {
       transform: translateY(-4px);
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
@@ -5367,7 +5369,9 @@
         <div class="profil-info">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
             <div class="profil-nama" id="profilNama">—</div>
-            <button onclick="loadUserProfile(true)" style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8" title="Segarkan Data Profil">🔄</button>
+            <button onclick="loadUserProfile(true)"
+              style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8"
+              title="Segarkan Data Profil">🔄</button>
           </div>
           <div class="profil-jabatan" id="profilJabatan">—</div>
           <div class="profil-nip" id="profilNip">NIP —</div>
@@ -5634,7 +5638,8 @@
       <div class="rekap-header">
         <div class="rekap-title">📊 Rekap Pegawai</div>
         <div class="rekap-toolbar">
-          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()" style="background: var(--admin); color: white; border: none; font-weight: 800; padding: 6px 16px; border-radius: 9px; box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);">
+          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()"
+            style="background: var(--admin); color: white; border: none; font-weight: 800; padding: 6px 16px; border-radius: 9px; box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);">
             <span id="rekapRefIcon" style="margin-right: 4px">🔄</span> Muat
           </button>
         </div>
@@ -5644,7 +5649,8 @@
         Periode: <span id="printPeriode">—</span><br>
         Dicetak: <span id="printTanggal">—</span>
       </div>
-      <div class="date-range-card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, var(--card-bg), rgba(255,255,255,0.02));">
+      <div class="date-range-card"
+        style="box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, var(--card-bg), rgba(255,255,255,0.02));">
         <div class="date-range-row">
           <div>
             <div class="date-range-label">Dari Tanggal</div>
@@ -5655,7 +5661,7 @@
             <input type="date" class="date-range-input" id="rekapSampai" onchange="onDateRangeChange()" />
           </div>
         </div>
-        
+
         <!-- Presets relocated back below date inputs -->
         <div class="date-preset-bar" style="margin-top: 10px; margin-bottom: 2px;">
           <button class="date-preset active" id="dp-today" onclick="setPreset('today', this)">Hari Ini</button>
@@ -5669,12 +5675,14 @@
         <!-- Filter Bidang -->
         <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
           <div class="date-range-label" style="margin-bottom: 4px">Filter Bidang / Unit Kerja</div>
-          <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer" onchange="renderRekap(lastRekapPegawai)">
+          <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
+            onchange="renderRekap(lastRekapPegawai)">
             <option value="Semua">— Tampilkan Semua Bidang —</option>
             <option value="Sekretariat">Sekretariat</option>
             <option value="Bidang Perencanaan">Bidang Perencanaan</option>
             <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
+            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
+            </option>
             <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
             <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
           </select>
@@ -5816,8 +5824,10 @@
           <div class="meja-badge">👑 Super Admin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-             <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
-             <div id="aiEngineBadge" style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">AI: Detecting...</div>
+            <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
+            <div id="aiEngineBadge"
+              style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">
+              AI: Detecting...</div>
           </div>
           <div class="meja-status-bar" id="mejaStatusBar">
             <div class="meja-status-dot" id="mejaStatusDot"></div>
@@ -5857,30 +5867,40 @@
 
           <!-- 🧠 AI ENGINE SETTINGS ══ -->
           <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1)">
-            <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <div
+              style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
               🧠 PENGATURAN MESIN AI
             </div>
             <div class="form-group" style="margin-bottom:8px">
               <label class="form-label" style="font-size:8px; opacity:0.7">Pilih Mesin Deteksi Wajah</label>
-              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
+              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)"
+                style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
                 <option value="faceapi">face-api.js (Standard)</option>
                 <option value="human">Human Library (Advanced / Anti-Spoof)</option>
               </select>
             </div>
             <div style="margin-bottom:12px; font-size:8px; opacity:0.6; line-height:1.4">
-              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan.
+              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model
+              tambahan.
             </div>
 
-            <div id="humanJsCacheControl" style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div id="humanJsCacheControl"
+              style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:9px; color:var(--muted); font-weight:600;">Status Human.js Lokal:</span>
-                <span id="humanJsStatus" style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
+                <span id="humanJsStatus"
+                  style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
               </div>
-              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
-              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️ Hapus File Cache Lokal</button>
+              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()"
+                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥
+                Download Library ke Perangkat (Offline)</button>
+              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()"
+                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️
+                Hapus File Cache Lokal</button>
             </div>
 
-            <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
+            <button class="btn-admin" onclick="simpanAiEngine()"
+              style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
           </div>
         </div>
       </div>
@@ -5919,15 +5939,17 @@
                   class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama"
                   type="text" class="form-input" /></div>
-              <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label><select id="inPegawaiBidang" class="form-input">
-                <option value="">— Pilih Bidang —</option>
-                <option value="Sekretariat">Sekretariat</option>
-                <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-                <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-                <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
-                <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-                <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-              </select></div>
+              <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label><select id="inPegawaiBidang"
+                  class="form-input">
+                  <option value="">— Pilih Bidang —</option>
+                  <option value="Sekretariat">Sekretariat</option>
+                  <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+                  <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+                  <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan
+                    Manusia</option>
+                  <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+                  <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+                </select></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input
                     id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
@@ -5992,7 +6014,8 @@
             </div>
 
             <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)">
-              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span></div>
+              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span>
+            </div>
             <div id="adminFaceRegList" style="margin-top:12px">
               <div class="shimmer" style="height:100px; border-radius:12px"></div>
             </div>
@@ -6142,7 +6165,8 @@
                 </div>
               </div>
             </div>
-            <div id="faceToggleDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi status...</div>
+            <div id="faceToggleDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi status...
+            </div>
           </div>
           <div id="faceToggleResult" style="display:none; margin-top:12px"></div>
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
@@ -6164,7 +6188,8 @@
                 </div>
               </div>
             </div>
-            <div id="desktopModeDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi mode...</div>
+            <div id="desktopModeDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi mode...
+            </div>
           </div>
         </div>
       </div>
@@ -6237,18 +6262,22 @@
   </div>
 
   <!-- ══ MODAL MANUAL LOG (ADMIN) ══ -->
-  <div id="logModal" class="sig-overlay" style="display:none; align-items:center; justify-content:center; padding:20px; z-index:999999;">
-    <div class="card" style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
+  <div id="logModal" class="sig-overlay"
+    style="display:none; align-items:center; justify-content:center; padding:20px; z-index:999999;">
+    <div class="card"
+      style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
+      <div
+        style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
         <div style="display:flex; align-items:center; gap:8px">
           <span id="logModalIcon" style="font-size:18px">➕</span>
           <div id="logModalTitle" style="font-size:11px; font-weight:800; color:var(--white)">TAMBAH LOG MANUAL</div>
         </div>
-        <button onclick="closeLogEditor()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer">✕</button>
+        <button onclick="closeLogEditor()"
+          style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer">✕</button>
       </div>
 
       <input type="hidden" id="editLogId">
-      
+
       <div class="form-group">
         <label class="form-label" style="font-size:9px">Pegawai</label>
         <select id="inLogPegawai" class="form-input">
@@ -6461,7 +6490,7 @@
             return r;
           }
           throw new Error(`HTTP ${r.status}`);
-        } catch (e) { 
+        } catch (e) {
           console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
         }
       }
@@ -6629,22 +6658,22 @@
       const statusEl = $('humanJsStatus');
       const btnEl = $('btnDownloadHumanJs');
       if (statusEl) statusEl.textContent = 'Memeriksa...';
-      
+
       if (cached && cached.blob) {
-         if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
-         if (btnEl) btnEl.style.display = 'none';
-         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
-         return true;
+        if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
+        if (btnEl) btnEl.style.display = 'none';
+        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
+        return true;
       } else {
-         if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
-         if (btnEl) btnEl.style.display = 'flex';
-         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
-         return false;
+        if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
+        if (btnEl) btnEl.style.display = 'flex';
+        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
+        return false;
       }
     }
 
     async function clearHumanJsCache() {
-      if(confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
+      if (confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
         await idb.delete('master_data', 'human_script');
         alert('File lokal berhasil dihapus!');
         await checkHumanJsCache();
@@ -6653,11 +6682,11 @@
 
     async function downloadHumanJsOffline() {
       const btn = $('btnDownloadHumanJs');
-      if(btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
+      if (btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
       try {
         const response = await fetch(HUMAN_CDN);
         if (!response.ok) throw new Error('Response tidak OK');
-        
+
         const contentLength = response.headers.get('content-length');
         if (!contentLength) {
           const blob = await response.blob();
@@ -6667,24 +6696,24 @@
           let loaded = 0;
           const reader = response.body.getReader();
           const chunks = [];
-          
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             chunks.push(value);
             loaded += value.length;
             const progress = Math.round((loaded / total) * 100);
-            if(btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
+            if (btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
           }
           const blob = new Blob(chunks, { type: 'application/javascript' });
           await idb.set('master_data', { key: 'human_script', blob: blob });
         }
-        
+
         alert('✅ Human.js berhasil didownload dan disimpan ke penyimpanan lokal perangkat!');
         await checkHumanJsCache();
       } catch (err) {
         alert('❌ Gagal mendownload Human.js: ' + err.message);
-        if(btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
+        if (btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
       }
     }
 
@@ -6703,7 +6732,7 @@
       if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
       const T = getAllTabs();
       if (!T.includes(tab)) tab = 'absen';
-      
+
       localStorage.setItem('absen_last_tab', tab);
       window.scrollTo(0, 0);
       document.querySelectorAll('.tab').forEach((t, i) => {
@@ -6711,7 +6740,7 @@
       });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const el = $('panel-' + tab); if (el) el.classList.add('active');
-      
+
       if (tab === 'absen') {
         updateClock(); // refresh notif & batas jam periode segera
         if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
@@ -6742,7 +6771,7 @@
           // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
         }, 50); // Reduced delay for better responsiveness
-        
+
         // Immediate check as well
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
       }
@@ -6972,7 +7001,7 @@
         setUserFallback();
       } else if (isManual) {
         // Jika manual refresh gagal, beri tahu user tapi jangan hapus data yang ada
-        applyProfile(); 
+        applyProfile();
         console.warn('[Profile] Manual refresh failed, preserving existing data.');
       }
     }
@@ -7817,7 +7846,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const d1 = Array.isArray(desc1) ? desc1 : Array.from(desc1);
       const d2 = Array.isArray(desc2) ? desc2 : Array.from(desc2);
       if (d1.length !== d2.length || d1.length === 0) return 999;
-      
+
       let sum = 0;
       for (let i = 0; i < d1.length; i++) {
         const d = d1[i] - d2[i];
@@ -7833,7 +7862,7 @@ File di Google Drive juga akan dihapus.`)) return;
       let refDesc = ref.descriptor;
       // Handle stringified descriptor from DB
       if (typeof refDesc === 'string') {
-        try { refDesc = JSON.parse(refDesc); } catch(e) { refDesc = null; }
+        try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
       }
 
       const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
@@ -7841,10 +7870,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
       if (refDesc && capturedDescArr) {
         if (refDesc.length !== capturedDescArr.length) {
-          return { 
-            score: 0, 
-            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`, 
-            cls: 'face-match-warn', 
+          return {
+            score: 0,
+            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`,
+            cls: 'face-match-warn',
             capturedDescriptor: capturedDescArr,
             needsUpdate: true
           };
@@ -7854,12 +7883,12 @@ File di Google Drive juga akan dihapus.`)) return;
         const threshold = 0.55;
         // Sync with reference score calculation (divisor 0.75)
         const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-        
+
         let label, cls;
         if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
         else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
         else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-        
+
         return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
@@ -7985,16 +8014,16 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadHumanScript() {
       if (window.Human || (window.Human && window.Human.default)) { _humanLoaded = true; return; }
-      
+
       let srcToLoad = HUMAN_CDN;
-      
+
       try {
         const cached = await idb.get('master_data', 'human_script');
         if (cached && cached.blob) {
           srcToLoad = URL.createObjectURL(cached.blob);
           console.log('[AI] Memuat Human.js dari cache lokal (Offline)');
         }
-      } catch(e) {
+      } catch (e) {
         console.warn('[AI] Gagal membaca cache Human.js', e);
       }
 
@@ -8029,7 +8058,7 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl', 
+            backend: 'webgl',
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: true, equalization: true },
             face: {
@@ -8051,13 +8080,13 @@ File di Google Drive juga akan dihapus.`)) return;
           let HumanConstructor = window.Human;
           if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
           else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
-          
+
           if (typeof HumanConstructor !== 'function') {
             throw new Error('Gagal menemukan Class Human (window.Human bukan constructor). Coba bersihkan Cache.');
           }
 
           HumanInstance = new HumanConstructor(config);
-          
+
           // Paksa backend WebGL untuk menghindari error WebGPU yang belum siap di beberapa browser
           if (HumanInstance.tf) {
             await HumanInstance.tf.setBackend('webgl');
@@ -8069,7 +8098,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // Timeout 15s for model load
           const loadPromise = HumanInstance.load();
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
-          
+
           await Promise.race([loadPromise, timeoutPromise]);
           await HumanInstance.warmup();
 
@@ -8080,7 +8109,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // DEFAULT: Face-API (vladmandic fork for better support)
           await _loadFaceApiScript();
           _updateModelProgress(0, 20);
-          
+
           // Enhanced loader with individual net error check
           const nets = [
             { net: window.faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
@@ -8103,7 +8132,7 @@ File di Google Drive juga akan dihapus.`)) return;
               await window.faceapi.detectSingleFace(dummyCanvas).withFaceLandmarks().withFaceDescriptor();
             }
           } catch (e) { console.warn('[AI] Pre-warm skipped:', e.message); }
-          
+
           _modelsReady = true;
           _refreshAiBadge();
           _updateModelProgress(2, 10);
@@ -8404,7 +8433,7 @@ File di Google Drive juga akan dihapus.`)) return;
             const liveScore = f.live || 0;
             const realScore = f.real || 0;
             const genericScore = f.liveness || 0;
-            
+
             // Log for user to see on screen (using lsText)
             _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
 
@@ -8557,7 +8586,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
               const itemDesc = item.descriptor || (item.descriptors ? item.descriptors[0] : null);
               if (!itemDesc || (itemDesc.length !== currentDim && Math.abs(itemDesc.length - currentDim) > 1)) continue;
-              
+
               const sim = HumanInstance.match.similarity(itemDesc, descriptor);
               if (sim > maxSim) {
                 maxSim = sim;
@@ -10231,13 +10260,13 @@ File di Google Drive juga akan dihapus.`)) return;
               const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
               const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
               const ket = getField(r, 'Keterangan', 'keterangan') || '';
-              
-              if (!jamMap[id]) jamMap[id] = { 
-                jamMasuk: '-', jamPulang: '-', logKet: '', 
+
+              if (!jamMap[id]) jamMap[id] = {
+                jamMasuk: '-', jamPulang: '-', logKet: '',
                 _rawMasukLog: null, _rawPulangLog: null,
-                tubel:0, cuti:0, izin:0, sakit:0, tugas:0 
+                tubel: 0, cuti: 0, izin: 0, sakit: 0, tugas: 0
               };
-              
+
               if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') {
                 jamMap[id].jamMasuk = jam || '-';
                 jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
@@ -10254,17 +10283,17 @@ File di Google Drive juga akan dihapus.`)) return;
                 else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
                 jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
               }
-              
+
               if (ket) jamMap[id].logKet = ket;
             });
             // Pasangkan ke pegawai
             pegawai = pegawai.map(p => {
               const id = String(p.id || '');
               const jm = jamMap[id];
-              return jm ? { 
-                ...p, 
-                jamMasuk: jm.jamMasuk, 
-                jamPulang: jm.jamPulang, 
+              return jm ? {
+                ...p,
+                jamMasuk: jm.jamMasuk,
+                jamPulang: jm.jamPulang,
                 _rawMasukLog: jm._rawMasukLog,
                 _rawPulangLog: jm._rawPulangLog,
                 _rawKetLog: jm._rawKetLog,
@@ -10286,8 +10315,8 @@ File di Google Drive juga akan dihapus.`)) return;
         $('rsIzin').textContent = ringkasan.izin ?? 0;
         $('rsSakit').textContent = ringkasan.sakit ?? 0;
         $('rsTugas').textContent = ringkasan.tugas ?? 0;
-        if($('rsTubel')) $('rsTubel').textContent = ringkasan.tubel ?? 0;
-        if($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
+        if ($('rsTubel')) $('rsTubel').textContent = ringkasan.tubel ?? 0;
+        if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
         $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
         const order = await orderPromise;
@@ -10299,12 +10328,13 @@ File di Google Drive juga akan dihapus.`)) return;
               u.nama.toLowerCase().trim() === (p.nama || '').toLowerCase().trim() ||
               (u.nip && u.nip === p.nip));
             return match
-              ? { ...p, 
-                  nama: p.nama && p.nama !== '—' ? p.nama : match.nama, 
-                  nip: p.nip && p.nip !== '—' ? p.nip : match.nip,
-                  jabatan: p.jabatan || match.jabatan, 
-                  urutan: p.urutan ?? match.urutan 
-                }
+              ? {
+                ...p,
+                nama: p.nama && p.nama !== '—' ? p.nama : match.nama,
+                nip: p.nip && p.nip !== '—' ? p.nip : match.nip,
+                jabatan: p.jabatan || match.jabatan,
+                urutan: p.urutan ?? match.urutan
+              }
               : p;
           });
         }
@@ -10413,40 +10443,40 @@ File di Google Drive juga akan dihapus.`)) return;
         if (curNama.length > map[id].nama.length) map[id].nama = curNama;
         if (nip && map[id].nip === '—') map[id].nip = nip;
         const jam = toMenit(jamStr);
-        if (jenis === 'MASUK') { 
-          map[id].masuk++; 
+        if (jenis === 'MASUK') {
+          map[id].masuk++;
           if (jamStr) {
-            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
             map[id]._rawMasukLog = { ...r, ID_Log: id_log }; // Store row with PK
           }
         }
         else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
-          map[id].di_luar_masuk++; 
+          map[id].di_luar_masuk++;
           if (jamStr) {
             map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
             map[id]._rawMasukLog = { ...r, ID_Log: id_log };
           }
           if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
         }
-        else if (jenis === 'PULANG') { 
-          map[id].pulang++; 
+        else if (jenis === 'PULANG') {
+          map[id].pulang++;
           if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
             map[id]._rawPulangLog = { ...r, ID_Log: id_log };
           }
         }
         else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
-          map[id].di_luar_pulang++; 
+          map[id].di_luar_pulang++;
           if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
             map[id]._rawPulangLog = { ...r, ID_Log: id_log };
           }
           if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
         }
-        else if (jenis === 'PULANG LUAR') { 
-          map[id].pulang_luar++; 
+        else if (jenis === 'PULANG LUAR') {
+          map[id].pulang_luar++;
           if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
             map[id]._rawPulangLog = { ...r, ID_Log: id_log };
           }
         }
@@ -10583,7 +10613,7 @@ File di Google Drive juga akan dihapus.`)) return;
       if (filterBidang !== 'Semua') {
         filteredPg = pg.filter(p => (p.bidang || p.Bidang || '') === filterBidang);
       }
-      
+
       if (!filteredPg.length) {
         el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Tidak ada pegawai di bidang ini</div><div class="empty-sub">Coba pilih bidang lain atau tampilkan semua</div></div>`;
         return;
@@ -12157,7 +12187,7 @@ File di Google Drive juga akan dihapus.`)) return;
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
         const mainPayload = { id, nama, no, nip, jabatan, bidang, role, status };
-        
+
         const res = await apiFetch(path, {
           method: 'POST',
           body: JSON.stringify(mainPayload)
@@ -12218,22 +12248,22 @@ File di Google Drive juga akan dihapus.`)) return;
     async function openLogEditor(uid = '', date = '', log = null) {
       const modal = $('logModal');
       if (!modal) return;
-      
+
       // Load pegawai list for dropdown if first time
       await loadLogPegawaiList();
-      
+
       // Reset form
       const existingId = log ? (log.ID_Log || log.id_log || '') : '';
-      
+
       // SMART UI DETECTION: If opened via + but we detect existing record in view
       let smartLogId = existingId;
       if (!smartLogId && uid && date) {
-          const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
-          if (p) {
-              // Default to MASUK check as MASUK is usually the first thing opened
-              const checkLog = p._rawKetLog || p._rawMasukLog || p._rawPulangLog;
-              if (checkLog && (checkLog.ID_Log || checkLog.id_log)) smartLogId = checkLog.ID_Log || checkLog.id_log;
-          }
+        const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
+        if (p) {
+          // Default to MASUK check as MASUK is usually the first thing opened
+          const checkLog = p._rawKetLog || p._rawMasukLog || p._rawPulangLog;
+          if (checkLog && (checkLog.ID_Log || checkLog.id_log)) smartLogId = checkLog.ID_Log || checkLog.id_log;
+        }
       }
 
       $('editLogId').value = smartLogId;
@@ -12243,7 +12273,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('inLogJenis').value = log ? (log['Jenis Absen'] || log.jenis_absen || log.Jenis || 'MASUK') : 'MASUK';
       $('inLogKet').value = log ? (log.Ket || log.ket || log.keterangan || '') : '';
       $('logFormResult').style.display = 'none';
-      
+
       const isActualEdit = !!smartLogId;
       if (isActualEdit) {
         $('logModalTitle').textContent = 'UPDATE LOG ABSEN';
@@ -12254,7 +12284,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('logModalIcon').textContent = '➕';
         $('btnSaveLogTxt').textContent = 'Simpan Log';
       }
-      
+
       modal.style.display = 'flex';
     }
 
@@ -12266,17 +12296,17 @@ File di Google Drive juga akan dihapus.`)) return;
     async function loadLogPegawaiList() {
       const select = $('inLogPegawai');
       if (!select || select.options.length > 1) return;
-      
+
       try {
         const res = await apiFetch(P.userList + '?format=full', { method: 'GET' });
         if (!res.ok) return;
         const data = await res.json();
         const users = (Array.isArray(data) ? data : (data.data || [])).filter(u => u.id || u.ID);
-        
+
         _pegawaiListCache = users; // Store in cache for saveLog reference
-        
+
         users.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
-        
+
         users.forEach(u => {
           const opt = document.createElement('option');
           opt.value = u.id || u.ID;
@@ -12317,22 +12347,22 @@ File di Google Drive juga akan dihapus.`)) return;
       setBtnL('btnSaveLog', true, 'Menyimpan...');
       try {
         const path = isEdit ? P.logEdit : P.logAdd;
-        
+
         // Cari data p untuk nama & nip (utamakan cache dari dropdown)
-        const pData = (_pegawaiListCache || []).find(u => String(u.id || u.ID) === String(uid)) 
-                   || (window.userListOrder || []).find(u => String(u.id) === String(uid)) 
-                   || {};
+        const pData = (_pegawaiListCache || []).find(u => String(u.id || u.ID) === String(uid))
+          || (window.userListOrder || []).find(u => String(u.id) === String(uid))
+          || {};
 
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ 
-            ID_Log: editId, 
+          body: JSON.stringify({
+            ID_Log: editId,
             telegram_id: uid,
             nama: pData.nama || pData.Nama || '',
             nip: pData.nip || pData.NIP || '',
-            tanggal: tgl, 
-            jam: jamRaw, 
-            jenis_absen: jenis, 
+            tanggal: tgl,
+            jam: jamRaw,
+            jenis_absen: jenis,
             keterangan: ket,
             admin_id: MY_ID,
             timestamp: Math.floor(Date.now() / 1000)
@@ -12543,13 +12573,13 @@ File di Google Drive juga akan dihapus.`)) return;
         try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
         updateClock();
         initJamAdminUI();
-        
+
         // FIX: Jika sedang di tab admin saat data jam/admin dimuat, refresh UI admin
         const activeTab = document.querySelector('.tab.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
         if (activeTab === 'admin' && IS_ADMIN) {
-           _applyAdminUIExtended();
-           // Trigger loading data admin jika baru pertama kali terbuka
-           if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+          _applyAdminUIExtended();
+          // Trigger loading data admin jika baru pertama kali terbuka
+          if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
         }
       } catch (e) {
         initJamAdminUI();
@@ -12994,23 +13024,7 @@ File di Google Drive juga akan dihapus.`)) return;
       );
     }
 
-    // Load semua data dasar secara paralel
-    window._jamAbsenReady = Promise.all([
-      loadJamAbsen(),
-      fetchJamPeriode(),
-      loadUserProfile(),
-      loadTodayHistory(),
-    ]).then(() => {
-      // Update clock setelah semua jam siap (agar notif periode langsung benar)
-      updateClock();
-      // Sembunyikan splash screen setelah data dasar siap
-      const splash = document.getElementById('appSplash');
-      if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
-    });
-    // Tunggu keduanya selesai sebelum cek wajib daftar
-    // Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
-    // masih default true padahal admin sudah matikan → modal paksa muncul keliru
-    Promise.all([loadFaceToggle(), loadFaceFromServer()]).then(() => _cekWajibFace());
+    // Initial data loading is now handled by initApp() at the bottom.
     initPermissions(); // pre-check & watch geolocation + camera permissions
 
     /* ============================================================
@@ -13375,24 +13389,16 @@ File di Google Drive juga akan dihapus.`)) return;
       document.querySelectorAll('.superadmin-section').forEach(el => {
         if (el) el.style.display = isSA ? 'block' : 'none';
       });
-      
+
       // Meja Absen & Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
         const desktopCard = $('desktopModeCard');
         if (desktopCard) desktopCard.style.display = 'block';
-        
+
         const mejaCard = $('mejaAbsenCard');
         if (mejaCard) mejaCard.style.display = 'block';
-        
+
         initDesktopMode();
-      }
-    }
-      // Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
-      if (IS_ADMIN) {
-        // Desktop mode card exists in configuration section, ensure its state is synced
-        initDesktopMode();
-        const dmCard = $('desktopModeCard');
-        if (dmCard) dmCard.style.display = 'block';
       }
     }
 
@@ -14123,19 +14129,19 @@ File di Google Drive juga akan dihapus.`)) return;
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { return false; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { return false; }
           const dLen = Array.isArray(desc) ? desc.length : 0;
-          
+
           // Enhanced Matching logic for 1024 dimensions
           const isHumanData = (f.face_model === 'human' || dLen >= 512);
           const isFaceApiData = (f.face_model === 'faceapi' || dLen === 128);
-          
+
           // Allow all for visibility, we handle mismatch in matching loop
           return dLen === 128 || dLen === 512 || dLen === 1024;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { desc = []; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
           const dLen = desc.length;
 
@@ -14686,20 +14692,65 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── MAIN INITIALIZATION ──
     async function initApp() {
-      await idb.init();
-      await loadFaceToggle();
-      
-      const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
-      switchTab(lastTab);
-      
-      if (IS_ADMIN) {
-        const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';
-        switchAdminSection(lastSection);
+      try {
+        console.log('[Init] Starting application...');
+        await idb.init();
+
+        // Critical: Load role & face settings first
+        await Promise.allSettled([
+          loadFaceToggle(),
+          loadJamAbsen()
+        ]);
+
+        // Secondary: Other data
+        await Promise.allSettled([
+          fetchJamPeriode(),
+          loadUserProfile(),
+          loadTodayHistory(),
+          loadFaceFromServer()
+        ]);
+
+        updateClock();
+
+        const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
+        switchTab(lastTab);
+
+        if (IS_ADMIN) {
+          const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';
+          switchAdminSection(lastSection);
+        }
+
+        // Check face registration requirement
+        _cekWajibFace();
+
+      } catch (err) {
+        console.error('[Init] Error during startup:', err);
+      } finally {
+        // Always hide splash screen after 300ms attempt
+        setTimeout(() => {
+          const splash = document.getElementById('appSplash');
+          if (splash) {
+            splash.classList.add('hide');
+            setTimeout(() => splash.remove(), 500);
+          }
+          console.log('[Init] Application ready.');
+        }, 300);
       }
     }
-    
+
     // Jalankan initApp di akhir script atau via DOMContentLoaded
     document.addEventListener('DOMContentLoaded', initApp);
+
+    // Safety fallback: Hide splash anyway after 8s
+    setTimeout(() => {
+      const splash = document.getElementById('appSplash');
+      if (splash) {
+        console.warn('[Init] Splash screen safety fallback triggered.');
+        splash.classList.add('hide');
+        setTimeout(() => splash.remove(), 500);
+      }
+    }, 8000);
+  </script>
 </body>
 
 </html>

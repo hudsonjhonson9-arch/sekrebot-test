@@ -8037,6 +8037,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let HumanInstance = null;
     let _isDetecting = false; // Flag Pengaman Loop Deteksi
     let _aiProcessing = false; // Flag Pengaman Ekstraksi
+    let _isLoopEnabled = false; // Flag Kontrol Loop Absolut
 
     // Fungsi Pengaman untuk Reset Total State AI jika terjadi Stuck
     function _forceResetAiState() {
@@ -8478,9 +8479,17 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function stopDetectLoop() {
+      _isLoopEnabled = false; // Matikan loop secara absolut
       _forceResetAiState(); // Pastikan semua flag mati
       if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
       if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer = null; }
+      
+      // Bersihkan Canvas
+      const cnv = $('camCanvas');
+      if (cnv) {
+        const ctx = cnv.getContext('2d');
+        ctx.clearRect(0, 0, cnv.width, cnv.height);
+      }
     }
 
     /* ── Loop deteksi wajah (rAF) ── */
@@ -8501,8 +8510,9 @@ File di Google Drive juga akan dihapus.`)) return;
         if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false;
       }, 3000);
 
+      _isLoopEnabled = true;
       const loop = async () => {
-        if (!_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         if (_isDetecting) {
           _detectLoop = requestAnimationFrame(loop);
           return;
@@ -8617,7 +8627,7 @@ File di Google Drive juga akan dihapus.`)) return;
           console.error('[AI] Loop Error:', e);
         } finally {
           _isDetecting = false;
-          if ($('camOverlay') && !$('camOverlay').classList.contains('hidden')) {
+          if (_isLoopEnabled && $('camOverlay') && !$('camOverlay').classList.contains('hidden')) {
             _detectLoop = requestAnimationFrame(loop);
           }
         }

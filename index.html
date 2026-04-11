@@ -5616,8 +5616,18 @@
       <div class="rekap-header">
         <div class="rekap-title">📊 Rekap Pegawai</div>
         <div class="rekap-toolbar">
-          <!--<button class="btn-download" id="btnDownloadRekap" onclick="downloadRekap()"
-            title="Kirim Rekap ke Telegram">📤 Kirim</button>-->
+          <select id="rekapBidang" class="btn-refresh" style="width: auto; margin-right: 8px; font-size: 11px; padding: 0 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 8px; height: 32px;" onchange="renderRekap(lastRekapPegawai)">
+            <option value="Semua">Semua Bidang</option>
+            <option value="Sekretariat">Sekretariat</option>
+            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
+            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+          </select>
+          <button class="btn-refresh" id="btnTambahLog" onclick="openLogEditor()" style="display: none; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: white; border: none; margin-right: 8px; border-radius: 8px; font-weight: 700;">
+            <span>➕ Log</span>
+          </button>
           <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()"><span id="rekapRefIcon">🔄</span>
             Muat</button>
         </div>
@@ -5886,6 +5896,15 @@
                   class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama"
                   type="text" class="form-input" /></div>
+              <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label><select id="inPegawaiBidang" class="form-input">
+                <option value="">— Pilih Bidang —</option>
+                <option value="Sekretariat">Sekretariat</option>
+                <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+                <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+                <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
+                <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+                <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+              </select></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input
                     id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
@@ -6331,6 +6350,8 @@
       userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
       userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
       userDel: isTest ? '/webhook-test/user-delete' : '/webhook/user-delete',
+      logAdd: isTest ? '/webhook-test/log-add' : '/webhook/log-add',
+      logEdit: isTest ? '/webhook-test/log-edit' : '/webhook/log-edit',
       signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
       signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
       signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
@@ -10387,6 +10408,18 @@ File di Google Drive juga akan dihapus.`)) return;
       const _sampai = $('rekapSampai')?.value || '';
       const isHarian = _dari && _sampai && _dari === _sampai;
 
+      // ── Client-side filtering by Bidang ──
+      const filterBidang = $('rekapBidang')?.value || 'Semua';
+      let filteredPg = pg;
+      if (filterBidang !== 'Semua') {
+        filteredPg = pg.filter(p => (p.bidang || p.Bidang || '') === filterBidang);
+      }
+      
+      if (!filteredPg.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Tidak ada pegawai di bidang ini</div><div class="empty-sub">Coba pilih bidang lain atau tampilkan semua</div></div>`;
+        return;
+      }
+
       // ── Hitung hari kerja periode (senin-jumat, kurangi libur) ──
       function countHKRekap(dari, sampai) {
         let count = 0;
@@ -10407,7 +10440,7 @@ File di Google Drive juga akan dihapus.`)) return;
         tanggalLabel = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       }
 
-      el.innerHTML = pg.map((p, idx) => {
+      el.innerHTML = filteredPg.map((p, idx) => {
         const nama = p.nama || '—';
         const nip = p.nip || '—';
         const jabatan = p.jabatan || '';
@@ -10493,6 +10526,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
           return `
       <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px">
+        ${IS_ADMIN ? `<button onclick="openLogEditor('${p.id}', '${_dari}')" style="position:absolute; top:8px; right:35px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); color:var(--gold); width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; z-index:10" title="Tambah/Edit Log Manual">✏️</button>` : ''}
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
@@ -11836,6 +11870,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const nama = u.nama || u.Nama || u.username || 'Tanpa Nama';
           const nip = u.nip || u.NIP || '—';
           const jab = u.jabatan || u.Jabatan || '—';
+          const bid = u.bidang || u.Bidang || '—';
           const status = (u.status || u.Status || 'AKTIF').toUpperCase();
           const isAktif = status === 'AKTIF';
 
@@ -11845,7 +11880,7 @@ File di Google Drive juga akan dihapus.`)) return;
             </div>
             <div style="flex:1; min-width:0; margin-left:2px">
               <div class="face-adm-name" style="font-size:12px; margin-bottom:1px; color:#fff">${nama}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab} &nbsp;·&nbsp; ${bid}</div>
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
               <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
@@ -11902,6 +11937,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiNo').value = p.no || '';
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
+        $('inPegawaiBidang').value = p.bidang || p.Bidang || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
         $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
 
@@ -11918,6 +11954,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
+      const bidang = $('inPegawaiBidang').value;
       const role = $('inPegawaiRole').value;
       const status = $('inPegawaiStatus').value;
 
@@ -11931,7 +11968,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const path = isEdit ? P.userEdit : P.userAdd;
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
+          body: JSON.stringify({ id, nama, no, nip, jabatan, bidang, role, status })
         });
         const d = await res.json();
 
@@ -11962,6 +11999,108 @@ File di Google Drive juga akan dihapus.`)) return;
           alert('Gagal: ' + (d.message || 'Error server'));
         }
       } catch (e) { alert('Server error'); }
+    }
+
+    /* ════ LOG MANAGEMENT (ADMIN) ════ */
+    function openLogEditor(uid = '', date = '', log = null) {
+      const modal = $('logModal');
+      if (!modal) return;
+      
+      // Reset form
+      $('editLogId').value = log ? (log.id || log.ID || '') : '';
+      $('inLogPegawai').value = uid;
+      $('inLogTanggal').value = date || fmtD(nowWITA());
+      $('inLogJam').value = log ? (log.jam || '').substring(0, 5) : '';
+      $('inLogJenis').value = log ? (log.jenis || 'MASUK') : 'MASUK';
+      $('inLogKet').value = log ? (log.keterangan || '') : '';
+      $('logFormResult').style.display = 'none';
+      
+      if (log) {
+        $('logModalTitle').textContent = 'EDIT LOG ABSEN';
+        $('logModalIcon').textContent = '✏️';
+      } else {
+        $('logModalTitle').textContent = 'TAMBAH LOG MANUAL';
+        $('logModalIcon').textContent = '➕';
+      }
+      
+      modal.style.display = 'flex';
+      
+      // Load pegawai list for dropdown if first time
+      loadLogPegawaiList();
+    }
+
+    function closeLogEditor() {
+      $('logModal').style.display = 'none';
+    }
+
+    let _pegawaiListCache = null;
+    async function loadLogPegawaiList() {
+      const select = $('inLogPegawai');
+      if (!select || select.options.length > 1) return;
+      
+      try {
+        const res = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const users = (Array.isArray(data) ? data : (data.data || [])).filter(u => u.id || u.ID);
+        
+        users.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+        
+        users.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id || u.ID;
+          opt.textContent = `${u.nama || u.Nama} (${u.id || u.ID})`;
+          select.appendChild(opt);
+        });
+      } catch (e) { console.error('Load log pegawai failed', e); }
+    }
+
+    async function saveLog() {
+      const editId = $('editLogId').value;
+      const isEdit = !!editId;
+      const uid = $('inLogPegawai').value;
+      const tgl = $('inLogTanggal').value;
+      const jamRaw = $('inLogJam').value;
+      const jenis = $('inLogJenis').value;
+      const ket = $('inLogKet').value.trim();
+
+      if (!uid || !tgl || !jamRaw) {
+        showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'warning', '⚠️', 'Data Kurang', 'Pegawai, Tanggal, dan Jam wajib diisi.');
+        return;
+      }
+
+      setBtnL('btnSaveLog', true, 'Menyimpan...');
+      try {
+        const path = isEdit ? P.logEdit : P.logAdd;
+        const res = await apiFetch(path, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            id: editId, 
+            telegram_id: uid, 
+            tanggal: tgl, 
+            jam: jamRaw + ':00 WITA', 
+            jenis_absen: jenis, 
+            keterangan: ket,
+            admin_id: MY_ID,
+            timestamp: Math.floor(Date.now() / 1000)
+          })
+        });
+        const d = await res.json().catch(() => ({}));
+
+        if (!res.ok || d.ok === false) {
+          showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan log.');
+        } else {
+          showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'success', '✅', 'Berhasil', isEdit ? 'Log absen diperbarui.' : 'Log absen manual ditambahkan.');
+          setTimeout(() => {
+            closeLogEditor();
+            loadRekap(); // Refresh rekap after change
+          }, 2000);
+        }
+      } catch (e) {
+        showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
+      } finally {
+        setBtnL('btnSaveLog', false, 'Simpan Log');
+      }
     }
 
     async function loadAdminMgmt() {
@@ -12167,6 +12306,11 @@ File di Google Drive juga akan dihapus.`)) return;
     function _applyAdminUI() {
       const panelAdmin = $('panel-admin');
       if (!panelAdmin) return;
+
+      // Update visibility of manual log button in Rekap tab
+      const btnLog = $('btnTambahLog');
+      if (btnLog) btnLog.style.display = IS_ADMIN ? 'inline-block' : 'none';
+
       if (!IS_ADMIN) {
         panelAdmin.style.display = 'none';
         // Sembunyikan tombol tab admin jika ada

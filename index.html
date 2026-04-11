@@ -6386,13 +6386,18 @@
     async function apiFetch(path, opts = {}) {
       for (const base of [SERVER_1, SERVER_2]) {
         try {
+          console.log(`[Fetch] Attempting: ${base}${path}`);
           const r = await fetch(base + path, { ...opts, headers: HDR });
-          // Return response for both ok AND client errors (4xx) — let caller handle
-          if (r.ok || (r.status >= 400 && r.status < 500)) return r;
+          if (r.ok || (r.status >= 400 && r.status < 500)) {
+            console.log(`[Fetch] Success: ${base}${path}`);
+            return r;
+          }
           throw new Error(`HTTP ${r.status}`);
-        } catch (e) { console.warn(`[Fallback] ${base}:`, e.message) }
+        } catch (e) { 
+          console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
+        }
       }
-      throw new Error('Semua server offline');
+      throw new Error('Semua server offline atau tidak merespons.');
     }
 
     /* ════ MODEL LOADING STATE ════ */
@@ -12031,21 +12036,44 @@ File di Google Drive juga akan dihapus.`)) return;
       $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
+        const mainPayload = { id, nama, no, nip, jabatan, bidang, role, status };
+        
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify({ id, nama, no, nip, jabatan, bidang, role, status })
+          body: JSON.stringify(mainPayload)
         });
-        const d = await res.json();
+        const d = await res.json().catch(() => ({}));
 
         if (!res.ok || d.ok === false) {
           showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan data pegawai.');
         } else {
+          // ── SYNC ADMIN LOGIC (Request User) ──
+          // Jika role adalah ADMIN atau SUPERADMIN, sync ke webhook admin-add
+          const cleanRole = role.toLowerCase().replace(/\s+/g, '');
+          if (cleanRole === 'admin' || cleanRole === 'superadmin') {
+            try {
+              console.log('[Sync] Detecting Admin role, syncing to admin-add...');
+              await apiFetch(P.adminAdd, {
+                method: 'POST',
+                body: JSON.stringify({
+                  telegram_id: Number(id),
+                  nama: nama,
+                  role: cleanRole,
+                  ditambahkan_oleh: Number(MY_ID)
+                })
+              });
+            } catch (err) {
+              console.warn('[Sync] Gagal sync ke admin-list (opsional):', err.message);
+            }
+          }
+
           showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'success', '✅', 'Berhasil', isEdit ? 'Data pegawai diperbarui.' : 'Pegawai baru ditambahkan.');
           setTimeout(hidePegawaiForm, 2500);
           loadPegawaiMgmt();
         }
       } catch (e) {
-        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
+        console.error('[SavePegawai] Error:', e);
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', `Server tidak merespons: ${e.message}`);
       }
       $('btnSavePegawaiTxt').textContent = 'Simpan Data';
     }

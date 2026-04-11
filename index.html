@@ -5811,8 +5811,8 @@
           </div>
         </div>
 
-        <!-- ══ MEJA ABSEN (Super Admin Only) ══ -->
-        <div class="superadmin-section meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
+        <!-- ══ MEJA ABSEN (Admin Only) ══ -->
+        <div class="meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
           <div class="meja-badge">👑 Super Admin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
@@ -6132,15 +6132,19 @@
             style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
             📸 FACE VERIFICATION SWITCH</div>
           <div
-            style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
-            <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
-            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
-              style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
-              <div id="faceToggleKnob"
-                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
+            style="display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
+              <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
+                style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
+                <div id="faceToggleKnob"
+                  style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
+                </div>
               </div>
             </div>
+            <div id="faceToggleDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi status...</div>
           </div>
+          <div id="faceToggleResult" style="display:none; margin-top:12px"></div>
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
@@ -6577,16 +6581,29 @@
     }
 
     function switchAdminSection(sectionId) {
+      if (!sectionId) sectionId = localStorage.getItem('absen_last_admin_section') || 'ops';
+      localStorage.setItem('absen_last_admin_section', sectionId);
+
       // Hide all sections
-      document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+      document.querySelectorAll('.admin-section').forEach(s => {
+        if (s) s.style.display = 'none';
+      });
       // Show Target
       const target = $('admin-section-' + sectionId);
-      if (target) target.style.display = 'block';
+      if (target) {
+        target.style.display = 'block';
+        target.style.animation = 'fadeIn 0.4s ease forwards';
+      }
 
       // Update Button State
-      document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = $('btn-nav-' + sectionId);
-      if (activeBtn) activeBtn.classList.add('active');
+      document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+        if (btn) btn.classList.remove('active');
+        if (btn && btn.id === 'btn-nav-' + sectionId) btn.classList.add('active');
+      });
+
+      // Special handling for specific sections
+      if (sectionId === 'ops') loadKonfirmasiAdmin();
+      if (sectionId === 'user') loadAdminFaceReg();
 
       // Fix Leaflet Map rendering if switching to Config
       if (sectionId === 'config' && typeof adminMap !== 'undefined' && adminMap) {
@@ -6683,11 +6700,18 @@
     /* ════ TABS ════ */
     function getAllTabs() { return IS_ADMIN ? ['absen', 'ket', 'rekap', 'profil', 'admin'] : ['absen', 'ket', 'rekap', 'profil']; }
     function switchTab(tab) {
-      window.scrollTo(0, 0);
+      if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
       const T = getAllTabs();
-      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', T[i] === tab));
+      if (!T.includes(tab)) tab = 'absen';
+      
+      localStorage.setItem('absen_last_tab', tab);
+      window.scrollTo(0, 0);
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        if (t) t.classList.toggle('active', T[i] === tab);
+      });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const el = $('panel-' + tab); if (el) el.classList.add('active');
+      
       if (tab === 'absen') {
         updateClock(); // refresh notif & batas jam periode segera
         if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
@@ -12807,15 +12831,15 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!sw || !knob) return;
 
       if (enabled) {
-        sw.style.background = '#22c55e'; // Green
-        knob.style.left = '27px';    // Right
-        label.textContent = '🟢 Face Recognition Aktif';
-        desc.textContent = 'Pegawai wajib verifikasi wajah saat absen';
+        if (sw) sw.style.background = '#22c55e'; // Green
+        if (knob) knob.style.left = '27px';    // Right
+        if (label) label.textContent = '🟢 Face Recognition Aktif';
+        if (desc) desc.textContent = 'Pegawai wajib verifikasi wajah saat absen';
       } else {
-        sw.style.background = '#6b7280'; // Grey (Neutral Inactive)
-        knob.style.left = '3px';     // Left
-        label.textContent = '⚪ Face Recognition Nonaktif';
-        desc.textContent = 'Absen tanpa verifikasi wajah (hanya GPS)';
+        if (sw) sw.style.background = '#6b7280'; // Grey (Neutral Inactive)
+        if (knob) knob.style.left = '3px';     // Left
+        if (label) label.textContent = '⚪ Face Recognition Nonaktif';
+        if (desc) desc.textContent = 'Absen tanpa verifikasi wajah (hanya GPS)';
       }
       // Sinkronisasi UI profil dengan status toggle
       if (typeof updateProfilFaceUI === 'function') updateProfilFaceUI();
@@ -13349,8 +13373,20 @@ File di Google Drive juga akan dihapus.`)) return;
       const isSA = _isSuperAdmin();
       document.body.classList.toggle('is-superadmin', isSA);
       document.querySelectorAll('.superadmin-section').forEach(el => {
-        el.style.display = isSA ? 'block' : 'none';
+        if (el) el.style.display = isSA ? 'block' : 'none';
       });
+      
+      // Meja Absen & Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
+      if (IS_ADMIN) {
+        const desktopCard = $('desktopModeCard');
+        if (desktopCard) desktopCard.style.display = 'block';
+        
+        const mejaCard = $('mejaAbsenCard');
+        if (mejaCard) mejaCard.style.display = 'block';
+        
+        initDesktopMode();
+      }
+    }
       // Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
         // Desktop mode card exists in configuration section, ensure its state is synced
@@ -14648,8 +14684,22 @@ File di Google Drive juga akan dihapus.`)) return;
     // Auto-init Desktop Mode jika di layar laptop/PC
     setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (_) { } }, 1000);
 
-    // Model AI akan diunduh secara lazily saat user membuka kamera.
-  </script>
+    // ── MAIN INITIALIZATION ──
+    async function initApp() {
+      await idb.init();
+      await loadFaceToggle();
+      
+      const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
+      switchTab(lastTab);
+      
+      if (IS_ADMIN) {
+        const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';
+        switchAdminSection(lastSection);
+      }
+    }
+    
+    // Jalankan initApp di akhir script atau via DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', initApp);
 </body>
 
 </html>

@@ -10199,10 +10199,21 @@ File di Google Drive juga akan dihapus.`)) return;
               const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
               const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
               const ket = getField(r, 'Keterangan', 'keterangan') || '';
-              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '', tubel:0, cuti:0, izin:0, sakit:0, tugas:0 };
               
-              if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') jamMap[id].jamMasuk = jam || '-';
-              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') jamMap[id].jamPulang = jam || '-';
+              if (!jamMap[id]) jamMap[id] = { 
+                jamMasuk: '-', jamPulang: '-', logKet: '', 
+                _rawMasukLog: null, _rawPulangLog: null,
+                tubel:0, cuti:0, izin:0, sakit:0, tugas:0 
+              };
+              
+              if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') {
+                jamMap[id].jamMasuk = jam || '-';
+                jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+              }
+              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') {
+                jamMap[id].jamPulang = jam || '-';
+                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+              }
               else if (j === 'TUBEL') jamMap[id].tubel = 1;
               else if (j === 'CUTI') jamMap[id].cuti = 1;
               else if (j === 'IZIN') jamMap[id].izin = 1;
@@ -10219,6 +10230,8 @@ File di Google Drive juga akan dihapus.`)) return;
                 ...p, 
                 jamMasuk: jm.jamMasuk, 
                 jamPulang: jm.jamPulang, 
+                _rawMasukLog: jm._rawMasukLog,
+                _rawPulangLog: jm._rawPulangLog,
                 logKet: jm.logKet,
                 tubel: (p.tubel || 0) + jm.tubel,
                 cuti: (p.cuti || 0) + jm.cuti,
@@ -10640,9 +10653,10 @@ File di Google Drive juga akan dihapus.`)) return;
           return `
       <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
         ${IS_ADMIN ? `
-          <div style="position:absolute; top:12px; right:64px; z-index:100">
+          <div style="position:absolute; top:12px; right:12px; z-index:100; display:flex; gap:6px;">
             <button onclick="openLogEditor('${p.id}', '${_dari}')" 
-                    style="background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer;" 
+                    style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:var(--white); width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; backdrop-filter:blur(10px); transition: all 0.2s;" 
+                    onmouseover="this.style.background='rgba(124,58,237,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'"
                     title="Tambah Log Manual">➕</button>
           </div>` : ''}
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
@@ -10667,10 +10681,12 @@ File di Google Drive juga akan dihapus.`)) return;
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
 
           <!-- JAM MASUK -->
-          <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px; position:relative">
+          <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
             ${IS_ADMIN && p._rawMasukLog ? `
               <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog).replace(/"/g, '&quot;')})" 
-                      style="position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.1); border:none; color:${masukColor}; cursor:pointer; font-size:10px;">✏️</button>
+                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                      title="Edit Log Masuk">✏️</button>
             ` : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
             ${izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0
@@ -10686,10 +10702,12 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>
 
           <!-- JAM PULANG -->
-          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px; position:relative">
+          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
             ${IS_ADMIN && p._rawPulangLog ? `
               <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog).replace(/"/g, '&quot;')})" 
-                      style="position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.1); border:none; color:${pulangColor}; cursor:pointer; font-size:10px;">✏️</button>
+                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                      title="Edit Log Pulang">✏️</button>
             ` : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
             ${isKet
@@ -12159,7 +12177,20 @@ File di Google Drive juga akan dihapus.`)) return;
       await loadLogPegawaiList();
       
       // Reset form
-      $('editLogId').value = log ? (log.ID_Log || log.id_log || '') : '';
+      const existingId = log ? (log.ID_Log || log.id_log || '') : '';
+      
+      // SMART UI DETECTION: If opened via + but we detect existing record in view
+      let smartLogId = existingId;
+      if (!smartLogId && uid && date) {
+          const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
+          if (p) {
+              // Default to MASUK check as MASUK is usually the first thing opened
+              const checkLog = p._rawMasukLog || p._rawPulangLog;
+              if (checkLog && (checkLog.ID_Log || checkLog.id_log)) smartLogId = checkLog.ID_Log || checkLog.id_log;
+          }
+      }
+
+      $('editLogId').value = smartLogId;
       $('inLogPegawai').value = uid;
       $('inLogTanggal').value = date || fmtD(nowWITA());
       $('inLogJam').value = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
@@ -12167,12 +12198,15 @@ File di Google Drive juga akan dihapus.`)) return;
       $('inLogKet').value = log ? (log.Ket || log.ket || log.keterangan || '') : '';
       $('logFormResult').style.display = 'none';
       
-      if (log) {
-        $('logModalTitle').textContent = 'EDIT LOG ABSEN';
-        $('logModalIcon').textContent = '✏️';
+      const isActualEdit = !!smartLogId;
+      if (isActualEdit) {
+        $('logModalTitle').textContent = 'UPDATE LOG ABSEN';
+        $('logModalIcon').textContent = '📝';
+        $('btnSaveLogTxt').textContent = 'Perbarui Log';
       } else {
         $('logModalTitle').textContent = 'TAMBAH LOG MANUAL';
         $('logModalIcon').textContent = '➕';
+        $('btnSaveLogTxt').textContent = 'Simpan Log';
       }
       
       modal.style.display = 'flex';

@@ -2188,12 +2188,12 @@
     }
 
     .date-range-card {
-      background: var(--card-bg);
+      background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.01));
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      backdrop-filter: blur(12px)
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
     .date-range-row {
@@ -3308,10 +3308,20 @@
     .pegawai-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 11px 13px;
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+      transition: all .25s ease;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
       backdrop-filter: blur(10px);
-      animation: slideUp .25s ease
+      animation: slideUp .3s ease;
+    }
+
+    .pegawai-card:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
+      transform: translateY(-2px);
+      border-color: rgba(201, 168, 76, .3);
     }
 
     .pegawai-top {
@@ -3435,13 +3445,21 @@
 
     /* ── REDESIGN REKAP CARD ── */
     .rekap-card-v2 {
-      background: var(--card-bg);
+      background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 15px;
-      margin-bottom: 12px;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
       position: relative;
-      overflow: hidden;
+      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      animation: slideUp .4s ease;
+    }
+    
+    .rekap-card-v2:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      border-color: rgba(124, 58, 237, 0.3);
     }
 
     .rekap-hero-section {
@@ -5616,20 +5634,9 @@
       <div class="rekap-header">
         <div class="rekap-title">📊 Rekap Pegawai</div>
         <div class="rekap-toolbar">
-          <select id="rekapBidang" class="btn-refresh" style="width: auto; margin-right: 8px; font-size: 11px; padding: 0 10px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text); border-radius: 8px; height: 32px;" onchange="renderRekap(lastRekapPegawai)">
-            <option value="Semua">Semua Bidang</option>
-            <option value="Sekretariat">Sekretariat</option>
-            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
-            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-          </select>
-          <button class="btn-refresh" id="btnTambahLog" onclick="openLogEditor()" style="display: none; background: linear-gradient(135deg, #7c3aed, #a78bfa); color: white; border: none; margin-right: 8px; border-radius: 8px; font-weight: 700;">
-            <span>➕ Log</span>
+          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()" style="background: var(--admin); color: white; border: none; font-weight: 800; padding: 6px 16px; border-radius: 9px; box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);">
+            <span id="rekapRefIcon" style="margin-right: 4px">🔄</span> Muat
           </button>
-          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()"><span id="rekapRefIcon">🔄</span>
-            Muat</button>
         </div>
       </div>
       <div class="print-info" id="printInfo">
@@ -5637,16 +5644,30 @@
         Periode: <span id="printPeriode">—</span><br>
         Dicetak: <span id="printTanggal">—</span>
       </div>
-      <div class="date-range-card">
+      <div class="date-range-card" style="box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, var(--card-bg), rgba(255,255,255,0.02));">
         <div class="date-range-row">
           <div>
-            <div class="date-range-label">Dari Tanggal</div><input type="date" class="date-range-input" id="rekapDari"
-              onchange="onDateRangeChange()" />
+            <div class="date-range-label">Dari Tanggal</div>
+            <input type="date" class="date-range-input" id="rekapDari" onchange="onDateRangeChange()" />
           </div>
           <div>
-            <div class="date-range-label">Sampai Tanggal</div><input type="date" class="date-range-input"
-              id="rekapSampai" onchange="onDateRangeChange()" />
+            <div class="date-range-label">Sampai Tanggal</div>
+            <input type="date" class="date-range-input" id="rekapSampai" onchange="onDateRangeChange()" />
           </div>
+        </div>
+        
+        <!-- Filter Bidang relocated here -->
+        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <div class="date-range-label" style="margin-bottom: 4px">Filter Bidang / Unit Kerja</div>
+          <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer" onchange="renderRekap(lastRekapPegawai)">
+            <option value="Semua">— Tampilkan Semua Bidang —</option>
+            <option value="Sekretariat">Sekretariat</option>
+            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
+            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+          </select>
         </div>
         <div class="date-preset-bar">
           <button class="date-preset active" id="dp-today" onclick="setPreset('today', this)">Hari Ini</button>
@@ -10241,6 +10262,7 @@ File di Google Drive juga akan dihapus.`)) return;
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
+          _rawMasukLog: null, _rawPulangLog: null,
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
           all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
@@ -10262,6 +10284,7 @@ File di Google Drive juga akan dihapus.`)) return;
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
+          _rawMasukLog: null, _rawPulangLog: null,
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
           all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
@@ -10270,17 +10293,43 @@ File di Google Drive juga akan dihapus.`)) return;
         if (curNama.length > map[id].nama.length) map[id].nama = curNama;
         if (nip && map[id].nip === '—') map[id].nip = nip;
         const jam = toMenit(jamStr);
-        if (jenis === 'MASUK') { map[id].masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
+        if (jenis === 'MASUK') { 
+          map[id].masuk++; 
+          if (jamStr) {
+            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id]._rawMasukLog = r; // Save whole record
+          }
+        }
         else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
-          map[id].di_luar_masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
+          map[id].di_luar_masuk++; 
+          if (jamStr) {
+            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
+            map[id]._rawMasukLog = r;
+          }
           if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
         }
-        else if (jenis === 'PULANG') { map[id].pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
+        else if (jenis === 'PULANG') { 
+          map[id].pulang++; 
+          if (jamStr) {
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id]._rawPulangLog = r;
+          }
+        }
         else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
-          map[id].di_luar_pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
+          map[id].di_luar_pulang++; 
+          if (jamStr) {
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id]._rawPulangLog = r;
+          }
           if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
         }
-        else if (jenis === 'PULANG LUAR') { map[id].pulang_luar++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
+        else if (jenis === 'PULANG LUAR') { 
+          map[id].pulang_luar++; 
+          if (jamStr) {
+            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); 
+            map[id]._rawPulangLog = r;
+          }
+        }
         else if (jenis.includes('LUAR')) { map[id].di_luar_masuk++; }
         else if (jenis === 'IZIN') { map[id].izin++; }
         else if (jenis === 'SAKIT') { map[id].sakit++; }
@@ -10525,8 +10574,13 @@ File di Google Drive juga akan dihapus.`)) return;
                 : 'var(--success)';
 
           return `
-      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px">
-        ${IS_ADMIN ? `<button onclick="openLogEditor('${p.id}', '${_dari}')" style="position:absolute; top:8px; right:35px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); color:var(--gold); width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; cursor:pointer; z-index:10" title="Tambah/Edit Log Manual">✏️</button>` : ''}
+      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
+        ${IS_ADMIN ? `
+          <div style="position:absolute; top:12px; right:12px; z-index:10">
+            <button onclick="openLogEditor('${p.id}', '${_dari}')" 
+                    style="background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.2); color:#a78bfa; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer;" 
+                    title="Tambah Log Manual">➕</button>
+          </div>` : ''}
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
@@ -10549,7 +10603,11 @@ File di Google Drive juga akan dihapus.`)) return;
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
 
           <!-- JAM MASUK -->
-          <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px">
+          <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px; position:relative">
+            ${IS_ADMIN && p._rawMasukLog ? `
+              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog).replace(/"/g, '&quot;')})" 
+                      style="position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.1); border:none; color:${masukColor}; cursor:pointer; font-size:10px;">✏️</button>
+            ` : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
             ${izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${masukIcon}</div>
@@ -10564,7 +10622,11 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>
 
           <!-- JAM PULANG -->
-          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px">
+          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px; position:relative">
+            ${IS_ADMIN && p._rawPulangLog ? `
+              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog).replace(/"/g, '&quot;')})" 
+                      style="position:absolute; top:6px; right:6px; background:rgba(255,255,255,0.1); border:none; color:${pulangColor}; cursor:pointer; font-size:10px;">✏️</button>
+            ` : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
             ${isKet
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">—</div>

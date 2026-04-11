@@ -12139,7 +12139,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const path = isEdit ? P.logEdit : P.logAdd;
         
         // Cari data p untuk nama & nip
-        const pData = (userSeed || []).find(u => String(u.id) === String(uid)) || {};
+        const pData = (userListOrder || []).find(u => String(u.id) === String(uid)) || {};
 
         const res = await apiFetch(path, {
           method: 'POST',

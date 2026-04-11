@@ -6229,6 +6229,62 @@
     </div>
   </div>
 
+  <!-- ══ MODAL MANUAL LOG (ADMIN) ══ -->
+  <div id="logModal" class="sig-overlay" style="display:none; align-items:center; justify-content:center; padding:20px; z-index:999999;">
+    <div class="card" style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
+        <div style="display:flex; align-items:center; gap:8px">
+          <span id="logModalIcon" style="font-size:18px">➕</span>
+          <div id="logModalTitle" style="font-size:11px; font-weight:800; color:var(--white)">TAMBAH LOG MANUAL</div>
+        </div>
+        <button onclick="closeLogEditor()" style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer">✕</button>
+      </div>
+
+      <input type="hidden" id="editLogId">
+      
+      <div class="form-group">
+        <label class="form-label" style="font-size:9px">Pegawai</label>
+        <select id="inLogPegawai" class="form-input">
+          <option value="">— Pilih Pegawai —</option>
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:9px">Tanggal</label>
+          <input type="date" id="inLogTanggal" class="form-input">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" style="font-size:9px">Jam</label>
+          <input type="time" id="inLogJam" class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:9px">Jenis Absen</label>
+        <select id="inLogJenis" class="form-input">
+          <option value="MASUK">MASUK</option>
+          <option value="PULANG">PULANG</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:9px">Keterangan (Opsional)</label>
+        <input type="text" id="inLogKet" class="form-input" placeholder="Misal: Lupa absen, error GPS...">
+      </div>
+
+      <div class="result-card" id="logFormResult" style="display:none; margin-bottom:12px">
+        <div class="r-icon" id="logFormRIcon"></div>
+        <div class="r-title" id="logFormRTitle"></div>
+        <div class="r-msg" id="logFormRMsg"></div>
+      </div>
+
+      <button class="btn-admin" id="btnSaveLog" onclick="saveLog()" style="margin:0; height:45px">
+        <span>💾</span><span id="btnSaveLogTxt">Simpan Log</span>
+      </button>
+    </div>
+  </div>
+
   <script>
     /* ════ SUPABASE CONFIGURATION (MIGRASI DARI N8N) ════ */
     // TODO: Ganti placeholder ini dengan kredensial Supabase dari dashboard
@@ -12149,13 +12205,27 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     async function saveLog() {
-      const editId = $('editLogId').value;
-      const isEdit = !!editId;
+      let editId = $('editLogId').value;
       const uid = $('inLogPegawai').value;
       const tgl = $('inLogTanggal').value;
       const jamRaw = $('inLogJam').value;
       const jenis = $('inLogJenis').value;
       const ket = $('inLogKet').value.trim();
+
+      // SMART DETECTION: If no editId is set, check if we already have this log in memory (rekap view)
+      if (!editId && uid && tgl && jenis) {
+        const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
+        if (p) {
+          const isMasuk = jenis.toUpperCase().includes('MASUK');
+          const existing = isMasuk ? p._rawMasukLog : p._rawPulangLog;
+          if (existing && (existing.ID_Log || existing.id_log)) {
+            editId = existing.ID_Log || existing.id_log;
+            console.log(`[Smart Log] Detected existing record: ${editId}. Switching to EDIT mode.`);
+          }
+        }
+      }
+
+      const isEdit = !!editId;
 
       if (!uid || !tgl || !jamRaw) {
         showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'warning', '⚠️', 'Data Kurang', 'Pegawai, Tanggal, dan Jam wajib diisi.');
@@ -12167,7 +12237,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const path = isEdit ? P.logEdit : P.logAdd;
         
         // Cari data p untuk nama & nip
-        const pData = (userListOrder || []).find(u => String(u.id) === String(uid)) || {};
+        const pData = (window.userListOrder || []).find(u => String(u.id) === String(uid)) || {};
 
         const res = await apiFetch(path, {
           method: 'POST',

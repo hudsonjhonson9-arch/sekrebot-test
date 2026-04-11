@@ -7703,6 +7703,15 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Extract face descriptor ──
     async function getFaceDescriptor(input) {
+      // Tunggu hingga AI tidak sibuk (max 3 detik)
+      let waitStart = Date.now();
+      while (_isDetecting && (Date.now() - waitStart < 3000)) {
+        await new Promise(r => setTimeout(r, 50));
+      }
+
+      const prevDetectState = _isDetecting;
+      _isDetecting = true; // Kunci AI untuk ekstraksi
+
       try {
         if (window._aiEngine === 'human' && HumanInstance) {
           const res = await HumanInstance.detect(input);
@@ -7716,6 +7725,8 @@ File di Google Drive juga akan dihapus.`)) return;
         }
       } catch (e) {
         console.warn('getFaceDescriptor error:', e);
+      } finally {
+        _isDetecting = prevDetectState; // Kembalikan state awal
       }
       return null;
     }
@@ -8455,12 +8466,23 @@ File di Google Drive juga akan dihapus.`)) return;
 
       const loop = async () => {
         if (!_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-        if (_isDetecting) return; // Cegah tumpukan proses
+        if (_isDetecting) {
+          _detectLoop = requestAnimationFrame(loop);
+          return;
+        }
+
+        // Pastikan dimensi video valid (Mencegah deteksi pada frame kosong/hitam di awal loading)
+        if (vid.videoWidth === 0 || vid.videoHeight === 0) {
+          _detectLoop = requestAnimationFrame(loop);
+          return;
+        }
+
         _isDetecting = true;
 
         try {
           let detection = null;
           if (window._aiEngine === 'human' && HumanInstance) {
+            // Gunakan konfigurasi deteksi yang lebih ringan khusus untuk loop liveness
             const res = await HumanInstance.detect(vid);
             if (res.face && res.face.length > 0) {
               const f = res.face[0];

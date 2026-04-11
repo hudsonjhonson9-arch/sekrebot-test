@@ -7855,7 +7855,7 @@ File di Google Drive juga akan dihapus.`)) return;
       return Math.sqrt(sum);
     }
 
-    async function matchFace(capturedDataUrl) {
+    async function matchFace(capturedDataUrl, preDescriptor = null) {
       const ref = getFaceRef();
       if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
@@ -7865,31 +7865,54 @@ File di Google Drive juga akan dihapus.`)) return;
         try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
       }
 
-      const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
-      const capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
+      let capturedDescArr = preDescriptor;
+      if (!capturedDescArr && capturedDataUrl) {
+         const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
+         capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
+      }
 
       if (refDesc && capturedDescArr) {
-        if (refDesc.length !== capturedDescArr.length) {
-          return {
-            score: 0,
-            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`,
-            cls: 'face-match-warn',
-            capturedDescriptor: capturedDescArr,
-            needsUpdate: true
-          };
+        const refDim = refDesc.length;
+        const capDim = capturedDescArr.length;
+
+        // Engine-aware matching logic
+        const engine = window._aiEngine || 'faceapi';
+        
+        if (engine === 'human' && HumanInstance && refDim >= 512 && capDim >= 512) {
+           // Use Human Similarity
+           const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
+           const score = Math.round(sim * 100);
+           const threshold = 0.6; // Human threshold
+
+           let label, cls;
+           if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+           else if (sim >= threshold - 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+           else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
+
+           return { score, label, cls, similarity: sim, capturedDescriptor: capturedDescArr };
+        } else {
+           // Use Face-API Euclidean Distance (Fallback if mismatch or faceapi)
+           if (refDim !== capDim) {
+             return {
+               score: 0,
+               label: `⚠️ Mismatch (${refDim} vs ${capDim})`,
+               cls: 'face-match-warn',
+               capturedDescriptor: capturedDescArr,
+               needsUpdate: true
+             };
+           }
+
+           const dist = euclideanDistance(refDesc, capturedDescArr);
+           const threshold = 0.55;
+           const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+
+           let label, cls;
+           if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+           else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+           else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
+
+           return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
         }
-        const dist = euclideanDistance(refDesc, capturedDescArr);
-        // Sync with reference threshold: 0.55
-        const threshold = 0.55;
-        // Sync with reference score calculation (divisor 0.75)
-        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-
-        let label, cls;
-        if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-        else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
-        else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-
-        return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
       return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
@@ -8632,12 +8655,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // Jika Absen Personal (bukan Daftar Wajah Admin), tampilkan persentase kecocokan
       if (!_absenCallbackAfterCam?.isRegister) {
-        const ref = getFaceRef();
-        if (ref && descriptor) {
-          const dist = euclideanDistance(ref.descriptor, descriptor);
-          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-          if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
-          else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+        if (descriptor) {
+          const mRes = await matchFace(null, descriptor);
+          match = { label: mRes.label, cls: (mRes.cls === 'face-match-ok' ? 'cpb-ok' : 'cpb-warn') };
         }
       } else {
         // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi

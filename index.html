@@ -12151,9 +12151,12 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ LOG MANAGEMENT (ADMIN) ════ */
-    function openLogEditor(uid = '', date = '', log = null) {
+    async function openLogEditor(uid = '', date = '', log = null) {
       const modal = $('logModal');
       if (!modal) return;
+      
+      // Load pegawai list for dropdown if first time
+      await loadLogPegawaiList();
       
       // Reset form
       $('editLogId').value = log ? (log.ID_Log || log.id_log || '') : '';
@@ -12173,9 +12176,6 @@ File di Google Drive juga akan dihapus.`)) return;
       }
       
       modal.style.display = 'flex';
-      
-      // Load pegawai list for dropdown if first time
-      loadLogPegawaiList();
     }
 
     function closeLogEditor() {

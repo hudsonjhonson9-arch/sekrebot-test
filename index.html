@@ -7714,8 +7714,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
       try {
         if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await HumanInstance.detect(input);
-          return (res.face && res.face.length > 0) ? res.face[0].embedding : null;
+          const res = await _detectWithTimeout(input, 8000); // Max 8 detik untuk ekstraksi identitas
+          return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
         } else if (window.faceapi) {
           const detection = await window.faceapi
             .detectSingleFace(input, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
@@ -7725,6 +7725,9 @@ File di Google Drive juga akan dihapus.`)) return;
         }
       } catch (e) {
         console.warn('getFaceDescriptor error:', e);
+        if (e.message === 'AI_TIMEOUT') {
+          setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', 'Coba ulangi scan atau ganti pencahayaan');
+        }
       } finally {
         _isDetecting = prevDetectState; // Kembalikan state awal
       }
@@ -8015,6 +8018,25 @@ File di Google Drive juga akan dihapus.`)) return;
     let _humanLoaded = false;
     let HumanInstance = null;
     let _isDetecting = false; // Flag Pengaman Loop Deteksi
+    let _aiProcessing = false; // Flag Pengaman Ekstraksi
+
+    // Fungsi Pengaman untuk Reset Total State AI jika terjadi Stuck
+    function _forceResetAiState() {
+      _isDetecting = false;
+      _aiProcessing = false;
+      _autoCaptured = false;
+      _captureData = null;
+      console.log('[AI] Global state reset performed.');
+    }
+
+    // Wrapper Timeout untuk menghindari AI Hang selamanya
+    async function _detectWithTimeout(source, timeoutMs = 6000) {
+      if (!HumanInstance) return null;
+      return Promise.race([
+        HumanInstance.detect(source),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT')), timeoutMs))
+      ]);
+    }
 
     function _refreshAiBadge() {
       const b = $('aiEngineBadge');
@@ -8210,12 +8232,9 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Buka overlay kamera ── */
     async function openCamOverlay(onDone) {
       const isMeja = onDone === 'meja';
+      _forceResetAiState(); // Reset total sebelum mulai
 
       _absenCallbackAfterCam = onDone;
-      _captureData = null;
-      _autoCaptured = false;
-      _isDetecting = false; // Reset flag saat modal dibuka ulang
-      _livenessState = { faceOk: false };
       window._isMejaMode = isMeja;
 
       $('camOverlay').classList.remove('hidden');
@@ -8441,7 +8460,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function stopDetectLoop() {
-      _isDetecting = false; // Reset flag pengaman
+      _forceResetAiState(); // Pastikan semua flag mati
       if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
       if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer = null; }
     }
@@ -8483,8 +8502,8 @@ File di Google Drive juga akan dihapus.`)) return;
           let detection = null;
           if (window._aiEngine === 'human' && HumanInstance) {
             // Gunakan konfigurasi deteksi yang lebih ringan khusus untuk loop liveness
-            const res = await HumanInstance.detect(vid);
-            if (res.face && res.face.length > 0) {
+            const res = await _detectWithTimeout(vid, 5000); // Max 5 detik untuk loop
+            if (res && res.face && res.face.length > 0) {
               const f = res.face[0];
               const liveScore = f.live || 0;
               const realScore = f.real || 0;
@@ -8590,17 +8609,19 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-      if (_captureData) return;
-      _captureData = true; // Kunci agar tidak klik 2x
-      stopDetectLoop();
-
-      // Ubah tombol jadi loading
+      if (_aiProcessing) return;
+      _aiProcessing = true; // Kunci proses ekstraksi
+      
+      // Update UI Segera
+      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
       const btnCap = $('btnCapture');
       if (btnCap) {
         btnCap.disabled = true;
         btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
       }
-      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
+
+      stopDetectLoop();
+      _aiProcessing = true; // Pastikan tetap terkunci setelah stopDetectLoop
 
       // Bekukan video & Ambil gambar
       const vid = $('camVideo');

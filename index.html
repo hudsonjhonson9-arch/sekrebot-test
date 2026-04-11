@@ -7882,7 +7882,7 @@ File di Google Drive juga akan dihapus.`)) return;
            // Use Human Similarity
            const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
            const score = Math.round(sim * 100);
-           const threshold = 0.6; // Human threshold
+           const threshold = 0.55; // Human threshold (Optimized for tolerance)
 
            let label, cls;
            if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
@@ -8203,11 +8203,14 @@ File di Google Drive juga akan dihapus.`)) return;
       _absenCallbackAfterCam = onDone;
       _captureData = null;
       _autoCaptured = false;
+      _isDetecting = false; // Reset flag saat modal dibuka ulang
       _livenessState = { faceOk: false };
       window._isMejaMode = isMeja;
 
       $('camOverlay').classList.remove('hidden');
       $('modelLoading').style.display = 'block';
+      if ($('mlTitle')) $('mlTitle').textContent = 'Memuat Model AI Deteksi Wajah'; // Reset Judul Loading
+      if ($('mlHint')) $('mlHint').textContent = 'Harap tunggu sebentar...';
       $('camVideoWrap').style.display = 'none';
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';
@@ -8427,6 +8430,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function stopDetectLoop() {
+      _isDetecting = false; // Reset flag pengaman
       if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
       if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer = null; }
     }
@@ -8623,7 +8627,7 @@ File di Google Drive juga akan dihapus.`)) return;
               }
             }
             // Threshold for Human Desktop Mode (0.6 is good for mobile, 0.55 for desktop/tablets)
-            const deskThreshold = 0.58;
+            const deskThreshold = 0.55;
             if (maxSim < deskThreshold) bestMatch.label = 'unknown';
           } else {
             // Face-API Standard Matcher

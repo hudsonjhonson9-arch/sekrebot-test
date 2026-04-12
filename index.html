@@ -10491,6 +10491,7 @@ File di Google Drive juga akan dihapus.`)) return;
           id: String(getField(r, 'id', 'ID') || '').trim(),
           nama: getField(r, 'nama', 'Nama', 'username', 'Username') || '',
           jabatan: getField(r, 'jabatan', 'Jabatan') || '',
+          pangkat: getField(r, 'pangkat', 'Pangkat') || '',
           nip: getField(r, 'nip', 'NIP') || '',
           urutan: idx
         }));
@@ -14635,7 +14636,7 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.autoTable({
           startY: 60,
           margin: { top: 20, left: 10, right: 10, bottom: 20 },
-          head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          head: [['No', 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
           body: tableBody,
           theme: 'grid',
           headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },

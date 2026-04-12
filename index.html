@@ -7,8 +7,8 @@
   <title>Absensi BAPPERIDA</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
   <!-- face-api.js loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15177,16 +15177,20 @@ File di Google Drive juga akan dihapus.`)) return;
           loadJamAbsen()
         ]);
 
-        // Secondary: Other data
+        // Secondary: Load Profile and History to show on dashboard
         await Promise.allSettled([
-          fetchJamPeriode(),
           loadUserProfile(),
           loadTodayHistory(),
-          loadFaceFromServer(),
-          loadBidangList()
+          fetchJamPeriode()
         ]);
 
         updateClock();
+
+        // Tertiary/Lazy: Background tasks that don't block the main UI
+        setTimeout(() => {
+          loadFaceFromServer();
+          loadBidangList();
+        }, 1000);
 
         const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
         switchTab(lastTab);
@@ -15202,8 +15206,8 @@ File di Google Drive juga akan dihapus.`)) return;
         // Manage Logout Button Visibility
         const logoutSec = $('logoutSection');
         if (logoutSec) {
-          const isFromTg = new URLSearchParams(window.location.search).has('id');
-          logoutSec.style.display = !isFromTg ? 'block' : 'none';
+          const isTg = !!(window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.search).has('id'));
+          logoutSec.style.display = !isTg ? 'block' : 'none';
         }
 
       } catch (err) {

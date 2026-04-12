@@ -5038,7 +5038,7 @@
     <div class="auth-card">
       <div class="auth-title">Selamat Datang</div>
       <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
-      
+
       <div class="auth-tabs">
         <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
         <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
@@ -5055,7 +5055,18 @@
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
         <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
-        
+
+        <select id="regBidang" class="form-input-auth">
+          <option value="">— Pilih Bidang —</option>
+          <option value="Sekretariat">Sekretariat</option>
+          <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+          <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+          <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
+          </option>
+          <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+          <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+        </select>
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
           <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
             <option value="">— Jenis —</option>
@@ -5805,6 +5816,14 @@
         </div>
       </div>
       <div class="footer" style="margin-top:12px">Data dari Supabase via n8n</div>
+
+      <!-- LOGOUT BUTTON (Only for NIP Login) -->
+      <div id="logoutSection" style="margin-top:20px; display:none; padding: 0 10px 20px;">
+        <button onclick="handleLogout()"
+          style="width:100%; padding:14px; background:rgba(255, 60, 60, 0.1); border:1px solid rgba(255, 60, 60, 0.3); border-radius:12px; color:#ff6060; font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition: all 0.3s;">
+          <span style="font-size: 16px; margin-right: 6px;">🚪</span> Keluar dari Akun ini
+        </button>
+      </div>
     </div>
 
     <!-- ══ TAB REKAP ══ -->
@@ -5954,14 +5973,6 @@
         </div>
       </div>
       <div class="footer" style="margin-top:12px">Data rekap dihitung langsung dari log absen</div>
-
-      <!-- LOGOUT BUTTON (Only for NIP Login) -->
-      <div id="logoutSection" style="margin-top:20px; display:none; padding: 0 10px 20px;">
-        <button onclick="handleLogout()" 
-                style="width:100%; padding:14px; background:rgba(255, 60, 60, 0.1); border:1px solid rgba(255, 60, 60, 0.3); border-radius:12px; color:#ff6060; font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition: all 0.3s;">
-          <span style="font-size: 16px; margin-right: 6px;">🚪</span> Keluar dari Akun ini
-        </button>
-      </div>
     </div>
 
     <!-- ══ TAB ADMIN (conditional) ══ -->
@@ -6142,7 +6153,8 @@
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">Tipe Pegawai</label><select
-                    id="inPegawaiTipe" class="form-input" onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
+                    id="inPegawaiTipe" class="form-input"
+                    onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
                     <option value="PNS">Pegawai Negeri Sipil (PNS)</option>
                     <option value="PPPK">PPPK</option>
                     <option value="NONASN">Non ASN / Lainnya</option>
@@ -6243,6 +6255,8 @@
                 <option value="admin">Admin</option>
                 <option value="superadmin">Super Admin</option>
               </select></div>
+            <input id="regJabatan" class="form-input-auth" type="text" placeholder="Jabatan">
+
             <button class="btn-admin" onclick="tambahAdmin()" style="margin:0">Tambah Hak Akses</button>
           </div>
         </div>
@@ -6671,10 +6685,24 @@
       signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
       mejaAbsen: isTest ? '/webhook-test/meja-absen' : '/webhook/meja-absen',
       faceGetAll: isTest ? '/webhook-test/face-get-all' : '/webhook/face-get-all',
+      bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
     };
 
     const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
     async function apiFetch(path, opts = {}) {
+      // Auto-append instansi_id scoping
+      const urlParams = new URLSearchParams(window.location.search);
+      let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
+      if (!inst) {
+          try {
+              const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+              inst = u.instansi_id || 'pusat';
+          } catch(e) { inst = 'pusat'; }
+      }
+      if (inst && !path.includes('instansi_id=')) {
+        path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
+      }
+
       for (const base of [SERVER_1, SERVER_2]) {
         try {
           console.log(`[Fetch] Attempting: ${base}${path}`);
@@ -6782,7 +6810,7 @@
     const H_ID = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const H_DISP = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const LOK_DEF = { senin: ['Kantor Bupati', 'Kantor BAPPERIDA'], rabu: ['Kantor BPBD', 'Kantor BAPPERIDA'], default: ['Kantor BAPPERIDA'] };
-    
+
     // ════ PANGKAT OPTIONS ════
     const PANGKAT_DATA = {
       PNS: [
@@ -6797,6 +6825,29 @@
         "Golongan I", "Golongan II", "Golongan III", "Golongan IV", "Golongan V", "Golongan VI", "Golongan VII", "Golongan VIII", "Golongan IX", "Golongan X", "Golongan XI", "Golongan XII", "Golongan XIII", "Golongan XIV", "Golongan XV", "Golongan XVI", "Golongan XVII"
       ]
     };
+
+    async function loadBidangList() {
+      const regSelect = $('regBidang');
+      const rekapSelect = $('rekapBidang');
+      if (!regSelect && !rekapSelect) return;
+
+      try {
+        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
+        const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
+        const d = await res.json();
+        if (d.ok && Array.isArray(d.data)) {
+          const options = d.data.map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`).join('');
+          if (regSelect) regSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
+          if (rekapSelect) {
+            const currentVal = rekapSelect.value;
+            rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>` + options;
+            rekapSelect.value = currentVal;
+          }
+        }
+      } catch (e) {
+        console.error('[Bidang] Load error:', e);
+      }
+    }
 
     function _updatePangkatDropdown(targetId, category) {
       const select = $(targetId);
@@ -12430,7 +12481,7 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiBidang').value = p.bidang || p.Bidang || '';
         $('inPegawaiPangkat').value = p.pangkat || p.Pangkat || '';
-        
+
         // Auto select Tipe based on string content if not explicit
         const pkt = (p.pangkat || '').toUpperCase();
         if (pkt.includes('GOLONGAN')) $('inPegawaiTipe').value = 'PPPK';
@@ -14811,7 +14862,7 @@ File di Google Drive juga akan dihapus.`)) return;
       if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
         console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
         setTimeout(() => {
-          _forceResetAiState(true); 
+          _forceResetAiState(true);
           _autoCaptured = false;
           startDetectLoop();
           setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
@@ -14995,7 +15046,7 @@ File di Google Drive juga akan dihapus.`)) return;
     async function handleAuthAction(mode) {
       const btn = mode === 'login' ? $('btnLogin') : $('btnRegister');
       const originalText = btn.innerHTML;
-      
+
       btn.disabled = true;
       btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
 
@@ -15003,10 +15054,10 @@ File di Google Drive juga akan dihapus.`)) return;
         if (mode === 'login') {
           const nip = $('loginNip').value.trim();
           if (!nip) throw new Error('Silakan masukkan NIP');
-          
+
           const res = await apiFetch(`${P.userList}?nip=${nip}`, { method: 'GET' });
           const d = await res.json();
-          
+
           // API n8n versi single mengembalikan { ok: true, single: true, ... }
           // API n8n versi list mengembalikan { ok: true, data: [...] }
           let user = null;
@@ -15016,12 +15067,12 @@ File di Google Drive juga akan dihapus.`)) return;
           }
 
           if (!user || user.error || !user.id) throw new Error('NIP tidak terdaftar. Silakan daftar baru.');
-          
+
           // Verifikasi akhir untuk memastikan NIP benar
           if (String(user.nip || '').trim() !== nip) {
-             throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
+            throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
           }
-          
+
           // Login Success
           MY_ID = user.telegram_id || user.id;
           localStorage.setItem('tg_user_id_v5', String(MY_ID));
@@ -15033,9 +15084,10 @@ File di Google Drive juga akan dihapus.`)) return;
             nama: $('regNama').value.trim(),
             nip: $('regNip').value.trim(),
             jabatan: $('regJabatan').value.trim(),
+            bidang: $('regBidang').value,
             pangkat: $('regPangkat').value,
             telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: 'pusat'
+            instansi_id: new URLSearchParams(window.location.search).get('instansi') || 'pusat'
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
@@ -15057,6 +15109,42 @@ File di Google Drive juga akan dihapus.`)) return;
         btn.disabled = false;
         btn.innerHTML = originalText;
       }
+    }
+
+    async function loadBidangList() {
+      const regSelect = $('regBidang');
+      if (!regSelect) return;
+      try {
+        const instId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
+        const res = await apiFetch(`${P.bidangList}?instansi_id=${instId}`, { method: 'GET' });
+        const d = await res.json();
+        const list = d.data || d || [];
+        if (Array.isArray(list) && list.length > 0) {
+          regSelect.innerHTML = '<option value="">— Pilih Bidang —</option>';
+          list.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.nama_bidang;
+            opt.textContent = b.nama_bidang;
+            regSelect.appendChild(opt);
+          });
+        }
+      } catch (e) {
+        console.warn('[Init] Gagal mengambil daftar bidang dari server.');
+      }
+    }
+
+    // Global Logout Handler
+    async function handleLogout() {
+      if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
+      console.log('[Auth] Logging out user...');
+      localStorage.removeItem('tg_user_id_v5');
+      localStorage.removeItem('tg_user_obj_v5');
+      
+      // Clear all active caches to prevent data leakage
+      localStorage.removeItem('absen_last_tab');
+      
+      // Force return to login screen
+      location.href = location.pathname; 
     }
 
     function _checkIdentityOnLoad() {
@@ -15088,7 +15176,8 @@ File di Google Drive juga akan dihapus.`)) return;
           fetchJamPeriode(),
           loadUserProfile(),
           loadTodayHistory(),
-          loadFaceFromServer()
+          loadFaceFromServer(),
+          loadBidangList()
         ]);
 
         updateClock();

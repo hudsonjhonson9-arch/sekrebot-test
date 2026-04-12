@@ -695,6 +695,12 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
+    .form-input-auth option {
+      background: #1a2a4a;
+      color: #ffffff;
+      padding: 10px;
+    }
+
     .btn-auth {
       width: 100%;
       background: var(--gold);
@@ -5948,6 +5954,14 @@
         </div>
       </div>
       <div class="footer" style="margin-top:12px">Data rekap dihitung langsung dari log absen</div>
+
+      <!-- LOGOUT BUTTON (Only for NIP Login) -->
+      <div id="logoutSection" style="margin-top:20px; display:none; padding: 0 10px 20px;">
+        <button onclick="handleLogout()" 
+                style="width:100%; padding:14px; background:rgba(255, 60, 60, 0.1); border:1px solid rgba(255, 60, 60, 0.3); border-radius:12px; color:#ff6060; font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition: all 0.3s;">
+          <span style="font-size: 16px; margin-right: 6px;">🚪</span> Keluar dari Akun ini
+        </button>
+      </div>
     </div>
 
     <!-- ══ TAB ADMIN (conditional) ══ -->
@@ -14557,7 +14571,7 @@ File di Google Drive juga akan dihapus.`)) return;
           return [
             i + 1,
             `${p.nama}\nNIP. ${p.nip || '—'}`,
-            p.jabatan || '—',
+            (p.jabatan || '—') + (p.pangkat ? `\n(${p.pangkat})` : ''),
             jamM,
             '',
             jamP,
@@ -15089,6 +15103,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // Check face registration requirement
         _cekWajibFace();
+
+        // Manage Logout Button Visibility
+        const logoutSec = $('logoutSection');
+        if (logoutSec) {
+          const isFromTg = new URLSearchParams(window.location.search).has('id');
+          logoutSec.style.display = !isFromTg ? 'block' : 'none';
+        }
 
       } catch (err) {
         console.error('[Init] Error during startup:', err);

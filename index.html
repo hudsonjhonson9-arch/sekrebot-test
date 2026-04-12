@@ -12932,9 +12932,8 @@ File di Google Drive juga akan dihapus.`)) return;
         // Sembunyikan tombol tab admin jika ada
         const btn = document.querySelector('.tab[data-tab="admin"]');
         if (btn) btn.style.display = 'none';
-        // Jika sedang di tab admin, kembali ke absen
-        const allTabs = getAllTabs();
-        if (!allTabs.includes('admin')) switchTab('absen');
+        // Jika sedang di tab admin (yang sekarang terlarang), kembali ke absen
+        if (localStorage.getItem('absen_last_tab') === 'admin') switchTab('absen');
       } else {
         panelAdmin.style.display = '';
         // Buat tombol tab admin jika belum ada, lalu tampilkan

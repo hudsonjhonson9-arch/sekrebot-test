@@ -14577,7 +14577,12 @@ File di Google Drive juga akan dihapus.`)) return;
       // Jika orang yang sama di-scan lagi dalam waktu kurang dari 20 detik, abaikan.
       if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
         console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
-        setTimeout(() => { _autoCaptured = false; }, 2000); // FIX: Memastikan loop deteksi bisa lanjut mengecek orang selanjutnya
+        setTimeout(() => {
+          _forceResetAiState(true); 
+          _autoCaptured = false;
+          startDetectLoop();
+          setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+        }, 1500);
         return;
       }
 
@@ -14611,9 +14616,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
         setTimeout(() => {
           overlay.style.display = 'none';
+          _forceResetAiState(true);
           window._mejaProcessing = false;
-          _autoCaptured = false;
-          _captureData = null;
 
           const vid = $('camVideo');
           if (vid && vid.paused) vid.play().catch(() => { });
@@ -14690,23 +14694,21 @@ File di Google Drive juga akan dihapus.`)) return;
         $('moDetail').textContent = 'Gagal menghubungi server absen';
         _mejaCnt.gagal++;
         _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
+      } finally {
+        _updateMejaCnt();
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          _forceResetAiState(true);
+          window._mejaProcessing = false;
+          setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+
+          const vid = $('camVideo');
+          if (vid && vid.paused) {
+            vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
+          }
+          startDetectLoop();
+        }, 3500);
       }
-
-      _updateMejaCnt();
-
-      setTimeout(() => {
-        overlay.style.display = 'none';
-        window._mejaProcessing = false;
-        _autoCaptured = false;
-        _captureData = null;
-        setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
-
-        const vid = $('camVideo');
-        if (vid && vid.paused) {
-          vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
-        }
-        startDetectLoop();
-      }, 3500);
     }
 
     // ── Override existing openSignaturePad for Admin Support ──

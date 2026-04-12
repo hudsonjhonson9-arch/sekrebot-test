@@ -14756,7 +14756,7 @@ File di Google Drive juga akan dihapus.`)) return;
         await apiFetch(P.kirimRekap, {
           method: 'POST',
           body: JSON.stringify({
-            chat_id: String(MY_ID || REKAP_CHAT_ID || ''),
+            chat_id: String(MY_ID || ''),
             pdf_base64: pdfBase64,
             namaFilePdf: fileName,
             tanggal_label: tanggalLabel,

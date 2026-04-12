@@ -599,6 +599,132 @@
       margin-top: 1px
     }
 
+    /* ══ AUTH MODAL (LOGIN & DAFTAR) ══ */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(5, 12, 30, 0.85);
+      backdrop-filter: blur(25px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 360px;
+      background: rgba(17, 34, 64, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 28px 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .auth-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--white);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .auth-sub {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+
+    .auth-tab.active {
+      background: var(--gold);
+      color: var(--navy);
+    }
+
+    .form-input-auth {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 13px;
+      margin-bottom: 12px;
+      transition: all 0.3s;
+    }
+
+    .form-input-auth:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-auth {
+      width: 100%;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+
+    .btn-auth:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .auth-footer {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 20px;
+    }
+
     /* ══ KAMERA / FACE SCAN MODAL ══ */
     .cam-overlay {
       position: fixed;
@@ -4902,6 +5028,47 @@
     }
   </style>
   <div id="offlineBanner" class="offline-banner">⚠️ ANDA SEDANG OFFLINE (MODE OFFLINE)</div>
+  <div id="authOverlay" class="auth-overlay" style="display:none">
+    <div class="auth-card">
+      <div class="auth-title">Selamat Datang</div>
+      <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
+      
+      <div class="auth-tabs">
+        <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
+        <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="formLogin">
+        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
+        <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
+      </div>
+
+      <!-- Register Form -->
+      <div id="formRegister" style="display:none">
+        <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
+        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
+        <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
+          <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
+            <option value="">— Jenis —</option>
+            <option value="PNS">PNS</option>
+            <option value="PPPK">PPPK</option>
+          </select>
+          <select id="regPangkat" class="form-input-auth">
+            <option value="">— Pangkat —</option>
+          </select>
+        </div>
+        <button id="btnRegister" class="btn-auth" onclick="handleAuthAction('register')">Daftar Akun 📋</button>
+      </div>
+
+      <div class="auth-footer">
+        Sistem Absensi Multi-Tenant V5.2<br>© 2026 Sekretariat Daerah
+      </div>
+    </div>
+  </div>
+
   <div id="appSplash">
     <div class="splash-logo">🏛️</div>
     <div class="splash-title">BAPPERIDA Sumba Barat</div>
@@ -5959,6 +6126,18 @@
                 <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input
                     id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
               </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+                <div class="form-group"><label class="form-label" style="font-size:9px">Tipe Pegawai</label><select
+                    id="inPegawaiTipe" class="form-input" onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
+                    <option value="PNS">Pegawai Negeri Sipil (PNS)</option>
+                    <option value="PPPK">PPPK</option>
+                    <option value="NONASN">Non ASN / Lainnya</option>
+                  </select></div>
+                <div class="form-group"><label class="form-label" style="font-size:9px">Pangkat/Golongan</label><select
+                    id="inPegawaiPangkat" class="form-input">
+                    <option value="">— Pilih —</option>
+                  </select></div>
+              </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select
                     id="inPegawaiRole" class="form-input">
@@ -6589,6 +6768,33 @@
     const H_ID = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const H_DISP = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const LOK_DEF = { senin: ['Kantor Bupati', 'Kantor BAPPERIDA'], rabu: ['Kantor BPBD', 'Kantor BAPPERIDA'], default: ['Kantor BAPPERIDA'] };
+    
+    // ════ PANGKAT OPTIONS ════
+    const PANGKAT_DATA = {
+      PNS: [
+        "Juru Muda (I/a)", "Juru Muda Tk.I (I/b)", "Juru (I/c)", "Juru Tk.I (I/d)",
+        "Pengatur Muda (II/a)", "Pengatur Muda Tk.I (II/b)", "Pengatur (II/c)", "Pengatur Tk.I (II/d)",
+        "Penata Muda (III/a)", "Penata Muda Tk.I (III/b)", "Penata (III/c)", "Penata Tk.I (III/d)",
+        "Pembina (IV/a)", "Pembina Tk.I (IV/b)", "Pembina Utama Muda (IV/c)", "Pembina Utama Madya (IV/d)", "Pembina Utama (IV/e)"
+      ],
+      PPPK: [
+        "Ahli Pertama", "Ahli Muda", "Ahli Madya", "Ahli Utama",
+        "Terampil", "Mahir", "Penyelia",
+        "Golongan I", "Golongan II", "Golongan III", "Golongan IV", "Golongan V", "Golongan VI", "Golongan VII", "Golongan VIII", "Golongan IX", "Golongan X", "Golongan XI", "Golongan XII", "Golongan XIII", "Golongan XIV", "Golongan XV", "Golongan XVI", "Golongan XVII"
+      ]
+    };
+
+    function _updatePangkatDropdown(targetId, category) {
+      const select = $(targetId);
+      if (!select) return;
+      let options = '<option value="">— Pilih —</option>';
+      if (PANGKAT_DATA[category]) {
+        options += PANGKAT_DATA[category].map(p => `<option value="${p}">${p}</option>`).join('');
+      } else {
+        options += '<option value="Lainnya">Lainnya / Staff</option>';
+      }
+      select.innerHTML = options;
+    }
 
     const p2 = n => String(n).padStart(2, '0');
     const nowWITA = () => new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
@@ -8636,10 +8842,12 @@ File di Google Drive juga akan dihapus.`)) return;
       loop();
     }
 
+    let _isSubmitting = false; // ANTI-SPAM LOCK
+
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-      if (_aiProcessing) {
-        console.warn('[AI] Capture ignored: Already processing.');
+      if (_aiProcessing || _isSubmitting) {
+        console.warn('[AI] Capture ignored: Already processing or submitting.');
         return;
       }
       _aiProcessing = true;
@@ -9202,9 +9410,9 @@ File di Google Drive juga akan dihapus.`)) return;
               showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
               setBtnL('btnAbsen', false, '🔄 Coba Lagi');
             }
-          } catch {
-            showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Semua Server Offline', 'Pastikan n8n & ngrok berjalan.');
             setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+          } finally {
+            _isSubmitting = false;
           }
         },
         (err) => {
@@ -12207,6 +12415,16 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
         $('inPegawaiBidang').value = p.bidang || p.Bidang || '';
+        $('inPegawaiPangkat').value = p.pangkat || p.Pangkat || '';
+        
+        // Auto select Tipe based on string content if not explicit
+        const pkt = (p.pangkat || '').toUpperCase();
+        if (pkt.includes('GOLONGAN')) $('inPegawaiTipe').value = 'PPPK';
+        else if (pkt.includes('/') || pkt.includes('JURU') || pkt.includes('PENGATUR') || pkt.includes('PENATA') || pkt.includes('PEMBINA')) $('inPegawaiTipe').value = 'PNS';
+        else $('inPegawaiTipe').value = 'NONASN';
+        _updatePangkatDropdown('inPegawaiPangkat', $('inPegawaiTipe').value);
+        $('inPegawaiPangkat').value = p.pangkat || '';
+
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
         $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
 
@@ -12223,6 +12441,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
+      const pangkat = $('inPegawaiPangkat').value;
       const bidang = $('inPegawaiBidang').value;
       const role = $('inPegawaiRole').value;
       const status = $('inPegawaiStatus').value;
@@ -12235,7 +12454,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
-        const mainPayload = { id, nama, no, nip, jabatan, bidang, role, status };
+        const mainPayload = { id, nama, no, nip, jabatan, pangkat, bidang, role, status, instansi_id: 'pusat' };
 
         const res = await apiFetch(path, {
           method: 'POST',
@@ -14639,11 +14858,13 @@ File di Google Drive juga akan dihapus.`)) return;
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 
+      _isSubmitting = true; // LOCK SUBMISSION
       const n = nowWITA();
       const payload = {
         telegram_id: telegramId,
         nama: user.nama,
         nip: user.nip,
+        pangkat: user.pangkat || '',
         admin_id: MY_ID,
         jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`,
         tanggal_iso: fmtD(n),
@@ -14695,6 +14916,7 @@ File di Google Drive juga akan dihapus.`)) return;
         _mejaCnt.gagal++;
         _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
       } finally {
+        _isSubmitting = false; // UNLOCK SUBMISSION
         _updateMejaCnt();
         setTimeout(() => {
           overlay.style.display = 'none';
@@ -14741,9 +14963,91 @@ File di Google Drive juga akan dihapus.`)) return;
     // Auto-init Desktop Mode jika di layar laptop/PC
     setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (_) { } }, 1000);
 
-    // ── MAIN INITIALIZATION ──
+    // ── AUTH LOGIC (LOGIN & REGISTRATION) ──
+    function switchAuthTab(mode) {
+      if (mode === 'login') {
+        $('tabLogin').classList.add('active');
+        $('tabRegister').classList.remove('active');
+        $('formLogin').style.display = 'block';
+        $('formRegister').style.display = 'none';
+      } else {
+        $('tabLogin').classList.remove('active');
+        $('tabRegister').classList.add('active');
+        $('formLogin').style.display = 'none';
+        $('formRegister').style.display = 'block';
+      }
+    }
+
+    async function handleAuthAction(mode) {
+      const btn = mode === 'login' ? $('btnLogin') : $('btnRegister');
+      const originalText = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
+
+      try {
+        if (mode === 'login') {
+          const nip = $('loginNip').value.trim();
+          if (!nip) throw new Error('Silakan masukkan NIP');
+          
+          const res = await apiFetch(`${P.userList}?nip=${nip}`, { method: 'GET' });
+          const data = await res.json();
+          const user = Array.isArray(data) ? data[0] : (data.data ? data.data[0] : data);
+
+          if (!user || user.error) throw new Error('NIP tidak terdaftar. Silakan daftar baru.');
+          
+          // Login Success
+          MY_ID = user.telegram_id || user.id;
+          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          localStorage.setItem('tg_user_obj_v5', JSON.stringify(user));
+          location.reload(); // Refresh to init with new ID
+        } else {
+          // Register Mode
+          const payload = {
+            nama: $('regNama').value.trim(),
+            nip: $('regNip').value.trim(),
+            jabatan: $('regJabatan').value.trim(),
+            pangkat: $('regPangkat').value,
+            telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
+            instansi_id: 'pusat'
+          };
+
+          if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
+
+          const res = await apiFetch(P.userAdd || P.faceRegister, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          const d = await res.json();
+          if (!res.ok || d.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
+
+          MY_ID = payload.telegram_id;
+          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          location.reload();
+        }
+      } catch (err) {
+        alert('⚠️ ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    function _checkIdentityOnLoad() {
+      if (!MY_ID) {
+        $('authOverlay').style.display = 'flex';
+        const splash = $('appSplash');
+        if (splash) splash.remove(); // No need splash if no auth
+        return false;
+      }
+      return true;
+    }
+
     async function initApp() {
       try {
+        console.log('[Init] Checking identity...');
+        if (!_checkIdentityOnLoad()) return; // Stop if not logged in
+
         console.log('[Init] Starting application...');
         await idb.init();
 

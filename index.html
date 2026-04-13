@@ -8968,17 +8968,17 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (window._isMejaMode) {
           console.log('[AI] Phase 4: Matching against Employee Database...');
-          const refList = window._faceRefList || [];
-          let bestMatch = { id: 'unknown', distance: 0 };
+          let bestMatch = { id: 'unknown', similarity: 0 };
+          const candidates = _allFaceDescriptors || [];
 
-          for (const ref of refList) {
-            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
-            if (dist > bestMatch.distance && dist >= 0.55) {
-              bestMatch = { id: ref.telegram_id, distance: dist };
+          for (const cand of candidates) {
+            const sim = matchMejaCandidate(descriptor, cand.descriptor, cand.engine);
+            if (sim > bestMatch.similarity && sim >= 0.55) {
+              bestMatch = { id: cand.id, similarity: sim };
             }
           }
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.similarity.toFixed(4)})`);
+          _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.similarity);
         } else {
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
           if (_absenCallbackAfterCam) {

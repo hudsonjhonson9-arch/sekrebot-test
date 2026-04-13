@@ -8912,7 +8912,17 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     let _isSubmitting = false; // ANTI-SPAM LOCK
-
+    function matchMejaCandidate(captured, refDesc, engine) {
+      const refArr = Array.isArray(refDesc) ? refDesc : (typeof refDesc === 'string' ? JSON.parse(refDesc) : []);
+      const capArr = Array.isArray(captured) ? captured : [];
+      if (!refArr.length || !capArr.length || refArr.length !== capArr.length) return 0;
+      if (engine === 'human' && HumanInstance) {
+        return HumanInstance.match.similarity(refArr, capArr);
+      }
+      // Euclidean ke similarity untuk faceapi
+      const dist = euclideanDistance(refArr, capArr);
+      return Math.max(0, 1 - dist / 1.5);
+    }
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
       if (_aiProcessing || _isSubmitting) {

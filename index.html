@@ -14481,18 +14481,13 @@ File di Google Drive juga akan dihapus.`)) return;
             dim: dLen
           };
 
-          // Bridge for Human vs Face-API
-          if (window._aiEngine === 'human') {
-            return { id: tid, descriptor: desc };
-          } else {
-            // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
-            if (dLen === 128 && window.faceapi) {
-              return new window.faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-            } else {
-              // Fallback for non-128 descriptors in face-api mode
-              return { id: tid, descriptor: desc, skipFaceApi: true };
-            }
-          }
+          // Standardized format for matchMejaCandidate loop
+          return { 
+            id: tid, 
+            descriptor: desc, 
+            engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
+            dim: dLen
+          };
         });
 
         if (!_allFaceDescriptors.length) {

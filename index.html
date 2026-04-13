@@ -6696,8 +6696,8 @@
       if (!inst) {
           try {
               const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-              inst = u.instansi_id || 'pusat';
-          } catch(e) { inst = 'pusat'; }
+              inst = u.instansi_id || 'bapperida';
+          } catch(e) { inst = 'bapperida'; }
       }
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
@@ -6832,7 +6832,7 @@
       if (!regSelect && !rekapSelect) return;
 
       try {
-        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
+        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
         const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {
@@ -12521,7 +12521,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
-        const mainPayload = { id, nama, no, nip, jabatan, pangkat, bidang, role, status, instansi_id: 'pusat' };
+        const mainPayload = { id, nama, no, nip, jabatan, pangkat, bidang, role, status, instansi_id: 'bapperida' };
 
         const res = await apiFetch(path, {
           method: 'POST',
@@ -15098,7 +15098,7 @@ File di Google Drive juga akan dihapus.`)) return;
             bidang: $('regBidang').value,
             pangkat: $('regPangkat').value,
             telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: new URLSearchParams(window.location.search).get('instansi') || 'pusat'
+            instansi_id: new URLSearchParams(window.location.search).get('instansi') || 'bapperida'
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
@@ -15126,7 +15126,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const regSelect = $('regBidang');
       if (!regSelect) return;
       try {
-        const instId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
+        const instId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
         const res = await apiFetch(`${P.bidangList}?instansi_id=${instId}`, { method: 'GET' });
         const d = await res.json();
         const list = d.data || d || [];

@@ -7249,7 +7249,8 @@
               status: d.status || d.Status || 'AKTIF',
               role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
-              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
+              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null,
+              instansi_id: d.instansi_id || new URLSearchParams(window.location.search).get('instansi') || 'bapperida'
             };
             applyProfile();
             _profileLoading = false;
@@ -10118,7 +10119,7 @@ File di Google Drive juga akan dihapus.`)) return;
         // Reset cache jam agar selalu dapat data terbaru dari server
         _resetJamAbsenCache();
         const [res] = await Promise.all([
-          apiFetch(`${P.log}?user_id=${MY_ID || ''}`, { method: 'GET' }),
+          apiFetch(`${P.log}?user_id=${(typeof MY_ID !== 'undefined' && MY_ID !== null) ? MY_ID : ''}`, { method: 'GET' }),
           fetchJamPeriode(),
           loadJamAbsen(),        // reload jam global dari server (bukan cache)
           liburLoaded ? Promise.resolve() : fetchLiburForRekap()
@@ -10539,7 +10540,7 @@ File di Google Drive juga akan dihapus.`)) return;
           }
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
+          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&instansi_id=${userProfile?.instansi_id || 'bapperida'}`, { method: 'GET' });
           if (res.ok) {
             const json = await res.json();
             const d = Array.isArray(json) ? json[0] : json;
@@ -11679,7 +11680,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       try {
-        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
         showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'success', '📌', 'Lokasi Tersimpan!', `${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
         setBtnL('btnTambahLokasi', false, 'Simpan Lokasi ke Database');
@@ -12961,7 +12962,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const btn = $('btnSimpanJam');
       if (btn) { btn.disabled = true; $('btnJamText').textContent = '💾 Menyimpan...'; }
       try {
-        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;
@@ -14448,7 +14449,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 2. Load face descriptors dari server
       try {
-        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+        const urlInst = new URLSearchParams(window.location.search).get('instansi');
+        const currentInstansi = userProfile?.instansi_id || urlInst || 'bapperida';
+        const res = await apiFetch(`${P.faceGetAll}?instansi_id=${currentInstansi}`, { method: 'GET' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);

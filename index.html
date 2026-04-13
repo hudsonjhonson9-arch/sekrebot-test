@@ -6699,6 +6699,8 @@
               inst = u.instansi_id || 'bapperida';
           } catch(e) { inst = 'bapperida'; }
       }
+      // Force 'bapperida' if 'pusat' is detected
+      if (inst === 'pusat') inst = 'bapperida';
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
       }
@@ -6832,7 +6834,8 @@
       if (!regSelect && !rekapSelect) return;
 
       try {
-        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
+        let instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
+        if (instansiId === 'pusat') instansiId = 'bapperida';
         const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {

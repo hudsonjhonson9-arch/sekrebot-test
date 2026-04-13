@@ -6699,8 +6699,6 @@
               inst = u.instansi_id || 'bapperida';
           } catch(e) { inst = 'bapperida'; }
       }
-      // Force 'bapperida' if 'pusat' is detected
-      if (inst === 'pusat') inst = 'bapperida';
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
       }
@@ -6834,8 +6832,7 @@
       if (!regSelect && !rekapSelect) return;
 
       try {
-        let instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
-        if (instansiId === 'pusat') instansiId = 'bapperida';
+        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
         const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {
@@ -7252,8 +7249,7 @@
               status: d.status || d.Status || 'AKTIF',
               role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
-              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null,
-              instansi_id: d.instansi_id || new URLSearchParams(window.location.search).get('instansi') || 'bapperida'
+              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
             applyProfile();
             _profileLoading = false;
@@ -8912,17 +8908,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     let _isSubmitting = false; // ANTI-SPAM LOCK
-    function matchMejaCandidate(captured, refDesc, engine) {
-      const refArr = Array.isArray(refDesc) ? refDesc : (typeof refDesc === 'string' ? JSON.parse(refDesc) : []);
-      const capArr = Array.isArray(captured) ? captured : [];
-      if (!refArr.length || !capArr.length || refArr.length !== capArr.length) return 0;
-      if (engine === 'human' && HumanInstance) {
-        return HumanInstance.match.similarity(refArr, capArr);
-      }
-      // Euclidean ke similarity untuk faceapi
-      const dist = euclideanDistance(refArr, capArr);
-      return Math.max(0, 1 - dist / 1.5);
-    }
+
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
       if (_aiProcessing || _isSubmitting) {
@@ -8982,17 +8968,17 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (window._isMejaMode) {
           console.log('[AI] Phase 4: Matching against Employee Database...');
-          let bestMatch = { id: 'unknown', similarity: 0 };
-          const candidates = _allFaceDescriptors || [];
+          const refList = window._faceRefList || [];
+          let bestMatch = { id: 'unknown', distance: 0 };
 
-          for (const cand of candidates) {
-            const sim = matchMejaCandidate(descriptor, cand.descriptor, cand.engine);
-            if (sim > bestMatch.similarity && sim >= 0.55) {
-              bestMatch = { id: cand.id, similarity: sim };
+          for (const ref of refList) {
+            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
+            if (dist > bestMatch.distance && dist >= 0.55) {
+              bestMatch = { id: ref.telegram_id, distance: dist };
             }
           }
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.similarity.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.similarity);
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
+          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
         } else {
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
           if (_absenCallbackAfterCam) {
@@ -10132,7 +10118,7 @@ File di Google Drive juga akan dihapus.`)) return;
         // Reset cache jam agar selalu dapat data terbaru dari server
         _resetJamAbsenCache();
         const [res] = await Promise.all([
-          apiFetch(`${P.log}?user_id=${(typeof MY_ID !== 'undefined' && MY_ID !== null) ? MY_ID : ''}`, { method: 'GET' }),
+          apiFetch(`${P.log}?user_id=${MY_ID || ''}`, { method: 'GET' }),
           fetchJamPeriode(),
           loadJamAbsen(),        // reload jam global dari server (bukan cache)
           liburLoaded ? Promise.resolve() : fetchLiburForRekap()
@@ -10553,7 +10539,7 @@ File di Google Drive juga akan dihapus.`)) return;
           }
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&instansi_id=${userProfile?.instansi_id || 'bapperida'}`, { method: 'GET' });
+          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
           if (res.ok) {
             const json = await res.json();
             const d = Array.isArray(json) ? json[0] : json;
@@ -11693,7 +11679,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       try {
-        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
         showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'success', '📌', 'Lokasi Tersimpan!', `${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
         setBtnL('btnTambahLokasi', false, 'Simpan Lokasi ke Database');
@@ -12975,7 +12961,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const btn = $('btnSimpanJam');
       if (btn) { btn.disabled = true; $('btnJamText').textContent = '💾 Menyimpan...'; }
       try {
-        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;
@@ -13797,9 +13783,9 @@ File di Google Drive juga akan dihapus.`)) return;
         listEl.innerHTML = users.map(u => {
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
-          // Gunakan metadata has_face & has_signature dari view_user_mgmt (cast to Boolean from 1/0)
-          const hasFace = !!(u.has_face && u.has_face != '0');
-          const hasSig = !!(u.has_signature && u.has_signature != '0');
+          // Gunakan metadata has_face & has_signature dari view_user_mgmt
+          const hasFace = !!(u.has_face);
+          const hasSig = !!(u.has_signature);
           const facePhoto = u.face_photo || null;
 
           let engineBadge = '';
@@ -13808,27 +13794,37 @@ File di Google Drive juga akan dihapus.`)) return;
             engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
           } else if (faceModel === 'faceapi') {
             engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+          } else {
+            // Fallback to length check if column is missing
+            const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
+            if (histD && histD !== '' && histD !== '[]') {
+              try {
+                const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
+                const dLen = Array.isArray(arr) ? arr.length : 0;
+                if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+                else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+              } catch (e) { }
+            }
           }
 
           const faceS = hasFace ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
           const sigS = hasSig ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
 
           return `
-            <div class="face-adm-item" style="padding:15px; border-radius:12px; display:flex; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:10px">
-              <div class="face-adm-thumb" id="thumb-${uid}" style="width:64px; height:64px; border-radius:12px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,.08); cursor:pointer" onclick="adminLoadSinglePhoto('${uid}')">
-                ${facePhoto && facePhoto.length > 100 ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` : 
+            <div class="face-adm-item" style="padding:15px; border-radius:20px; display:flex; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:10px">
+              <div class="face-adm-thumb" id="thumb-${uid}" style="width:64px; height:64px; border-radius:18px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); cursor:pointer" onclick="adminLoadSinglePhoto('${uid}')">
+                ${facePhoto ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` : 
                 (hasFace ? '<span style="font-size:10px;color:var(--gold);font-weight:700">LIHAT</span>' : '<span style="opacity:0.3;font-size:32px">👤</span>')}
               </div>
               <div class="face-adm-info" style="flex:1; margin-left:14px; min-width:0">
                 <div class="face-adm-name" style="font-size:14px; font-weight:800; color:#fff; word-break:break-word; line-height:1.3; margin-bottom:4px">${nama}</div>
-                <div class="face-adm-status" style="font-size:10px; color:rgba(255,255,255,0.5); display:flex; flex-direction:column; gap:4px">
-                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">🖼️ Wajah: ${faceS}${engineBadge}</div>
-                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">🖋️ TTD: ${sigS}</div>
-                  <div style="opacity:0.6; font-size:9px">ID: ${uid}</div>
+                <div class="face-adm-status" style="font-size:10px; color:rgba(255,255,255,0.5)">
+                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">📷 Wajah: ${faceS}${engineBadge} <span style="margin:0 4px">·</span> ✍️ TTD: ${sigS}</div>
+                  <div style="opacity:0.6; font-size:9px; margin-top:4px">ID: ${uid}</div>
                 </div>
               </div>
               <div class="face-adm-btns" style="display:flex; flex-direction:column; gap:6px; margin-left:12px">
-                <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px; padding:6px 10px; border-radius:8px; border:1px solid var(--gold); background:rgba(201,168,76,.1); color:var(--gold); font-size:10px; font-weight:700; cursor:pointer">📷 Wajah</button>
+                <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">📷 Wajah</button>
                 <button class="face-adm-btn" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">✍️ TTD</button>
               </div>
             </div>`;
@@ -14462,9 +14458,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 2. Load face descriptors dari server
       try {
-        const urlInst = new URLSearchParams(window.location.search).get('instansi');
-        const currentInstansi = userProfile?.instansi_id || urlInst || 'bapperida';
-        const res = await apiFetch(`${P.faceGetAll}?instansi_id=${currentInstansi}`, { method: 'GET' });
+        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);
@@ -14497,13 +14491,18 @@ File di Google Drive juga akan dihapus.`)) return;
             dim: dLen
           };
 
-          // Standardized format for matchMejaCandidate loop
-          return { 
-            id: tid, 
-            descriptor: desc, 
-            engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
-            dim: dLen
-          };
+          // Bridge for Human vs Face-API
+          if (window._aiEngine === 'human') {
+            return { id: tid, descriptor: desc };
+          } else {
+            // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
+            if (dLen === 128 && window.faceapi) {
+              return new window.faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
+            } else {
+              // Fallback for non-128 descriptors in face-api mode
+              return { id: tid, descriptor: desc, skipFaceApi: true };
+            }
+          }
         });
 
         if (!_allFaceDescriptors.length) {

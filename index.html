@@ -10649,11 +10649,18 @@ File di Google Drive juga akan dihapus.`)) return;
                   ...p,
                   jamMasuk: jm.jamMasuk || p.jamMasuk || '-',
                   jamPulang: jm.jamPulang || p.jamPulang || '-',
-                  _rawMasukLog: jm._rawMasukLog,
-                  _rawPulangLog: jm._rawPulangLog,
+                  _rawMasukLog: jm._rawMasukLog || (p.jamMasuk && p.jamMasuk !== '-' ? { id_log: 'TEMP', Tanggal: dari, user_id: id } : null),
+                  _rawPulangLog: jm._rawPulangLog || (p.jamPulang && p.jamPulang !== '-' ? { id_log: 'TEMP', Tanggal: dari, user_id: id } : null),
                   _rawKetLog: jm._rawKetLog,
                   logKet: jm.logKet || p.logKet || ''
                 };
+              }
+              // JARING PENGAMAN: Jika jm tidak match tapi p punya jam dari backend
+              if (p.jamMasuk && p.jamMasuk !== '-') {
+                 p._rawMasukLog = { id_log: 'TEMP', Tanggal: dari, user_id: id };
+              }
+              if (p.jamPulang && p.jamPulang !== '-') {
+                 p._rawPulangLog = { id_log: 'TEMP', Tanggal: dari, user_id: id };
               }
               return p;
             });

@@ -7975,33 +7975,24 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Extract face descriptor ──
     async function getFaceDescriptor(input) {
-      // Tunggu hingga AI tidak sibuk (max 3 detik)
       let waitStart = Date.now();
       while (_isDetecting && (Date.now() - waitStart < 3000)) {
         await new Promise(r => setTimeout(r, 50));
       }
-
       const prevDetectState = _isDetecting;
-      _isDetecting = true; // Kunci AI untuk ekstraksi
-
+      _isDetecting = true;
       try {
         if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await _detectWithTimeout(input, 8000); // Max 8 detik untuk ekstraksi identitas
+          const res = await _detectWithTimeout(input, 8000); // ← gunakan timeout
           return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
         } else if (window.faceapi) {
-          const detection = await window.faceapi
-            .detectSingleFace(input, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
-            .withFaceLandmarks()
-            .withFaceDescriptor();
-          return detection ? detection.descriptor : null;
+          const result = await faceapi.detectSingleFace(input).withFaceLandmarks().withFaceDescriptor();
+          return result ? result.descriptor : null;
         }
       } catch (e) {
-        console.warn('getFaceDescriptor error:', e);
-        if (e.message === 'AI_TIMEOUT') {
-          setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', 'Coba ulangi scan atau ganti pencahayaan');
-        }
+        if (e.message === 'AI_TIMEOUT') setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', '...');
       } finally {
-        _isDetecting = prevDetectState; // Kembalikan state awal
+        _isDetecting = prevDetectState; // ← kembalikan state
       }
       return null;
     }
@@ -8019,8 +8010,8 @@ File di Google Drive juga akan dihapus.`)) return;
             const cnv = document.createElement('canvas');
             cnv.width = img.width; cnv.height = img.height;
             cnv.getContext('2d').drawImage(img, 0, 0);
-            const desc = await getFaceDescriptor(cnv);
-            resolve(desc);
+            const descriptor = await getFaceDescriptor(img);
+            resolve(descriptor);
           };
           img.onerror = () => { clearTimeout(timeout); resolve(null); };
           img.src = dataUrl;
@@ -8139,6 +8130,48 @@ File di Google Drive juga akan dihapus.`)) return;
         sum += d * d;
       }
       return Math.sqrt(sum);
+    }
+
+    /**
+     * Pencocokan 1-ke-Banyak (Identification) untuk Meja Absen.
+     * Mencari kandidat terbaik dari _allFaceDescriptors.
+     */
+    async function matchMejaCandidate(capturedDesc) {
+      if (!capturedDesc || !_allFaceDescriptors.length) return { id: 'unknown', score: 0 };
+
+      let bestMatch = { id: 'unknown', score: 0 };
+      const capDim = capturedDesc.length;
+      const engine = window._aiEngine || 'faceapi';
+
+      for (const ref of _allFaceDescriptors) {
+        const refDesc = ref.descriptor;
+        const refDim = (refDesc && Array.isArray(refDesc)) ? refDesc.length : 0;
+        let similarity = 0;
+
+        if (engine === 'human' && HumanInstance && capDim >= 512 && refDim >= 512) {
+          // Human to Human similarity (0 to 1)
+          similarity = HumanInstance.match.similarity(refDesc, capturedDesc);
+        } else if (capDim === 128 && refDim === 128) {
+          // Face-API Euclidean fallback (higher dist = lower similarity)
+          const dist = euclideanDistance(refDesc, capturedDesc);
+          // Convert distance to pseudo-similarity (0 to 1). 0.55 threshold => ~0.73 score
+          similarity = Math.max(0, 1 - (dist / 1.5)); 
+        } else {
+          // Dimension mismatch - skip candidate
+          continue;
+        }
+
+        if (similarity > bestMatch.score) {
+          bestMatch = { id: ref.id, score: similarity };
+        }
+      }
+
+      // Thresholding (0.55 for similarity is standard for Human)
+      if (bestMatch.score < 0.55) {
+        return { id: 'unknown', score: bestMatch.score };
+      }
+
+      return bestMatch;
     }
 
     async function matchFace(capturedDataUrl, preDescriptor = null) {
@@ -8391,6 +8424,7 @@ File di Google Drive juga akan dihapus.`)) return;
       });
     }
 
+
     // ── Terpadu: Muat Model AI (face-api atau Human) ──
     async function loadAIModels() {
       if (_modelsReady) return true;
@@ -8411,7 +8445,7 @@ File di Google Drive juga akan dihapus.`)) return;
             filter: { enabled: false }, // Matikan filter berat untuk HP
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.15 },
+              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json',maxDetected: 1, minConfidence: 0.15, inputSize: 1024 },
               mesh: { enabled: true },
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },
@@ -8968,17 +9002,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (window._isMejaMode) {
           console.log('[AI] Phase 4: Matching against Employee Database...');
-          const refList = window._faceRefList || [];
-          let bestMatch = { id: 'unknown', distance: 0 };
-
-          for (const ref of refList) {
-            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
-            if (dist > bestMatch.distance && dist >= 0.55) {
-              bestMatch = { id: ref.telegram_id, distance: dist };
-            }
-          }
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
+          const bestMatch = await matchMejaCandidate(descriptor);
+          
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score.toFixed(4)})`);
+          _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
         } else {
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
           if (_absenCallbackAfterCam) {
@@ -14487,22 +14514,12 @@ File di Google Drive juga akan dihapus.`)) return;
           window._mejaUserMap[tid] = {
             nama: f.nama || f.Nama || tid,
             nip: f.nip || f.NIP || '-',
+            pangkat: f.pangkat || '',
             engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
             dim: dLen
           };
 
-          // Bridge for Human vs Face-API
-          if (window._aiEngine === 'human') {
-            return { id: tid, descriptor: desc };
-          } else {
-            // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
-            if (dLen === 128 && window.faceapi) {
-              return new window.faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-            } else {
-              // Fallback for non-128 descriptors in face-api mode
-              return { id: tid, descriptor: desc, skipFaceApi: true };
-            }
-          }
+          return { id: tid, descriptor: desc, engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi') };
         });
 
         if (!_allFaceDescriptors.length) {

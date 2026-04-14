@@ -8128,9 +8128,11 @@ File di Google Drive juga akan dihapus.`)) return;
     // ── Euclidean distance between two 128-d descriptors ──
     function euclideanDistance(desc1, desc2) {
       if (!desc1 || !desc2) return 999;
+      // Handle TypedArrays or standard Arrays
       const d1 = Array.isArray(desc1) ? desc1 : Array.from(desc1);
       const d2 = Array.isArray(desc2) ? desc2 : Array.from(desc2);
-      if (d1.length === 0 || d1.length !== d2.length) return 999;
+      if (d1.length !== d2.length || d1.length === 0) return 999;
+
       let sum = 0;
       for (let i = 0; i < d1.length; i++) {
         const d = d1[i] - d2[i];
@@ -8139,119 +8141,68 @@ File di Google Drive juga akan dihapus.`)) return;
       return Math.sqrt(sum);
     }
 
-    /**
-     * Helper universal untuk membandingkan dua descriptor wajah.
-     * Mendukung Face-API (128-dim) dan Human (512/1024-dim).
-     */
-    function compareFaceDescriptors(desc1, desc2) {
-      if (!desc1 || !desc2) return { matched: false, score: 0, distance: 999 };
+    async function matchFace(capturedDataUrl, preDescriptor = null) {
+      const ref = getFaceRef();
+      if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
-      const d1 = Array.isArray(desc1) ? desc1 : Array.from(desc1);
-      const d2 = Array.isArray(desc2) ? desc2 : Array.from(desc2);
-      const dim1 = d1.length;
-      const dim2 = d2.length;
-
-      if (dim1 !== dim2) {
-        return { matched: false, score: 0, error: 'DIM_MISMATCH', dim1, dim2 };
+      let refDesc = ref.descriptor;
+      // Handle stringified descriptor from DB
+      if (typeof refDesc === 'string') {
+        try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
       }
 
-      // ── LOGIKA HUMAN (Similarity) ──
-      if (dim1 >= 512) {
-        let sim = 0;
-        if (window.HumanInstance && window.HumanInstance.match) {
-          sim = window.HumanInstance.match.similarity(d1, d2);
+      let capturedDescArr = preDescriptor;
+      if (!capturedDescArr && capturedDataUrl) {
+        const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
+        capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
+      }
+
+      if (refDesc && capturedDescArr) {
+        const refDim = refDesc.length;
+        const capDim = capturedDescArr.length;
+
+        // Engine-aware matching logic
+        const engine = window._aiEngine || 'faceapi';
+
+        if (engine === 'human' && HumanInstance && refDim >= 512 && capDim >= 512) {
+          // Use Human Similarity
+          const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
+          const score = Math.round(sim * 100);
+          const threshold = 0.55; // Human threshold (Optimized for tolerance)
+
+          let label, cls;
+          if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+          else if (sim >= threshold - 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+          else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
+
+          return { score, label, cls, similarity: sim, capturedDescriptor: capturedDescArr };
         } else {
-          // Fallback manual Cosine Similarity jika instance tidak ada
-          let dot = 0, sum1 = 0, sum2 = 0;
-          for (let i = 0; i < dim1; i++) {
-            dot += d1[i] * d2[i];
-            sum1 += d1[i] * d1[i];
-            sum2 += d2[i] * d2[i];
+          // Use Face-API Euclidean Distance (Fallback if mismatch or faceapi)
+          if (refDim !== capDim) {
+            return {
+              score: 0,
+              label: `⚠️ Mismatch (${refDim} vs ${capDim})`,
+              cls: 'face-match-warn',
+              capturedDescriptor: capturedDescArr,
+              needsUpdate: true
+            };
           }
-          sim = dot / (Math.sqrt(sum1) * Math.sqrt(sum2));
+
+          const dist = euclideanDistance(refDesc, capturedDescArr);
+          const threshold = 0.55;
+          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+
+          let label, cls;
+          if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+          else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+          else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
+
+          return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
         }
-
-        const threshold = 0.55; 
-        const simScore = Math.max(0, Math.round(sim * 100)); // Ganti 'score' jadi 'simScore'
-        return { 
-          matched: sim >= threshold, 
-          score: simScore, 
-          similarity: sim, 
-          engine: 'human', 
-          dim: dim1,
-          label: sim >= threshold ? `✅ Cocok ${simScore}%` : `❌ Tidak Cocok ${simScore}%`,
-          cls: sim >= threshold ? 'face-match-ok' : 'face-match-warn'
-        };
-      } 
-      
-      // ── LOGIKA FACE-API (Euclidean) ──
-      else {
-        const dist = euclideanDistance(d1, d2);
-        const threshold = 0.60; 
-        const distScore = Math.max(0, Math.round((1 - dist / 0.75) * 100)); // Ganti 'score' jadi 'distScore'
-        
-        return { 
-          matched: dist <= threshold, 
-          score: distScore, 
-          distance: dist, 
-          engine: 'faceapi', 
-          dim: dim1,
-          label: dist <= threshold ? `✅ Cocok ${distScore}%` : `❌ Tidak Cocok ${distScore}%`,
-          cls: dist <= threshold ? 'face-match-ok' : 'face-match-warn'
-        };
       }
+
+      return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
     }
-
-    async function matchFace(capturedSource, refDescriptor = null) {
-      // 1. Dapatkan Descriptor Referensi
-      let reference = refDescriptor;
-      if (!reference) {
-         const userRef = getFaceRef();
-         if (!userRef) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip' };
-         reference = userRef.descriptor;
-      }
-
-      // Handle Stringified JSON
-      if (typeof reference === 'string') {
-        try { reference = JSON.parse(reference); } catch(e) { reference = null; }
-      }
-
-      // 2. Dapatkan Descriptor Kamera (Captured)
-      let captured = null;
-      if (typeof capturedSource === 'string' && capturedSource.startsWith('data:')) {
-        // Jika input adalah DataURL, ekstraksi dulu
-        captured = await getDescriptorFromDataUrl(capturedSource);
-      } else {
-        // Jika input sudah Array/Descriptor
-        captured = capturedSource;
-      }
-
-      if (!reference || !captured) {
-        return { score: 0, label: '⚠️ Gagal verifikasi', cls: 'face-match-warn' };
-      }
-
-      // 3. Bandingkan
-      const result = compareFaceDescriptors(reference, captured);
-      
-      if (result.error === 'DIM_MISMATCH') {
-        return {
-          score: 0,
-          label: `⚠️ Mismatch (${result.dim1} vs ${result.dim2})`,
-          cls: 'face-match-warn',
-          needsUpdate: true
-        };
-      }
-
-      return {
-        score: result.score,
-        label: result.label,
-        cls: result.cls,
-        similarity: result.similarity,
-        distance: result.distance,
-        capturedDescriptor: captured
-      };
-    }
-
 
     function updateFaceRegUI() {
       const ref = getFaceRef();
@@ -9017,30 +8968,18 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (window._isMejaMode) {
           console.log('[AI] Phase 4: Matching against Employee Database...');
-          // Gunakan _allFaceDescriptors (dari startMejaAbsen)
-          const refList = (typeof _allFaceDescriptors !== 'undefined') ? _allFaceDescriptors : [];
-          let bestMatch = { id: 'unknown', matchScore: 0 };
+          const refList = window._faceRefList || [];
+          let bestMatch = { id: 'unknown', distance: 0 };
 
           for (const ref of refList) {
-            // ref.descriptor bisa berupa array atau LabeledFaceDescriptors
-            let targetDesc = ref.descriptor;
-            if (!targetDesc && ref.descriptors && ref.descriptors[0]) {
-               targetDesc = ref.descriptors[0];
-            }
-
-            if (targetDesc) {
-              const res = compareFaceDescriptors(descriptor, targetDesc);
-              if (res.matched && res.score > bestMatch.matchScore) {
-                bestMatch = { id: ref.id || ref.label, matchScore: res.score };
-              }
+            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
+            if (dist > bestMatch.distance && dist >= 0.55) {
+              bestMatch = { id: ref.telegram_id, distance: dist };
             }
           }
-          
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.matchScore}%)`);
-          // Urutan argumen: (telegramId, score, dataUrl, descriptor)
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.matchScore, dataUrl, descriptor);
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
+          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
         } else {
-
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
           if (_absenCallbackAfterCam) {
             const result = { dataUrl, descriptor };
@@ -14926,7 +14865,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _lastMejaId = null;
     let _lastMejaTime = 0;
 
-    async function _onMejaAbsenMatchFound(telegramId, matchScore, dataUrl, descriptor) {
+    async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance) {
       const sekarang = Date.now();
 
       // 1. SISTEM ANTI-SPAM (COOLDOWN)
@@ -14984,13 +14923,14 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // JIKA WAJAH DIKENAL
       const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
+      const score = Math.max(0, Math.round((distance || 0) * 100)); // Arg 'distance' is now passing similarity score (0-1)
 
       $('moIcon').textContent = '⏳';
       $('moNama').textContent = user.nama;
       $('moStatus').textContent = 'MEMERIKSA STATUS...';
       $('moStatus').style.color = 'var(--gold)';
       $('moStatus').style.background = 'rgba(201,168,76,0.2)';
-      $('moDetail').textContent = `Mencocokkan AI: ${matchScore}%`;
+      $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 
@@ -15008,7 +14948,7 @@ File di Google Drive juga akan dihapus.`)) return;
         longitude: _mejaGpsLocation?.lng ?? 0,
         accuracy: _mejaGpsLocation?.acc ?? 0,
         lokasi_nama: 'Meja Absen',
-        face_match: matchScore,
+        face_match: score,
         timestamp: Math.floor(Date.now() / 1000),
         source: 'meja_absen'
       };

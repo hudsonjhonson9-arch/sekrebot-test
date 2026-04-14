@@ -7553,13 +7553,13 @@ File di Google Drive juga akan dihapus.`)) return;
         const json = await res.json();
         let rows = parseRows(json);
         rows = rows.filter(r => {
-          const rowUid = Number(getField(r, 'ID', 'id'));
-          const tgl = getField(r, 'Tanggal', 'tanggal');
+          const rowUid = Number(r.telegram_id || r.ID || getField(r, 'ID', 'id'));
+          const tgl = r.tanggal || getField(r, 'Tanggal', 'tanggal');
           const byMe = uid ? (rowUid === uid) : true;
           return byMe && tgl === todayStr;
         });
         rows.sort((a, b) => {
-          const ja = getField(a, 'Jam', 'jam'), jb = getField(b, 'Jam', 'jam');
+          const ja = a.jam || getField(a, 'Jam', 'jam'), jb = b.jam || getField(b, 'Jam', 'jam');
           return ja.localeCompare(jb);
         });
         renderTodayHistory(rows);
@@ -10587,33 +10587,48 @@ File di Google Drive juga akan dihapus.`)) return;
             // Bangun map: id → {jamMasuk, jamPulang, logKet, status flags}
             const jamMap = {};
             logHarian.forEach(r => {
-              const id = String(getField(r, 'ID', 'id') || '').trim();
+              // Gunakan telegram_id (alias eksplisit dari backend) atau ID (Upper)
+              const id = String(r.telegram_id || r.ID || '').trim();
               if (!id) return;
-              const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
-              const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
-              const ket = getField(r, 'Keterangan', 'keterangan') || '';
+              
+              const j = (r.jenis_absen || getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen') || '').toUpperCase().trim();
+              const jamStr = (r.jam || getField(r, 'Jam') || '').replace(/\s*WITA\s*/i, '').trim();
+              const ket = r.keterangan || getField(r, 'Keterangan', 'ket') || '';
+              const id_log = r.id_log || r.ID_Log || '';
 
               if (!jamMap[id]) jamMap[id] = {
                 jamMasuk: '-', jamPulang: '-', logKet: '',
-                _rawMasukLog: null, _rawPulangLog: null,
+                _rawMasukLog: null, _rawPulangLog: null, _rawKetLog: null,
+                _minMasuk: 9999, _maxPulang: -1,
                 tubel: 0, cuti: 0, izin: 0, sakit: 0, tugas: 0
               };
 
-              if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') {
-                jamMap[id].jamMasuk = jam || '-';
-                jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+              const curMenit = toMenit(jamStr);
+
+              // 1. Kategorisasi MASUK (Ambil yang paling AWAL)
+              if (j === 'MASUK' || j.includes('MASUK')) {
+                if (curMenit !== null && curMenit < jamMap[id]._minMasuk) {
+                  jamMap[id]._minMasuk = curMenit;
+                  jamMap[id].jamMasuk = jamStr || '-';
+                  jamMap[id]._rawMasukLog = { ...r, ID_Log: id_log };
+                }
               }
-              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') {
-                jamMap[id].jamPulang = jam || '-';
-                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+              // 2. Kategorisasi PULANG (Ambil yang paling AKHIR)
+              else if (j === 'PULANG' || j.includes('PULANG')) {
+                if (curMenit !== null && curMenit > jamMap[id]._maxPulang) {
+                  jamMap[id]._maxPulang = curMenit;
+                  jamMap[id].jamPulang = jamStr || '-';
+                  jamMap[id]._rawPulangLog = { ...r, ID_Log: id_log };
+                }
               }
-              else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].includes(j)) {
-                if (j === 'TUBEL') jamMap[id].tubel = 1;
-                else if (j === 'CUTI') jamMap[id].cuti = 1;
-                else if (j === 'IZIN') jamMap[id].izin = 1;
-                else if (j === 'SAKIT') jamMap[id].sakit = 1;
-                else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
-                jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+              // 3. Kategorisasi KETERANGAN
+              else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].some(k => j.includes(k))) {
+                if (j.includes('TUBEL')) jamMap[id].tubel = 1;
+                else if (j.includes('CUTI')) jamMap[id].cuti = 1;
+                else if (j.includes('IZIN')) jamMap[id].izin = 1;
+                else if (j.includes('SAKIT')) jamMap[id].sakit = 1;
+                else if (j.includes('TUGAS') || j.includes('DL')) jamMap[id].tugas = 1;
+                jamMap[id]._rawKetLog = { ...r, ID_Log: id_log };
               }
 
               if (ket) jamMap[id].logKet = ket;
@@ -10753,89 +10768,86 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // Process periode (filtered rows)
       rows.forEach(r => {
-        const id = String(getField(r, 'ID', 'id') || '').trim();
+        const id = String(r.telegram_id || r.ID || getField(r, 'ID', 'id') || '').trim();
         if (!id) return;
-        const nama = getField(r, 'Nama', 'nama') || '—';
-        const nip = getField(r, 'NIP', 'nip') || '—';
-        const tgl = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
-        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
-        const jamStr = getField(r, 'Jam', 'jam') || '';
-        const id_log = r.ID_Log || r.id_log || r.id || ''; // Capture the primary key
+        const nama = r.nama || getField(r, 'Nama', 'nama') || '—';
+        const nip = r.nip || getField(r, 'NIP', 'nip') || '—';
+        const tgl = normToISO(r.tanggal || getField(r, 'Tanggal', 'tanggal') || '');
+        const jenis = (r.jenis_absen || getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen') || '').toUpperCase().trim();
+        const jamStr = (r.jam || getField(r, 'Jam') || '').replace(/\s*WITA\s*/i, '').trim();
+        const id_log = r.id_log || r.ID_Log || '';
+
         if (!map[id]) map[id] = {
           id, nama, nip, jabatan: '', urutan: 9999,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
-          _rawMasukLog: null, _rawPulangLog: null,
+          _rawMasukLog: null, _rawPulangLog: null, _rawKetLog: null,
+          _minMasuk: 9999, _maxPulang: -1,
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
           all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
         };
-        const curNama = getField(r, 'Nama', 'nama') || '';
-        if (curNama.length > map[id].nama.length) map[id].nama = curNama;
-        if (nip && map[id].nip === '—') map[id].nip = nip;
+
         const jam = toMenit(jamStr);
-        if (jenis === 'MASUK') {
-          map[id].masuk++;
-          if (jamStr) {
-            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawMasukLog = { ...r, ID_Log: id_log }; // Store row with PK
-          }
-        }
-        else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
-          map[id].di_luar_masuk++;
-          if (jamStr) {
-            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
+
+        // 1. MASUK (Earliest)
+        if (jenis === 'MASUK' || jenis.includes('MASUK')) {
+          if (jenis === 'MASUK') map[id].masuk++;
+          else map[id].di_luar_masuk++;
+
+          if (jam !== null && jam < map[id]._minMasuk) {
+            map[id]._minMasuk = jam;
+            map[id].jamMasuk = jamStr;
             map[id]._rawMasukLog = { ...r, ID_Log: id_log };
           }
-          if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
-        }
-        else if (jenis === 'PULANG') {
-          map[id].pulang++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawPulangLog = { ...r, ID_Log: id_log };
+          if (jenis.includes('LUAR') && jam !== null && jam > getMasukBatas(id, tgl)) {
+            map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
           }
         }
-        else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
-          map[id].di_luar_pulang++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
+        // 2. PULANG (Latest)
+        else if (jenis === 'PULANG' || jenis.includes('PULANG')) {
+          if (jenis === 'PULANG') map[id].pulang++;
+          else if (jenis === 'PULANG LUAR') map[id].pulang_luar++;
+          else map[id].di_luar_pulang++;
+
+          if (jam !== null && jam > map[id]._maxPulang) {
+            map[id]._maxPulang = jam;
+            map[id].jamPulang = jamStr;
             map[id]._rawPulangLog = { ...r, ID_Log: id_log };
           }
-          if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
-        }
-        else if (jenis === 'PULANG LUAR') {
-          map[id].pulang_luar++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawPulangLog = { ...r, ID_Log: id_log };
+          if (jenis.includes('LUAR') && jam !== null && jam < getPulangBatas(id, tgl)) {
+            map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
           }
         }
-        else if (jenis.includes('LUAR')) { map[id].di_luar_masuk++; }
-        else if (jenis === 'IZIN') { map[id].izin++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'SAKIT') { map[id].sakit++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'TUGAS') { map[id].tugas++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'TUBEL') { map[id].tubel++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'CUTI') { map[id].cuti++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
+        // 3. KETERANGAN
+        else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].some(k => jenis.includes(k))) {
+          if (jenis.includes('TUBEL')) map[id].tubel++;
+          else if (jenis.includes('CUTI')) map[id].cuti++;
+          else if (jenis.includes('IZIN')) map[id].izin++;
+          else if (jenis.includes('SAKIT')) map[id].sakit++;
+          else if (jenis.includes('TUGAS') || jenis.includes('DL')) map[id].tugas++;
+          map[id]._rawKetLog = { ...r, ID_Log: id_log };
+        }
       });
 
-      // Process ALL-TIME rows (if provided)
-      const allRows = allRowsParam || rows; // fallback to same rows if no allRows
+      // Process ALL-TIME rows
+      const allRows = allRowsParam || rows;
       allRows.forEach(r => {
-        const id = String(getField(r, 'ID', 'id') || '').trim();
-        if (!id || !map[id]) return; // only process existing employees
-        const tglA = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
-        const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
-        const jamStr = getField(r, 'Jam', 'jam') || '';
+        const id = String(r.telegram_id || r.ID || getField(r, 'ID', 'id') || '').trim();
+        if (!id || !map[id]) return;
+        const jenis = (r.jenis_absen || getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen') || '').toUpperCase().trim();
+        const jamStr = (r.jam || getField(r, 'Jam') || '').replace(/\s*WITA\s*/i, '').trim();
+        const tglA = normToISO(r.tanggal || getField(r, 'Tanggal', 'tanggal') || '');
         const jam = toMenit(jamStr);
+
         if (jenis === 'MASUK') { map[id].all_masuk++; }
-        else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
+        else if (jenis.includes('MASUK')) {
           map[id].all_di_luar_masuk++;
           if (jam !== null && jam > getMasukBatas(id, tglA)) map[id].all_menit_terlambat += (jam - getMasukBatas(id, tglA));
         }
-        else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
+        else if (jenis.includes('PULANG') && jenis.includes('LUAR')) {
           map[id].all_di_luar_pulang++;
           if (jam !== null && jam < getPulangBatas(id, tglA)) map[id].all_menit_lebih_awal += (getPulangBatas(id, tglA) - jam);
         }
@@ -10859,7 +10871,7 @@ File di Google Drive juga akan dihapus.`)) return;
           dCur.setDate(dCur.getDate() + 1);
         }
         // Check presence per employee per date
-        const rowSet = new Set(rows.map(r => String(getField(r, 'ID', 'id')) + '|' + normToISO(getField(r, 'Tanggal', 'tanggal'))));
+        const rowSet = new Set(rows.map(r => String(r.telegram_id || r.ID || getField(r, 'ID', 'id')) + '|' + normToISO(r.tanggal || getField(r, 'Tanggal', 'tanggal'))));
         Object.keys(map).forEach(uid => {
           let c = 0;
           rangeDates.forEach(tgl => { if (!rowSet.has(uid + '|' + tgl)) c++; });
@@ -12597,7 +12609,7 @@ File di Google Drive juga akan dihapus.`)) return;
       await loadLogPegawaiList();
 
       // Reset form
-      const existingId = log ? (log.ID_Log || log.id_log || '') : '';
+      const existingId = log ? (log.id_log || log.ID_Log || '') : '';
 
       // SMART UI DETECTION: If opened via + but we detect existing record in view
       let smartLogId = existingId;

@@ -8171,15 +8171,15 @@ File di Google Drive juga akan dihapus.`)) return;
           sim = dot / (Math.sqrt(sum1) * Math.sqrt(sum2));
         }
 
-        const threshold = 0.55; // Threshold standar Human
-        const score = Math.max(0, Math.round(sim * 100));
+        const threshold = 0.55; 
+        const simScore = Math.max(0, Math.round(sim * 100)); // Ganti 'score' jadi 'simScore'
         return { 
           matched: sim >= threshold, 
-          score, 
+          score: simScore, 
           similarity: sim, 
           engine: 'human', 
           dim: dim1,
-          label: sim >= threshold ? `✅ Cocok ${score}%` : `❌ Tidak Cocok ${score}%`,
+          label: sim >= threshold ? `✅ Cocok ${simScore}%` : `❌ Tidak Cocok ${simScore}%`,
           cls: sim >= threshold ? 'face-match-ok' : 'face-match-warn'
         };
       } 
@@ -8187,16 +8187,16 @@ File di Google Drive juga akan dihapus.`)) return;
       // ── LOGIKA FACE-API (Euclidean) ──
       else {
         const dist = euclideanDistance(d1, d2);
-        const threshold = 0.60; // Threshold standar Face-API (Agak longgar dari 0.55 agar tidak error terus)
-        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+        const threshold = 0.60; 
+        const distScore = Math.max(0, Math.round((1 - dist / 0.75) * 100)); // Ganti 'score' jadi 'distScore'
         
         return { 
           matched: dist <= threshold, 
-          score, 
+          score: distScore, 
           distance: dist, 
           engine: 'faceapi', 
           dim: dim1,
-          label: dist <= threshold ? `✅ Cocok ${score}%` : `❌ Tidak Cocok ${score}%`,
+          label: dist <= threshold ? `✅ Cocok ${distScore}%` : `❌ Tidak Cocok ${distScore}%`,
           cls: dist <= threshold ? 'face-match-ok' : 'face-match-warn'
         };
       }
@@ -9019,7 +9019,7 @@ File di Google Drive juga akan dihapus.`)) return;
           console.log('[AI] Phase 4: Matching against Employee Database...');
           // Gunakan _allFaceDescriptors (dari startMejaAbsen)
           const refList = (typeof _allFaceDescriptors !== 'undefined') ? _allFaceDescriptors : [];
-          let bestMatch = { id: 'unknown', score: 0 };
+          let bestMatch = { id: 'unknown', matchScore: 0 };
 
           for (const ref of refList) {
             // ref.descriptor bisa berupa array atau LabeledFaceDescriptors
@@ -9030,15 +9030,15 @@ File di Google Drive juga akan dihapus.`)) return;
 
             if (targetDesc) {
               const res = compareFaceDescriptors(descriptor, targetDesc);
-              if (res.matched && res.score > bestMatch.score) {
-                bestMatch = { id: ref.id || ref.label, score: res.score };
+              if (res.matched && res.score > bestMatch.matchScore) {
+                bestMatch = { id: ref.id || ref.label, matchScore: res.score };
               }
             }
           }
           
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score}%)`);
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.matchScore}%)`);
           // Urutan argumen: (telegramId, score, dataUrl, descriptor)
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.score, dataUrl, descriptor);
+          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.matchScore, dataUrl, descriptor);
         } else {
 
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
@@ -14926,7 +14926,7 @@ File di Google Drive juga akan dihapus.`)) return;
     let _lastMejaId = null;
     let _lastMejaTime = 0;
 
-    async function _onMejaAbsenMatchFound(telegramId, score, dataUrl, descriptor) {
+    async function _onMejaAbsenMatchFound(telegramId, matchScore, dataUrl, descriptor) {
       const sekarang = Date.now();
 
       // 1. SISTEM ANTI-SPAM (COOLDOWN)
@@ -14990,7 +14990,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('moStatus').textContent = 'MEMERIKSA STATUS...';
       $('moStatus').style.color = 'var(--gold)';
       $('moStatus').style.background = 'rgba(201,168,76,0.2)';
-      $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
+      $('moDetail').textContent = `Mencocokkan AI: ${matchScore}%`;
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 
@@ -15008,7 +15008,7 @@ File di Google Drive juga akan dihapus.`)) return;
         longitude: _mejaGpsLocation?.lng ?? 0,
         accuracy: _mejaGpsLocation?.acc ?? 0,
         lokasi_nama: 'Meja Absen',
-        face_match: score,
+        face_match: matchScore,
         timestamp: Math.floor(Date.now() / 1000),
         source: 'meja_absen'
       };

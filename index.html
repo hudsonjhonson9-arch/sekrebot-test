@@ -10593,7 +10593,7 @@ File di Google Drive juga akan dihapus.`)) return;
               // Gunakan telegram_id (alias eksplisit dari backend) atau ID (Upper)
               const id = String(r.telegram_id || r.ID || '').trim();
               if (!id) return;
-              
+
               const j = (r.jenis_absen || getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen') || '').toUpperCase().trim();
               const jamStr = (r.jam || getField(r, 'Jam') || '').replace(/\s*WITA\s*/i, '').trim();
               const ket = r.keterangan || getField(r, 'Keterangan', 'ket') || '';

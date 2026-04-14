@@ -10560,7 +10560,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!rekapOK) {
           let allRowsRaw = [], periodRowsRaw = [];
           try {
-            const resAll = await apiFetch(`${P.log}`, { method: 'GET' });
+            const resAll = await apiFetch(`${P.log}?instansi_id=${finalInstansiId}`, { method: 'GET' });
             if (resAll.ok) allRowsRaw = parseRows(await resAll.json());
           } catch (_) { }
           periodRowsRaw = allRowsRaw.filter(r => {
@@ -10581,7 +10581,7 @@ File di Google Drive juga akan dihapus.`)) return;
             // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
             let logHarian = allLogs.filter(r => getField(r, 'Tanggal', 'tanggal') === dari);
             if (!logHarian.length) {
-              const rLog = await apiFetch(`${P.log}?tanggal=${dari}`, { method: 'GET' });
+              const rLog = await apiFetch(`${P.log}?tanggal=${dari}&instansi_id=${finalInstansiId}`, { method: 'GET' });
               if (rLog.ok) { const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r => getField(r, 'Tanggal', 'tanggal') === dari); }
             }
             // Bangun map: id → {jamMasuk, jamPulang, logKet, status flags}

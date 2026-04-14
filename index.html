@@ -8,7 +8,8 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"
+    defer></script>
   <!-- face-api.js loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6694,11 +6695,13 @@
       const urlParams = new URLSearchParams(window.location.search);
       let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
       if (!inst) {
-          try {
-              const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-              inst = u.instansi_id || 'bapperida';
-          } catch(e) { inst = 'bapperida'; }
+        try {
+          const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+          inst = u.instansi_id || 'bapperida';
+        } catch (e) { inst = 'bapperida'; }
       }
+      // Force 'bapperida' if 'pusat' is detected
+      if (inst === 'pusat') inst = 'bapperida';
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
       }
@@ -6832,7 +6835,8 @@
       if (!regSelect && !rekapSelect) return;
 
       try {
-        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
+        let instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
+        if (instansiId === 'pusat') instansiId = 'bapperida';
         const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {
@@ -7249,7 +7253,8 @@
               status: d.status || d.Status || 'AKTIF',
               role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
-              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
+              tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null,
+              instansi_id: d.instansi_id || new URLSearchParams(window.location.search).get('instansi') || 'bapperida'
             };
             applyProfile();
             _profileLoading = false;
@@ -8968,17 +8973,17 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (window._isMejaMode) {
           console.log('[AI] Phase 4: Matching against Employee Database...');
-          const refList = window._faceRefList || [];
-          let bestMatch = { id: 'unknown', distance: 0 };
+          let bestMatch = { id: 'unknown', similarity: 0 };
+          const candidates = _allFaceDescriptors || [];
 
-          for (const ref of refList) {
-            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
-            if (dist > bestMatch.distance && dist >= 0.55) {
-              bestMatch = { id: ref.telegram_id, distance: dist };
+          for (const cand of candidates) {
+            const sim = matchMejaCandidate(descriptor, cand.descriptor, cand.engine);
+            if (sim > bestMatch.similarity && sim >= 0.55) {
+              bestMatch = { id: cand.id, similarity: sim };
             }
           }
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
+          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.similarity.toFixed(4)})`);
+          _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.similarity);
         } else {
           console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
           if (_absenCallbackAfterCam) {
@@ -10118,7 +10123,7 @@ File di Google Drive juga akan dihapus.`)) return;
         // Reset cache jam agar selalu dapat data terbaru dari server
         _resetJamAbsenCache();
         const [res] = await Promise.all([
-          apiFetch(`${P.log}?user_id=${MY_ID || ''}`, { method: 'GET' }),
+          apiFetch(`${P.log}?user_id=${(typeof MY_ID !== 'undefined' && MY_ID !== null) ? MY_ID : ''}`, { method: 'GET' }),
           fetchJamPeriode(),
           loadJamAbsen(),        // reload jam global dari server (bukan cache)
           liburLoaded ? Promise.resolve() : fetchLiburForRekap()
@@ -10539,7 +10544,11 @@ File di Google Drive juga akan dihapus.`)) return;
           }
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
+          // Normalisasi instansi_id: paksa bapperida jika pusat atau null
+          let finalInstansiId = userProfile?.instansi_id || 'bapperida';
+          if (finalInstansiId === 'pusat') finalInstansiId = 'bapperida';
+
+          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&instansi_id=${finalInstansiId}`, { method: 'GET' });
           if (res.ok) {
             const json = await res.json();
             const d = Array.isArray(json) ? json[0] : json;
@@ -11679,7 +11688,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       try {
-        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.lokasiAdd, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
         showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'success', '📌', 'Lokasi Tersimpan!', `${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
         setBtnL('btnTambahLokasi', false, 'Simpan Lokasi ke Database');
@@ -12961,7 +12970,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const btn = $('btnSimpanJam');
       if (btn) { btn.disabled = true; $('btnJamText').textContent = '💾 Menyimpan...'; }
       try {
-        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ instansi_id: userProfile?.instansi_id || 'bapperida', masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
         // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;
@@ -13783,9 +13792,9 @@ File di Google Drive juga akan dihapus.`)) return;
         listEl.innerHTML = users.map(u => {
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
-          // Gunakan metadata has_face & has_signature dari view_user_mgmt
-          const hasFace = !!(u.has_face);
-          const hasSig = !!(u.has_signature);
+          // Gunakan metadata has_face & has_signature dari view_user_mgmt (cast to Boolean from 1/0)
+          const hasFace = !!(u.has_face && u.has_face != '0');
+          const hasSig = !!(u.has_signature && u.has_signature != '0');
           const facePhoto = u.face_photo || null;
 
           let engineBadge = '';
@@ -13794,37 +13803,27 @@ File di Google Drive juga akan dihapus.`)) return;
             engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
           } else if (faceModel === 'faceapi') {
             engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-          } else {
-            // Fallback to length check if column is missing
-            const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
-            if (histD && histD !== '' && histD !== '[]') {
-              try {
-                const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
-                const dLen = Array.isArray(arr) ? arr.length : 0;
-                if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-                else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-              } catch (e) { }
-            }
           }
 
           const faceS = hasFace ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
           const sigS = hasSig ? '<span style="color:#22c55e">OK</span>' : '<span style="color:#ef4444">Belum</span>';
 
           return `
-            <div class="face-adm-item" style="padding:15px; border-radius:20px; display:flex; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:10px">
-              <div class="face-adm-thumb" id="thumb-${uid}" style="width:64px; height:64px; border-radius:18px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); cursor:pointer" onclick="adminLoadSinglePhoto('${uid}')">
-                ${facePhoto ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` : 
-                (hasFace ? '<span style="font-size:10px;color:var(--gold);font-weight:700">LIHAT</span>' : '<span style="opacity:0.3;font-size:32px">👤</span>')}
+            <div class="face-adm-item" style="padding:15px; border-radius:12px; display:flex; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:10px">
+              <div class="face-adm-thumb" id="thumb-${uid}" style="width:64px; height:64px; border-radius:12px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,.08); cursor:pointer" onclick="adminLoadSinglePhoto('${uid}')">
+                ${facePhoto && facePhoto.length > 100 ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` :
+              (hasFace ? '<span style="font-size:10px;color:var(--gold);font-weight:700">LIHAT</span>' : '<span style="opacity:0.3;font-size:32px">👤</span>')}
               </div>
               <div class="face-adm-info" style="flex:1; margin-left:14px; min-width:0">
                 <div class="face-adm-name" style="font-size:14px; font-weight:800; color:#fff; word-break:break-word; line-height:1.3; margin-bottom:4px">${nama}</div>
-                <div class="face-adm-status" style="font-size:10px; color:rgba(255,255,255,0.5)">
-                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">📷 Wajah: ${faceS}${engineBadge} <span style="margin:0 4px">·</span> ✍️ TTD: ${sigS}</div>
-                  <div style="opacity:0.6; font-size:9px; margin-top:4px">ID: ${uid}</div>
+                <div class="face-adm-status" style="font-size:10px; color:rgba(255,255,255,0.5); display:flex; flex-direction:column; gap:4px">
+                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">🖼️ Wajah: ${faceS}${engineBadge}</div>
+                  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">🖋️ TTD: ${sigS}</div>
+                  <div style="opacity:0.6; font-size:9px">ID: ${uid}</div>
                 </div>
               </div>
               <div class="face-adm-btns" style="display:flex; flex-direction:column; gap:6px; margin-left:12px">
-                <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">📷 Wajah</button>
+                <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px; padding:6px 10px; border-radius:8px; border:1px solid var(--gold); background:rgba(201,168,76,.1); color:var(--gold); font-size:10px; font-weight:700; cursor:pointer">📷 Wajah</button>
                 <button class="face-adm-btn" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">✍️ TTD</button>
               </div>
             </div>`;
@@ -13858,21 +13857,21 @@ File di Google Drive juga akan dihapus.`)) return;
     async function adminLoadSinglePhoto(uid) {
       const container = $(`thumb-${uid}`);
       if (!container) return;
-      
+
       const original = container.innerHTML;
       container.innerHTML = '<span class="spin-sm"></span>';
-      
+
       try {
         const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
         if (!res.ok) throw 0;
         const json = await res.json();
         const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
-        
+
         if (d && d.face_photo) {
           container.innerHTML = `<img src="${d.face_photo}" style="width:100%;height:100%;object-fit:cover;animation:fadeIn .3s">`;
           container.onclick = null; // Sudah dimuat
         } else {
-           container.innerHTML = '<span style="opacity:0.3;font-size:32px">👤</span>';
+          container.innerHTML = '<span style="opacity:0.3;font-size:32px">👤</span>';
         }
       } catch (e) {
         container.innerHTML = original;
@@ -14458,7 +14457,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // 2. Load face descriptors dari server
       try {
-        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+        const urlInst = new URLSearchParams(window.location.search).get('instansi');
+        let currentInstansi = userProfile?.instansi_id || urlInst || 'bapperida';
+        if (currentInstansi === 'pusat') currentInstansi = 'bapperida';
+        const res = await apiFetch(`${P.faceGetAll}?instansi_id=${currentInstansi}`, { method: 'GET' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);
@@ -14491,18 +14493,13 @@ File di Google Drive juga akan dihapus.`)) return;
             dim: dLen
           };
 
-          // Bridge for Human vs Face-API
-          if (window._aiEngine === 'human') {
-            return { id: tid, descriptor: desc };
-          } else {
-            // Face-API specifically expects 128 dimensions for its LabeledFaceDescriptors
-            if (dLen === 128 && window.faceapi) {
-              return new window.faceapi.LabeledFaceDescriptors(tid, [new Float32Array(desc)]);
-            } else {
-              // Fallback for non-128 descriptors in face-api mode
-              return { id: tid, descriptor: desc, skipFaceApi: true };
-            }
-          }
+          // Standardized format for matchMejaCandidate loop
+          return {
+            id: tid,
+            descriptor: desc,
+            engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
+            dim: dLen
+          };
         });
 
         if (!_allFaceDescriptors.length) {
@@ -14860,8 +14857,25 @@ File di Google Drive juga akan dihapus.`)) return;
        MEJA ABSEN / DESK ATTENDANCE LOGIC
     ════════════════════════════════════════════════════════ */
     // 4. Handler Pencocokan & Cek Status (AJAX ke Webhook)
-    // Tambahkan dua variabel ini di bagian paling atas script (di luar fungsi) 
-    // agar tracker tetap tersimpan selama aplikasi terbuka.
+    /* ════ PENGHITUNG SIMILARITAS (DUAL-ENGINE) ════ */
+    function matchMejaCandidate(d1, d2, engine) {
+      if (!d1 || !d2) return 0;
+      // Normalisasi input ke array jika masih string (antisipasi data n8n)
+      const a1 = (typeof d1 === 'string') ? JSON.parse(d1) : d1;
+      const a2 = (typeof d2 === 'string') ? JSON.parse(d2) : d2;
+
+      if (!Array.isArray(a1) || !Array.isArray(a2)) return 0;
+      if (a1.length !== a2.length) return 0; // Engine mismatch (128 vs 1024)
+
+      // Cosine Similarity: Untuk unit vectors (seperti Face-API / Human), 
+      // Dot Product = Cosine Similarity.
+      let dot = 0;
+      for (let i = 0; i < a1.length; i++) {
+        dot += a1[i] * a2[i];
+      }
+      return dot; // Rentang -1 s.d 1 (biasanya 0 s.d 1 untuk wajah)
+    }
+
     let _lastMejaId = null;
     let _lastMejaTime = 0;
 
@@ -15150,12 +15164,12 @@ File di Google Drive juga akan dihapus.`)) return;
       console.log('[Auth] Logging out user...');
       localStorage.removeItem('tg_user_id_v5');
       localStorage.removeItem('tg_user_obj_v5');
-      
+
       // Clear all active caches to prevent data leakage
       localStorage.removeItem('absen_last_tab');
-      
+
       // Force return to login screen
-      location.href = location.pathname; 
+      location.href = location.pathname;
     }
 
     function _checkIdentityOnLoad() {

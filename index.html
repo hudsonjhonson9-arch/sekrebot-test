@@ -7975,24 +7975,33 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Extract face descriptor ──
     async function getFaceDescriptor(input) {
+      // Tunggu hingga AI tidak sibuk (max 3 detik)
       let waitStart = Date.now();
       while (_isDetecting && (Date.now() - waitStart < 3000)) {
         await new Promise(r => setTimeout(r, 50));
       }
+
       const prevDetectState = _isDetecting;
-      _isDetecting = true;
+      _isDetecting = true; // Kunci AI untuk ekstraksi
+
       try {
         if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await _detectWithTimeout(input, 8000); // ← gunakan timeout
+          const res = await _detectWithTimeout(input, 8000); // Max 8 detik untuk ekstraksi identitas
           return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
         } else if (window.faceapi) {
-          const result = await faceapi.detectSingleFace(input).withFaceLandmarks().withFaceDescriptor();
-          return result ? result.descriptor : null;
+          const detection = await window.faceapi
+            .detectSingleFace(input, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+          return detection ? detection.descriptor : null;
         }
       } catch (e) {
-        if (e.message === 'AI_TIMEOUT') setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', '...');
+        console.warn('getFaceDescriptor error:', e);
+        if (e.message === 'AI_TIMEOUT') {
+          setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', 'Coba ulangi scan atau ganti pencahayaan');
+        }
       } finally {
-        _isDetecting = prevDetectState; // ← kembalikan state
+        _isDetecting = prevDetectState; // Kembalikan state awal
       }
       return null;
     }
@@ -8010,8 +8019,8 @@ File di Google Drive juga akan dihapus.`)) return;
             const cnv = document.createElement('canvas');
             cnv.width = img.width; cnv.height = img.height;
             cnv.getContext('2d').drawImage(img, 0, 0);
-            const descriptor = await getFaceDescriptor(img);
-            resolve(descriptor);
+            const desc = await getFaceDescriptor(cnv);
+            resolve(desc);
           };
           img.onerror = () => { clearTimeout(timeout); resolve(null); };
           img.src = dataUrl;
@@ -8382,7 +8391,6 @@ File di Google Drive juga akan dihapus.`)) return;
       });
     }
 
-
     // ── Terpadu: Muat Model AI (face-api atau Human) ──
     async function loadAIModels() {
       if (_modelsReady) return true;
@@ -8403,7 +8411,7 @@ File di Google Drive juga akan dihapus.`)) return;
             filter: { enabled: false }, // Matikan filter berat untuk HP
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json',maxDetected: 1, minConfidence: 0.15, inputSize: 1024 },
+              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.15 },
               mesh: { enabled: true },
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },

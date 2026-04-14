@@ -14984,7 +14984,6 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // JIKA WAJAH DIKENAL
       const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
-      const score = Math.max(0, Math.round((distance || 0) * 100)); // Arg 'distance' is now passing similarity score (0-1)
 
       $('moIcon').textContent = '⏳';
       $('moNama').textContent = user.nama;

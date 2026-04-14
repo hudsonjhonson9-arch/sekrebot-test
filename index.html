@@ -7165,7 +7165,7 @@
     function updateClock() {
       const n = nowWITA(), h = n.getDay(), tot = n.getHours() * 60 + n.getMinutes();
       $('clockTime').innerHTML = `${p2(n.getHours())}<span>:</span>${p2(n.getMinutes())}<span>:</span>${p2(n.getSeconds())}`;
-      $('clockDate').textContent = n.toLocaleDateString('id-ID', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      $('clockDate').textContent = fmtD(n);
       const _hEl = $('hariIni'); if (_hEl) _hEl.textContent = H_DISP[h];
 
       // ── Gunakan jam periode aktif hari ini (bukan selalu jam global) ──
@@ -7737,7 +7737,7 @@ File di Google Drive juga akan dihapus.`)) return;
           clb.className = 'clock-loc-badge unknown';
         }
       }
-      $('gpsTanggal').textContent = n.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      $('gpsTanggal').textContent = fmtD(n);
       $('gpsJam').textContent = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
       const pct = Math.max(5, Math.min(100, 100 - (acc / 5)));
       const col = acc <= 20 ? '#22c55e' : acc <= 100 ? '#f59e0b' : '#ef4444';
@@ -10579,10 +10579,10 @@ File di Google Drive juga akan dihapus.`)) return;
         if (isHarianLoad && rekapOK) {
           try {
             // Pakai allLogs jika sudah dimuat, atau fetch khusus untuk tanggal ini
-            let logHarian = allLogs.filter(r => getField(r, 'Tanggal', 'tanggal') === dari);
+            let logHarian = allLogs.filter(r => normToISO(getField(r, 'Tanggal', 'tanggal')) === normToISO(dari));
             if (!logHarian.length) {
               const rLog = await apiFetch(`${P.log}?tanggal=${dari}&instansi_id=${finalInstansiId}`, { method: 'GET' });
-              if (rLog.ok) { const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r => getField(r, 'Tanggal', 'tanggal') === dari); }
+              if (rLog.ok) { const jLog = await rLog.json(); logHarian = parseRows(jLog).filter(r => normToISO(getField(r, 'Tanggal', 'tanggal')) === normToISO(dari)); }
             }
             // Bangun map: id → {jamMasuk, jamPulang, logKet, status flags}
             const jamMap = {};
@@ -10981,7 +10981,7 @@ File di Google Drive juga akan dihapus.`)) return;
       let tanggalLabel = '';
       if (isHarian && _dari) {
         const d = new Date(_dari + 'T00:00:00');
-        tanggalLabel = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        tanggalLabel = fmtD(d);
       }
 
       el.innerHTML = filteredPg.map((p, idx) => {
@@ -13103,7 +13103,7 @@ File di Google Drive juga akan dihapus.`)) return;
         return;
       }
       const todayStr = fmtD(nowWITA());
-      const fmtTgl = s => { try { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return s; } };
+      const fmtTgl = s => { try { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : fmtD(d); } catch { return s; } };
       list.innerHTML = jamPeriodeList.map(p => {
         const aktif = todayStr >= p.dari && todayStr <= p.sampai;
         const expired = todayStr > p.sampai;
@@ -14587,7 +14587,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const sampai = $('rekapSampai').value;
         const isHarian = dari === sampai;
         const tanggalLabel = isHarian
-          ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+          ? fmtD(new Date(dari + 'T00:00:00'))
           : `${dari} s.d. ${sampai}`;
 
         const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";

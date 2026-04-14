@@ -7,8 +7,8 @@
   <title>Absensi BAPPERIDA</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
   <!-- face-api.js loaded on-demand saat kamera dibuka -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -597,138 +597,6 @@
       opacity: .75;
       font-weight: 500;
       margin-top: 1px
-    }
-
-    /* ══ AUTH MODAL (LOGIN & DAFTAR) ══ */
-    .auth-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10000;
-      background: rgba(5, 12, 30, 0.85);
-      backdrop-filter: blur(25px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      animation: fadeIn 0.4s ease;
-    }
-
-    .auth-card {
-      width: 100%;
-      max-width: 360px;
-      background: rgba(17, 34, 64, 0.7);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 28px 24px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .auth-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    }
-
-    .auth-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--white);
-      text-align: center;
-      margin-bottom: 8px;
-    }
-
-    .auth-sub {
-      font-size: 11px;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 24px;
-      line-height: 1.5;
-    }
-
-    .auth-tabs {
-      display: flex;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    .auth-tab {
-      flex: 1;
-      padding: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--muted);
-      cursor: pointer;
-      text-align: center;
-      border-radius: 8px;
-      transition: all 0.3s;
-    }
-
-    .auth-tab.active {
-      background: var(--gold);
-      color: var(--navy);
-    }
-
-    .form-input-auth {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      color: var(--white);
-      font-family: inherit;
-      font-size: 13px;
-      margin-bottom: 12px;
-      transition: all 0.3s;
-    }
-
-    .form-input-auth:focus {
-      outline: none;
-      border-color: var(--gold);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .form-input-auth option {
-      background: #1a2a4a;
-      color: #ffffff;
-      padding: 10px;
-    }
-
-    .btn-auth {
-      width: 100%;
-      background: var(--gold);
-      color: var(--navy);
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 13px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.3s;
-      margin-top: 10px;
-    }
-
-    .btn-auth:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .auth-footer {
-      font-size: 10px;
-      color: var(--muted);
-      text-align: center;
-      margin-top: 20px;
     }
 
     /* ══ KAMERA / FACE SCAN MODAL ══ */
@@ -1812,8 +1680,7 @@
       text-align: center;
       transition: all .2s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
-      flex-direction: row;
-      /* Icon and text on same line */
+      flex-direction: row; /* Icon and text on same line */
       align-items: center;
       justify-content: center;
       gap: 6px;
@@ -1821,8 +1688,7 @@
     }
 
     .jenis-pill span {
-      font-size: 15px;
-      /* Icon size */
+      font-size: 15px; /* Icon size */
     }
 
     .jenis-pill:hover {
@@ -2322,12 +2188,12 @@
     }
 
     .date-range-card {
-      background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.01));
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 15px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      backdrop-filter: blur(12px)
     }
 
     .date-range-row {
@@ -3442,20 +3308,10 @@
     .pegawai-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 15px;
-      margin-bottom: 12px;
-      transition: all .25s ease;
-      position: relative;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+      border-radius: 13px;
+      padding: 11px 13px;
       backdrop-filter: blur(10px);
-      animation: slideUp .3s ease;
-    }
-
-    .pegawai-card:hover {
-      box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
-      transform: translateY(-2px);
-      border-color: rgba(201, 168, 76, .3);
+      animation: slideUp .25s ease
     }
 
     .pegawai-top {
@@ -3579,21 +3435,13 @@
 
     /* ── REDESIGN REKAP CARD ── */
     .rekap-card-v2 {
-      background: linear-gradient(145deg, var(--card-bg), rgba(255, 255, 255, 0.02));
+      background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
       position: relative;
-      transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-      animation: slideUp .4s ease;
-    }
-
-    .rekap-card-v2:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-      border-color: rgba(124, 58, 237, 0.3);
+      overflow: hidden;
     }
 
     .rekap-hero-section {
@@ -5034,58 +4882,6 @@
     }
   </style>
   <div id="offlineBanner" class="offline-banner">⚠️ ANDA SEDANG OFFLINE (MODE OFFLINE)</div>
-  <div id="authOverlay" class="auth-overlay" style="display:none">
-    <div class="auth-card">
-      <div class="auth-title">Selamat Datang</div>
-      <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
-
-      <div class="auth-tabs">
-        <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
-        <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
-      </div>
-
-      <!-- Login Form -->
-      <div id="formLogin">
-        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
-        <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
-      </div>
-
-      <!-- Register Form -->
-      <div id="formRegister" style="display:none">
-        <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
-        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
-        <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
-
-        <select id="regBidang" class="form-input-auth">
-          <option value="">— Pilih Bidang —</option>
-          <option value="Sekretariat">Sekretariat</option>
-          <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-          <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-          <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
-          </option>
-          <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-          <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-        </select>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
-          <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
-            <option value="">— Jenis —</option>
-            <option value="PNS">PNS</option>
-            <option value="PPPK">PPPK</option>
-          </select>
-          <select id="regPangkat" class="form-input-auth">
-            <option value="">— Pangkat —</option>
-          </select>
-        </div>
-        <button id="btnRegister" class="btn-auth" onclick="handleAuthAction('register')">Daftar Akun 📋</button>
-      </div>
-
-      <div class="auth-footer">
-        Sistem Absensi<br>© 2026 Sekretariat Daerah
-      </div>
-    </div>
-  </div>
-
   <div id="appSplash">
     <div class="splash-logo">🏛️</div>
     <div class="splash-title">BAPPERIDA Sumba Barat</div>
@@ -5309,7 +5105,6 @@
                   🧠 Face Recognition</div>
                 <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data
                   wajah</div>
-                <div id="faceRegSub" style="font-size:8px;color:var(--muted)">Daftarkan wajah untuk login AI</div>
               </div>
               <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()"
                 style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
@@ -5554,9 +5349,7 @@
         <div class="profil-info">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
             <div class="profil-nama" id="profilNama">—</div>
-            <button onclick="loadUserProfile(true)"
-              style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8"
-              title="Segarkan Data Profil">🔄</button>
+            <button onclick="loadUserProfile(true)" style="background:none; border:none; color:var(--gold); font-size:16px; cursor:pointer; padding:5px; opacity:0.8" title="Segarkan Data Profil">🔄</button>
           </div>
           <div class="profil-jabatan" id="profilJabatan">—</div>
           <div class="profil-nip" id="profilNip">NIP —</div>
@@ -5816,14 +5609,6 @@
         </div>
       </div>
       <div class="footer" style="margin-top:12px">Data dari Supabase via n8n</div>
-
-      <!-- LOGOUT BUTTON (Only for NIP Login) -->
-      <div id="logoutSection" style="margin-top:20px; display:none; padding: 0 10px 20px;">
-        <button onclick="handleLogout()"
-          style="width:100%; padding:14px; background:rgba(255, 60, 60, 0.1); border:1px solid rgba(255, 60, 60, 0.3); border-radius:12px; color:#ff6060; font-weight:700; cursor:pointer; font-size:13px; font-family:inherit; transition: all 0.3s;">
-          <span style="font-size: 16px; margin-right: 6px;">🚪</span> Keluar dari Akun ini
-        </button>
-      </div>
     </div>
 
     <!-- ══ TAB REKAP ══ -->
@@ -5831,10 +5616,10 @@
       <div class="rekap-header">
         <div class="rekap-title">📊 Rekap Pegawai</div>
         <div class="rekap-toolbar">
-          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()"
-            style="background: var(--admin); color: white; border: none; font-weight: 800; padding: 6px 16px; border-radius: 9px; box-shadow: 0 2px 10px rgba(124, 58, 237, 0.25);">
-            <span id="rekapRefIcon" style="margin-right: 4px">🔄</span> Muat
-          </button>
+          <!--<button class="btn-download" id="btnDownloadRekap" onclick="downloadRekap()"
+            title="Kirim Rekap ke Telegram">📤 Kirim</button>-->
+          <button class="btn-refresh" id="btnRekapRefresh" onclick="loadRekap()"><span id="rekapRefIcon">🔄</span>
+            Muat</button>
         </div>
       </div>
       <div class="print-info" id="printInfo">
@@ -5842,43 +5627,24 @@
         Periode: <span id="printPeriode">—</span><br>
         Dicetak: <span id="printTanggal">—</span>
       </div>
-      <div class="date-range-card"
-        style="box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, var(--card-bg), rgba(255,255,255,0.02));">
+      <div class="date-range-card">
         <div class="date-range-row">
           <div>
-            <div class="date-range-label">Dari Tanggal</div>
-            <input type="date" class="date-range-input" id="rekapDari" onchange="onDateRangeChange()" />
+            <div class="date-range-label">Dari Tanggal</div><input type="date" class="date-range-input" id="rekapDari"
+              onchange="onDateRangeChange()" />
           </div>
           <div>
-            <div class="date-range-label">Sampai Tanggal</div>
-            <input type="date" class="date-range-input" id="rekapSampai" onchange="onDateRangeChange()" />
+            <div class="date-range-label">Sampai Tanggal</div><input type="date" class="date-range-input"
+              id="rekapSampai" onchange="onDateRangeChange()" />
           </div>
         </div>
-
-        <!-- Presets relocated back below date inputs -->
-        <div class="date-preset-bar" style="margin-top: 10px; margin-bottom: 2px;">
+        <div class="date-preset-bar">
           <button class="date-preset active" id="dp-today" onclick="setPreset('today', this)">Hari Ini</button>
           <button class="date-preset" id="dp-week" onclick="setPreset('week',  this)">Minggu Ini</button>
           <button class="date-preset" id="dp-month" onclick="setPreset('month', this)">Bulan Ini</button>
           <button class="date-preset" id="dp-last30" onclick="setPreset('last30',this)">30 Hari</button>
           <button class="date-preset" id="dp-custom" onclick="setPreset('custom',this)"
             style="display:none">Kustom</button>
-        </div>
-
-        <!-- Filter Bidang -->
-        <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
-          <div class="date-range-label" style="margin-bottom: 4px">Filter Bidang / Unit Kerja</div>
-          <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
-            onchange="renderRekap(lastRekapPegawai)">
-            <option value="Semua">— Tampilkan Semua Bidang —</option>
-            <option value="Sekretariat">Sekretariat</option>
-            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
-            </option>
-            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-          </select>
         </div>
       </div>
       <!-- Stat Rekap: baris atas kehadiran, baris bawah keterangan -->
@@ -6012,15 +5778,13 @@
           </div>
         </div>
 
-        <!-- ══ MEJA ABSEN (Admin Only) ══ -->
-        <div class="meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
-          <div class="meja-badge">🛡️ Akses Terjamin</div>
+        <!-- ══ MEJA ABSEN (Super Admin Only) ══ -->
+        <div class="superadmin-section meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
+          <div class="meja-badge">👑 Super Admin</div>
           <div class="meja-title">🖥️ Meja Absen</div>
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
-            <div id="aiEngineBadge"
-              style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">
-              AI: Detecting...</div>
+             <div class="meja-sub" style="margin-bottom:0">Scan wajah pegawai untuk absensi manual.</div>
+             <div id="aiEngineBadge" style="font-size:8px;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:10px;color:var(--muted);border:1px solid var(--border);font-family:monospace">AI: Detecting...</div>
           </div>
           <div class="meja-status-bar" id="mejaStatusBar">
             <div class="meja-status-dot" id="mejaStatusDot"></div>
@@ -6060,40 +5824,30 @@
 
           <!-- 🧠 AI ENGINE SETTINGS ══ -->
           <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1)">
-            <div
-              style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+            <div style="font-size:10px;font-weight:800;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:6px">
               🧠 PENGATURAN MESIN AI
             </div>
             <div class="form-group" style="margin-bottom:8px">
               <label class="form-label" style="font-size:8px; opacity:0.7">Pilih Mesin Deteksi Wajah</label>
-              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)"
-                style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
+              <select id="selectAiEngine" class="form-input" onchange="toggleHumanDownloadUI(this.value)" style="background:rgba(0,0,0,0.2); border-color:rgba(255,255,255,0.1); height:34px; font-size:11px">
                 <option value="faceapi">face-api.js (Standard)</option>
                 <option value="human">Human Library (Advanced / Anti-Spoof)</option>
               </select>
             </div>
             <div style="margin-bottom:12px; font-size:8px; opacity:0.6; line-height:1.4">
-              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model
-              tambahan.
+              Human Library menawarkan liveness detection yang lebih akurat (Antispoof) namun memerlukan download model tambahan.
             </div>
 
-            <div id="humanJsCacheControl"
-              style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div id="humanJsCacheControl" style="display:none; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:8px; padding:10px; border:1px solid rgba(255,255,255,0.05);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                 <span style="font-size:9px; color:var(--muted); font-weight:600;">Status Human.js Lokal:</span>
-                <span id="humanJsStatus"
-                  style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
+                <span id="humanJsStatus" style="font-size:9px; font-weight:800; color:var(--warning)">Memeriksa...</span>
               </div>
-              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()"
-                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥
-                Download Library ke Perangkat (Offline)</button>
-              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()"
-                style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️
-                Hapus File Cache Lokal</button>
+              <button class="btn-admin" id="btnDownloadHumanJs" onclick="downloadHumanJsOffline()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:var(--success); border-radius:6px; margin-bottom:6px; display:none;">📥 Download Library ke Perangkat (Offline)</button>
+              <button class="btn-admin" id="btnClearHumanJs" onclick="clearHumanJsCache()" style="width:100%; justify-content:center; height:30px; font-size:10px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:var(--danger); border-radius:6px; display:none;">🗑️ Hapus File Cache Lokal</button>
             </div>
 
-            <button class="btn-admin" onclick="simpanAiEngine()"
-              style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
+            <button class="btn-admin" onclick="simpanAiEngine()" style="width:100%; justify-content:center; height:34px; font-size:11px">💾 Simpan & Reload Mesin</button>
           </div>
         </div>
       </div>
@@ -6132,17 +5886,6 @@
                   class="form-input" /></div>
               <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama"
                   type="text" class="form-input" /></div>
-              <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label><select id="inPegawaiBidang"
-                  class="form-input">
-                  <option value="">— Pilih Bidang —</option>
-                  <option value="Sekretariat">Sekretariat</option>
-                  <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-                  <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-                  <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan
-                    Manusia</option>
-                  <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-                  <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-                </select></div>
               <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input
                     id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
@@ -6150,19 +5893,6 @@
                     id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." /></div>
                 <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input
                     id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">Tipe Pegawai</label><select
-                    id="inPegawaiTipe" class="form-input"
-                    onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
-                    <option value="PNS">Pegawai Negeri Sipil (PNS)</option>
-                    <option value="PPPK">PPPK</option>
-                    <option value="NONASN">Non ASN / Lainnya</option>
-                  </select></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Pangkat/Golongan</label><select
-                    id="inPegawaiPangkat" class="form-input">
-                    <option value="">— Pilih —</option>
-                  </select></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
                 <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select
@@ -6220,8 +5950,7 @@
             </div>
 
             <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)">
-              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span>
-            </div>
+              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span></div>
             <div id="adminFaceRegList" style="margin-top:12px">
               <div class="shimmer" style="height:100px; border-radius:12px"></div>
             </div>
@@ -6255,8 +5984,6 @@
                 <option value="admin">Admin</option>
                 <option value="superadmin">Super Admin</option>
               </select></div>
-            <input id="regJabatan" class="form-input-auth" type="text" placeholder="Jabatan">
-
             <button class="btn-admin" onclick="tambahAdmin()" style="margin:0">Tambah Hak Akses</button>
           </div>
         </div>
@@ -6363,20 +6090,15 @@
             style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
             📸 FACE VERIFICATION SWITCH</div>
           <div
-            style="display:flex;flex-direction:column;gap:12px;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
-              <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
-                style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
-                <div id="faceToggleKnob"
-                  style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
-                </div>
+            style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:14px;border:1px solid var(--border);border-radius:12px">
+            <div id="faceToggleLabel" style="font-size:12px;font-weight:700">Memuat status...</div>
+            <div id="faceToggleSwitch" onclick="toggleFaceRecognition()"
+              style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
+              <div id="faceToggleKnob"
+                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
               </div>
             </div>
-            <div id="faceToggleDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi status...
-            </div>
           </div>
-          <div id="faceToggleResult" style="display:none; margin-top:12px"></div>
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
@@ -6386,17 +6108,13 @@
             style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
             🖥️ TAMPILAN MODE DESKTOP</div>
           <div
-            style="display:flex;flex-direction:column;gap:12px;background:rgba(96,165,250,.04);padding:14px;border:1px solid rgba(96,165,250,.1);border-radius:12px">
-            <div style="display:flex;align-items:center;justify-content:space-between">
-              <div id="desktopModeLabel" style="font-size:12px;font-weight:700">Memuat...</div>
-              <div id="desktopModeSwitch" onclick="toggleDesktopMode()"
-                style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
-                <div id="desktopModeKnob"
-                  style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
-                </div>
+            style="display:flex;align-items:center;justify-content:space-between;background:rgba(96,165,250,.04);padding:14px;border:1px solid rgba(96,165,250,.1);border-radius:12px">
+            <div id="desktopModeLabel" style="font-size:12px;font-weight:700">Memuat...</div>
+            <div id="desktopModeSwitch" onclick="toggleDesktopMode()"
+              style="width:52px;height:28px;border-radius:14px;background:#6b7280;position:relative;cursor:pointer">
+              <div id="desktopModeKnob"
+                style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .3s">
               </div>
-            </div>
-            <div id="desktopModeDesc" style="font-size:9px;color:var(--muted);line-height:1.4">Memuat deskripsi mode...
             </div>
           </div>
         </div>
@@ -6466,71 +6184,6 @@
         </button>
       </div>
       <div id="sigMsg" style="display:none" class="sig-msg"></div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL MANUAL LOG (ADMIN) ══ -->
-  <div id="logModal" class="sig-overlay"
-    style="display:none; align-items:center; justify-content:center; padding:20px; z-index:999999;">
-    <div class="card"
-      style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
-      <div
-        style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
-        <div style="display:flex; align-items:center; gap:8px">
-          <span id="logModalIcon" style="font-size:18px">➕</span>
-          <div id="logModalTitle" style="font-size:11px; font-weight:800; color:var(--white)">TAMBAH LOG MANUAL</div>
-        </div>
-        <button onclick="closeLogEditor()"
-          style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer">✕</button>
-      </div>
-
-      <input type="hidden" id="editLogId">
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Pegawai</label>
-        <select id="inLogPegawai" class="form-input">
-          <option value="">— Pilih Pegawai —</option>
-        </select>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:9px">Tanggal</label>
-          <input type="date" id="inLogTanggal" class="form-input">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:9px">Jam</label>
-          <input type="time" id="inLogJam" class="form-input">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Jenis Absen</label>
-        <select id="inLogJenis" class="form-input">
-          <option value="MASUK">MASUK</option>
-          <option value="PULANG">PULANG</option>
-          <option value="IZIN">IZIN</option>
-          <option value="SAKIT">SAKIT</option>
-          <option value="TUGAS">TUGAS</option>
-          <option value="TUBEL">TUBEL (TUGAS BELAJAR)</option>
-          <option value="CUTI">CUTI</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Keterangan (Opsional)</label>
-        <input type="text" id="inLogKet" class="form-input" placeholder="Misal: Lupa absen, error GPS...">
-      </div>
-
-      <div class="result-card" id="logFormResult" style="display:none; margin-bottom:12px">
-        <div class="r-icon" id="logFormRIcon"></div>
-        <div class="r-title" id="logFormRTitle"></div>
-        <div class="r-msg" id="logFormRMsg"></div>
-      </div>
-
-      <button class="btn-admin" id="btnSaveLog" onclick="saveLog()" style="margin:0; height:45px">
-        <span>💾</span><span id="btnSaveLogTxt">Simpan Log</span>
-      </button>
     </div>
   </div>
 
@@ -6617,7 +6270,7 @@
     /* ════ KONFIGURASI N8N ════ */
     // Akan dihapus secara bertahap saat migrasi ke Supabase selesai
     const SERVER_1 = 'https://mindcloud.my.id';           // server utama (permanen)
-    const SERVER_2 = 'https://n8n-sp8dtwslkxal.jkt3.sumopod.my.id'; // fallback/dev
+    const SERVER_2 = 'https://unheeled-timmy-supernumerously.ngrok-free.dev'; // fallback/dev
     const isTest = false;
     // ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
     // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
@@ -6678,45 +6331,24 @@
       userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
       userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
       userDel: isTest ? '/webhook-test/user-delete' : '/webhook/user-delete',
-      logAdd: isTest ? '/webhook-test/log-add' : '/webhook/log-add',
-      logEdit: isTest ? '/webhook-test/log-edit' : '/webhook/log-edit',
       signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
       signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
       signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
       mejaAbsen: isTest ? '/webhook-test/meja-absen' : '/webhook/meja-absen',
       faceGetAll: isTest ? '/webhook-test/face-get-all' : '/webhook/face-get-all',
-      bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
     };
 
     const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
     async function apiFetch(path, opts = {}) {
-      // Auto-append instansi_id scoping
-      const urlParams = new URLSearchParams(window.location.search);
-      let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
-      if (!inst) {
-          try {
-              const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-              inst = u.instansi_id || 'pusat';
-          } catch(e) { inst = 'pusat'; }
-      }
-      if (inst && !path.includes('instansi_id=')) {
-        path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
-      }
-
       for (const base of [SERVER_1, SERVER_2]) {
         try {
-          console.log(`[Fetch] Attempting: ${base}${path}`);
           const r = await fetch(base + path, { ...opts, headers: HDR });
-          if (r.ok || (r.status >= 400 && r.status < 500)) {
-            console.log(`[Fetch] Success: ${base}${path}`);
-            return r;
-          }
+          // Return response for both ok AND client errors (4xx) — let caller handle
+          if (r.ok || (r.status >= 400 && r.status < 500)) return r;
           throw new Error(`HTTP ${r.status}`);
-        } catch (e) {
-          console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
-        }
+        } catch (e) { console.warn(`[Fallback] ${base}:`, e.message) }
       }
-      throw new Error('Semua server offline atau tidak merespons.');
+      throw new Error('Semua server offline');
     }
 
     /* ════ MODEL LOADING STATE ════ */
@@ -6811,56 +6443,6 @@
     const H_DISP = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const LOK_DEF = { senin: ['Kantor Bupati', 'Kantor BAPPERIDA'], rabu: ['Kantor BPBD', 'Kantor BAPPERIDA'], default: ['Kantor BAPPERIDA'] };
 
-    // ════ PANGKAT OPTIONS ════
-    const PANGKAT_DATA = {
-      PNS: [
-        "Juru Muda (I/a)", "Juru Muda Tk.I (I/b)", "Juru (I/c)", "Juru Tk.I (I/d)",
-        "Pengatur Muda (II/a)", "Pengatur Muda Tk.I (II/b)", "Pengatur (II/c)", "Pengatur Tk.I (II/d)",
-        "Penata Muda (III/a)", "Penata Muda Tk.I (III/b)", "Penata (III/c)", "Penata Tk.I (III/d)",
-        "Pembina (IV/a)", "Pembina Tk.I (IV/b)", "Pembina Utama Muda (IV/c)", "Pembina Utama Madya (IV/d)", "Pembina Utama (IV/e)"
-      ],
-      PPPK: [
-        "Ahli Pertama", "Ahli Muda", "Ahli Madya", "Ahli Utama",
-        "Terampil", "Mahir", "Penyelia",
-        "Golongan I", "Golongan II", "Golongan III", "Golongan IV", "Golongan V", "Golongan VI", "Golongan VII", "Golongan VIII", "Golongan IX", "Golongan X", "Golongan XI", "Golongan XII", "Golongan XIII", "Golongan XIV", "Golongan XV", "Golongan XVI", "Golongan XVII"
-      ]
-    };
-
-    async function loadBidangList() {
-      const regSelect = $('regBidang');
-      const rekapSelect = $('rekapBidang');
-      if (!regSelect && !rekapSelect) return;
-
-      try {
-        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
-        const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
-        const d = await res.json();
-        if (d.ok && Array.isArray(d.data)) {
-          const options = d.data.map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`).join('');
-          if (regSelect) regSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
-          if (rekapSelect) {
-            const currentVal = rekapSelect.value;
-            rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>` + options;
-            rekapSelect.value = currentVal;
-          }
-        }
-      } catch (e) {
-        console.error('[Bidang] Load error:', e);
-      }
-    }
-
-    function _updatePangkatDropdown(targetId, category) {
-      const select = $(targetId);
-      if (!select) return;
-      let options = '<option value="">— Pilih —</option>';
-      if (PANGKAT_DATA[category]) {
-        options += PANGKAT_DATA[category].map(p => `<option value="${p}">${p}</option>`).join('');
-      } else {
-        options += '<option value="Lainnya">Lainnya / Staff</option>';
-      }
-      select.innerHTML = options;
-    }
-
     const p2 = n => String(n).padStart(2, '0');
     const nowWITA = () => new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
     const fmtD = d => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
@@ -6882,29 +6464,16 @@
     }
 
     function switchAdminSection(sectionId) {
-      if (!sectionId) sectionId = localStorage.getItem('absen_last_admin_section') || 'ops';
-      localStorage.setItem('absen_last_admin_section', sectionId);
-
       // Hide all sections
-      document.querySelectorAll('.admin-section').forEach(s => {
-        if (s) s.style.display = 'none';
-      });
+      document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
       // Show Target
       const target = $('admin-section-' + sectionId);
-      if (target) {
-        target.style.display = 'block';
-        target.style.animation = 'fadeIn 0.4s ease forwards';
-      }
+      if (target) target.style.display = 'block';
 
       // Update Button State
-      document.querySelectorAll('.admin-nav-btn').forEach(btn => {
-        if (btn) btn.classList.remove('active');
-        if (btn && btn.id === 'btn-nav-' + sectionId) btn.classList.add('active');
-      });
-
-      // Special handling for specific sections
-      if (sectionId === 'ops') loadKonfirmasiAdmin();
-      if (sectionId === 'user') loadAdminFaceReg();
+      document.querySelectorAll('.admin-nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = $('btn-nav-' + sectionId);
+      if (activeBtn) activeBtn.classList.add('active');
 
       // Fix Leaflet Map rendering if switching to Config
       if (sectionId === 'config' && typeof adminMap !== 'undefined' && adminMap) {
@@ -6930,22 +6499,22 @@
       const statusEl = $('humanJsStatus');
       const btnEl = $('btnDownloadHumanJs');
       if (statusEl) statusEl.textContent = 'Memeriksa...';
-
+      
       if (cached && cached.blob) {
-        if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
-        if (btnEl) btnEl.style.display = 'none';
-        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
-        return true;
+         if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }
+         if (btnEl) btnEl.style.display = 'none';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'flex';
+         return true;
       } else {
-        if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
-        if (btnEl) btnEl.style.display = 'flex';
-        if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
-        return false;
+         if (statusEl) { statusEl.textContent = '❌ Belum Didownload'; statusEl.style.color = 'var(--warning)'; }
+         if (btnEl) btnEl.style.display = 'flex';
+         if ($('btnClearHumanJs')) $('btnClearHumanJs').style.display = 'none';
+         return false;
       }
     }
 
     async function clearHumanJsCache() {
-      if (confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
+      if(confirm('Hapus file Human.js dari cache lokal? Anda harus download ulang jika ingin menggunakannya tanpa internet.')) {
         await idb.delete('master_data', 'human_script');
         alert('File lokal berhasil dihapus!');
         await checkHumanJsCache();
@@ -6954,11 +6523,11 @@
 
     async function downloadHumanJsOffline() {
       const btn = $('btnDownloadHumanJs');
-      if (btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
+      if(btn) { btn.innerHTML = '⏳ Mendownload... (0%)'; btn.disabled = true; }
       try {
         const response = await fetch(HUMAN_CDN);
         if (!response.ok) throw new Error('Response tidak OK');
-
+        
         const contentLength = response.headers.get('content-length');
         if (!contentLength) {
           const blob = await response.blob();
@@ -6968,24 +6537,24 @@
           let loaded = 0;
           const reader = response.body.getReader();
           const chunks = [];
-
+          
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             chunks.push(value);
             loaded += value.length;
             const progress = Math.round((loaded / total) * 100);
-            if (btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
+            if(btn) btn.innerHTML = `⏳ Mendownload... (${progress}%)`;
           }
           const blob = new Blob(chunks, { type: 'application/javascript' });
           await idb.set('master_data', { key: 'human_script', blob: blob });
         }
-
+        
         alert('✅ Human.js berhasil didownload dan disimpan ke penyimpanan lokal perangkat!');
         await checkHumanJsCache();
       } catch (err) {
         alert('❌ Gagal mendownload Human.js: ' + err.message);
-        if (btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
+        if(btn) { btn.innerHTML = '📥 Coba Lagi Download (Offline)'; btn.disabled = false; }
       }
     }
 
@@ -7001,18 +6570,11 @@
     /* ════ TABS ════ */
     function getAllTabs() { return IS_ADMIN ? ['absen', 'ket', 'rekap', 'profil', 'admin'] : ['absen', 'ket', 'rekap', 'profil']; }
     function switchTab(tab) {
-      if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
-      const T = getAllTabs();
-      if (!T.includes(tab)) tab = 'absen';
-
-      localStorage.setItem('absen_last_tab', tab);
       window.scrollTo(0, 0);
-      document.querySelectorAll('.tab').forEach((t, i) => {
-        if (t) t.classList.toggle('active', T[i] === tab);
-      });
+      const T = getAllTabs();
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', T[i] === tab));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const el = $('panel-' + tab); if (el) el.classList.add('active');
-
       if (tab === 'absen') {
         updateClock(); // refresh notif & batas jam periode segera
         if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
@@ -7043,7 +6605,7 @@
           // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
         }, 50); // Reduced delay for better responsiveness
-
+        
         // Immediate check as well
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
       }
@@ -7273,7 +6835,7 @@
         setUserFallback();
       } else if (isManual) {
         // Jika manual refresh gagal, beri tahu user tapi jangan hapus data yang ada
-        applyProfile();
+        applyProfile(); 
         console.warn('[Profile] Manual refresh failed, preserving existing data.');
       }
     }
@@ -7975,19 +7537,10 @@ File di Google Drive juga akan dihapus.`)) return;
 
     // ── Extract face descriptor ──
     async function getFaceDescriptor(input) {
-      // Tunggu hingga AI tidak sibuk (max 3 detik)
-      let waitStart = Date.now();
-      while (_isDetecting && (Date.now() - waitStart < 3000)) {
-        await new Promise(r => setTimeout(r, 50));
-      }
-
-      const prevDetectState = _isDetecting;
-      _isDetecting = true; // Kunci AI untuk ekstraksi
-
       try {
         if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await _detectWithTimeout(input, 8000); // Max 8 detik untuk ekstraksi identitas
-          return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
+          const res = await HumanInstance.detect(input);
+          return (res.face && res.face.length > 0) ? res.face[0].embedding : null;
         } else if (window.faceapi) {
           const detection = await window.faceapi
             .detectSingleFace(input, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
@@ -7997,11 +7550,6 @@ File di Google Drive juga akan dihapus.`)) return;
         }
       } catch (e) {
         console.warn('getFaceDescriptor error:', e);
-        if (e.message === 'AI_TIMEOUT') {
-          setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', 'Coba ulangi scan atau ganti pencahayaan');
-        }
-      } finally {
-        _isDetecting = prevDetectState; // Kembalikan state awal
       }
       return null;
     }
@@ -8132,7 +7680,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const d1 = Array.isArray(desc1) ? desc1 : Array.from(desc1);
       const d2 = Array.isArray(desc2) ? desc2 : Array.from(desc2);
       if (d1.length !== d2.length || d1.length === 0) return 999;
-
+      
       let sum = 0;
       for (let i = 0; i < d1.length; i++) {
         const d = d1[i] - d2[i];
@@ -8141,64 +7689,41 @@ File di Google Drive juga akan dihapus.`)) return;
       return Math.sqrt(sum);
     }
 
-    async function matchFace(capturedDataUrl, preDescriptor = null) {
+    async function matchFace(capturedDataUrl) {
       const ref = getFaceRef();
       if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
       let refDesc = ref.descriptor;
       // Handle stringified descriptor from DB
       if (typeof refDesc === 'string') {
-        try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
+        try { refDesc = JSON.parse(refDesc); } catch(e) { refDesc = null; }
       }
 
-      let capturedDescArr = preDescriptor;
-      if (!capturedDescArr && capturedDataUrl) {
-        const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
-        capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
-      }
+      const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
+      const capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
 
       if (refDesc && capturedDescArr) {
-        const refDim = refDesc.length;
-        const capDim = capturedDescArr.length;
-
-        // Engine-aware matching logic
-        const engine = window._aiEngine || 'faceapi';
-
-        if (engine === 'human' && HumanInstance && refDim >= 512 && capDim >= 512) {
-          // Use Human Similarity
-          const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
-          const score = Math.round(sim * 100);
-          const threshold = 0.55; // Human threshold (Optimized for tolerance)
-
-          let label, cls;
-          if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-          else if (sim >= threshold - 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
-          else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-
-          return { score, label, cls, similarity: sim, capturedDescriptor: capturedDescArr };
-        } else {
-          // Use Face-API Euclidean Distance (Fallback if mismatch or faceapi)
-          if (refDim !== capDim) {
-            return {
-              score: 0,
-              label: `⚠️ Mismatch (${refDim} vs ${capDim})`,
-              cls: 'face-match-warn',
-              capturedDescriptor: capturedDescArr,
-              needsUpdate: true
-            };
-          }
-
-          const dist = euclideanDistance(refDesc, capturedDescArr);
-          const threshold = 0.55;
-          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-
-          let label, cls;
-          if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-          else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
-          else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-
-          return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
+        if (refDesc.length !== capturedDescArr.length) {
+          return { 
+            score: 0, 
+            label: `⚠️ Mismatch (${refDesc.length} vs ${capturedDescArr.length})`, 
+            cls: 'face-match-warn', 
+            capturedDescriptor: capturedDescArr,
+            needsUpdate: true
+          };
         }
+        const dist = euclideanDistance(refDesc, capturedDescArr);
+        // Sync with reference threshold: 0.55
+        const threshold = 0.55;
+        // Sync with reference score calculation (divisor 0.75)
+        const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+        
+        let label, cls;
+        if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
+        else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
+        else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
+        
+        return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
       }
 
       return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
@@ -8207,47 +7732,29 @@ File di Google Drive juga akan dihapus.`)) return;
     function updateFaceRegUI() {
       const ref = getFaceRef();
       const card = $('faceRegCard'); if (!card) return;
-      const thumb = $('faceRegThumb');
-      const thumbEmpty = $('faceRegThumbEmpty');
-      const status = $('faceRegStatus');
-      const sub = $('faceRegSub');
+      const thumb = $('faceRegThumb'), thumbEmpty = $('faceRegThumbEmpty');
+      const status = $('faceRegStatus'), sub = $('faceRegSub');
       const btn = $('btnRegisterFace');
-
       const descLen = (ref && ref.descriptor) ? (Array.isArray(ref.descriptor) ? ref.descriptor.length : 0) : 0;
       const hasDescriptor = descLen >= 128;
       const isHuman = ref?.faceModel === 'human' || descLen >= 512;
-
       if (ref) {
-        if (thumb && ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
-        else if (thumb) { thumb.style.display = 'none'; }
+        if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; }
+        else { thumb.style.display = 'none'; }
         if (thumbEmpty) thumbEmpty.style.display = 'none';
-
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-
-        if (status) {
-          status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
-          status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
-        }
-        if (sub) {
-          sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
-        }
-        if (btn) {
-          btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
-        }
+        status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
+        status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+        sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
+        btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
       } else {
-        if (thumb) thumb.style.display = 'none';
+        thumb.style.display = 'none';
         if (thumbEmpty) thumbEmpty.style.display = 'flex';
-        if (status) {
-          status.textContent = 'Belum ada data wajah';
-          status.style.color = 'var(--muted)';
-        }
-        if (sub) {
-          sub.textContent = 'Daftarkan wajah untuk pengenalan AI otomatis';
-        }
-        if (btn) {
-          btn.textContent = '📷 Daftarkan';
-        }
+        status.textContent = 'Belum ada data wajah';
+        status.style.color = 'var(--muted)';
+        sub.textContent = 'Daftarkan wajah untuk pengenalan AI otomatis';
+        btn.textContent = '📷 Daftarkan';
       }
     }
 
@@ -8307,27 +7814,6 @@ File di Google Drive juga akan dihapus.`)) return;
     let _faceApiLoaded = false;
     let _humanLoaded = false;
     let HumanInstance = null;
-    let _isDetecting = false; // Flag Pengaman Loop Deteksi
-    let _aiProcessing = false; // Flag Pengaman Ekstraksi
-    let _isLoopEnabled = false; // Flag Kontrol Loop Absolut
-
-    // Fungsi Pengaman untuk Reset Total State AI jika terjadi Stuck
-    function _forceResetAiState(includeProcessing = true) {
-      _isDetecting = false;
-      if (includeProcessing) _aiProcessing = false;
-      _autoCaptured = false;
-      _captureData = null;
-      console.log(`[AI] State reset (Proc:${includeProcessing})`);
-    }
-
-    // Wrapper Timeout untuk menghindari AI Hang selamanya
-    async function _detectWithTimeout(source, timeoutMs = 6000) {
-      if (!HumanInstance) return null;
-      return Promise.race([
-        HumanInstance.detect(source),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('AI_TIMEOUT')), timeoutMs))
-      ]);
-    }
 
     function _refreshAiBadge() {
       const b = $('aiEngineBadge');
@@ -8362,16 +7848,16 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function _loadHumanScript() {
       if (window.Human || (window.Human && window.Human.default)) { _humanLoaded = true; return; }
-
+      
       let srcToLoad = HUMAN_CDN;
-
+      
       try {
         const cached = await idb.get('master_data', 'human_script');
         if (cached && cached.blob) {
           srcToLoad = URL.createObjectURL(cached.blob);
           console.log('[AI] Memuat Human.js dari cache lokal (Offline)');
         }
-      } catch (e) {
+      } catch(e) {
         console.warn('[AI] Gagal membaca cache Human.js', e);
       }
 
@@ -8406,17 +7892,17 @@ File di Google Drive juga akan dihapus.`)) return;
           _updateModelProgress(0, 10);
 
           const config = {
-            backend: 'webgl',
+            backend: 'webgl', 
             modelBasePath: HUMAN_MODELS,
-            filter: { enabled: false }, // Matikan filter berat untuk HP
+            filter: { enabled: true, equalization: true },
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.15 },
-              mesh: { enabled: true },
+              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json' },
+              mesh: { enabled: true }, // Mesh is needed for better liveness
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },
               emotion: { enabled: false },
-              liveness: { enabled: true }
+              liveness: { enabled: true } // Enable liveness
             },
             body: { enabled: false },
             hand: { enabled: false },
@@ -8424,26 +7910,21 @@ File di Google Drive juga akan dihapus.`)) return;
             gesture: { enabled: false }
           };
 
-          // Deteksi konstruktor yang benar
+          // Deteksi konstruktor yang benar (beberapa versi CDN membungkusnya dalam objek)
           let HumanConstructor = window.Human;
           if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
           else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
-
+          
           if (typeof HumanConstructor !== 'function') {
-            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor).');
+            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor). Coba bersihkan Cache.');
           }
 
           HumanInstance = new HumanConstructor(config);
-
-          // Cek Backend
+          
+          // Paksa backend WebGL untuk menghindari error WebGPU yang belum siap di beberapa browser
           if (HumanInstance.tf) {
-            try {
-              await HumanInstance.tf.setBackend('webgl');
-              await HumanInstance.tf.ready();
-            } catch (e) {
-              console.warn('[AI] WebGL gagal, fallback ke default backend');
-              // Biarkan Human memilih backend terbaik otomatis (wasm/cpu)
-            }
+            await HumanInstance.tf.setBackend('webgl');
+            await HumanInstance.tf.ready();
           }
 
           _updateModelProgress(0, 20);
@@ -8451,7 +7932,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // Timeout 15s for model load
           const loadPromise = HumanInstance.load();
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
-
+          
           await Promise.race([loadPromise, timeoutPromise]);
           await HumanInstance.warmup();
 
@@ -8462,7 +7943,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // DEFAULT: Face-API (vladmandic fork for better support)
           await _loadFaceApiScript();
           _updateModelProgress(0, 20);
-
+          
           // Enhanced loader with individual net error check
           const nets = [
             { net: window.faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
@@ -8485,7 +7966,7 @@ File di Google Drive juga akan dihapus.`)) return;
               await window.faceapi.detectSingleFace(dummyCanvas).withFaceLandmarks().withFaceDescriptor();
             }
           } catch (e) { console.warn('[AI] Pre-warm skipped:', e.message); }
-
+          
           _modelsReady = true;
           _refreshAiBadge();
           _updateModelProgress(2, 10);
@@ -8523,15 +8004,15 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ── Buka overlay kamera ── */
     async function openCamOverlay(onDone) {
       const isMeja = onDone === 'meja';
-      _forceResetAiState(); // Reset total sebelum mulai
 
       _absenCallbackAfterCam = onDone;
+      _captureData = null;
+      _autoCaptured = false;
+      _livenessState = { faceOk: false };
       window._isMejaMode = isMeja;
 
       $('camOverlay').classList.remove('hidden');
       $('modelLoading').style.display = 'block';
-      if ($('mlTitle')) $('mlTitle').textContent = 'Memuat Model AI Deteksi Wajah'; // Reset Judul Loading
-      if ($('mlHint')) $('mlHint').textContent = 'Harap tunggu sebentar...';
       $('camVideoWrap').style.display = 'none';
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';
@@ -8751,17 +8232,8 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     function stopDetectLoop() {
-      _isLoopEnabled = false; // Matikan loop secara absolut
-      _forceResetAiState(false); // Reset deteksi tapi JANGAN reset _aiProcessing agar lock tidak lepas
       if (_detectLoop) { cancelAnimationFrame(_detectLoop); _detectLoop = null; }
       if (_liveMatchTimer) { clearInterval(_liveMatchTimer); _liveMatchTimer = null; }
-
-      // Bersihkan Canvas
-      const cnv = $('camCanvas');
-      if (cnv) {
-        const ctx = cnv.getContext('2d');
-        ctx.clearRect(0, 0, cnv.width, cnv.height);
-      }
     }
 
     /* ── Loop deteksi wajah (rAF) ── */
@@ -8782,222 +8254,262 @@ File di Google Drive juga akan dihapus.`)) return;
         if ($('btnCapture') && !window._isMejaMode) $('btnCapture').disabled = false;
       }, 3000);
 
-      _isLoopEnabled = true;
       const loop = async () => {
-        if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
-        if (_isDetecting) {
-          _detectLoop = requestAnimationFrame(loop);
+        if (!$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        _detectLoop = requestAnimationFrame(loop);
+
+        let detection = null;
+        if (window._aiEngine === 'human' && HumanInstance) {
+          const res = await HumanInstance.detect(vid);
+          if (res.face && res.face.length > 0) {
+            const f = res.face[0];
+            // f.live, f.real, f.liveness are possible properties in Human 3.x
+            const liveScore = f.live || 0;
+            const realScore = f.real || 0;
+            const genericScore = f.liveness || 0;
+            
+            // Log for user to see on screen (using lsText)
+            _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
+
+            const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+            detection = {
+              landmarks: { positions: f.landmarks || [] },
+              _isHumanLive: isLive
+            };
+          }
+        } else {
+          // Default: face-api.js
+          const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
+          if (d) detection = d;
+        }
+
+        if (!detection) {
+          wrap.className = 'cam-video-wrap face-bad';
+          setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
+          _livenessState.faceOk = false;
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '😐';
+            $('lsText').textContent = 'Menunggu Wajah...';
+            $('lsText').style.color = 'var(--muted)';
+          }
           return;
         }
 
-        // Pastikan dimensi video valid (Mencegah deteksi pada frame kosong/hitam di awal loading)
-        if (vid.videoWidth === 0 || vid.videoHeight === 0) {
-          _detectLoop = requestAnimationFrame(loop);
-          return;
+        _livenessState.faceOk = true;
+        wrap.className = 'cam-video-wrap face-ok';
+
+        // --- LIVENESS LOGIC ---
+        if (window._aiEngine === 'human') {
+          _isLive = detection._isHumanLive;
+        } else {
+          // Passive Liveness Logic for face-api.js
+          const landmarks = detection.landmarks.positions;
+          if (_lastLandmarks) {
+            let totalDist = 0;
+            for (let i = 0; i < landmarks.length; i++) {
+              totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
+            }
+            const avgDist = totalDist / landmarks.length;
+            if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
+
+            const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
+            const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
+            const ratio = eyeDist / faceWidth;
+
+            if (_livenessHistory.length > 5) {
+              const prevRatio = _livenessHistory[_livenessHistory.length - 1];
+              const diff = Math.abs(ratio - prevRatio);
+              if (diff > 0.001) _livenessScore += 2;
+            }
+            _livenessHistory.push(ratio);
+            if (_livenessHistory.length > 30) _livenessHistory.shift();
+          }
+          _lastLandmarks = landmarks;
+          if (_livenessScore > 25) _isLive = true;
         }
 
-        _isDetecting = true;
-
-        try {
-          let detection = null;
-          if (window._aiEngine === 'human' && HumanInstance) {
-            // Gunakan konfigurasi deteksi yang lebih ringan khusus untuk loop liveness
-            const res = await _detectWithTimeout(vid, 5000); // Max 5 detik untuk loop
-            if (res && res.face && res.face.length > 0) {
-              const f = res.face[0];
-              const liveScore = f.live || 0;
-              const realScore = f.real || 0;
-              const genericScore = f.liveness || 0;
-              _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
-              const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
-              detection = {
-                landmarks: { positions: f.landmarks || [] },
-                _isHumanLive: isLive
-              };
-            }
-          } else {
-            const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
-            if (d) detection = d;
+        if (_isLive) {
+          setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '🛡️';
+            $('lsText').textContent = 'Wajah Terverifikasi Asli';
+            $('lsText').style.color = 'var(--success)';
           }
-
-          if (!detection) {
-            wrap.className = 'cam-video-wrap face-bad';
-            setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
-            _livenessState.faceOk = false;
-            if (window._isMejaMode) {
-              $('lsIcon').textContent = '😐';
-              $('lsText').textContent = 'Menunggu Wajah...';
-              $('lsText').style.color = 'var(--muted)';
-            }
-          } else {
-            _livenessState.faceOk = true;
-            wrap.className = 'cam-video-wrap face-ok';
-
-            if (window._aiEngine === 'human') {
-              _isLive = detection._isHumanLive;
-            } else {
-              const landmarks = detection.landmarks.positions;
-              if (_lastLandmarks) {
-                let totalDist = 0;
-                for (let i = 0; i < landmarks.length; i++) {
-                  totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
-                }
-                const avgDist = totalDist / landmarks.length;
-                if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
-
-                const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
-                const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
-                const ratio = eyeDist / faceWidth;
-
-                if (_livenessHistory.length > 5) {
-                  const prevRatio = _livenessHistory[_livenessHistory.length - 1];
-                  const diff = Math.abs(ratio - prevRatio);
-                  if (diff > 0.001) _livenessScore += 2;
-                }
-                _livenessHistory.push(ratio);
-                if (_livenessHistory.length > 30) _livenessHistory.shift();
-              }
-              _lastLandmarks = landmarks;
-              if (_livenessScore > 25) _isLive = true;
-            }
-
-            if (_isLive) {
-              setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
-              if (window._isMejaMode) {
-                $('lsIcon').textContent = '🛡️';
-                $('lsText').textContent = 'Wajah Terverifikasi Asli';
-                $('lsText').style.color = 'var(--success)';
-              }
-            } else {
-              setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
-              if (window._isMejaMode) {
-                $('lsIcon').textContent = '🔍';
-                $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
-                $('lsText').style.color = 'var(--gold)';
-              }
-            }
-
-            if (window._isMejaMode) {
-              if (!_autoCaptured && _modelsReady && _isLive) {
-                _autoCaptured = true;
-                setTimeout(doCapture, 400);
-              }
-            } else {
-              if (!_autoCaptured && _modelsReady && _isLive) {
-                _autoCaptured = true;
-                setTimeout(() => {
-                  if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
-                    doCapture();
-                  } else {
-                    _autoCaptured = false;
-                  }
-                }, 800);
-              }
-            }
+        } else {
+          setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
+          if (window._isMejaMode) {
+            $('lsIcon').textContent = '🔍';
+            $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
+            $('lsText').style.color = 'var(--gold)';
           }
-        } catch (e) {
-          console.error('[AI] Loop Error:', e);
-        } finally {
-          _isDetecting = false;
-          if (_isLoopEnabled && $('camOverlay') && !$('camOverlay').classList.contains('hidden')) {
-            _detectLoop = requestAnimationFrame(loop);
+        }
+
+        // Auto capture Meja Mode
+        if (window._isMejaMode) {
+          if (!_autoCaptured && _modelsReady && _isLive) {
+            _autoCaptured = true;
+            setTimeout(doCapture, 400);
+          }
+        } else {
+          // Auto capture Mode Personal
+          if (!_autoCaptured && _modelsReady && _isLive) {
+            _autoCaptured = true;
+            setTimeout(() => {
+              if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
+                doCapture();
+              } else {
+                _autoCaptured = false;
+              }
+            }, 800);
           }
         }
       };
       loop();
     }
 
-    let _isSubmitting = false; // ANTI-SPAM LOCK
-
     /* ── Ambil foto (capture) ── */
     async function doCapture() {
-      if (_aiProcessing || _isSubmitting) {
-        console.warn('[AI] Capture ignored: Already processing or submitting.');
-        return;
-      }
-      _aiProcessing = true;
-      console.log('[AI] --- Starting Capture & ID Match ---');
+      if (_captureData) return;
+      _captureData = true; // Kunci agar tidak klik 2x
+      stopDetectLoop();
 
-      // Update UI Segera
-      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
+      // Ubah tombol jadi loading
       const btnCap = $('btnCapture');
       if (btnCap) {
         btnCap.disabled = true;
-        btnCap.innerHTML = '<span class="spinner"></span> Memproses...';
+        btnCap.innerHTML = '<span class="spinner"></span> Sedang Memproses...';
+      }
+      setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
+
+      // Bekukan video & Ambil gambar
+      const vid = $('camVideo');
+      const cnv = document.createElement('canvas');
+      cnv.width = vid.videoWidth;
+      cnv.height = vid.videoHeight;
+      const ctx = cnv.getContext('2d');
+      // Membalikkan gambar agar hasil asli sama persis dengan preview (tidak di mirror)
+      ctx.translate(cnv.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(vid, 0, 0);
+      const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
+
+      // Matikan stream video agar hemat memori (Kecuali untuk Meja Absen yang butuh kamera terus menyala)
+      if (!window._isMejaMode) stopCamStream();
+
+      // 1. Ekstrak AI Wajah (Wajib untuk daftar)
+      let descriptor = null;
+      if (_modelsReady) {
+        const desc = await getFaceDescriptor(cnv);
+        if (desc) descriptor = Array.from(desc);
       }
 
-      stopDetectLoop();
-      // stopDetectLoop() resets flags via _forceResetAiState(false), 
-      // so we MUST re-lock _aiProcessing immediately.
-      _aiProcessing = true;
+      // 2. Handle Continuous Scan (Meja Absen)
+      if (window._isMejaMode) {
+        if (_allFaceDescriptors.length > 0 && descriptor) {
+          let bestMatch = { label: 'unknown', similarity: 0 };
+          const thresholdSim = 0.6; // Human Similarity Threshold
+          const thresholdDist = 0.55; // Face-API Distance Threshold
 
-      try {
-        const vid = $('camVideo');
-        const cnv = $('camCanvas');
-        if (!vid) throw new Error('VIDEO_MISSING');
+          if (window._aiEngine === 'human' && HumanInstance) {
+            let maxSim = 0;
+            const currentDim = descriptor.length;
+            for (const item of _allFaceDescriptors) {
+              // Strict Filter: Only match against same engine data
+              const mapped = window._mejaUserMap[item.id || item.label];
+              if (mapped && mapped.engine !== 'human') continue;
 
-        console.log('[AI] Phase 1: Drawing Frame...');
-        const ctx = cnv.getContext('2d');
-        cnv.width = vid.videoWidth;
-        cnv.height = vid.videoHeight;
+              const itemDesc = item.descriptor || (item.descriptors ? item.descriptors[0] : null);
+              if (!itemDesc || (itemDesc.length !== currentDim && Math.abs(itemDesc.length - currentDim) > 1)) continue;
+              
+              const sim = HumanInstance.match.similarity(itemDesc, descriptor);
+              if (sim > maxSim) {
+                maxSim = sim;
+                bestMatch = { label: item.id || item.label, similarity: sim };
+              }
+            }
+            if (maxSim < thresholdSim) bestMatch.label = 'unknown';
+          } else {
+            // Face-API Standard Matcher
+            try {
+              // Strict Filter: Only match against same engine data
+              const validDescriptors = _allFaceDescriptors.filter(d => {
+                const mapped = window._mejaUserMap[d.label];
+                return mapped && mapped.engine === 'faceapi' && d.descriptors;
+              });
 
-        // Mirroring agar hasil searah dengan preview (untuk personal)
-        ctx.translate(cnv.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(vid, 0, 0);
-
-        const dataUrl = cnv.toDataURL('image/jpeg', 0.8);
-        _captureData = { dataUrl };
-
-        if (!window._isMejaMode) stopCamStream();
-
-        console.log('[AI] Phase 2: Extracting Face Features (AI)...');
-        // Gunakan timeout agar tidak hang selamanya di GPU
-        const aiRes = await _detectWithTimeout(vid, 8000);
-
-        if (!aiRes || !aiRes.face || aiRes.face.length === 0) {
-          console.warn('[AI] End Phase: No face found during capture.');
-          _forceResetAiState(true);
-          setCamStatus('bad', '⚠️', 'Wajah Hilang', 'Posisikan wajah kembali');
-          if (!window._isMejaMode) startDetectLoop();
-          return;
-        }
-
-        const descriptor = aiRes.face[0].embedding;
-        console.log('[AI] Phase 3: Features extracted. Length:', descriptor?.length);
-
-        if (window._isMejaMode) {
-          console.log('[AI] Phase 4: Matching against Employee Database...');
-          const refList = window._faceRefList || [];
-          let bestMatch = { id: 'unknown', distance: 0 };
-
-          for (const ref of refList) {
-            const dist = matchFace(descriptor, ref.descriptor, ref.face_model);
-            if (dist > bestMatch.distance && dist >= 0.55) {
-              bestMatch = { id: ref.telegram_id, distance: dist };
+              if (validDescriptors.length > 0) {
+                const faceMatcher = new window.faceapi.FaceMatcher(validDescriptors, thresholdDist);
+                const res = faceMatcher.findBestMatch(new Float32Array(descriptor));
+                // Convert distance to similarity for consistent UI
+                bestMatch = { label: res.label, similarity: 1 - res.distance };
+              }
+            } catch (e) {
+              console.error('[AI] FaceMatcher error:', e);
             }
           }
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.distance.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, bestMatch.distance);
-        } else {
-          console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
-          if (_absenCallbackAfterCam) {
-            const result = { dataUrl, descriptor };
-            if (typeof _absenCallbackAfterCam === 'function') {
-              await _absenCallbackAfterCam(result);
-            } else if (_absenCallbackAfterCam.onDone) {
-              await _absenCallbackAfterCam.onDone(result);
-            }
+
+          if (bestMatch.label !== 'unknown' && bestMatch.label !== 'Unknown') {
+            _onMejaAbsenMatchFound(bestMatch.label, descriptor, dataUrl, bestMatch.similarity);
+            return;
           }
-          _forceResetAiState(true); // Lepas kunci setelah callback personal selesai
         }
-      } catch (e) {
-        console.error('[AI] Fatal Capture Error:', e);
-        _forceResetAiState(true);
-        setCamStatus('bad', '❌', 'Gagal Memproses', 'Silakan coba lagi');
+        _onMejaAbsenMatchFound('unknown', null, dataUrl, 0);
+        return;
       }
+
+      // 3. TAMPILKAN PREVIEW FOTO (SEMBUNYIKAN VIDEO)
+      $('camVideoWrap').style.display = 'none'; // Sembunyikan frame kamera
+      $('camStatus').style.display = 'none';    // Sembunyikan status
+      $('livenessMini').style.display = 'none';
+
+      let match = { label: 'Siap Disimpan', cls: 'cpb-ok' };
+
+      // Jika Absen Personal (bukan Daftar Wajah Admin), tampilkan persentase kecocokan
+      if (!_absenCallbackAfterCam?.isRegister) {
+        const ref = getFaceRef();
+        if (ref && descriptor) {
+          const dist = euclideanDistance(ref.descriptor, descriptor);
+          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
+          if (dist <= 0.55) match = { label: `✅ Cocok ${score}%`, cls: 'cpb-ok' };
+          else match = { label: `❌ Tidak Cocok ${score}%`, cls: 'cpb-warn' };
+        }
+      } else {
+        // Jika mode Daftar Wajah Admin tapi wajahnya buram/tidak terdeteksi
+        if (!descriptor) {
+          match = { label: `⚠️ Wajah Tidak Jelas`, cls: 'cpb-warn' };
+        }
+      }
+
+      _captureData = { dataUrl, descriptor, faceOk: !!descriptor, livenessOk: true };
+
+      // Render info ke preview card
+      $('camPreviewImg').src = dataUrl;
+      $('camPreviewInfo').innerHTML = `<span class="cam-preview-badge cpb-ok">✅ Foto Tertangkap</span> <span class="cam-preview-badge ${match.cls}">${match.label}</span>`;
+      $('camPreview').classList.add('show');
+
+      // 4. Eksekusi Pengiriman Data ke Server
+      const cb = _absenCallbackAfterCam;
+
+      // Beri jeda 1.5 detik agar user bisa melihat preview foto
+      setTimeout(async () => {
+        try {
+          // Null-kan callback SEBELUM memanggil, agar closeCamOverlay tidak salah memanggil onCancel
+          _absenCallbackAfterCam = null;
+
+          if (typeof cb === 'function') {
+            await cb(_captureData);
+          } else if (cb?.onDone) {
+            await cb.onDone(_captureData);
+          }
+        } catch (err) {
+          console.error('[doCapture] callback error:', err);
+        } finally {
+          // Tutup overlay setelah data selesai diproses
+          closeCamOverlay(false); // false = bukan oleh user, tidak trigger onCancel
+          if (btnCap) btnCap.innerHTML = '📸 Ambil Foto & Lanjutkan';
+        }
+      }, 1500);
     }
-
 
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
@@ -9475,9 +8987,9 @@ File di Google Drive juga akan dihapus.`)) return;
               showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
               setBtnL('btnAbsen', false, '🔄 Coba Lagi');
             }
+          } catch {
+            showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Semua Server Offline', 'Pastikan n8n & ngrok berjalan.');
             setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-          } finally {
-            _isSubmitting = false;
           }
         },
         (err) => {
@@ -10491,7 +10003,6 @@ File di Google Drive juga akan dihapus.`)) return;
           id: String(getField(r, 'id', 'ID') || '').trim(),
           nama: getField(r, 'nama', 'Nama', 'username', 'Username') || '',
           jabatan: getField(r, 'jabatan', 'Jabatan') || '',
-          pangkat: getField(r, 'pangkat', 'Pangkat') || '',
           nip: getField(r, 'nip', 'NIP') || '',
           urutan: idx
         }));
@@ -10583,43 +10094,26 @@ File di Google Drive juga akan dihapus.`)) return;
               const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
               const jam = (getField(r, 'Jam', 'jam') || '').replace(/\s*WITA\s*/i, '').trim();
               const ket = getField(r, 'Keterangan', 'keterangan') || '';
-
-              if (!jamMap[id]) jamMap[id] = {
-                jamMasuk: '-', jamPulang: '-', logKet: '',
-                _rawMasukLog: null, _rawPulangLog: null,
-                tubel: 0, cuti: 0, izin: 0, sakit: 0, tugas: 0
-              };
-
-              if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') {
-                jamMap[id].jamMasuk = jam || '-';
-                jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
-              }
-              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') {
-                jamMap[id].jamPulang = jam || '-';
-                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
-              }
-              else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].includes(j)) {
-                if (j === 'TUBEL') jamMap[id].tubel = 1;
-                else if (j === 'CUTI') jamMap[id].cuti = 1;
-                else if (j === 'IZIN') jamMap[id].izin = 1;
-                else if (j === 'SAKIT') jamMap[id].sakit = 1;
-                else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
-                jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
-              }
-
+              if (!jamMap[id]) jamMap[id] = { jamMasuk: '-', jamPulang: '-', logKet: '', tubel:0, cuti:0, izin:0, sakit:0, tugas:0 };
+              
+              if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') jamMap[id].jamMasuk = jam || '-';
+              else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') jamMap[id].jamPulang = jam || '-';
+              else if (j === 'TUBEL') jamMap[id].tubel = 1;
+              else if (j === 'CUTI') jamMap[id].cuti = 1;
+              else if (j === 'IZIN') jamMap[id].izin = 1;
+              else if (j === 'SAKIT') jamMap[id].sakit = 1;
+              else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
+              
               if (ket) jamMap[id].logKet = ket;
             });
             // Pasangkan ke pegawai
             pegawai = pegawai.map(p => {
               const id = String(p.id || '');
               const jm = jamMap[id];
-              return jm ? {
-                ...p,
-                jamMasuk: jm.jamMasuk,
-                jamPulang: jm.jamPulang,
-                _rawMasukLog: jm._rawMasukLog,
-                _rawPulangLog: jm._rawPulangLog,
-                _rawKetLog: jm._rawKetLog,
+              return jm ? { 
+                ...p, 
+                jamMasuk: jm.jamMasuk, 
+                jamPulang: jm.jamPulang, 
                 logKet: jm.logKet,
                 tubel: (p.tubel || 0) + jm.tubel,
                 cuti: (p.cuti || 0) + jm.cuti,
@@ -10638,8 +10132,8 @@ File di Google Drive juga akan dihapus.`)) return;
         $('rsIzin').textContent = ringkasan.izin ?? 0;
         $('rsSakit').textContent = ringkasan.sakit ?? 0;
         $('rsTugas').textContent = ringkasan.tugas ?? 0;
-        if ($('rsTubel')) $('rsTubel').textContent = ringkasan.tubel ?? 0;
-        if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
+        if($('rsTubel')) $('rsTubel').textContent = ringkasan.tubel ?? 0;
+        if($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
         $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
         const order = await orderPromise;
@@ -10651,14 +10145,7 @@ File di Google Drive juga akan dihapus.`)) return;
               u.nama.toLowerCase().trim() === (p.nama || '').toLowerCase().trim() ||
               (u.nip && u.nip === p.nip));
             return match
-              ? {
-                ...p,
-                nama: p.nama && p.nama !== '—' ? p.nama : match.nama,
-                nip: p.nip && p.nip !== '—' ? p.nip : match.nip,
-                jabatan: p.jabatan || match.jabatan,
-                pangkat: p.pangkat || match.pangkat,
-                urutan: p.urutan ?? match.urutan
-              }
+              ? { ...p, jabatan: p.jabatan || match.jabatan, urutan: p.urutan ?? match.urutan }
               : p;
           });
         }
@@ -10667,8 +10154,6 @@ File di Google Drive juga akan dihapus.`)) return;
           if (ua !== ub) return ua - ub;
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
-        window.userListOrder = pegawai; // Save globally for saveLog() reference
-
 
         lastRekapPegawai = pegawai;
         rekapLoaded = true;
@@ -10735,7 +10220,6 @@ File di Google Drive juga akan dihapus.`)) return;
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
-          _rawMasukLog: null, _rawPulangLog: null,
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
           all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
@@ -10751,14 +10235,12 @@ File di Google Drive juga akan dihapus.`)) return;
         const tgl = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
         const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
         const jamStr = getField(r, 'Jam', 'jam') || '';
-        const id_log = r.ID_Log || r.id_log || r.id || ''; // Capture the primary key
         if (!map[id]) map[id] = {
           id, nama, nip, jabatan: '', urutan: 9999,
           masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
           izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
           menit_terlambat: 0, menit_lebih_awal: 0,
           jamMasuk: '-', jamPulang: '-',
-          _rawMasukLog: null, _rawPulangLog: null,
           all_menit_terlambat: 0, all_menit_lebih_awal: 0,
           all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
           all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
@@ -10767,49 +10249,23 @@ File di Google Drive juga akan dihapus.`)) return;
         if (curNama.length > map[id].nama.length) map[id].nama = curNama;
         if (nip && map[id].nip === '—') map[id].nip = nip;
         const jam = toMenit(jamStr);
-        if (jenis === 'MASUK') {
-          map[id].masuk++;
-          if (jamStr) {
-            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawMasukLog = { ...r, ID_Log: id_log }; // Store row with PK
-          }
-        }
+        if (jenis === 'MASUK') { map[id].masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
         else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
-          map[id].di_luar_masuk++;
-          if (jamStr) {
-            map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawMasukLog = { ...r, ID_Log: id_log };
-          }
+          map[id].di_luar_masuk++; if (jamStr) map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
           if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
         }
-        else if (jenis === 'PULANG') {
-          map[id].pulang++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-          }
-        }
+        else if (jenis === 'PULANG') { map[id].pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
         else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
-          map[id].di_luar_pulang++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-          }
+          map[id].di_luar_pulang++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
           if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
         }
-        else if (jenis === 'PULANG LUAR') {
-          map[id].pulang_luar++;
-          if (jamStr) {
-            map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-            map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-          }
-        }
+        else if (jenis === 'PULANG LUAR') { map[id].pulang_luar++; if (jamStr) map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim(); }
         else if (jenis.includes('LUAR')) { map[id].di_luar_masuk++; }
-        else if (jenis === 'IZIN') { map[id].izin++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'SAKIT') { map[id].sakit++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'TUGAS') { map[id].tugas++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'TUBEL') { map[id].tubel++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-        else if (jenis === 'CUTI') { map[id].cuti++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
+        else if (jenis === 'IZIN') { map[id].izin++; }
+        else if (jenis === 'SAKIT') { map[id].sakit++; }
+        else if (jenis === 'TUGAS') { map[id].tugas++; }
+        else if (jenis === 'TUBEL') { map[id].tubel++; }
+        else if (jenis === 'CUTI') { map[id].cuti++; }
       });
 
       // Process ALL-TIME rows (if provided)
@@ -10931,18 +10387,6 @@ File di Google Drive juga akan dihapus.`)) return;
       const _sampai = $('rekapSampai')?.value || '';
       const isHarian = _dari && _sampai && _dari === _sampai;
 
-      // ── Client-side filtering by Bidang ──
-      const filterBidang = $('rekapBidang')?.value || 'Semua';
-      let filteredPg = pg;
-      if (filterBidang !== 'Semua') {
-        filteredPg = pg.filter(p => (p.bidang || p.Bidang || '') === filterBidang);
-      }
-
-      if (!filteredPg.length) {
-        el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Tidak ada pegawai di bidang ini</div><div class="empty-sub">Coba pilih bidang lain atau tampilkan semua</div></div>`;
-        return;
-      }
-
       // ── Hitung hari kerja periode (senin-jumat, kurangi libur) ──
       function countHKRekap(dari, sampai) {
         let count = 0;
@@ -10963,7 +10407,7 @@ File di Google Drive juga akan dihapus.`)) return;
         tanggalLabel = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       }
 
-      el.innerHTML = filteredPg.map((p, idx) => {
+      el.innerHTML = pg.map((p, idx) => {
         const nama = p.nama || '—';
         const nip = p.nip || '—';
         const jabatan = p.jabatan || '';
@@ -11048,7 +10492,7 @@ File di Google Drive juga akan dihapus.`)) return;
                 : 'var(--success)';
 
           return `
-      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
+      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
@@ -11071,18 +10515,7 @@ File di Google Drive juga akan dihapus.`)) return;
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
 
           <!-- JAM MASUK -->
-          <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawKetLog || p._rawMasukLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog || p._rawMasukLog).replace(/"/g, '&quot;')})" 
-                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
-                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
-                      title="Edit Log Masuk">✏️</button>
-            ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}')" 
-                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
-                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
-                      title="Tambah Log Manual">➕</button>
-            `) : ''}
+          <div style="background:${masukBg};border:1px solid ${masukColor}33;border-radius:10px;padding:8px 10px">
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
             ${izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${masukIcon}</div>
@@ -11097,18 +10530,7 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>
 
           <!-- JAM PULANG -->
-          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawKetLog || p._rawPulangLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog || p._rawPulangLog).replace(/"/g, '&quot;')})" 
-                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
-                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
-                      title="Edit Log Pulang">✏️</button>
-            ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}')" 
-                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
-                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
-                      title="Tambah Log Manual">➕</button>
-            `) : ''}
+          <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.06)'};border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'};border-radius:10px;padding:8px 10px">
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
             ${isKet
               ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">—</div>
@@ -12414,7 +11836,6 @@ File di Google Drive juga akan dihapus.`)) return;
           const nama = u.nama || u.Nama || u.username || 'Tanpa Nama';
           const nip = u.nip || u.NIP || '—';
           const jab = u.jabatan || u.Jabatan || '—';
-          const bid = u.bidang || u.Bidang || '—';
           const status = (u.status || u.Status || 'AKTIF').toUpperCase();
           const isAktif = status === 'AKTIF';
 
@@ -12424,7 +11845,7 @@ File di Google Drive juga akan dihapus.`)) return;
             </div>
             <div style="flex:1; min-width:0; margin-left:2px">
               <div class="face-adm-name" style="font-size:12px; margin-bottom:1px; color:#fff">${nama}</div>
-              <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab} &nbsp;·&nbsp; ${bid}</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab}</div>
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
               <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
@@ -12481,17 +11902,6 @@ File di Google Drive juga akan dihapus.`)) return;
         $('inPegawaiNo').value = p.no || '';
         $('inPegawaiNip').value = p.nip || p.NIP || '';
         $('inPegawaiJabatan').value = p.jabatan || p.Jabatan || '';
-        $('inPegawaiBidang').value = p.bidang || p.Bidang || '';
-        $('inPegawaiPangkat').value = p.pangkat || p.Pangkat || '';
-
-        // Auto select Tipe based on string content if not explicit
-        const pkt = (p.pangkat || '').toUpperCase();
-        if (pkt.includes('GOLONGAN')) $('inPegawaiTipe').value = 'PPPK';
-        else if (pkt.includes('/') || pkt.includes('JURU') || pkt.includes('PENGATUR') || pkt.includes('PENATA') || pkt.includes('PEMBINA')) $('inPegawaiTipe').value = 'PNS';
-        else $('inPegawaiTipe').value = 'NONASN';
-        _updatePangkatDropdown('inPegawaiPangkat', $('inPegawaiTipe').value);
-        $('inPegawaiPangkat').value = p.pangkat || '';
-
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
         $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
 
@@ -12508,8 +11918,6 @@ File di Google Drive juga akan dihapus.`)) return;
       const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
-      const pangkat = $('inPegawaiPangkat').value;
-      const bidang = $('inPegawaiBidang').value;
       const role = $('inPegawaiRole').value;
       const status = $('inPegawaiStatus').value;
 
@@ -12521,44 +11929,21 @@ File di Google Drive juga akan dihapus.`)) return;
       $('btnSavePegawaiTxt').textContent = 'Menyimpan...';
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
-        const mainPayload = { id, nama, no, nip, jabatan, pangkat, bidang, role, status, instansi_id: 'pusat' };
-
         const res = await apiFetch(path, {
           method: 'POST',
-          body: JSON.stringify(mainPayload)
+          body: JSON.stringify({ id, nama, no, nip, jabatan, role, status })
         });
-        const d = await res.json().catch(() => ({}));
+        const d = await res.json();
 
         if (!res.ok || d.ok === false) {
           showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan data pegawai.');
         } else {
-          // ── SYNC ADMIN LOGIC (Request User) ──
-          // Jika role adalah ADMIN atau SUPERADMIN, sync ke webhook admin-add
-          const cleanRole = role.toLowerCase().replace(/\s+/g, '');
-          if (cleanRole === 'admin' || cleanRole === 'superadmin') {
-            try {
-              console.log('[Sync] Detecting Admin role, syncing to admin-add...');
-              await apiFetch(P.adminAdd, {
-                method: 'POST',
-                body: JSON.stringify({
-                  telegram_id: Number(id),
-                  nama: nama,
-                  role: cleanRole,
-                  ditambahkan_oleh: Number(MY_ID)
-                })
-              });
-            } catch (err) {
-              console.warn('[Sync] Gagal sync ke admin-list (opsional):', err.message);
-            }
-          }
-
           showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'success', '✅', 'Berhasil', isEdit ? 'Data pegawai diperbarui.' : 'Pegawai baru ditambahkan.');
           setTimeout(hidePegawaiForm, 2500);
           loadPegawaiMgmt();
         }
       } catch (e) {
-        console.error('[SavePegawai] Error:', e);
-        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', `Server tidak merespons: ${e.message}`);
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
       }
       $('btnSavePegawaiTxt').textContent = 'Simpan Data';
     }
@@ -12577,148 +11962,6 @@ File di Google Drive juga akan dihapus.`)) return;
           alert('Gagal: ' + (d.message || 'Error server'));
         }
       } catch (e) { alert('Server error'); }
-    }
-
-    /* ════ LOG MANAGEMENT (ADMIN) ════ */
-    async function openLogEditor(uid = '', date = '', log = null) {
-      const modal = $('logModal');
-      if (!modal) return;
-
-      // Load pegawai list for dropdown if first time
-      await loadLogPegawaiList();
-
-      // Reset form
-      const existingId = log ? (log.ID_Log || log.id_log || '') : '';
-
-      // SMART UI DETECTION: If opened via + but we detect existing record in view
-      let smartLogId = existingId;
-      if (!smartLogId && uid && date) {
-        const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
-        if (p) {
-          // Default to MASUK check as MASUK is usually the first thing opened
-          const checkLog = p._rawKetLog || p._rawMasukLog || p._rawPulangLog;
-          if (checkLog && (checkLog.ID_Log || checkLog.id_log)) smartLogId = checkLog.ID_Log || checkLog.id_log;
-        }
-      }
-
-      $('editLogId').value = smartLogId;
-      $('inLogPegawai').value = uid;
-      $('inLogTanggal').value = date || fmtD(nowWITA());
-      $('inLogJam').value = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
-      $('inLogJenis').value = log ? (log['Jenis Absen'] || log.jenis_absen || log.Jenis || 'MASUK') : 'MASUK';
-      $('inLogKet').value = log ? (log.Ket || log.ket || log.keterangan || '') : '';
-      $('logFormResult').style.display = 'none';
-
-      const isActualEdit = !!smartLogId;
-      if (isActualEdit) {
-        $('logModalTitle').textContent = 'UPDATE LOG ABSEN';
-        $('logModalIcon').textContent = '📝';
-        $('btnSaveLogTxt').textContent = 'Perbarui Log';
-      } else {
-        $('logModalTitle').textContent = 'TAMBAH LOG MANUAL';
-        $('logModalIcon').textContent = '➕';
-        $('btnSaveLogTxt').textContent = 'Simpan Log';
-      }
-
-      modal.style.display = 'flex';
-    }
-
-    function closeLogEditor() {
-      $('logModal').style.display = 'none';
-    }
-
-    let _pegawaiListCache = null;
-    async function loadLogPegawaiList() {
-      const select = $('inLogPegawai');
-      if (!select || select.options.length > 1) return;
-
-      try {
-        const res = await apiFetch(P.userList + '?format=full', { method: 'GET' });
-        if (!res.ok) return;
-        const data = await res.json();
-        const users = (Array.isArray(data) ? data : (data.data || [])).filter(u => u.id || u.ID);
-
-        _pegawaiListCache = users; // Store in cache for saveLog reference
-
-        users.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
-
-        users.forEach(u => {
-          const opt = document.createElement('option');
-          opt.value = u.id || u.ID;
-          opt.textContent = `${u.nama || u.Nama} (${u.id || u.ID})`;
-          select.appendChild(opt);
-        });
-      } catch (e) { console.error('Load log pegawai failed', e); }
-    }
-
-    async function saveLog() {
-      let editId = $('editLogId').value;
-      const uid = $('inLogPegawai').value;
-      const tgl = $('inLogTanggal').value;
-      const jamRaw = $('inLogJam').value;
-      const jenis = $('inLogJenis').value;
-      const ket = $('inLogKet').value.trim();
-
-      // SMART DETECTION: If no editId is set, check if we already have this log in memory (rekap view)
-      if (!editId && uid && tgl && jenis) {
-        const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
-        if (p) {
-          const isMasuk = jenis.toUpperCase().includes('MASUK');
-          const existing = isMasuk ? p._rawMasukLog : p._rawPulangLog;
-          if (existing && (existing.ID_Log || existing.id_log)) {
-            editId = existing.ID_Log || existing.id_log;
-            console.log(`[Smart Log] Detected existing record: ${editId}. Switching to EDIT mode.`);
-          }
-        }
-      }
-
-      const isEdit = !!editId;
-
-      if (!uid || !tgl || !jamRaw) {
-        showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'warning', '⚠️', 'Data Kurang', 'Pegawai, Tanggal, dan Jam wajib diisi.');
-        return;
-      }
-
-      setBtnL('btnSaveLog', true, 'Menyimpan...');
-      try {
-        const path = isEdit ? P.logEdit : P.logAdd;
-
-        // Cari data p untuk nama & nip (utamakan cache dari dropdown)
-        const pData = (_pegawaiListCache || []).find(u => String(u.id || u.ID) === String(uid))
-          || (window.userListOrder || []).find(u => String(u.id) === String(uid))
-          || {};
-
-        const res = await apiFetch(path, {
-          method: 'POST',
-          body: JSON.stringify({
-            ID_Log: editId,
-            telegram_id: uid,
-            nama: pData.nama || pData.Nama || '',
-            nip: pData.nip || pData.NIP || '',
-            tanggal: tgl,
-            jam: jamRaw,
-            jenis_absen: jenis,
-            keterangan: ket,
-            admin_id: MY_ID,
-            timestamp: Math.floor(Date.now() / 1000)
-          })
-        });
-        const d = await res.json().catch(() => ({}));
-
-        if (!res.ok || d.ok === false) {
-          showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan log.');
-        } else {
-          showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'success', '✅', 'Berhasil', isEdit ? 'Log absen diperbarui.' : 'Log absen manual ditambahkan.');
-          setTimeout(() => {
-            closeLogEditor();
-            loadRekap(); // Refresh rekap after change
-          }, 2000);
-        }
-      } catch (e) {
-        showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
-      } finally {
-        setBtnL('btnSaveLog', false, 'Simpan Log');
-      }
     }
 
     async function loadAdminMgmt() {
@@ -12763,7 +12006,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const nama = namaMap[id] || `ID: ${id}`;
           const isMe = id === MY_ID;
           // Role diambil dari window._adminRoleMap yang diisi oleh _getJamAbsen()
-          const roleRaw = (window._adminRoleMap[id] || 'admin').toLowerCase().replace(/\s/g, '');
+          const roleRaw = window._adminRoleMap[id] || 'admin';
           const isSuperAdmin = roleRaw === 'superadmin';
 
           return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px">
@@ -12908,13 +12151,13 @@ File di Google Drive juga akan dihapus.`)) return;
         try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
         updateClock();
         initJamAdminUI();
-
+        
         // FIX: Jika sedang di tab admin saat data jam/admin dimuat, refresh UI admin
         const activeTab = document.querySelector('.tab.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
         if (activeTab === 'admin' && IS_ADMIN) {
-          _applyAdminUIExtended();
-          // Trigger loading data admin jika baru pertama kali terbuka
-          if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+           _applyAdminUIExtended();
+           // Trigger loading data admin jika baru pertama kali terbuka
+           if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
         }
       } catch (e) {
         initJamAdminUI();
@@ -12924,18 +12167,14 @@ File di Google Drive juga akan dihapus.`)) return;
     function _applyAdminUI() {
       const panelAdmin = $('panel-admin');
       if (!panelAdmin) return;
-
-      // Update visibility of manual log button in Rekap tab
-      const btnLog = $('btnTambahLog');
-      if (btnLog) btnLog.style.display = IS_ADMIN ? 'inline-block' : 'none';
-
       if (!IS_ADMIN) {
         panelAdmin.style.display = 'none';
         // Sembunyikan tombol tab admin jika ada
         const btn = document.querySelector('.tab[data-tab="admin"]');
         if (btn) btn.style.display = 'none';
-        // Jika sedang di tab admin (yang sekarang terlarang), kembali ke absen
-        if (localStorage.getItem('absen_last_tab') === 'admin') switchTab('absen');
+        // Jika sedang di tab admin, kembali ke absen
+        const allTabs = getAllTabs();
+        if (!allTabs.includes('admin')) switchTab('absen');
       } else {
         panelAdmin.style.display = '';
         // Buat tombol tab admin jika belum ada, lalu tampilkan
@@ -13195,15 +12434,15 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!sw || !knob) return;
 
       if (enabled) {
-        if (sw) sw.style.background = '#22c55e'; // Green
-        if (knob) knob.style.left = '27px';    // Right
-        if (label) label.textContent = '🟢 Face Recognition Aktif';
-        if (desc) desc.textContent = 'Pegawai wajib verifikasi wajah saat absen';
+        sw.style.background = '#22c55e'; // Green
+        knob.style.left = '27px';    // Right
+        label.textContent = '🟢 Face Recognition Aktif';
+        desc.textContent = 'Pegawai wajib verifikasi wajah saat absen';
       } else {
-        if (sw) sw.style.background = '#6b7280'; // Grey (Neutral Inactive)
-        if (knob) knob.style.left = '3px';     // Left
-        if (label) label.textContent = '⚪ Face Recognition Nonaktif';
-        if (desc) desc.textContent = 'Absen tanpa verifikasi wajah (hanya GPS)';
+        sw.style.background = '#6b7280'; // Grey (Neutral Inactive)
+        knob.style.left = '3px';     // Left
+        label.textContent = '⚪ Face Recognition Nonaktif';
+        desc.textContent = 'Absen tanpa verifikasi wajah (hanya GPS)';
       }
       // Sinkronisasi UI profil dengan status toggle
       if (typeof updateProfilFaceUI === 'function') updateProfilFaceUI();
@@ -13358,7 +12597,23 @@ File di Google Drive juga akan dihapus.`)) return;
       );
     }
 
-    // Initial data loading is now handled by initApp() at the bottom.
+    // Load semua data dasar secara paralel
+    window._jamAbsenReady = Promise.all([
+      loadJamAbsen(),
+      fetchJamPeriode(),
+      loadUserProfile(),
+      loadTodayHistory(),
+    ]).then(() => {
+      // Update clock setelah semua jam siap (agar notif periode langsung benar)
+      updateClock();
+      // Sembunyikan splash screen setelah data dasar siap
+      const splash = document.getElementById('appSplash');
+      if (splash) { splash.classList.add('hide'); setTimeout(() => splash.remove(), 500); }
+    });
+    // Tunggu keduanya selesai sebelum cek wajib daftar
+    // Mencegah race condition: jika loadFaceToggle belum selesai, FACE_RECOGNITION_ENABLED
+    // masih default true padahal admin sudah matikan → modal paksa muncul keliru
+    Promise.all([loadFaceToggle(), loadFaceFromServer()]).then(() => _cekWajibFace());
     initPermissions(); // pre-check & watch geolocation + camera permissions
 
     /* ============================================================
@@ -13688,14 +12943,14 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!sw) return;
       if (on) {
         sw.style.background = '#3b82f6';
-        if (knob) knob.style.left = '27px';
-        if (lbl) lbl.textContent = '🖥️ Mode Desktop Aktif';
-        if (desc) desc.textContent = 'Layout diperlebar untuk layar besar (maks 900px)';
+        knob.style.left = '27px';
+        lbl.textContent = '🖥️ Mode Desktop Aktif';
+        desc.textContent = 'Layout diperlebar untuk layar besar (maks 900px)';
       } else {
         sw.style.background = '#6b7280';
-        if (knob) knob.style.left = '3px';
-        if (lbl) lbl.textContent = '📱 Mode Mobile (Default)';
-        if (desc) desc.textContent = 'Layout standar untuk smartphone (maks 420px)';
+        knob.style.left = '3px';
+        lbl.textContent = '📱 Mode Mobile (Default)';
+        desc.textContent = 'Layout standar untuk smartphone (maks 420px)';
       }
     }
 
@@ -13721,18 +12976,14 @@ File di Google Drive juga akan dihapus.`)) return;
       const isSA = _isSuperAdmin();
       document.body.classList.toggle('is-superadmin', isSA);
       document.querySelectorAll('.superadmin-section').forEach(el => {
-        if (el) el.style.display = isSA ? 'block' : 'none';
+        el.style.display = isSA ? 'block' : 'none';
       });
-
-      // Meja Absen & Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
+      // Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
-        const desktopCard = $('desktopModeCard');
-        if (desktopCard) desktopCard.style.display = 'block';
-
-        const mejaCard = $('mejaAbsenCard');
-        if (mejaCard) mejaCard.style.display = 'block';
-
+        // Desktop mode card exists in configuration section, ensure its state is synced
         initDesktopMode();
+        const dmCard = $('desktopModeCard');
+        if (dmCard) dmCard.style.display = 'block';
       }
     }
 
@@ -13772,8 +13023,29 @@ File di Google Drive juga akan dihapus.`)) return;
             }).join('');
         }
 
-        const listEl2 = $('adminFaceRegList');
-        if (!listEl2) return;
+        // Muat status wajah & tanda tangan dari server
+        let faceMap = {}, sigMap = {};
+        try {
+          const [fr, sr] = await Promise.all([
+            apiFetch(P.faceGetAll, { method: 'GET' }),
+            apiFetch(P.signatureList, { method: 'GET' })
+          ]);
+          if (fr.ok) {
+            const fd = await fr.json();
+            const arr = Array.isArray(fd) ? fd : (fd.data || []);
+            arr.forEach(f => { faceMap[String(f.telegram_id || f.id || '')] = f; });
+          }
+          if (sr.ok) {
+            const sd = await sr.json();
+            const arr = Array.isArray(sd) ? sd : (sd.data || []);
+            arr.forEach(s => { sigMap[String(s.telegram_id || s.id || '')] = s; });
+          }
+        } catch (err) {
+          console.warn('[Admin] Failed to load supplemental face/sig maps:', err);
+        }
+
+        const listEl = $('adminFaceRegList');
+        if (!listEl) return;
 
         if (!users.length) {
           listEl.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">👥</div><div class="empty-text">Tidak ada pegawai</div></div>`;
@@ -13783,13 +13055,14 @@ File di Google Drive juga akan dihapus.`)) return;
         listEl.innerHTML = users.map(u => {
           const uid = String(u.ID || u.id || u.telegram_id || '');
           const nama = u.Nama || u.nama || u.username || uid;
-          // Gunakan metadata has_face & has_signature dari view_user_mgmt
-          const hasFace = !!(u.has_face);
-          const hasSig = !!(u.has_signature);
-          const facePhoto = u.face_photo || null;
+          const sigData = sigMap[uid];
+          const faceData = faceMap[uid];
+          const facePhoto = (faceData && (faceData.dataUrl || faceData.foto_base64 || faceData.face_photo)) || u.face_photo || null;
+          const hasFace = !!(u.has_face || faceData || facePhoto);
+          const hasSig = !!(u.has_signature || sigData || (sigData && sigData.signature));
 
           let engineBadge = '';
-          const faceModel = u.face_model || null;
+          const faceModel = (faceData && faceData.face_model) || u.face_model || null;
           if (faceModel === 'human') {
             engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
           } else if (faceModel === 'faceapi') {
@@ -13812,9 +13085,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
           return `
             <div class="face-adm-item" style="padding:15px; border-radius:20px; display:flex; align-items:center; background:rgba(255,255,255,0.03); border:1px solid var(--border); margin-bottom:10px">
-              <div class="face-adm-thumb" id="thumb-${uid}" style="width:64px; height:64px; border-radius:18px; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); cursor:pointer" onclick="adminLoadSinglePhoto('${uid}')">
-                ${facePhoto ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` : 
-                (hasFace ? '<span style="font-size:10px;color:var(--gold);font-weight:700">LIHAT</span>' : '<span style="opacity:0.3;font-size:32px">👤</span>')}
+              <div class="face-adm-thumb" style="width:64px; height:64px; border-radius:18px; flex-shrink:0; overflow:hidden">
+                ${facePhoto ? `<img src="${facePhoto}" style="width:100%;height:100%;object-fit:cover">` : '<span style="opacity:0.3;font-size:32px">👤</span>'}
               </div>
               <div class="face-adm-info" style="flex:1; margin-left:14px; min-width:0">
                 <div class="face-adm-name" style="font-size:14px; font-weight:800; color:#fff; word-break:break-word; line-height:1.3; margin-bottom:4px">${nama}</div>
@@ -13851,32 +13123,6 @@ File di Google Drive juga akan dihapus.`)) return;
         // Also reset the select dropdown
         const selectEl = $('selectPegawaiFaceReg');
         if (selectEl) selectEl.innerHTML = '<option value="">— Pilih Pegawai —</option>';
-      }
-    }
-
-    // Fungsi On-Demand untuk memuat foto profil tunggal agar hemat egress
-    async function adminLoadSinglePhoto(uid) {
-      const container = $(`thumb-${uid}`);
-      if (!container) return;
-      
-      const original = container.innerHTML;
-      container.innerHTML = '<span class="spin-sm"></span>';
-      
-      try {
-        const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const json = await res.json();
-        const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
-        
-        if (d && d.face_photo) {
-          container.innerHTML = `<img src="${d.face_photo}" style="width:100%;height:100%;object-fit:cover;animation:fadeIn .3s">`;
-          container.onclick = null; // Sudah dimuat
-        } else {
-           container.innerHTML = '<span style="opacity:0.3;font-size:32px">👤</span>';
-        }
-      } catch (e) {
-        container.innerHTML = original;
-        toast('Gagal memuat foto', 'error');
       }
     }
 
@@ -14468,19 +13714,19 @@ File di Google Drive juga akan dihapus.`)) return;
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { return false; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { return false; }
           const dLen = Array.isArray(desc) ? desc.length : 0;
-
+          
           // Enhanced Matching logic for 1024 dimensions
           const isHumanData = (f.face_model === 'human' || dLen >= 512);
           const isFaceApiData = (f.face_model === 'faceapi' || dLen === 128);
-
+          
           // Allow all for visibility, we handle mismatch in matching loop
           return dLen === 128 || dLen === 512 || dLen === 1024;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           let desc;
-          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { desc = []; }
+          try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch(e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
           const dLen = desc.length;
 
@@ -14628,7 +13874,7 @@ File di Google Drive juga akan dihapus.`)) return;
           return [
             i + 1,
             `${p.nama}\nNIP. ${p.nip || '—'}`,
-            (p.jabatan || '—') + (p.pangkat ? `\n(${p.pangkat})` : ''),
+            p.jabatan || '—',
             jamM,
             '',
             jamP,
@@ -14641,7 +13887,7 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.autoTable({
           startY: 60,
           margin: { top: 20, left: 10, right: 10, bottom: 20 },
-          head: [['No', 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          head: [['No', 'Nama / NIP', 'Jabatan', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
           body: tableBody,
           theme: 'grid',
           headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
@@ -14746,12 +13992,7 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.setFont('times', 'bold');
         doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
         doc.setFont('times', 'normal');
-        if (kaban?.pangkat) {
-          doc.text(kaban.pangkat, signatureX, footerY + 43, { align: 'center' });
-          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 48, { align: 'center' });
-        } else {
-          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
-        }
+        doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
 
         // 6. Simpan & Kirim
         const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
@@ -14872,12 +14113,7 @@ File di Google Drive juga akan dihapus.`)) return;
       // Jika orang yang sama di-scan lagi dalam waktu kurang dari 20 detik, abaikan.
       if (telegramId !== 'unknown' && telegramId === _lastMejaId && (sekarang - _lastMejaTime) < 20000) {
         console.log("User sama terdeteksi terlalu cepat, mengabaikan scan ganda.");
-        setTimeout(() => {
-          _forceResetAiState(true);
-          _autoCaptured = false;
-          startDetectLoop();
-          setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
-        }, 1500);
+        setTimeout(() => { _autoCaptured = false; }, 2000); // FIX: Memastikan loop deteksi bisa lanjut mengecek orang selanjutnya
         return;
       }
 
@@ -14911,8 +14147,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
         setTimeout(() => {
           overlay.style.display = 'none';
-          _forceResetAiState(true);
           window._mejaProcessing = false;
+          _autoCaptured = false;
+          _captureData = null;
 
           const vid = $('camVideo');
           if (vid && vid.paused) vid.play().catch(() => { });
@@ -14934,13 +14171,11 @@ File di Google Drive juga akan dihapus.`)) return;
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 
-      _isSubmitting = true; // LOCK SUBMISSION
       const n = nowWITA();
       const payload = {
         telegram_id: telegramId,
         nama: user.nama,
         nip: user.nip,
-        pangkat: user.pangkat || '',
         admin_id: MY_ID,
         jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`,
         tanggal_iso: fmtD(n),
@@ -14991,22 +14226,23 @@ File di Google Drive juga akan dihapus.`)) return;
         $('moDetail').textContent = 'Gagal menghubungi server absen';
         _mejaCnt.gagal++;
         _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
-      } finally {
-        _isSubmitting = false; // UNLOCK SUBMISSION
-        _updateMejaCnt();
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          _forceResetAiState(true);
-          window._mejaProcessing = false;
-          setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
-
-          const vid = $('camVideo');
-          if (vid && vid.paused) {
-            vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
-          }
-          startDetectLoop();
-        }, 3500);
       }
+
+      _updateMejaCnt();
+
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        window._mejaProcessing = false;
+        _autoCaptured = false;
+        _captureData = null;
+        setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+
+        const vid = $('camVideo');
+        if (vid && vid.paused) {
+          vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
+        }
+        startDetectLoop();
+      }, 3500);
     }
 
     // ── Override existing openSignaturePad for Admin Support ──
@@ -15039,209 +14275,7 @@ File di Google Drive juga akan dihapus.`)) return;
     // Auto-init Desktop Mode jika di layar laptop/PC
     setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (_) { } }, 1000);
 
-    // ── AUTH LOGIC (LOGIN & REGISTRATION) ──
-    function switchAuthTab(mode) {
-      if (mode === 'login') {
-        $('tabLogin').classList.add('active');
-        $('tabRegister').classList.remove('active');
-        $('formLogin').style.display = 'block';
-        $('formRegister').style.display = 'none';
-      } else {
-        $('tabLogin').classList.remove('active');
-        $('tabRegister').classList.add('active');
-        $('formLogin').style.display = 'none';
-        $('formRegister').style.display = 'block';
-      }
-    }
-
-    async function handleAuthAction(mode) {
-      const btn = mode === 'login' ? $('btnLogin') : $('btnRegister');
-      const originalText = btn.innerHTML;
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
-
-      try {
-        if (mode === 'login') {
-          const nip = $('loginNip').value.trim();
-          if (!nip) throw new Error('Silakan masukkan NIP');
-
-          const res = await apiFetch(`${P.userList}?nip=${nip}`, { method: 'GET' });
-          const d = await res.json();
-
-          // API n8n versi single mengembalikan { ok: true, single: true, ... }
-          // API n8n versi list mengembalikan { ok: true, data: [...] }
-          let user = null;
-          if (d.single) user = d;
-          else if (d.data && Array.isArray(d.data)) {
-            user = d.data.find(u => String(u.nip || '').trim() === nip);
-          }
-
-          if (!user || user.error || !user.id) throw new Error('NIP tidak terdaftar. Silakan daftar baru.');
-
-          // Verifikasi akhir untuk memastikan NIP benar
-          if (String(user.nip || '').trim() !== nip) {
-            throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
-          }
-
-          // Login Success
-          MY_ID = user.telegram_id || user.id;
-          localStorage.setItem('tg_user_id_v5', String(MY_ID));
-          localStorage.setItem('tg_user_obj_v5', JSON.stringify(user));
-          location.reload(); // Refresh to init with new ID
-        } else {
-          // Register Mode
-          const payload = {
-            nama: $('regNama').value.trim(),
-            nip: $('regNip').value.trim(),
-            jabatan: $('regJabatan').value.trim(),
-            bidang: $('regBidang').value,
-            pangkat: $('regPangkat').value,
-            telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: new URLSearchParams(window.location.search).get('instansi') || 'pusat'
-          };
-
-          if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
-
-          const res = await apiFetch(P.userAdd || P.faceRegister, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          });
-          const d = await res.json();
-          if (!res.ok || d.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
-
-          MY_ID = payload.telegram_id;
-          localStorage.setItem('tg_user_id_v5', String(MY_ID));
-          location.reload();
-        }
-      } catch (err) {
-        alert('⚠️ ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    }
-
-    async function loadBidangList() {
-      const regSelect = $('regBidang');
-      if (!regSelect) return;
-      try {
-        const instId = new URLSearchParams(window.location.search).get('instansi') || 'pusat';
-        const res = await apiFetch(`${P.bidangList}?instansi_id=${instId}`, { method: 'GET' });
-        const d = await res.json();
-        const list = d.data || d || [];
-        if (Array.isArray(list) && list.length > 0) {
-          regSelect.innerHTML = '<option value="">— Pilih Bidang —</option>';
-          list.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.nama_bidang;
-            opt.textContent = b.nama_bidang;
-            regSelect.appendChild(opt);
-          });
-        }
-      } catch (e) {
-        console.warn('[Init] Gagal mengambil daftar bidang dari server.');
-      }
-    }
-
-    // Global Logout Handler
-    async function handleLogout() {
-      if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
-      console.log('[Auth] Logging out user...');
-      localStorage.removeItem('tg_user_id_v5');
-      localStorage.removeItem('tg_user_obj_v5');
-      
-      // Clear all active caches to prevent data leakage
-      localStorage.removeItem('absen_last_tab');
-      
-      // Force return to login screen
-      location.href = location.pathname; 
-    }
-
-    function _checkIdentityOnLoad() {
-      if (!MY_ID) {
-        $('authOverlay').style.display = 'flex';
-        const splash = $('appSplash');
-        if (splash) splash.remove(); // No need splash if no auth
-        return false;
-      }
-      return true;
-    }
-
-    async function initApp() {
-      try {
-        console.log('[Init] Checking identity...');
-        if (!_checkIdentityOnLoad()) return; // Stop if not logged in
-
-        console.log('[Init] Starting application...');
-        await idb.init();
-
-        // Critical: Load role & face settings first
-        await Promise.allSettled([
-          loadFaceToggle(),
-          loadJamAbsen()
-        ]);
-
-        // Secondary: Load Profile and History to show on dashboard
-        await Promise.allSettled([
-          loadUserProfile(),
-          loadTodayHistory(),
-          fetchJamPeriode()
-        ]);
-
-        updateClock();
-
-        // Tertiary/Lazy: Background tasks that don't block the main UI
-        setTimeout(() => {
-          loadFaceFromServer();
-          loadBidangList();
-        }, 1000);
-
-        const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
-        switchTab(lastTab);
-
-        if (IS_ADMIN) {
-          const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';
-          switchAdminSection(lastSection);
-        }
-
-        // Check face registration requirement
-        _cekWajibFace();
-
-        // Manage Logout Button Visibility
-        const logoutSec = $('logoutSection');
-        if (logoutSec) {
-          const isTg = !!(window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.search).has('id'));
-          logoutSec.style.display = !isTg ? 'block' : 'none';
-        }
-
-      } catch (err) {
-        console.error('[Init] Error during startup:', err);
-      } finally {
-        // Always hide splash screen after 300ms attempt
-        setTimeout(() => {
-          const splash = document.getElementById('appSplash');
-          if (splash) {
-            splash.classList.add('hide');
-            setTimeout(() => splash.remove(), 500);
-          }
-          console.log('[Init] Application ready.');
-        }, 300);
-      }
-    }
-
-    // Jalankan initApp di akhir script atau via DOMContentLoaded
-    document.addEventListener('DOMContentLoaded', initApp);
-
-    // Safety fallback: Hide splash anyway after 8s
-    setTimeout(() => {
-      const splash = document.getElementById('appSplash');
-      if (splash) {
-        console.warn('[Init] Splash screen safety fallback triggered.');
-        splash.classList.add('hide');
-        setTimeout(() => splash.remove(), 500);
-      }
-    }, 8000);
+    // Model AI akan diunduh secara lazily saat user membuka kamera.
   </script>
 </body>
 

@@ -8933,7 +8933,7 @@ File di Google Drive juga akan dihapus.`)) return;
                     if (_isLive && !_autoCaptured) {
                       _autoCaptured = true;
                       console.log(`[AI] Continuous Match OK: ${nama}. Finalizing...`);
-                      setTimeout(doCapture, 600);
+                      setTimeout(() => doCapture(match.id, detection.descriptor, match.score), 600);
                     }
                   } else {
                     // No match yet
@@ -8975,13 +8975,13 @@ File di Google Drive juga akan dihapus.`)) return;
     let _isSubmitting = false; // ANTI-SPAM LOCK
 
     /* ── Ambil foto (capture) ── */
-    async function doCapture() {
+    async function doCapture(matchId = null, preDescriptor = null, preScore = 0) {
       if (_aiProcessing || _isSubmitting) {
         console.warn('[AI] Capture ignored: Already processing or submitting.');
         return;
       }
       _aiProcessing = true;
-      console.log('[AI] --- Starting Capture & ID Match ---');
+      console.log('[AI] --- Starting Capture & Finalization ---');
 
       // Update UI Segera
       setCamStatus('ok', '📸', 'Memproses Foto...', 'Harap tunggu');
@@ -9016,9 +9016,14 @@ File di Google Drive juga akan dihapus.`)) return;
 
         if (!window._isMejaMode) stopCamStream();
 
-        console.log('[AI] Phase 2: Extracting Face Features (AI)...');
-        // Gunakan wrapper universal yang mendukung Human & FaceAPI
-        const descriptor = await getFaceDescriptor(vid);
+        let descriptor = preDescriptor;
+        if (!descriptor) {
+          console.log('[AI] Phase 2: Extracting Face Features (AI)...');
+          // Gunakan wrapper universal yang mendukung Human & FaceAPI
+          descriptor = await getFaceDescriptor(vid);
+        } else {
+          console.log('[AI] Phase 2: Using Pre-Identified Descriptor.');
+        }
 
         if (!descriptor) {
           console.warn('[AI] End Phase: No face descriptor extracted.');
@@ -9031,8 +9036,14 @@ File di Google Drive juga akan dihapus.`)) return;
         console.log('[AI] Phase 3: Features extracted. Length:', descriptor?.length);
 
         if (window._isMejaMode) {
-          console.log('[AI] Phase 4: Matching against Employee Database...');
-          const bestMatch = await matchMejaCandidate(descriptor);
+          let bestMatch = { id: matchId, score: preScore };
+          
+          if (!bestMatch.id || bestMatch.id === 'unknown') {
+            console.log('[AI] Phase 4: Matching against Employee Database...');
+            bestMatch = await matchMejaCandidate(descriptor);
+          } else {
+            console.log('[AI] Phase 4: Using Pre-Identified ID:', bestMatch.id);
+          }
           
           console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score.toFixed(4)})`);
           _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);

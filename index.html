@@ -10335,6 +10335,11 @@ File di Google Drive juga akan dihapus.`)) return;
           ${isLibur ? `<div style="font-size:8px;font-weight:700;color:${isLiburNasional ? '#f87171' : 'var(--muted)'};margin-top:2px;background:${isLiburNasional ? 'rgba(239,68,68,.10)' : 'rgba(255,255,255,.05)'};border:1px solid ${isLiburNasional ? 'rgba(239,68,68,.25)' : 'rgba(255,255,255,.1)'};border-radius:5px;padding:1px 6px;display:inline-block">${isLiburNasional ? '🎉' : '📅'} ${namaLibur}</div>` : ''}
         </div>
         <div style="font-size:16px">${masukIcon}</div>
+        ${IS_ADMIN || (MY_ID && String(MY_ID) === String(p?.id)) ? `
+          <button onclick="openLogEditor('${p?.id || MY_ID}', '${tgl}', ${JSON.stringify(rMasuk || rKet).replace(/"/g, '&quot;')})"
+                  style="background:none; border:none; color:var(--gold); font-size:12px; cursor:pointer; opacity:0.7; padding:4px"
+                  title="Edit Log">✏️</button>
+        ` : ''}
       </div>
       <!-- Grid jam masuk/pulang -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 8px">
@@ -10728,8 +10733,8 @@ File di Google Drive juga akan dihapus.`)) return;
                 ...p,
                 nama: p.nama && p.nama !== '—' ? p.nama : match.nama,
                 nip: p.nip && p.nip !== '—' ? p.nip : match.nip,
-                jabatan: p.jabatan || match.jabatan,
-                pangkat: p.pangkat || match.pangkat,
+                jabatan: (p.jabatan && p.jabatan !== '—' && p.jabatan.trim() !== '') ? p.jabatan : match.jabatan,
+                pangkat: (p.pangkat && p.pangkat !== '—' && p.pangkat.trim() !== '') ? p.pangkat : match.pangkat,
                 urutan: p.urutan ?? match.urutan
               }
               : p;
@@ -11145,8 +11150,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
           <!-- JAM MASUK -->
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawKetLog || p._rawMasukLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog || p._rawMasukLog).replace(/"/g, '&quot;')})" 
+            ${IS_ADMIN ? (p._rawMasukLog || p._rawKetLog ? `
+              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Masuk">✏️</button>
@@ -11171,8 +11176,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
           <!-- JAM PULANG -->
           <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawKetLog || p._rawPulangLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog || p._rawPulangLog).replace(/"/g, '&quot;')})" 
+            ${IS_ADMIN ? (p._rawPulangLog || p._rawKetLog ? `
+              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Pulang">✏️</button>
@@ -14810,11 +14815,16 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.setFont('times', 'bold');
         doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
         doc.setFont('times', 'normal');
+        
+        // Jabatan di bawah nama
+        doc.text(kaban?.jabatan || 'Kepala Badan', signatureX, footerY + 43, { align: 'center' });
+        
+        // Pangkat & NIP (Jika ada pangkat, taruh di bawah jabatan, lalu NIP)
         if (kaban?.pangkat) {
-          doc.text(kaban.pangkat, signatureX, footerY + 43, { align: 'center' });
-          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 48, { align: 'center' });
+          doc.text(kaban.pangkat, signatureX, footerY + 48, { align: 'center' });
+          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 53, { align: 'center' });
         } else {
-          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 43, { align: 'center' });
+          doc.text(`NIP. ${kaban?.nip || '..........................................'}`, signatureX, footerY + 48, { align: 'center' });
         }
 
         // 6. Simpan & Kirim

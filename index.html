@@ -10674,7 +10674,7 @@ File di Google Drive juga akan dihapus.`)) return;
               }
               else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') {
                 jamMap[id].jamPulang = jam || '-';
-                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || r.Id || r.ID_log || '' };
+                jamMap[id]._rawPulangLog = { ...r, ID_Log: getLogId(r) };
               }
               else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].includes(j)) {
                 if (j === 'TUBEL') jamMap[id].tubel = 1;
@@ -10682,7 +10682,7 @@ File di Google Drive juga akan dihapus.`)) return;
                 else if (j === 'IZIN') jamMap[id].izin = 1;
                 else if (j === 'SAKIT') jamMap[id].sakit = 1;
                 else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
-                jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || r.Id || r.ID_log || '' };
+                jamMap[id]._rawKetLog = { ...r, ID_Log: getLogId(r) };
               }
 
               if (ket) jamMap[id].logKet = ket;
@@ -12666,19 +12666,16 @@ File di Google Drive juga akan dihapus.`)) return;
       await loadLogPegawaiList();
 
       // Find the existing ID from various sources
-      let existingId = log ? (log.ID_Log || log.id_log || log.id || log.Id || log.ID_log || '') : '';
+      let existingId = getLogId(log);
 
       // SMART UI DETECTION: If ID still missing, search in our global order cache
       if (!existingId && uid && date) {
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
         if (p) {
-          // Check which log we should prioritize based on possible selection
-          // If log data was passed but has no ID, it might be one of these:
-          const logsToCheck = [p._rawMasukLog, p._rawPulangLog, p._rawKetLog].filter(Boolean);
+          const logsToCheck = [log, p._rawMasukLog, p._rawPulangLog, p._rawKetLog].filter(Boolean);
           for (const l of logsToCheck) {
-            const lid = l.ID_Log || l.id_log || l.id || l.Id || l.ID_log;
+            const lid = getLogId(l);
             if (lid) {
-              // If the time matches, it's definitely this one
               const lTime = (l.Jam || l.jam || '').substring(0, 5);
               const paramTime = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
               if (paramTime && lTime === paramTime) {
@@ -12687,11 +12684,7 @@ File di Google Drive juga akan dihapus.`)) return;
               }
             }
           }
-          // Fallback if still no ID but we have a record for this date
-          if (!existingId) {
-            const firstLog = p._rawMasukLog || p._rawPulangLog || p._rawKetLog;
-            if (firstLog) existingId = firstLog.ID_Log || firstLog.id_log || firstLog.id || firstLog.Id || firstLog.ID_log;
-          }
+          if (!existingId) existingId = getLogId(p._rawMasukLog || p._rawPulangLog || p._rawKetLog);
         }
       }
 
@@ -12761,7 +12754,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const isMasuk = jU.includes('MASUK');
           const isPulang = jU.includes('PULANG');
           const existing = isMasuk ? p._rawMasukLog : (isPulang ? p._rawPulangLog : p._rawKetLog);
-          const lid = existing ? (existing.ID_Log || existing.id_log || existing.id || existing.Id || existing.ID_log) : '';
+          const lid = getLogId(existing);
           if (lid) {
             editId = lid;
             console.log(`[Smart Log] Detected existing record: ${editId}. Switching to EDIT mode.`);
@@ -12769,6 +12762,7 @@ File di Google Drive juga akan dihapus.`)) return;
         }
       }
 
+      editId = editId && String(editId).toLowerCase() !== 'undefined' ? String(editId) : '';
       const isEdit = !!editId;
 
       if (!uid || !tgl || !jamRaw) {
@@ -12788,7 +12782,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const res = await apiFetch(path, {
           method: 'POST',
           body: JSON.stringify({
-            ID_Log: editId,
+            ID_Log: editId || '',
             telegram_id: uid,
             nama: pData.nama || pData.Nama || '',
             nip: pData.nip || pData.NIP || '',

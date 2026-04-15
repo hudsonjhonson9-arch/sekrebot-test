@@ -10670,11 +10670,11 @@ File di Google Drive juga akan dihapus.`)) return;
 
               if (j === 'MASUK' || j === 'DI LUAR JAM MASUK') {
                 jamMap[id].jamMasuk = jam || '-';
-                jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+                jamMap[id]._rawMasukLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || r.Id || r.ID_log || '' };
               }
               else if (j === 'PULANG' || j === 'DI LUAR JAM PULANG' || j === 'PULANG LUAR') {
                 jamMap[id].jamPulang = jam || '-';
-                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+                jamMap[id]._rawPulangLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || r.Id || r.ID_log || '' };
               }
               else if (['IZIN', 'SAKIT', 'TUGAS', 'TUBEL', 'CUTI', 'DL'].includes(j)) {
                 if (j === 'TUBEL') jamMap[id].tubel = 1;
@@ -10682,7 +10682,7 @@ File di Google Drive juga akan dihapus.`)) return;
                 else if (j === 'IZIN') jamMap[id].izin = 1;
                 else if (j === 'SAKIT') jamMap[id].sakit = 1;
                 else if (j === 'TUGAS' || j === 'DL') jamMap[id].tugas = 1;
-                jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || '' };
+                jamMap[id]._rawKetLog = { ...r, ID_Log: r.ID_Log || r.id_log || r.id || r.Id || r.ID_log || '' };
               }
 
               if (ket) jamMap[id].logKet = ket;
@@ -12665,21 +12665,37 @@ File di Google Drive juga akan dihapus.`)) return;
       // Load pegawai list for dropdown if first time
       await loadLogPegawaiList();
 
-      // Reset form
-      const existingId = log ? (log.ID_Log || log.id_log || '') : '';
+      // Find the existing ID from various sources
+      let existingId = log ? (log.ID_Log || log.id_log || log.id || log.Id || log.ID_log || '') : '';
 
-      // SMART UI DETECTION: If opened via + but we detect existing record in view
-      let smartLogId = existingId;
-      if (!smartLogId && uid && date) {
+      // SMART UI DETECTION: If ID still missing, search in our global order cache
+      if (!existingId && uid && date) {
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
         if (p) {
-          // Default to MASUK check as MASUK is usually the first thing opened
-          const checkLog = p._rawKetLog || p._rawMasukLog || p._rawPulangLog;
-          if (checkLog && (checkLog.ID_Log || checkLog.id_log)) smartLogId = checkLog.ID_Log || checkLog.id_log;
+          // Check which log we should prioritize based on possible selection
+          // If log data was passed but has no ID, it might be one of these:
+          const logsToCheck = [p._rawMasukLog, p._rawPulangLog, p._rawKetLog].filter(Boolean);
+          for (const l of logsToCheck) {
+            const lid = l.ID_Log || l.id_log || l.id || l.Id || l.ID_log;
+            if (lid) {
+              // If the time matches, it's definitely this one
+              const lTime = (l.Jam || l.jam || '').substring(0, 5);
+              const paramTime = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
+              if (paramTime && lTime === paramTime) {
+                existingId = lid;
+                break;
+              }
+            }
+          }
+          // Fallback if still no ID but we have a record for this date
+          if (!existingId) {
+            const firstLog = p._rawMasukLog || p._rawPulangLog || p._rawKetLog;
+            if (firstLog) existingId = firstLog.ID_Log || firstLog.id_log || firstLog.id || firstLog.Id || firstLog.ID_log;
+          }
         }
       }
 
-      $('editLogId').value = smartLogId;
+      $('editLogId').value = existingId;
       $('inLogPegawai').value = uid;
       $('inLogTanggal').value = date || fmtD(nowWITA());
       $('inLogJam').value = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
@@ -12687,7 +12703,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('inLogKet').value = log ? (log.Ket || log.ket || log.keterangan || '') : '';
       $('logFormResult').style.display = 'none';
 
-      const isActualEdit = !!smartLogId;
+      const isActualEdit = !!existingId;
       if (isActualEdit) {
         $('logModalTitle').textContent = 'UPDATE LOG ABSEN';
         $('logModalIcon').textContent = '📝';
@@ -12741,10 +12757,13 @@ File di Google Drive juga akan dihapus.`)) return;
       if (!editId && uid && tgl && jenis) {
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
         if (p) {
-          const isMasuk = jenis.toUpperCase().includes('MASUK');
-          const existing = isMasuk ? p._rawMasukLog : p._rawPulangLog;
-          if (existing && (existing.ID_Log || existing.id_log)) {
-            editId = existing.ID_Log || existing.id_log;
+          const jU = jenis.toUpperCase();
+          const isMasuk = jU.includes('MASUK');
+          const isPulang = jU.includes('PULANG');
+          const existing = isMasuk ? p._rawMasukLog : (isPulang ? p._rawPulangLog : p._rawKetLog);
+          const lid = existing ? (existing.ID_Log || existing.id_log || existing.id || existing.Id || existing.ID_log) : '';
+          if (lid) {
+            editId = lid;
             console.log(`[Smart Log] Detected existing record: ${editId}. Switching to EDIT mode.`);
           }
         }

@@ -8846,6 +8846,7 @@ File di Google Drive juga akan dihapus.`)) return;
               const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
               detection = {
                 landmarks: { positions: f.landmarks || [] },
+                descriptor: f.embedding || null, // Capture embedding for live matching
                 _isHumanLive: isLive
               };
             }
@@ -8912,9 +8913,39 @@ File di Google Drive juga akan dihapus.`)) return;
             }
 
             if (window._isMejaMode) {
-              if (!_autoCaptured && _modelsReady && _isLive) {
-                _autoCaptured = true;
-                setTimeout(doCapture, 400);
+              // --- LIVE MATCHING ON VIDEO STREAM ---
+              if (!_autoCaptured && _modelsReady && detection.descriptor) {
+                // Perform matching asynchronously to not lag the preview
+                matchMejaCandidate(detection.descriptor).then(match => {
+                  if (match && match.id !== 'unknown') {
+                    const profile = window._mejaUserMap ? window._mejaUserMap[match.id] : null;
+                    const nama = profile ? profile.nama : match.id;
+                    const score = Math.round(match.score * 100);
+
+                    // Update UI with identified person
+                    if ($('lsText')) {
+                      $('lsIcon').textContent = '✅';
+                      $('lsText').textContent = `ID Found: ${nama} (${score}%)`;
+                      $('lsText').style.color = '#4ade80';
+                    }
+
+                    // If liveness is also approved, trigger final capture
+                    if (_isLive && !_autoCaptured) {
+                      _autoCaptured = true;
+                      console.log(`[AI] Continuous Match OK: ${nama}. Finalizing...`);
+                      setTimeout(doCapture, 600);
+                    }
+                  } else {
+                    // No match yet
+                    if (!$('lsText').textContent.includes('ID Found')) {
+                        $('lsIcon').textContent = '🔍';
+                        if (_isLive) {
+                             $('lsText').textContent = 'Mencari Identitas di Database...';
+                             $('lsText').style.color = 'var(--gold)';
+                        }
+                    }
+                  }
+                });
               }
             } else {
               if (!_autoCaptured && _modelsReady && _isLive) {
@@ -8986,18 +9017,17 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!window._isMejaMode) stopCamStream();
 
         console.log('[AI] Phase 2: Extracting Face Features (AI)...');
-        // Gunakan timeout agar tidak hang selamanya di GPU
-        const aiRes = await _detectWithTimeout(vid, 8000);
+        // Gunakan wrapper universal yang mendukung Human & FaceAPI
+        const descriptor = await getFaceDescriptor(vid);
 
-        if (!aiRes || !aiRes.face || aiRes.face.length === 0) {
-          console.warn('[AI] End Phase: No face found during capture.');
+        if (!descriptor) {
+          console.warn('[AI] End Phase: No face descriptor extracted.');
           _forceResetAiState(true);
-          setCamStatus('bad', '⚠️', 'Wajah Hilang', 'Posisikan wajah kembali');
+          setCamStatus('bad', '⚠️', 'Gagal Ekstraksi', 'Posisikan wajah kembali');
           if (!window._isMejaMode) startDetectLoop();
           return;
         }
 
-        const descriptor = aiRes.face[0].embedding;
         console.log('[AI] Phase 3: Features extracted. Length:', descriptor?.length);
 
         if (window._isMejaMode) {
@@ -14529,6 +14559,7 @@ File di Google Drive juga akan dihapus.`)) return;
         }
 
         window._isMejaMode = true; // Set Global State
+        window._aiEngine = 'human'; // Force Human-AI for matching accuracy
         _isMejaAbsen = true;
 
         _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');

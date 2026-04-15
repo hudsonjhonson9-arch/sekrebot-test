@@ -8445,7 +8445,7 @@ File di Google Drive juga akan dihapus.`)) return;
             filter: { enabled: false }, // Matikan filter berat untuk HP
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: false, modelPath: 'blazeface.json',maxDetected: 1, minConfidence: 0.15, inputSize: 1024 },
+              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.2, inputSize: 416 },
               mesh: { enabled: true },
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },
@@ -8600,7 +8600,12 @@ File di Google Drive juga akan dihapus.`)) return;
       // Inisialisasi Kamera
       try {
         _camStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+          video: { 
+            facingMode: 'user', 
+            width: { ideal: 1080 }, 
+            height: { ideal: 1920 },
+            aspectRatio: { ideal: 0.5625 } // 9:16 Portrait
+          }
         });
         const vid = $('camVideo');
         vid.srcObject = _camStream;

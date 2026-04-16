@@ -10347,11 +10347,6 @@ File di Google Drive juga akan dihapus.`)) return;
           ${isLibur ? `<div style="font-size:8px;font-weight:700;color:${isLiburNasional ? '#f87171' : 'var(--muted)'};margin-top:2px;background:${isLiburNasional ? 'rgba(239,68,68,.10)' : 'rgba(255,255,255,.05)'};border:1px solid ${isLiburNasional ? 'rgba(239,68,68,.25)' : 'rgba(255,255,255,.1)'};border-radius:5px;padding:1px 6px;display:inline-block">${isLiburNasional ? '🎉' : '📅'} ${namaLibur}</div>` : ''}
         </div>
         <div style="font-size:16px">${masukIcon}</div>
-        ${IS_ADMIN || (MY_ID) ? `
-          <button onclick="openLogEditor('${MY_ID}', '${tgl}', ${JSON.stringify(rMasuk || rKet || rPulang || rows[0]).replace(/"/g, '&quot;')})"
-                  style="background:none; border:none; color:var(--gold); font-size:12px; cursor:pointer; opacity:0.7; padding:4px"
-                  title="Edit Log">✏️</button>
-        ` : ''}
       </div>
       <!-- Grid jam masuk/pulang -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 8px">

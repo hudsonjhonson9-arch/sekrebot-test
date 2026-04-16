@@ -10208,7 +10208,9 @@ File di Google Drive juga akan dihapus.`)) return;
         allLogs = rows; logLoaded = true;
         renderLog(allLogs); updateLogStats(allLogs);
       } catch (e) {
-        $('logList').innerHTML = `<div class="empty-state"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data</div><div class="empty-sub">Pastikan n8n aktif lalu refresh</div></div>`;
+        console.error('[Fetch Log Error]', e);
+        const code = e?.message?.includes('404') ? '404' : (e?.message?.includes('500') ? '500' : '🔌');
+        $('logList').innerHTML = `<div class="empty-state"><div class="empty-icon">${code}</div><div class="empty-text">Gagal memuat data</div><div class="empty-sub">Pastikan n8n aktif lalu refresh. (${e.message || 'Network Error'})</div></div>`;
       }
       finally { btn.disabled = false; const s = $('rIcon2'); if (s) s.outerHTML = '<span id="rIcon2">🔄</span>'; }
     }
@@ -12511,7 +12513,8 @@ File di Google Drive juga akan dihapus.`)) return;
           </div>`;
         }).join('');
       } catch (e) {
-        el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data pegawai</div></div>`;
+        console.error('[Fetch Pegawai Error]', e);
+        el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data pegawai</div><div class="empty-sub">${e.message || 'Coba lagi beberapa saat'}</div></div>`;
       }
     }
 

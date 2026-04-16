@@ -13901,21 +13901,23 @@ File di Google Drive juga akan dihapus.`)) return;
           const facePhoto = u.face_photo || null;
 
           let engineBadge = '';
-          const faceModel = u.face_model || null;
-          if (faceModel === 'human') {
-            engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-          } else if (faceModel === 'faceapi') {
-            engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-          } else {
-            // Fallback to length check if column is missing
-            const histD = faceData ? (faceData.face_histogram || faceData.descriptor) : null;
-            if (histD && histD !== '' && histD !== '[]') {
-              try {
-                const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
-                const dLen = Array.isArray(arr) ? arr.length : 0;
-                if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
-                else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
-              } catch (e) { }
+          if (hasFace) {
+            const faceModel = u.face_model || null;
+            if (faceModel === 'human') {
+              engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+            } else if (faceModel === 'faceapi') {
+              engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+            } else {
+              // Fallback to check length if face_histogram is available in 'u'
+              const histD = u.face_histogram || u.descriptor;
+              if (histD && histD !== '' && histD !== '[]') {
+                try {
+                  const arr = typeof histD === 'string' ? JSON.parse(histD) : histD;
+                  const dLen = Array.isArray(arr) ? arr.length : 0;
+                  if (dLen >= 512) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(201,168,76,0.2);color:var(--gold);border-radius:4px;margin-left:4px;border:1px solid rgba(201,168,76,0.3);display:inline-block">🛡️ Human</span>';
+                  else if (dLen === 128) engineBadge = '<span style="font-size:8px;padding:1px 4px;background:rgba(96,165,250,0.2);color:#60a5fa;border-radius:4px;margin-left:4px;border:1px solid rgba(96,165,250,0.3);display:inline-block">🤖 API</span>';
+                } catch (e) { }
+              }
             }
           }
 
@@ -13932,7 +13934,7 @@ File di Google Drive juga akan dihapus.`)) return;
                 <div class="face-adm-name" style="font-size:14px; font-weight:800; color:#fff; word-break:break-word; line-height:1.3; margin-bottom:4px">${nama}</div>
                 <div class="face-adm-status" style="font-size:10px; color:rgba(255,255,255,0.5)">
                   <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">📷 Wajah: ${faceS}${engineBadge} <span style="margin:0 4px">·</span> ✍️ TTD: ${sigS}</div>
-                  <div style="opacity:0.6; font-size:9px; margin-top:4px">ID: ${uid}</div>
+                  <div style="opacity:0.6; font-size:9px; margin-top:4px">ID: ${uid} &nbsp;·&nbsp; ${u.nip || u.NIP || '—'} &nbsp;·&nbsp; ${u.jabatan || u.Jabatan || '—'}</div>
                 </div>
               </div>
               <div class="face-adm-btns" style="display:flex; flex-direction:column; gap:6px; margin-left:12px">

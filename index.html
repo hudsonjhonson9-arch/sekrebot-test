@@ -12658,6 +12658,22 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ LOG MANAGEMENT (ADMIN) ════ */
+    function getLogId(obj) {
+      if (!obj) return '';
+      if (obj.ID_Log) return obj.ID_Log;
+      if (obj.ID_LOG) return obj.ID_LOG;
+      if (obj.id_log) return obj.id_log;
+      if (obj.ID_log) return obj.ID_log;
+      if (obj.Id_Log) return obj.Id_Log;
+      for (const k of Object.keys(obj)) {
+        const lk = k.toLowerCase();
+        if (lk === 'id_log' || lk === 'idlog' || lk === 'log_id') {
+          if (obj[k]) return obj[k];
+        }
+      }
+      return '';
+    }
+
     async function openLogEditor(uid = '', date = '', log = null) {
       const modal = $('logModal');
       if (!modal) return;
@@ -12666,7 +12682,7 @@ File di Google Drive juga akan dihapus.`)) return;
       await loadLogPegawaiList();
 
       // Find the existing ID from various sources
-      let existingId = log ? (log.ID_Log || log.id_log || log.id || log.Id || log.ID_log || '') : '';
+      let existingId = log ? getLogId(log) : '';
 
       // SMART UI DETECTION: If ID still missing, search in our global order cache
       if (!existingId && uid && date) {
@@ -12676,7 +12692,7 @@ File di Google Drive juga akan dihapus.`)) return;
           // If log data was passed but has no ID, it might be one of these:
           const logsToCheck = [p._rawMasukLog, p._rawPulangLog, p._rawKetLog].filter(Boolean);
           for (const l of logsToCheck) {
-            const lid = l.ID_Log || l.id_log || l.id || l.Id || l.ID_log;
+            const lid = getLogId(l);
             if (lid) {
               // If the time matches, it's definitely this one
               const lTime = (l.Jam || l.jam || '').substring(0, 5);
@@ -12689,7 +12705,7 @@ File di Google Drive juga akan dihapus.`)) return;
           }
           if (!existingId) {
             const firstLog = p._rawMasukLog || p._rawPulangLog || p._rawKetLog;
-            if (firstLog) existingId = firstLog.ID_Log || firstLog.id_log || firstLog.id || firstLog.Id || firstLog.ID_log || '';
+            if (firstLog) existingId = getLogId(firstLog);
           }
         }
       }
@@ -12760,7 +12776,7 @@ File di Google Drive juga akan dihapus.`)) return;
           const isMasuk = jU.includes('MASUK');
           const isPulang = jU.includes('PULANG');
           const existing = isMasuk ? p._rawMasukLog : (isPulang ? p._rawPulangLog : p._rawKetLog);
-          const lid = existing ? (existing.ID_Log || existing.id_log || existing.id || existing.Id || existing.ID_log) : '';
+          const lid = existing ? getLogId(existing) : '';
           if (lid) {
             editId = lid;
             console.log(`[Smart Log] Detected existing record: ${editId}. Switching to EDIT mode.`);

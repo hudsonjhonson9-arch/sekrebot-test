@@ -6689,16 +6689,16 @@
     };
 
     function getScopedInstansiId() {
-      // Priority 1: From logged in user data (User List)
+      // Priority 1: From URL parameters (Registration context / Override)
+      const urlParams = new URLSearchParams(window.location.search);
+      let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
+      if (inst) return inst;
+
+      // Priority 2: From logged in user data (User List cache)
       try {
         const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
         if (u.instansi_id) return u.instansi_id;
       } catch (e) {}
-
-      // Priority 2: From URL parameters (Registration context)
-      const urlParams = new URLSearchParams(window.location.search);
-      let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
-      if (inst) return inst;
 
       // Priority 3: Global fallback
       return 'bapperida';

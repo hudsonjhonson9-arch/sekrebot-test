@@ -12665,9 +12665,10 @@ File di Google Drive juga akan dihapus.`)) return;
       // Load pegawai list for dropdown if first time
       await loadLogPegawaiList();
 
-      // Find the existing ID from various sources
-      let existingId = log ? (log.ID_Log || log.id_log || log.id || log.Id || log.ID_log || '') : '';
-
+      let existingId = '';
+      if (log) {
+          existingId = log.ID_Log || log.id_log || log.id || '';
+      }
       // SMART UI DETECTION: If ID still missing, search in our global order cache
       if (!existingId && uid && date) {
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
@@ -12752,7 +12753,10 @@ File di Google Drive juga akan dihapus.`)) return;
       const jamRaw = $('inLogJam').value;
       const jenis = $('inLogJenis').value;
       const ket = $('inLogKet').value.trim();
-
+      // PERBAIKAN: Paksa bersihkan teks undefined
+      if (editId === "undefined" || editId === "null" || !editId || editId === "[object Object]") {
+        editId = ""; 
+      }
       // SMART DETECTION: If no editId is set, check if we already have this log in memory (rekap view)
       if (!editId && uid && tgl && jenis) {
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));

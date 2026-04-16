@@ -10327,6 +10327,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const ketRow = rIzin || rSakit || rTugas;
         const ketTeks = ketRow ? (getField(ketRow, 'Ket', 'ket') || '').trim() : '';
 
+        const rKet = rIzin || rSakit || rTugas;
         return `<div class="log-item" style="display:block;padding:0;border-color:${cardBorder};position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTop}"></div>
       <!-- Header tanggal -->
@@ -10337,8 +10338,8 @@ File di Google Drive juga akan dihapus.`)) return;
           ${isLibur ? `<div style="font-size:8px;font-weight:700;color:${isLiburNasional ? '#f87171' : 'var(--muted)'};margin-top:2px;background:${isLiburNasional ? 'rgba(239,68,68,.10)' : 'rgba(255,255,255,.05)'};border:1px solid ${isLiburNasional ? 'rgba(239,68,68,.25)' : 'rgba(255,255,255,.1)'};border-radius:5px;padding:1px 6px;display:inline-block">${isLiburNasional ? '🎉' : '📅'} ${namaLibur}</div>` : ''}
         </div>
         <div style="font-size:16px">${masukIcon}</div>
-        ${IS_ADMIN || (MY_ID && String(MY_ID) === String(p?.id)) ? `
-          <button onclick="openLogEditor('${p?.id || MY_ID}', '${tgl}', ${JSON.stringify(rMasuk || rKet).replace(/"/g, '&quot;')})"
+        ${IS_ADMIN || (MY_ID) ? `
+          <button onclick="openLogEditor('${MY_ID}', '${tgl}', ${JSON.stringify(rMasuk || rKet || rPulang || rows[0]).replace(/"/g, '&quot;')})"
                   style="background:none; border:none; color:var(--gold); font-size:12px; cursor:pointer; opacity:0.7; padding:4px"
                   title="Edit Log">✏️</button>
         ` : ''}

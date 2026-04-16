@@ -6688,17 +6688,26 @@
       bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
     };
 
-    const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
-    async function apiFetch(path, opts = {}) {
-      // Auto-append instansi_id scoping
+    function getScopedInstansiId() {
+      // Priority 1: From logged in user data (User List)
+      try {
+        const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+        if (u.instansi_id) return u.instansi_id;
+      } catch (e) {}
+
+      // Priority 2: From URL parameters (Registration context)
       const urlParams = new URLSearchParams(window.location.search);
       let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
-      if (!inst) {
-          try {
-              const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-              inst = u.instansi_id || 'bapperida';
-          } catch(e) { inst = 'bapperida'; }
-      }
+      if (inst) return inst;
+
+      // Priority 3: Global fallback
+      return 'bapperida';
+    }
+
+    const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
+    async function apiFetch(path, opts = {}) {
+      // Auto-append instansi_id scoping using centralized helper
+      const inst = getScopedInstansiId();
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
       }
@@ -6832,8 +6841,8 @@
       if (!regSelect && !rekapSelect) return;
 
       try {
-        const instansiId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
-        const res = await apiFetch(`${P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '')}?instansi_id=${instansiId}`);
+        const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
+        const res = await apiFetch(endpoint);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {
           const options = d.data.map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`).join('');
@@ -15209,7 +15218,7 @@ File di Google Drive juga akan dihapus.`)) return;
             bidang: $('regBidang').value,
             pangkat: $('regPangkat').value,
             telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: new URLSearchParams(window.location.search).get('instansi') || 'bapperida'
+            instansi_id: getScopedInstansiId()
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
@@ -15233,37 +15242,12 @@ File di Google Drive juga akan dihapus.`)) return;
       }
     }
 
-    async function loadBidangList() {
-      const regSelect = $('regBidang');
-      if (!regSelect) return;
-      try {
-        const instId = new URLSearchParams(window.location.search).get('instansi') || 'bapperida';
-        const res = await apiFetch(`${P.bidangList}?instansi_id=${instId}`, { method: 'GET' });
-        const d = await res.json();
-        const list = d.data || d || [];
-        if (Array.isArray(list) && list.length > 0) {
-          regSelect.innerHTML = '<option value="">— Pilih Bidang —</option>';
-          list.forEach(b => {
-            const opt = document.createElement('option');
-            opt.value = b.nama_bidang;
-            opt.textContent = b.nama_bidang;
-            regSelect.appendChild(opt);
-          });
-        }
-      } catch (e) {
-        console.warn('[Init] Gagal mengambil daftar bidang dari server.');
-      }
-    }
 
     // Global Logout Handler
     async function handleLogout() {
       if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
       console.log('[Auth] Logging out user...');
-      localStorage.removeItem('tg_user_id_v5');
-      localStorage.removeItem('tg_user_obj_v5');
-      
-      // Clear all active caches to prevent data leakage
-      localStorage.removeItem('absen_last_tab');
+      localStorage.clear();
       
       // Force return to login screen
       location.href = location.pathname; 

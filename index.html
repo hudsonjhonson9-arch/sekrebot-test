@@ -12687,10 +12687,9 @@ File di Google Drive juga akan dihapus.`)) return;
               }
             }
           }
-          // Fallback if still no ID but we have a record for this date
           if (!existingId) {
             const firstLog = p._rawMasukLog || p._rawPulangLog || p._rawKetLog;
-            if (firstLog) existingId = firstLog.ID_Log || firstLog.id_log || firstLog.id || firstLog.Id || firstLog.ID_log;
+            if (firstLog) existingId = firstLog.ID_Log || firstLog.id_log || firstLog.id || firstLog.Id || firstLog.ID_log || '';
           }
         }
       }

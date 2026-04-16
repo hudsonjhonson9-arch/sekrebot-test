@@ -14835,9 +14835,6 @@ File di Google Drive juga akan dihapus.`)) return;
         doc.text(kaban?.nama || '__________________________', signatureX, footerY + 38, { align: 'center' });
         doc.setFont('times', 'normal');
         
-        // Jabatan di bawah nama
-        doc.text(kaban?.pangkat || 'Kepala Badan', signatureX, footerY + 43, { align: 'center' });
-        
         // Pangkat & NIP (Jika ada pangkat, taruh di bawah jabatan, lalu NIP)
         if (kaban?.pangkat) {
           doc.text(kaban.pangkat, signatureX, footerY + 48, { align: 'center' });

@@ -11060,8 +11060,10 @@ File di Google Drive juga akan dihapus.`)) return;
         const masuk = p.masuk || 0;
         const pulang = p.pulang || 0;
         const pulangLuar = p.pulang_luar || 0;
-        const luarMasuk = p.lambat ?? p.di_luar_masuk ?? 0;
-        const luarPulang = p.pulangCepat ?? p.di_luar_pulang ?? 0;
+        const luarMasuk = p.di_luar_masuk ?? 0; // Minutes
+        const luarPulang = p.di_luar_pulang ?? 0; // Minutes
+        const lambatCount = p.lambat_count ?? 0; // Count from server
+        const cepatCount = p.pulang_cepat_count ?? 0; // Count from server
         const izin = p.izin || 0;
         const sakit = p.sakit || 0;
         const tugas = p.tugas || 0;
@@ -11125,7 +11127,7 @@ File di Google Drive juga akan dihapus.`)) return;
           else { pulangLabel = 'Tepat'; pulangColor = 'var(--info)'; pulangIcon = '🔵'; }
 
           // Kehadiran overall status untuk warna border card
-          const isHadir = (masuk + luarMasuk) > 0;
+          const isHadir = (masuk + lambatCount) > 0 || !!p._rawMasukLog || !!p._rawPulangLog;
           const isKet = izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0;
           const isAlpa = !isHadir && !isKet;
           const cardBorderColor = isKet ? (p.tubel > 0 ? 'rgba(99,102,241,.25)' : p.cuti > 0 ? 'rgba(20,184,166,.25)' : 'rgba(139,92,246,.25)')
@@ -11223,9 +11225,9 @@ File di Google Drive juga akan dihapus.`)) return;
               return `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:var(--warning);font-weight:800">⚠️ Akumulasi Jam: ${fmt}</span>`;
             })()}
           ${masuk > 0 ? `<span class="pbar-item pb-masuk"     >✅ Masuk</span>` : ''}
-          ${luarMasuk > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${luarMasuk}×</span>` : ''}
+          ${lambatCount > 0 ? `<span class="pbar-item pb-luar-masuk">⏰ Terlambat: ${lambatCount}×</span>` : ''}
           ${pulang > 0 ? `<span class="pbar-item pb-pulang"    >🔵 Pulang</span>` : ''}
-          ${luarPulang > 0 ? `<span class="pbar-item pb-luar-pulang">🏃 Pulang Cepat: ${luarPulang}×</span>` : ''}
+          ${cepatCount > 0 ? `<span class="pbar-item pb-luar-pulang">🏃 Pulang Cepat: ${cepatCount}×</span>` : ''}
           ${pulangLuar > 0 ? `<span class="pbar-item" style="background:rgba(245,158,11,.15);color:#f59e0b">🏃 Lapangan</span>` : ''}
           ${izin > 0 ? `<span class="pbar-item pb-izin"      >🙏 Izin</span>` : ''}
           ${sakit > 0 ? `<span class="pbar-item pb-sakit"     >🤒 Sakit</span>` : ''}
@@ -11278,11 +11280,11 @@ File di Google Drive juga akan dihapus.`)) return;
         const dColor = dLevel === 4 ? 'var(--success)' : dLevel === 3 ? 'var(--info)' : dLevel === 2 ? 'var(--warning)' : 'var(--danger)';
 
         // ── Kehadiran vs hari kerja ──
-        const hariHadir = (p.masuk || 0) + (p.lambat || p.di_luar_masuk || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0) + (p.tubel || 0) + (p.cuti || 0);
+        const hariHadir = (p.masuk || 0) + (lambatCount || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0) + (p.tubel || 0) + (p.cuti || 0);
         const hadirPct = hariKerjaPeriode > 0 ? Math.min(100, Math.round(hariHadir / hariKerjaPeriode * 100)) : 0;
         const hadirColor = hadirPct >= 90 ? 'var(--success)' : hadirPct >= 75 ? 'var(--info)' : hadirPct >= 60 ? 'var(--warning)' : 'var(--danger)';
 
-        const totalEntries = masuk + pulang + pulangLuar + luarMasuk + luarPulang + izin + sakit + tugas + (p.tubel || 0) + (p.cuti || 0);
+        const totalEntries = masuk + pulang + pulangLuar + lambatCount + cepatCount + izin + sakit + tugas + (p.tubel || 0) + (p.cuti || 0);
 
         // ── All-Time Footer ──
         const allTimeFooter = mAllTotal > 0 || p.all_alpa > 0 ? `
@@ -11427,8 +11429,8 @@ File di Google Drive juga akan dihapus.`)) return;
       const pegawaiPayload = lastRekapPegawai.map((p, i) => {
         const masuk = p.masuk || 0;
         const pulang = p.pulang || 0;
-        const luarMasuk = p.lambat ?? p.di_luar_masuk ?? 0;
-        const luarPulang = p.pulangCepat ?? p.di_luar_pulang ?? 0;
+        const lambatCount = p.lambat_count ?? 0;
+        const cepatCount = p.pulang_cepat_count ?? 0;
         const izin = p.izin || 0;
         const sakit = p.sakit || 0;
         const tugas = p.tugas || 0;
@@ -11453,7 +11455,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const mPulang = toMenitDl(jamPulang);
         const mLambat = (mMasuk !== null && mMasuk > mPgwMasuk) ? mMasuk - mPgwMasuk : 0;
         const mCepat = (mPulang !== null && mPulang < mPgwPulang) ? mPgwPulang - mPulang : 0;
-        const ket = tubel > 0 ? 'Tubel' : cuti > 0 ? 'Cuti' : izin > 0 ? 'Izin' : sakit > 0 ? 'Sakit' : tugas > 0 ? 'Tugas/DL' : (masuk + luarMasuk) === 0 ? 'TB' : 'Hadir';
+        const ket = tubel > 0 ? 'Tubel' : cuti > 0 ? 'Cuti' : izin > 0 ? 'Izin' : sakit > 0 ? 'Sakit' : tugas > 0 ? 'Tugas/DL' : (masuk + lambatCount) === 0 ? 'TB' : 'Hadir';
 
         // Jam hadir aktual (hitung dari log masuk+pulang dalam periode)
         const jh = parseFloat(p.jamHadir || 0);
@@ -11471,7 +11473,7 @@ File di Google Drive juga akan dihapus.`)) return;
             : izin > 0 ? 'Izin'
               : sakit > 0 ? 'Sakit'
                 : tugas > 0 ? 'Tugas/DL'
-                  : (masuk + luarMasuk) === 0 ? 'TB'
+                  : (masuk + lambatCount) === 0 ? 'TB'
                     : 'Hadir';
         const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
         const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';

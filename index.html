@@ -6758,7 +6758,12 @@
       for (const base of [SERVER_1, SERVER_2]) {
         try {
           console.log(`[Fetch] Attempting: ${base}${path}`);
-          const r = await fetch(base + path, { ...opts, headers: HDR });
+          const fetchOpts = { ...opts };
+          fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
+          if (opts.method === 'GET' || !opts.body) {
+              delete fetchOpts.headers['Content-Type'];
+          }
+          const r = await fetch(base + path, fetchOpts);
           if (r.ok || (r.status >= 400 && r.status < 500)) {
             console.log(`[Fetch] Success: ${base}${path}`);
             return r;
@@ -6768,7 +6773,7 @@
           console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
         }
       }
-      throw new Error('Semua server offline atau tidak merespons.');
+      throw new Error(`Semua server (${[SERVER_1, SERVER_2].join(', ')}) offline/error.`);
     }
 
     /* ════ MODEL LOADING STATE ════ */
@@ -11825,7 +11830,7 @@ File di Google Drive juga akan dihapus.`)) return;
       } catch (e) {
         console.error('[Instansi] Error:', e);
         const el = $('regInstansi');
-        if (el) el.innerHTML = '<option value="">— Error koneksi —</option>';
+        if (el) el.innerHTML = `<option value="">— Error: ${e.message || 'Koneksi Terputus'} —</option>`;
       }
     }
 

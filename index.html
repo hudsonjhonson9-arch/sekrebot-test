@@ -821,10 +821,10 @@
     #camVideo {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* Agar tidak terpotong (wide view) */
+      object-fit: cover; /* Kembali ke cover (Full screen UI) */
       background: #000;
-      transform: scaleX(-1) !important;
-      transition: transform 0.2s ease; /* Untuk kelancaran digital zoom */
+      transform: scaleX(-1); /* Hapus !important agar bisa diupdate JS */
+      transition: transform 0.2s ease;
     }
 
     /* ── ZOOM SLIDER STYLING ── */
@@ -8101,6 +8101,9 @@ File di Google Drive juga akan dihapus.`)) return;
           method: 'POST',
           body: JSON.stringify(payload)
         });
+        
+        console.log(`[AI] Sync Response Status: ${res.status}`);
+        
         if (res.ok) {
           try {
             const json = await res.json();
@@ -8110,14 +8113,24 @@ File di Google Drive juga akan dihapus.`)) return;
               descriptor: descriptorArray,
               savedAt: payload.saved_at
             });
-            // Refresh Admin Gallery if in admin view
             if (typeof loadAdminFaceReg === 'function' && IS_ADMIN) {
               loadAdminFaceReg();
             }
             return true;
-          } catch (_) { return true; }
+          } catch (e) {
+            console.error('[AI] JSON Parse Error:', e);
+            return true;
+          }
+        } else {
+          try {
+            const errJson = await res.json();
+            console.error('[AI] Sync Failed Detail:', errJson);
+            window._lastAiError = errJson.message || errJson.error || `HTTP ${res.status}`;
+          } catch (_) {
+            window._lastAiError = `Server Error (HTTP ${res.status})`;
+          }
+          return false;
         }
-        return false;
       } catch (e) {
         console.warn('Sync face server error:', e);
         // Optimasi: Simpan error di window agar bisa dibaca caller jika butuh detail

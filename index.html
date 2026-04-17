@@ -11791,7 +11791,7 @@ File di Google Drive juga akan dihapus.`)) return;
         const el = $('regInstansi');
         if (!el || !data.length) return;
         el.innerHTML = '<option value="">— Pilih Instansi —</option>' + 
-          data.map(i => `<option value="${i.instansi_id || i.id}">${i.instansi_name || i.nama}</option>`).join('');
+          data.map(i => `<option value="${i.id}">${i.nama_instansi || i.nama || i.id}</option>`).join('');
       } catch (e) {
         console.error('[Fetch Instansi Error]', e);
       }

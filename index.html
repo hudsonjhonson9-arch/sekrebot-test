@@ -8761,17 +8761,52 @@ File di Google Drive juga akan dihapus.`)) return;
       // Reset UI progress
       _updateModelProgress(0, 0);
 
-      // Inisialisasi Kamera
+      // --- MULAI INISIALISASI KAMERA DENGAN TIERED FALLBACK ---
+      let stream = null;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      
+      // Tier 1: Optimized Wide View (Native Sensor Ratio)
       try {
-        _camStream = await navigator.mediaDevices.getUserMedia({
-          video: { 
-            facingMode: 'user', 
-            // Optimasi WIDE VIEW: Gunakan 4:3 (native sensor) untuk menghindari crop awal
-            width: { ideal: 1024 }, 
-            height: { ideal: 768 },
-            aspectRatio: { ideal: 0.75 } 
+        console.log('[AI] Camera Tier 1: Optimized Wide View');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: isPortrait ? 768 : 1024 },
+            height: { ideal: isPortrait ? 1024 : 768 },
+            aspectRatio: { ideal: isPortrait ? 0.75 : 1.3333333333 }
           }
         });
+      } catch (e1) {
+        console.warn('[AI] Tier 1 Failed:', e1.name);
+        // Tier 2: Standard Mobile HD (More compatible across devices)
+        try {
+          console.log('[AI] Camera Tier 2: Standard Mobile HD');
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'user',
+              width: { ideal: isPortrait ? 720 : 1280 },
+              height: { ideal: isPortrait ? 1280 : 720 }
+            }
+          });
+        } catch (e2) {
+          console.warn('[AI] Tier 2 Failed:', e2.name);
+          // Tier 3: Absolute Fallback (Most compatible)
+          try {
+            console.log('[AI] Camera Tier 3: Absolute Fallback');
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          } catch (e3) {
+            console.error('[AI] All camera tiers failed:', e3);
+            $('modelLoading').style.display = 'block';
+            if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
+            if ($('mlHint')) $('mlHint').innerHTML = `<span style="color:var(--danger)">Gagal mengakses kamera: ${e3.name || 'Unknown Error'}.<br>Pastikan izin kamera sudah diberikan.</span>`;
+            return;
+          }
+        }
+      }
+
+      // Jika berhasil mendapatkan stream
+      if (stream) {
+        _camStream = stream;
         const vid = $('camVideo');
         vid.srcObject = _camStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
@@ -8785,23 +8820,17 @@ File di Google Drive juga akan dihapus.`)) return;
         if (zoomSlider && window._camVideoTrack) {
           try {
             const caps = window._camVideoTrack.getCapabilities();
-            if (caps.zoom) {
+            if (caps && caps.zoom) {
               zoomSlider.min = caps.zoom.min;
               zoomSlider.max = caps.zoom.max;
               zoomSlider.step = caps.zoom.step || 0.1;
             } else {
-              // Fallback default digital zoom range
-              zoomSlider.min = 1;
-              zoomSlider.max = 3;
-              zoomSlider.step = 0.1;
+              zoomSlider.min = 1; zoomSlider.max = 3; zoomSlider.step = 0.1;
             }
-          } catch (_) { }
+          } catch (_) { 
+            zoomSlider.min = 1; zoomSlider.max = 3; zoomSlider.step = 0.1;
+          }
         }
-      } catch (e) {
-        $('modelLoading').style.display = 'block';
-        if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
-        if ($('mlHint')) $('mlHint').innerHTML = '<span style="color:var(--danger)">Izinkan akses kamera di pengaturan browser/Telegram.</span>';
-        return;
       }
 
       // ── MODE VERIFIKASI WAJAH ── muat AI

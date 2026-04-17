@@ -9069,9 +9069,9 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // Optimasi: Resize image agar payload tidak terlalu besar (sering gagal di Cloudflare/n8n jika > 1MB)
         const fullDataUrl = cnv.toDataURL('image/jpeg', 0.85);
-        const resizedDataUrl = await _resizeImage(fullDataUrl, 640);
+        const dataUrl = await _resizeImage(fullDataUrl, 640);
         
-        _captureData = { dataUrl: resizedDataUrl };
+        _captureData = { dataUrl };
 
         if (!window._isMejaMode) stopCamStream();
 

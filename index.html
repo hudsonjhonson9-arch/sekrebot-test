@@ -5092,8 +5092,7 @@
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
 
         <select id="regInstansi" class="form-input-auth">
-          <option value="">— Pilih Instansi —</option>
-          <option value="bapperida">BAPPERIDA Sumba Barat</option>
+          <option value="">— Memuat Instansi... —</option>
         </select>
 
         <select id="regBidang" class="form-input-auth">
@@ -11784,16 +11783,34 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function fetchInstansiList() {
       try {
+        console.log('[Instansi] Fetching list...');
         const res = await apiFetch(P.instansiList, { method: 'GET' });
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.error('[Instansi] API Error:', res.status);
+          const el = $('regInstansi');
+          if (el) el.innerHTML = '<option value="">— Gagal memuat instansi —</option>';
+          return;
+        }
         const json = await res.json();
+        console.log('[Instansi] Raw data:', json);
         const data = parseRows(json);
+        console.log('[Instansi] Parsed rows:', data);
+        
         const el = $('regInstansi');
-        if (!el || !data.length) return;
+        if (!el) return;
+        
+        if (!data || data.length === 0) {
+          el.innerHTML = '<option value="">— Tidak ada data instansi —</option>';
+          return;
+        }
+        
         el.innerHTML = '<option value="">— Pilih Instansi —</option>' + 
           data.map(i => `<option value="${i.id}">${i.nama_instansi || i.nama || i.id}</option>`).join('');
+        console.log('[Instansi] Populated', data.length, 'items');
       } catch (e) {
-        console.error('[Fetch Instansi Error]', e);
+        console.error('[Instansi] Error:', e);
+        const el = $('regInstansi');
+        if (el) el.innerHTML = '<option value="">— Error koneksi —</option>';
       }
     }
 

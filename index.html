@@ -5091,19 +5091,12 @@
         <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
 
-        <select id="regInstansi" class="form-input-auth">
+        <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
           <option value="">— Memuat Instansi... —</option>
         </select>
 
         <select id="regBidang" class="form-input-auth">
           <option value="">— Pilih Bidang —</option>
-          <option value="Sekretariat">Sekretariat</option>
-          <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-          <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-          <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
-          </option>
-          <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-          <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
         </select>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
@@ -6686,6 +6679,7 @@
 
     const P = {
       instansiList: isTest ? '/webhook-test/instansi-list' : '/webhook/instansi-list',
+      bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
       absen: isTest ? '/webhook-test/absen' : '/webhook/absen',
       ket: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
       log: isTest ? '/webhook-test/log-absen' : '/webhook/log-absen',
@@ -11823,10 +11817,47 @@ File di Google Drive juga akan dihapus.`)) return;
               return `<option value="${id}">${name}</option>`;
           }).join('');
         console.log('[Instansi] Populated', data.length, 'items');
+
+        // Jika hanya ada 1 instansi selain BAPPERIDA (atau jika bapperida dipilih), auto-load bidang
+        const selected = el.value || (data.length === 1 ? data[0].id : '');
+        if (selected) fetchBidangList(selected);
+
       } catch (e) {
         console.error('[Instansi] Error:', e);
         const el = $('regInstansi');
         if (el) el.innerHTML = '<option value="">— Error koneksi —</option>';
+      }
+    }
+
+    async function fetchBidangList(instansiId) {
+      const el = $('regBidang');
+      if (!el) return;
+      if (!instansiId) {
+        el.innerHTML = '<option value="">— Pilih Bidang —</option>';
+        return;
+      }
+      try {
+        el.innerHTML = '<option value="">— Memuat Bidang... —</option>';
+        console.log('[Bidang] Fetching for:', instansiId);
+        const res = await apiFetch(`${P.bidangList}?instansi_id=${instansiId}`, { method: 'GET' });
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        
+        let data = [];
+        if (Array.isArray(json)) data = json;
+        else if (json && Array.isArray(json.data)) data = json.data;
+        
+        if (!data || data.length === 0) {
+          el.innerHTML = '<option value="">— Tidak ada data bidang —</option>';
+          return;
+        }
+        
+        el.innerHTML = '<option value="">— Pilih Bidang —</option>' + 
+          data.map(b => `<option value="${b.nama_bidang || b.nama || b.id}">${b.nama_bidang || b.nama || b.id}</option>`).join('');
+        console.log('[Bidang] Populated', data.length, 'items');
+      } catch (e) {
+        console.error('[Bidang] Error:', e);
+        el.innerHTML = '<option value="">— Error memuat bidang —</option>';
       }
     }
 

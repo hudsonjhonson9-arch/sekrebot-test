@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Absensi BAPPERIDA</title>
+  <title>Absensi</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -8637,8 +8637,9 @@ File di Google Drive juga akan dihapus.`)) return;
         _camStream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: 'user', 
-            width: { ideal: 1080 }, 
-            height: { ideal: 1920 },
+            // Optimasi iPhone: Menggunakan 720p (HD) daripada 1080p (FHD) mencegah zoom berlebih di iOS
+            width: { ideal: 720 }, 
+            height: { ideal: 1280 },
             aspectRatio: { ideal: 0.5625 } // 9:16 Portrait
           }
         });
@@ -8976,13 +8977,11 @@ File di Google Drive juga akan dihapus.`)) return;
                       setTimeout(() => doCapture(match.id, detection.descriptor, match.score), 600);
                     }
                   } else {
-                    // No match yet
-                    if (!$('lsText').textContent.includes('ID Found')) {
-                        $('lsIcon').textContent = '🔍';
-                        if (_isLive) {
-                             $('lsText').textContent = 'Mencari Identitas di Database...';
-                             $('lsText').style.color = 'var(--gold)';
-                        }
+                    // Reset UI jika tidak ada match dalam frame ini (Mencegah "ID Found" nyangkut ke orang sebelumnya)
+                    if (_isLive) {
+                      $('lsIcon').textContent = '🔍';
+                      $('lsText').textContent = 'Mencari Identitas di Database...';
+                      $('lsText').style.color = 'var(--gold)';
                     }
                   }
                 });
@@ -9122,7 +9121,13 @@ File di Google Drive juga akan dihapus.`)) return;
       } catch (e) {
         console.error('[AI] Fatal Capture Error:', e);
         _forceResetAiState(true);
-        setCamStatus('bad', '❌', 'Gagal Memproses', 'Silakan coba lagi');
+        setCamStatus('bad', '❌', 'Gagal Memproses', e.message || 'Silakan coba lagi');
+        // Aktifkan kembali tombol agar user bisa coba lagi
+        const btn = $('btnCapture');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '📸 Coba Lagi';
+        }
       }
     }
 
@@ -14613,22 +14618,25 @@ File di Google Drive juga akan dihapus.`)) return;
 
       const btn = $('btnMejaAbsen');
       if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat Data...'; }
-      _setMejaStatus('processing', '⏳', 'Mengambil GPS & Database...', 'Harap tunggu');
+      _setMejaStatus('processing', '⏳', 'Sinkronisasi Sistem...', 'Memuat data & lokasi');
 
-      // 1. Ambil GPS Meja
-      _mejaGpsLocation = await _getMejaGps();
-      const locEl = $('mejaLocVal');
-      const accEl = $('mejaLocAccuracy');
-      if (_mejaGpsLocation && locEl) {
-        locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
-        if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
-      } else if (locEl) {
-        locEl.textContent = 'Lokasi GPS Meja Tidak Tersedia';
-      }
-
-      // 2. Load face descriptors dari server
+      // 1 & 2. Optimasi: Ambil GPS dan Database secara PARALEL untuk kecepatan maksimal
       try {
-        const res = await apiFetch(P.faceGetAll, { method: 'GET' });
+        const [gps, res] = await Promise.all([
+          _getMejaGps(),
+          apiFetch(P.faceGetAll, { method: 'GET' })
+        ]);
+
+        _mejaGpsLocation = gps;
+        const locEl = $('mejaLocVal');
+        const accEl = $('mejaLocAccuracy');
+        if (_mejaGpsLocation && locEl) {
+          locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
+          if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
+        } else if (locEl) {
+          locEl.textContent = 'Lokasi GPS Meja Tidak Tersedia';
+        }
+
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.data || []);

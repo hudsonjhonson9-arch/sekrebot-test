@@ -5091,6 +5091,11 @@
         <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
 
+        <select id="regInstansi" class="form-input-auth">
+          <option value="">— Pilih Instansi —</option>
+          <option value="bapperida">BAPPERIDA Sumba Barat</option>
+        </select>
+
         <select id="regBidang" class="form-input-auth">
           <option value="">— Pilih Bidang —</option>
           <option value="Sekretariat">Sekretariat</option>
@@ -6681,6 +6686,7 @@
     const WIFI_MODE = 'block';
 
     const P = {
+      instansiList: isTest ? '/webhook-test/instansi-list' : '/webhook/instansi-list',
       absen: isTest ? '/webhook-test/absen' : '/webhook/absen',
       ket: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
       log: isTest ? '/webhook-test/log-absen' : '/webhook/log-absen',
@@ -11775,6 +11781,22 @@ File di Google Drive juga akan dihapus.`)) return;
     /* ════ HARI LIBUR & JAM PEGAWAI ════ */
 
     // Fetch libur dari n8n untuk dipakai rekap
+
+    async function fetchInstansiList() {
+      try {
+        const res = await apiFetch(P.instansiList, { method: 'GET' });
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = parseRows(json);
+        const el = $('regInstansi');
+        if (!el || !data.length) return;
+        el.innerHTML = '<option value="">— Pilih Instansi —</option>' + 
+          data.map(i => `<option value="${i.instansi_id || i.id}">${i.instansi_name || i.nama}</option>`).join('');
+      } catch (e) {
+        console.error('[Fetch Instansi Error]', e);
+      }
+    }
+
     async function fetchLiburForRekap() {
       try {
         const res = await apiFetch(P.liburList, { method: 'GET' });
@@ -15436,7 +15458,7 @@ File di Google Drive juga akan dihapus.`)) return;
             bidang: $('regBidang').value,
             pangkat: $('regPangkat').value,
             telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: getScopedInstansiId()
+            instansi_id: $('regInstansi').value || getScopedInstansiId()
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
@@ -15483,6 +15505,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
     async function initApp() {
       try {
+        fetchInstansiList(); // Pre-load instansi for registration
         console.log('[Init] Checking identity...');
         if (!_checkIdentityOnLoad()) return; // Stop if not logged in
 

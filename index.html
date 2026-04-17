@@ -6891,10 +6891,14 @@
 
       try {
         const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
+        if (!endpoint) return;
         const res = await apiFetch(endpoint);
         const d = await res.json();
         if (d.ok && Array.isArray(d.data)) {
-          const options = d.data.map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`).join('');
+          const options = d.data
+            .filter(b => b.nama_bidang)
+            .map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`)
+            .join('');
           if (regSelect) regSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
           if (rekapSelect) {
             const currentVal = rekapSelect.value;
@@ -8826,7 +8830,7 @@ File di Google Drive juga akan dihapus.`)) return;
         setTimeout(() => { 
           _isStreamStable = true; 
           console.log('[AI] Stream marked as STABLE');
-        }, 1500); // Beri waktu sensor kamera auto-exposure stabil
+        }, 2500); // Bertambah menjadi 2.5 detik agar sensor benar-benar stabil
 
         // Ambil track untuk kontrol zoom/flash
         window._camVideoTrack = _camStream.getVideoTracks()[0];
@@ -9056,9 +9060,15 @@ File di Google Drive juga akan dihapus.`)) return;
       const loop = async () => {
         if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         
+        // STABILITY FIX: Jika stream belum stabil, jangan deteksi apa-apa
+        if (!_isStreamStable) {
+           _detectLoop = requestAnimationFrame(loop);
+           return;
+        }
+
         // Optimasi: Pastikan video sudah benar-benar memutar frame baru (Fresh Frame Check)
         // readyState 4 = HAVE_ENOUGH_DATA, currentTime > 0.5 = sudah lewat frame awal/hitam
-        if (!_isStreamStable || vid.readyState < 4 || vid.currentTime < 0.5 || vid.paused) {
+        if (vid.readyState < 4 || vid.currentTime < 0.5 || vid.paused) {
            _detectLoop = requestAnimationFrame(loop);
            return;
         }
@@ -13070,7 +13080,8 @@ File di Google Drive juga akan dihapus.`)) return;
 
         _pegawaiListCache = users; // Store in cache for saveLog reference
 
-        users.sort((a, b) => (a.nama || '').localeCompare(b.nama || ''));
+        // Urutkan berdasarkan ID (numerik)
+        users.sort((a, b) => Number(a.id || a.ID || 0) - Number(b.id || b.ID || 0));
 
         users.forEach(u => {
           const opt = document.createElement('option');
@@ -13882,10 +13893,10 @@ File di Google Drive juga akan dihapus.`)) return;
             ? json.data
             : []).filter(u => u.id || u.ID);
 
-        // Urutkan berdasarkan "no" secara numerik
+        // Urutkan berdasarkan ID (numerik)
         pegawai.sort((a, b) => {
-          const valA = parseInt(a.no || a.No || 9999);
-          const valB = parseInt(b.no || b.No || 9999);
+          const valA = Number(a.id || a.ID || 999999);
+          const valB = Number(b.id || b.ID || 999999);
           return valA - valB;
         });
 
@@ -14143,12 +14154,12 @@ File di Google Drive juga akan dihapus.`)) return;
 
     function _isSuperAdmin() {
       if (!IS_ADMIN || !MY_ID) return false;
-      const role = (window._adminRoleMap && window._adminRoleMap[MY_ID]) || null;
+      const role = (window._adminRoleMap && window._adminRoleMap[MY_ID]) || userProfile?.role || null;
       if (role) {
-        return role.toLowerCase().replace(/\s/g, '') === 'superadmin';
+        return role.toLowerCase().includes('super');
       }
       // Fallback legacy (admin pertama) jika map belum terisi
-      return ADMIN_IDS.length > 0 && ADMIN_IDS[0] === MY_ID;
+      return ADMIN_IDS.length > 0 && String(ADMIN_IDS[0]) === String(MY_ID);
     }
 
     function _applyAdminUIExtended() {
@@ -14190,10 +14201,10 @@ File di Google Drive juga akan dihapus.`)) return;
         const ud = ur.ok ? await ur.json() : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
-        // Urutkan berdasarkan No Pegawai (no) secara numerik
+        // Urutkan berdasarkan ID (numerik)
         users.sort((a, b) => {
-          const valA = parseInt(a.no || a.No || 9999);
-          const valB = parseInt(b.no || b.No || 9999);
+          const valA = Number(a.id || a.ID || 999999);
+          const valB = Number(b.id || b.ID || 999999);
           return valA - valB;
         });
 

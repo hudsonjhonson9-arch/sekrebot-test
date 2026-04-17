@@ -6730,6 +6730,7 @@
 
     /* ════ MODEL LOADING STATE ════ */
     let _modelsReady = false, _modelLoadPct = 0, _modelLoadStep = -1;
+    let _isStreamStable = false; // Flag untuk mencegah deteksi instan saat kamera baru terbuka
     function _updateModelProgress(idx, pctPerStep) {
       _modelLoadStep = idx;
       const base = idx * 33.3;
@@ -8594,6 +8595,12 @@ File di Google Drive juga akan dihapus.`)) return;
       const isMeja = onDone === 'meja';
       _forceResetAiState(); // Reset total sebelum mulai
 
+      // Optimasi: Reset UI Meja secara eksplisit & Tambah Stability Delay
+      const mejaResult = $('mejaOverlayResult');
+      if (mejaResult) mejaResult.style.display = 'none';
+      _isStreamStable = false;
+      setTimeout(() => { _isStreamStable = true; }, 1200);
+
       _absenCallbackAfterCam = onDone;
       window._isMejaMode = isMeja;
 
@@ -8860,6 +8867,13 @@ File di Google Drive juga akan dihapus.`)) return;
       _isLoopEnabled = true;
       const loop = async () => {
         if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
+        
+        // Optimasi: Jangan deteksi jika stream belum stabil (mencegah phantom detection)
+        if (!_isStreamStable) {
+           _detectLoop = requestAnimationFrame(loop);
+           return;
+        }
+
         if (_isDetecting) {
           _detectLoop = requestAnimationFrame(loop);
           return;
@@ -14612,7 +14626,11 @@ File di Google Drive juga akan dihapus.`)) return;
        di dalam startDetectLoop untuk akurasi yang lebih baik ════ */
 
     async function startMejaAbsen() {
-      // 0. RESET COUNTER (Hapus data sesi sebelumnya)
+      // 0. RESET TOTAL STATE (Mencegah residu deteksi sebelumnya)
+      _lastMejaId = null;
+      _lastMejaTime = 0;
+      _autoCaptured = false;
+      _mejaProcessing = false;
       _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
       _updateMejaCnt();
 

@@ -11792,20 +11792,36 @@ File di Google Drive juga akan dihapus.`)) return;
           return;
         }
         const json = await res.json();
-        console.log('[Instansi] Raw data:', json);
-        const data = parseRows(json);
-        console.log('[Instansi] Parsed rows:', data);
+        console.log('[Instansi] Raw JSON:', json);
+        
+        // Robust parsing: extract array regardless of wrapping
+        let data = [];
+        if (Array.isArray(json)) {
+            // Check if it's [ { data: [...] } ]
+            if (json.length === 1 && json[0].data && Array.isArray(json[0].data)) data = json[0].data;
+            // Check if it's [ {...}, {...} ]
+            else data = json;
+        } else if (json && Array.isArray(json.data)) {
+            data = json.data;
+        }
+        
+        console.log('[Instansi] Parsed Data:', data);
         
         const el = $('regInstansi');
         if (!el) return;
         
         if (!data || data.length === 0) {
+          console.warn('[Instansi] No data found in response');
           el.innerHTML = '<option value="">— Tidak ada data instansi —</option>';
           return;
         }
         
         el.innerHTML = '<option value="">— Pilih Instansi —</option>' + 
-          data.map(i => `<option value="${i.id}">${i.nama_instansi || i.nama || i.id}</option>`).join('');
+          data.map(i => {
+              const id = i.id || i.ID || i.instansi_id || '';
+              const name = i.nama_instansi || i.nama || i.Nama_Instansi || id || 'Instansi';
+              return `<option value="${id}">${name}</option>`;
+          }).join('');
         console.log('[Instansi] Populated', data.length, 'items');
       } catch (e) {
         console.error('[Instansi] Error:', e);

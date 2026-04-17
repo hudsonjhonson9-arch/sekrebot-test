@@ -8384,7 +8384,16 @@ File di Google Drive juga akan dihapus.`)) return;
       if (includeProcessing) _aiProcessing = false;
       _autoCaptured = false;
       _captureData = null;
+      _lastMejaId = null; // Reset tracker terakhir agar tidak "lengket"
+      _lastMejaTime = 0;
       console.log(`[AI] State reset (Proc:${includeProcessing})`);
+      
+      // Bersihkan canvas agar tidak ada sisa frame sebelumnya
+      const cnv = $('camCanvas');
+      if (cnv) {
+        const ctx = cnv.getContext('2d');
+        ctx.clearRect(0, 0, cnv.width, cnv.height);
+      }
     }
 
     // Wrapper Timeout untuk menghindari AI Hang selamanya
@@ -8868,8 +8877,9 @@ File di Google Drive juga akan dihapus.`)) return;
       const loop = async () => {
         if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         
-        // Optimasi: Jangan deteksi jika stream belum stabil (mencegah phantom detection)
-        if (!_isStreamStable) {
+        // Optimasi: Pastikan video sudah benar-benar memutar frame baru (Fresh Frame Check)
+        // readyState 4 = HAVE_ENOUGH_DATA, currentTime > 0.3 = sudah lewat frame awal/hitam
+        if (!_isStreamStable || vid.readyState < 4 || vid.currentTime < 0.3 || vid.paused) {
            _detectLoop = requestAnimationFrame(loop);
            return;
         }

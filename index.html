@@ -8075,6 +8075,8 @@ File di Google Drive juga akan dihapus.`)) return;
         return false;
       } catch (e) {
         console.warn('Sync face server error:', e);
+        // Optimasi: Simpan error di window agar bisa dibaca caller jika butuh detail
+        window._lastAiError = e.message;
         return false;
       }
     }
@@ -8096,12 +8098,18 @@ File di Google Drive juga akan dihapus.`)) return;
           return false;
         }
 
+        setCamStatus('ok', '📡', 'Mengirim...', 'Menyimpan ke server');
         const ok = await syncFaceToServer(uid, dataUrl, descriptorToSave, tgUser.first_name, savedAt);
         if (ok) {
           updateProfilFaceUI();
+        } else {
+          setCamStatus('bad', '❌', 'Gagal Simpan', window._lastAiError || 'Server tidak merespons');
         }
         return ok;
-      } catch (_) { return false; }
+      } catch (err) { 
+        setCamStatus('bad', '❌', 'Error', err.message);
+        return false; 
+      }
     }
 
     async function loadFaceFromServer() {
@@ -8297,11 +8305,27 @@ File di Google Drive juga akan dihapus.`)) return;
       openCamOverlay({
         onDone: async (cap) => {
           if (!cap?.dataUrl) return;
+          // btnCapture di doCapture sudah disabled & ganti spinner
           const ok = await saveFaceRef(cap.dataUrl, cap.descriptor);
           if (ok) {
             updateFaceRegUI();
             updateProfilFaceUI();
             setCamStatus('ok', '🧠', 'Data Wajah AI Tersimpan!', 'Wajah Anda berhasil didaftarkan dengan Face AI');
+            // Biarkan tombol Ambil Foto berubah jadi Selesai atau Tutup
+            const btn = $('btnCapture');
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '✅ Selesai';
+              btn.onclick = () => closeCamOverlay(false);
+            }
+          } else {
+            // Error sudah dihandle oleh saveFaceRef via setCamStatus
+            const btn = $('btnCapture');
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = '📸 Coba Lagi';
+              btn.onclick = () => doCapture();
+            }
           }
         }, onCancel: () => { }, isRegister: true
       });
@@ -8452,10 +8476,11 @@ File di Google Drive juga akan dihapus.`)) return;
             backend: 'webgl',
             modelBasePath: HUMAN_MODELS,
             filter: { enabled: false }, // Matikan filter berat untuk HP
+            cacheModels: true, // Optimasi: Gunakan cache browser untuk model
             face: {
               enabled: true,
-              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.2, inputSize: 416 },
-              mesh: { enabled: true },
+              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.2, inputSize: 320 }, // Optimasi: 320 lebih cepat dari 416
+              mesh: { enabled: false }, // Optimasi: Nonaktifkan mesh jika tidak butuh fitur 3D/iris
               iris: { enabled: false },
               description: { enabled: true, modelPath: 'faceres.json' },
               emotion: { enabled: false },
@@ -8496,7 +8521,8 @@ File di Google Drive juga akan dihapus.`)) return;
           const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
 
           await Promise.race([loadPromise, timeoutPromise]);
-          await HumanInstance.warmup();
+          // Optimasi: Warmup hanya untuk modul wajah agar lebih cepat
+          await HumanInstance.warmup({ warmup: 'face' });
 
           _updateModelProgress(2, 80);
           _modelsReady = true;
@@ -8988,6 +9014,23 @@ File di Google Drive juga akan dihapus.`)) return;
 
     let _isSubmitting = false; // ANTI-SPAM LOCK
 
+    /* ── Helper: Resize Image ── */
+    async function _resizeImage(dataUrl, maxW = 640) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width <= maxW) return resolve(dataUrl);
+          const ratio = maxW / img.width;
+          const cnv = document.createElement('canvas');
+          cnv.width = maxW; cnv.height = img.height * ratio;
+          cnv.getContext('2d').drawImage(img, 0, 0, cnv.width, cnv.height);
+          resolve(cnv.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      });
+    }
+
     /* ── Ambil foto (capture) ── */
     async function doCapture(matchId = null, preDescriptor = null, preScore = 0) {
       if (_aiProcessing || _isSubmitting) {
@@ -9025,16 +9068,19 @@ File di Google Drive juga akan dihapus.`)) return;
         ctx.scale(-1, 1);
         ctx.drawImage(vid, 0, 0);
 
-        const dataUrl = cnv.toDataURL('image/jpeg', 0.8);
-        _captureData = { dataUrl };
+        // Optimasi: Resize image agar payload tidak terlalu besar (sering gagal di Cloudflare/n8n jika > 1MB)
+        const fullDataUrl = cnv.toDataURL('image/jpeg', 0.85);
+        const resizedDataUrl = await _resizeImage(fullDataUrl, 640);
+        
+        _captureData = { dataUrl: resizedDataUrl };
 
         if (!window._isMejaMode) stopCamStream();
 
         let descriptor = preDescriptor;
         if (!descriptor) {
           console.log('[AI] Phase 2: Extracting Face Features (AI)...');
-          // Gunakan wrapper universal yang mendukung Human & FaceAPI
-          descriptor = await getFaceDescriptor(vid);
+          // Optimasi: Gunakan cnv (frame yang sama) bukan vid agar konsisten
+          descriptor = await getFaceDescriptor(cnv);
         } else {
           console.log('[AI] Phase 2: Using Pre-Identified Descriptor.');
         }
@@ -15287,7 +15333,9 @@ File di Google Drive juga akan dihapus.`)) return;
         setTimeout(() => {
           loadFaceFromServer();
           loadBidangList();
-        }, 1000);
+          // Optimasi: Pre-load AI model di latar belakang agar siap saat tombol diklik
+          loadAIModels().catch(e => console.warn('[AI] Background pre-load failed:', e));
+        }, 2000);
 
         const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
         switchTab(lastTab);

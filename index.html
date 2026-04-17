@@ -821,8 +821,43 @@
     #camVideo {
       width: 100%;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain; /* Agar tidak terpotong (wide view) */
+      background: #000;
       transform: scaleX(-1) !important;
+      transition: transform 0.2s ease; /* Untuk kelancaran digital zoom */
+    }
+
+    /* ── ZOOM SLIDER STYLING ── */
+    .cam-zoom-wrap {
+      width: 100%;
+      max-width: 320px;
+      padding: 10px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: -5px;
+    }
+
+    .zoom-slider {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--gold);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
 
     #buktiVideo {
@@ -5284,6 +5319,15 @@
           </div>
         </div>
 
+        <!-- Slider Zoom (Baru) -->
+        <div class="cam-zoom-wrap" id="camZoomWrap">
+          <span style="font-size:14px; opacity:0.7">🔍⁻</span>
+          <input type="range" id="camZoomSlider" class="zoom-slider" min="1" max="3" step="0.1" value="1"
+            oninput="setCamZoom(this.value)">
+          <span style="font-size:14px; opacity:0.7">🔍⁺</span>
+          <span id="camZoomVal" style="font-size:10px; font-weight:700; color:var(--gold); min-width:30px">1.0x</span>
+        </div>
+
         <!-- Status deteksi wajah -->
         <div class="cam-status idle" id="camStatus" style="display:none">
           <div class="cam-status-icon" id="camStatusIcon">🔍</div>
@@ -8366,6 +8410,58 @@ File di Google Drive juga akan dihapus.`)) return;
       }
     }
 
+    function _refreshAiBadge() {
+      const b = $('aiEngineBadge');
+      if (!b) return;
+      b.textContent = window._aiEngine === 'human' ? 'Human AI (Advanced)' : 'FaceAPI (Standard)';
+    }
+
+    // ── KONTROL ZOOM KAMERA ──
+    async function setCamZoom(val) {
+      _camZoomLevel = parseFloat(val);
+      const valEl = $('camZoomVal');
+      if (valEl) valEl.textContent = _camZoomLevel.toFixed(1) + 'x';
+
+      const vid = $('camVideo');
+      if (!vid) return;
+
+      // 1. Coba Hardare Zoom (Track Constraint)
+      if (window._camVideoTrack) {
+        try {
+          const caps = window._camVideoTrack.getCapabilities();
+          if (caps.zoom) {
+            await window._camVideoTrack.applyConstraints({
+              advanced: [{ zoom: _camZoomLevel }]
+            });
+            // Jika hardware zoom berhasil, pastikan CSS scale netral
+            vid.style.transform = 'scaleX(-1)'; 
+            return;
+          }
+        } catch (e) {
+          console.warn('[AI] Hardware zoom failed, using CSS fallback:', e);
+        }
+      }
+
+      // 2. Fallback: Software Zoom (CSS Scale)
+      // Mirroring scaleX(-1) dikombinasikan dengan scale(...)
+      vid.style.transform = `scaleX(-1) scale(${_camZoomLevel})`;
+    }
+status.textContent = hasDescriptor ? (isHuman ? '🛡️ Face AI: Human' : '✅ Data Wajah AI Tersimpan') : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
+        status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+        if (sub) sub.textContent = hasDescriptor
+          ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Advanced' : 'Standard'} aktif`
+          : `Daftarkan ulang untuk mengaktifkan AI Face Recognition`;
+        if (btn) btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
+      } else {
+        if (thumb) thumb.style.display = 'none';
+        if (empty) empty.style.display = 'flex';
+        status.textContent = 'Belum ada data wajah';
+        status.style.color = 'var(--muted)';
+        if (sub) sub.textContent = 'Daftarkan wajah Anda untuk pengenalan AI otomatis saat absen';
+        if (btn) btn.textContent = '📷 Daftarkan';
+      }
+    }
+
     /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
     const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
     const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
@@ -8381,10 +8477,10 @@ File di Google Drive juga akan dihapus.`)) return;
     let _isLoopEnabled = false; // Flag Kontrol Loop Absolut
 
     // Fungsi Pengaman untuk Reset Total State AI jika terjadi Stuck
-    let _matchSessionToken = 0; // Token untuk memvalidasi async result agar tidak leak
-    let _lastMatchedId = null; // Menyimpan ID pencocokan frame sebelumnya
     let _matchStabilityCount = 0; // Menghitung berapa frame ID yang sama terdeteksi
     let _mejaStartTime = 0; // Waktu mulai Meja Absen untuk startup delay
+    let _camZoomLevel = 1.0;
+    window._camVideoTrack = null;
 
     function _forceResetAiState(includeProcessing = true) {
       _isDetecting = false;
@@ -8395,6 +8491,10 @@ File di Google Drive juga akan dihapus.`)) return;
       _lastMejaTime = 0;
       _lastMatchedId = null;
       _matchStabilityCount = 0;
+      _camZoomLevel = 1.0;
+      const zoomSlider = $('camZoomSlider');
+      if (zoomSlider) zoomSlider.value = 1;
+      setCamZoom(1.0); // Reset visual zoom
       _matchSessionToken++; // Invalidasi semua pending async match result
       console.log(`[AI] State reset (Proc:${includeProcessing}), Token: ${_matchSessionToken}`);
       
@@ -8667,16 +8767,37 @@ File di Google Drive juga akan dihapus.`)) return;
         _camStream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: 'user', 
-            // Optimasi iPhone: Menggunakan 720p (HD) daripada 1080p (FHD) mencegah zoom berlebih di iOS
-            width: { ideal: 720 }, 
-            height: { ideal: 1280 },
-            aspectRatio: { ideal: 0.5625 } // 9:16 Portrait
+            // Optimasi WIDE VIEW: Gunakan 4:3 (native sensor) untuk menghindari crop awal
+            width: { ideal: 1024 }, 
+            height: { ideal: 768 },
+            aspectRatio: { ideal: 0.75 } 
           }
         });
         const vid = $('camVideo');
         vid.srcObject = _camStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         await vid.play();
+
+        // Ambil track untuk kontrol zoom/flash
+        window._camVideoTrack = _camStream.getVideoTracks()[0];
+        
+        // Inisialisasi Slider Zoom berdasarkan kapabilitas hardware
+        const zoomSlider = $('camZoomSlider');
+        if (zoomSlider && window._camVideoTrack) {
+          try {
+            const caps = window._camVideoTrack.getCapabilities();
+            if (caps.zoom) {
+              zoomSlider.min = caps.zoom.min;
+              zoomSlider.max = caps.zoom.max;
+              zoomSlider.step = caps.zoom.step || 0.1;
+            } else {
+              // Fallback default digital zoom range
+              zoomSlider.min = 1;
+              zoomSlider.max = 3;
+              zoomSlider.step = 0.1;
+            }
+          } catch (_) { }
+        }
       } catch (e) {
         $('modelLoading').style.display = 'block';
         if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';

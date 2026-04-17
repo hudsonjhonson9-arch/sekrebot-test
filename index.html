@@ -7573,9 +7573,14 @@ File di Google Drive juga akan dihapus.`)) return;
 
     /* ════ RIWAYAT HARI INI ════ */
     function parseRows(json) {
+      if (!json) return [];
+      // Jika format nya [ { data: [...], total: 10 } ] (N8N standard wrapper)
+      if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0]?.data)) return json[0].data;
+      // Jika format nya langsung array [ {...}, {...} ]
       if (Array.isArray(json)) return json;
+      // Jika format nya object { data: [...] }
       if (Array.isArray(json?.data)) return json.data;
-      if (Array.isArray(json?.[0]?.data)) return json[0].data;
+      // Jika format nya [ [...] ] (array di dalam array)
       if (Array.isArray(json?.[0])) return json[0];
       return [];
     }

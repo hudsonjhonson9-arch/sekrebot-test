@@ -8730,7 +8730,7 @@ File di Google Drive juga akan dihapus.`)) return;
       const mejaResult = $('mejaOverlayResult');
       if (mejaResult) mejaResult.style.display = 'none';
       _isStreamStable = false;
-      setTimeout(() => { _isStreamStable = true; }, 1200);
+      _mejaStartTime = 0; // Reset waktu mulai, akan di-set saat video benar-benar play
 
       _absenCallbackAfterCam = onDone;
       window._isMejaMode = isMeja;
@@ -8820,6 +8820,13 @@ File di Google Drive juga akan dihapus.`)) return;
         vid.srcObject = _camStream;
         await new Promise(r => { vid.onloadedmetadata = r; });
         await vid.play();
+        
+        // STABILITY FIX: Baru set _mejaStartTime & _isStreamStable SETELAH video play
+        _mejaStartTime = Date.now();
+        setTimeout(() => { 
+          _isStreamStable = true; 
+          console.log('[AI] Stream marked as STABLE');
+        }, 1500); // Beri waktu sensor kamera auto-exposure stabil
 
         // Ambil track untuk kontrol zoom/flash
         window._camVideoTrack = _camStream.getVideoTracks()[0];
@@ -9050,8 +9057,8 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!_isLoopEnabled || !_modelsReady || !$('camOverlay') || $('camOverlay').classList.contains('hidden')) return;
         
         // Optimasi: Pastikan video sudah benar-benar memutar frame baru (Fresh Frame Check)
-        // readyState 4 = HAVE_ENOUGH_DATA, currentTime > 0.3 = sudah lewat frame awal/hitam
-        if (!_isStreamStable || vid.readyState < 4 || vid.currentTime < 0.3 || vid.paused) {
+        // readyState 4 = HAVE_ENOUGH_DATA, currentTime > 0.5 = sudah lewat frame awal/hitam
+        if (!_isStreamStable || vid.readyState < 4 || vid.currentTime < 0.5 || vid.paused) {
            _detectLoop = requestAnimationFrame(loop);
            return;
         }

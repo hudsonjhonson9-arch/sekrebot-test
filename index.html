@@ -10993,17 +10993,32 @@ File di Google Drive juga akan dihapus.`)) return;
           return 0;
         };
 
-        pegawai.sort((a, b) => {
-          // 1. Urutkan berdasarkan Pangkat (Highest to Lowest)
-          const scoreA = getPangkatScore(a.pangkat);
-          const scoreB = getPangkatScore(b.pangkat);
-          if (scoreA !== scoreB) return scoreB - scoreA;
+        const getBirthScore = (nip) => {
+          const clean = String(nip || '').replace(/\D/g, ''); // Ambil hanya angka
+          if (clean.length >= 8) {
+            const datePart = clean.substring(0, 8);
+            if (/^\d{8}$/.test(datePart)) return parseInt(datePart);
+          }
+          return 99999999; // Fallback untuk NIP tidak valid
+        };
 
-          // 2. Urutkan berdasarkan Urutan Manual (jika ada)
+        pegawai.sort((a, b) => {
+          // 1. Urutkan berdasarkan Pangkat (Tertinggi -> Terendah)
+          const rankA = getPangkatScore(a.pangkat);
+          const rankB = getPangkatScore(b.pangkat);
+          if (rankA !== rankB) return rankB - rankA;
+
+          // 2. Jika pangkat sama, urutkan berdasarkan Umur (Tertua -> Termuda)
+          // Berdasarkan NIP (8 digit pertama adalah YYYYMMDD)
+          const birthA = getBirthScore(a.nip);
+          const birthB = getBirthScore(b.nip);
+          if (birthA !== birthB) return birthA - birthB; // Angka lebih kecil = tahun lebih tua
+
+          // 3. Fallback ke Urutan Manual
           const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
           if (ua !== ub) return ua - ub;
 
-          // 3. Urutkan berdasarkan Nama
+          // 4. Fallback ke Nama
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
         window.userListOrder = pegawai; // Save globally for saveLog() reference

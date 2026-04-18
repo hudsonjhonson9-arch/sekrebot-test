@@ -10978,9 +10978,32 @@ File di Google Drive juga akan dihapus.`)) return;
               : p;
           });
         }
+        const getPangkatScore = (p) => {
+          if (!p) return 0;
+          const s = String(p).toUpperCase();
+          if (s.includes('IV/E')) return 17; if (s.includes('IV/D')) return 16;
+          if (s.includes('IV/C')) return 15; if (s.includes('IV/B')) return 14;
+          if (s.includes('IV/A')) return 13; if (s.includes('III/D')) return 12;
+          if (s.includes('III/C')) return 11; if (s.includes('III/B')) return 10;
+          if (s.includes('III/A')) return 9;  if (s.includes('II/D')) return 8;
+          if (s.includes('II/C')) return 7;  if (s.includes('II/B')) return 6;
+          if (s.includes('II/A')) return 5;  if (s.includes('I/D')) return 4;
+          if (s.includes('I/C')) return 3;  if (s.includes('I/B')) return 2;
+          if (s.includes('I/A')) return 1;
+          return 0;
+        };
+
         pegawai.sort((a, b) => {
+          // 1. Urutkan berdasarkan Pangkat (Highest to Lowest)
+          const scoreA = getPangkatScore(a.pangkat);
+          const scoreB = getPangkatScore(b.pangkat);
+          if (scoreA !== scoreB) return scoreB - scoreA;
+
+          // 2. Urutkan berdasarkan Urutan Manual (jika ada)
           const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
           if (ua !== ub) return ua - ub;
+
+          // 3. Urutkan berdasarkan Nama
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
         window.userListOrder = pegawai; // Save globally for saveLog() reference

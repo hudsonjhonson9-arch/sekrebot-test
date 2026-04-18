@@ -10938,7 +10938,7 @@ File di Google Drive juga akan dihapus.`)) return;
             return t && t >= dari && t <= sampai;
           });
           const _order = await orderPromise;
-          const computed = computeRekap(periodRowsRaw, allRowsRaw, _order);
+          const computed = computeRekap(periodRowsRaw, allRowsRaw, _order, dari, sampai);
           pegawai = computed.pegawai;
           ringkasan = computed.ringkasan;
         }
@@ -11017,7 +11017,7 @@ File di Google Drive juga akan dihapus.`)) return;
     }
 
     /* ════ COMPUTE REKAP (fallback) — v2 dengan all-time accumulation ════ */
-    function computeRekap(rows, allRowsParam = null, userSeed = null) {
+    function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, sampai = null) {
       // Jam batas GLOBAL (default)
       const JAM_MASUK_BATAS = JAM_MASUK_MENIT;
       const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
@@ -11037,6 +11037,18 @@ File di Google Drive juga akan dihapus.`)) return;
         const h = parseInt(s[0]), m = parseInt(s[1]);
         return (isNaN(h) || isNaN(m)) ? null : h * 60 + m;
       }
+
+      // Calculate HK Periode (Working Days)
+      const rangeDates = [];
+      if (dari && sampai) {
+          let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
+          while (dCur <= dEnd) {
+              const t = dCur.toISOString().split('T')[0], dy = dCur.getDay();
+              if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) rangeDates.push(t);
+              dCur.setDate(dCur.getDate() + 1);
+          }
+      }
+      const HK_PERIODE = rangeDates.length || 1;
 
       const map = {};
 
@@ -11156,15 +11168,7 @@ File di Google Drive juga akan dihapus.`)) return;
 
       // Special handling: Calculate "Periode Alpa" counts for each employee
       // if not provided by n8n.
-      if (rows.length > 0) {
-        // Find HK dates in period
-        const rangeDates = [];
-        let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
-        while (dCur <= dEnd) {
-          const t = dCur.toISOString().split('T')[0], dy = dCur.getDay();
-          if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) rangeDates.push(t);
-          dCur.setDate(dCur.getDate() + 1);
-        }
+      if (rows.length > 0 && rangeDates.length > 0) {
         // Check presence per employee per date
         const rowSet = new Set(rows.map(r => String(getField(r, 'ID', 'id')) + '|' + normToISO(getField(r, 'Tanggal', 'tanggal'))));
         Object.keys(map).forEach(uid => {
@@ -11201,7 +11205,7 @@ File di Google Drive juga akan dihapus.`)) return;
           totalAkkHHMM: toHHMM(p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450)),
           totalAkkMenit: p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450),
           // Estimated jamHadir for fallback (Work hours minus penalties)
-          jamHadir: Math.max(0, ((HARI_KERJA_PERIODE * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
+          jamHadir: Math.max(0, ((HK_PERIODE * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
           // Discipline period
           disiplinPct, disiplinLabel, disiplinLevel,
           // All-time HH:MM

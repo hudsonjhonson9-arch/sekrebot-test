@@ -10930,7 +10930,7 @@ File di Google Drive juga akan dihapus.`)) return;
         if (!rekapOK) {
           let allRowsRaw = [], periodRowsRaw = [];
           try {
-            const resAll = await apiFetch(`${P.log}`, { method: 'GET' });
+            const resAll = await apiFetch(`${P.log}?dari=${dari}&sampai=${sampai}`, { method: 'GET' });
             if (resAll.ok) allRowsRaw = parseRows(await resAll.json());
           } catch (_) { }
           periodRowsRaw = allRowsRaw.filter(r => {

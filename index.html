@@ -10978,6 +10978,15 @@ File di Google Drive juga akan dihapus.`)) return;
               : p;
           });
         }
+        const getJabatanScore = (j) => {
+          if (!j) return 0;
+          const s = String(j).toUpperCase();
+          if (s.includes('KEPALA DINAS') || s === 'KEPALA') return 100;
+          if (s.includes('SEKRETARIS')) return 90;
+          if (s.includes('KEPALA BIDANG') || s.includes('KABID')) return 80;
+          return 0;
+        };
+
         const getPangkatScore = (p) => {
           if (!p) return 0;
           const s = String(p).toUpperCase();
@@ -10994,31 +11003,31 @@ File di Google Drive juga akan dihapus.`)) return;
         };
 
         const getBirthScore = (nip) => {
-          const clean = String(nip || '').replace(/\D/g, ''); // Ambil hanya angka
+          const clean = String(nip || '').replace(/\D/g, ''); 
           if (clean.length >= 8) {
             const datePart = clean.substring(0, 8);
             if (/^\d{8}$/.test(datePart)) return parseInt(datePart);
           }
-          return 99999999; // Fallback untuk NIP tidak valid
+          return 99999999;
         };
 
         pegawai.sort((a, b) => {
-          // 1. Urutkan berdasarkan Pangkat (Tertinggi -> Terendah)
+          // 1. Urutkan berdasarkan JABATAN (Kepala > Sekretaris > Kabid)
+          const jabA = getJabatanScore(a.jabatan);
+          const jabB = getJabatanScore(b.jabatan);
+          if (jabA !== jabB) return jabB - jabA;
+
+          // 2. Urutkan berdasarkan PANGKAT (Tertinggi -> Terendah)
           const rankA = getPangkatScore(a.pangkat);
           const rankB = getPangkatScore(b.pangkat);
           if (rankA !== rankB) return rankB - rankA;
 
-          // 2. Jika pangkat sama, urutkan berdasarkan Umur (Tertua -> Termuda)
-          // Berdasarkan NIP (8 digit pertama adalah YYYYMMDD)
+          // 3. Urutkan berdasarkan UMUR (Tertua -> Termuda via NIP)
           const birthA = getBirthScore(a.nip);
           const birthB = getBirthScore(b.nip);
-          if (birthA !== birthB) return birthA - birthB; // Angka lebih kecil = tahun lebih tua
+          if (birthA !== birthB) return birthA - birthB; 
 
-          // 3. Fallback ke Urutan Manual
-          const ua = a.urutan ?? 9999, ub = b.urutan ?? 9999;
-          if (ua !== ub) return ua - ub;
-
-          // 4. Fallback ke Nama
+          // 4. Urutkan berdasarkan Nama Tagihan
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
         window.userListOrder = pegawai; // Save globally for saveLog() reference

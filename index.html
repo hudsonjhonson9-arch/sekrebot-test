@@ -10981,8 +10981,11 @@ File di Google Drive juga akan dihapus.`)) return;
         const getJabatanScore = (j) => {
           if (!j) return 0;
           const s = String(j).toUpperCase();
-          if (s.includes('KEPALA DINAS') || s === 'KEPALA') return 100;
+          // Prioritas 1: Pimpinan Tertinggi (Kepala Dinas/Badan/Kantor)
+          if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('KEPALA KANTOR') || s === 'KEPALA') return 100;
+          // Prioritas 2: Sekretaris
           if (s.includes('SEKRETARIS')) return 90;
+          // Prioritas 3: Kepala Bidang
           if (s.includes('KEPALA BIDANG') || s.includes('KABID')) return 80;
           return 0;
         };

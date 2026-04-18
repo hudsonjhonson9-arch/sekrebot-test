@@ -13207,10 +13207,13 @@ File di Google Drive juga akan dihapus.`)) return;
           const nama = namaMap[id] || `ID: ${id}`;
           const isMe = id === MY_ID;
           // Role diambil dari window._adminRoleMap yang diisi oleh _getJamAbsen()
-          const rawRole = window._adminRoleMap[id] || 'admin';
+          const rawRole = window._adminRoleMap[id] || (isMe ? userProfile?.role : null) || 'admin';
           const rText = String(rawRole).toLowerCase().trim();
-          const isSuperAdmin = rText.includes('super');
-          console.log(`[AdminMgmt] ID: ${id}, RawRole: "${rawRole}", IsSuper: ${isSuperAdmin}`);
+          // PENTING: ID pertama di ADMIN_IDS selalu Super Admin (Fallback)
+          const isSAId = (Array.isArray(ADMIN_IDS) && ADMIN_IDS.length > 0 && String(id) === String(ADMIN_IDS[0]));
+          const isSuperAdmin = rText.includes('super') || isSAId;
+          
+          console.log(`[AdminMgmt] ID: ${id}, RawRole: "${rawRole}", IsSuper: ${isSuperAdmin} (isSAId: ${isSAId})`);
 
           return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:6px">
         <div style="font-size:18px">${isSuperAdmin ? '👑' : '🛡️'}</div>

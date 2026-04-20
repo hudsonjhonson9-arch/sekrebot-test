@@ -8255,8 +8255,8 @@ File di Google Drive juga akan dihapus.`)) return;
       }
 
       // Thresholding (0.55 for similarity is standard for Human)
-      // PENTING: Untuk Meja Absen (1:N), tingkatkan threshold ke 0.65 untuk menghindari false positive dari noise
-      const threshold = window._isMejaMode ? 0.55 : 0.55;
+      // PENTING: Untuk Meja Absen (1:N), gunakan threshold 0.55 agar lebih toleran terhadap noise
+      const threshold = 0.55;
       if (bestMatch.score < threshold) {
         return { id: 'unknown', score: bestMatch.score };
       }
@@ -11450,7 +11450,7 @@ File di Google Drive juga akan dihapus.`)) return;
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Masuk">✏️</button>
             ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}')" 
+              <button onclick="openLogEditor('${p.id}', '${_dari}', null, 'MASUK')" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
@@ -11476,7 +11476,7 @@ File di Google Drive juga akan dihapus.`)) return;
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Pulang">✏️</button>
             ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}')" 
+              <button onclick="openLogEditor('${p.id}', '${_dari}', null, 'PULANG')" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
@@ -13059,7 +13059,7 @@ File di Google Drive juga akan dihapus.`)) return;
       return '';
     }
 
-    async function openLogEditor(uid = '', date = '', log = null) {
+    async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
       const modal = $('logModal');
       if (!modal) return;
 
@@ -13074,23 +13074,38 @@ File di Google Drive juga akan dihapus.`)) return;
         const p = (window.userListOrder || []).find(u => String(u.id) === String(uid));
         if (p) {
           // Check which log we should prioritize based on possible selection
-          // If log data was passed but has no ID, it might be one of these:
-          const logsToCheck = [p._rawMasukLog, p._rawPulangLog, p._rawKetLog].filter(Boolean);
+          // If log data was passed but has no ID, or if we have a hintJenis
+          const hJ = (hintJenis || '').toUpperCase();
+          const isM = hJ.includes('MASUK');
+          const isP = hJ.includes('PULANG');
+
+          const logsToCheck = [];
+          if (isM) { if (p._rawMasukLog) logsToCheck.push(p._rawMasukLog); }
+          else if (isP) { if (p._rawPulangLog) logsToCheck.push(p._rawPulangLog); }
+          else {
+            if (p._rawMasukLog) logsToCheck.push(p._rawMasukLog);
+            if (p._rawPulangLog) logsToCheck.push(p._rawPulangLog);
+            if (p._rawKetLog) logsToCheck.push(p._rawKetLog);
+          }
+
           for (const l of logsToCheck) {
             const lid = getLogId(l);
             if (lid) {
-              // If the time matches, it's definitely this one
               const lTime = (l.Jam || l.jam || '').substring(0, 5);
               const paramTime = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
               if (paramTime && lTime === paramTime) {
                 existingId = lid;
                 break;
               }
+              // If we have a hint, and this is the record of that type, we target it
+              if (hJ) {
+                const lJ = (l['Jenis Absen'] || l.jenis_absen || l.Jenis || '').toUpperCase();
+                if (lJ.includes(hJ)) {
+                   existingId = lid;
+                   break;
+                }
+              }
             }
-          }
-          if (!existingId) {
-            const firstLog = p._rawMasukLog || p._rawPulangLog || p._rawKetLog;
-            if (firstLog) existingId = getLogId(firstLog);
           }
         }
       }
@@ -13099,7 +13114,7 @@ File di Google Drive juga akan dihapus.`)) return;
       $('inLogPegawai').value = uid;
       $('inLogTanggal').value = date || fmtD(nowWITA());
       $('inLogJam').value = log ? ((log.Jam || log.jam || '').substring(0, 5)) : '';
-      $('inLogJenis').value = log ? (log['Jenis Absen'] || log.jenis_absen || log.Jenis || 'MASUK') : 'MASUK';
+      $('inLogJenis').value = log ? (log['Jenis Absen'] || log.jenis_absen || log.Jenis || 'MASUK') : (hintJenis || 'MASUK');
       $('inLogKet').value = log ? (log.Ket || log.ket || log.keterangan || '') : '';
       $('logFormResult').style.display = 'none';
 

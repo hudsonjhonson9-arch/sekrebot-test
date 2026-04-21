@@ -11498,7 +11498,10 @@ File di Google Drive juga akan dihapus.`)) return;
         <!-- ── BADGE STATUS BAWAH ── -->
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
           ${(function () {
-              const mAll = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
+              const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
+              const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
+              const mAlpa_Total = (p.all_alpa || 0) * 450;
+              const mAll = mT + mC + mAlpa_Total;
               if (mAll === 0) return '';
               const h = Math.floor(mAll / 60), m = mAll % 60;
               const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
@@ -11520,17 +11523,22 @@ File di Google Drive juga akan dihapus.`)) return;
         </div>
 
         ${(function () {
-              const aLambat = p.totalLambatAllHHMM || '00:00';
-              const aCepat = p.totalCepatAllHHMM || '00:00';
-              const aTotal = p.totalAkkAllHHMM || '00:00';
-              const aTotalM = p.totalAkkAllMenit || 0;
-              if (aTotalM === 0 && aLambat === '00:00' && aCepat === '00:00' && (!p.all_izin && !p.all_sakit && !p.all_tugas && !p.all_alpa)) return '';
+              const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
+              const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
+              const mAlpa_Total = (p.all_alpa || 0) * 450;
+              const mAllTotal_Local = mT + mC + mAlpa_Total;
+              
+              const aLambat = toHHMM(mT);
+              const aCepat = toHHMM(mC);
+              const aTotal = toHHMM(mAllTotal_Local);
+              
+              if (mAllTotal_Local === 0 && (!p.all_izin && !p.all_sakit && !p.all_tugas && !p.all_alpa)) return '';
               return '<div class="akk-all-row" style="margin-top:8px">'
                 + '<span class="akk-all-label">📈 Akumulasi Keseluruhan (All-Time)</span>'
-                + (aLambat !== '00:00' ? '<span class="akk-badge akk-lambat">⏰ Lambat: ' + aLambat + '</span>' : '')
-                + (aCepat !== '00:00' ? '<span class="akk-badge akk-cepat">🏃 Cepat: ' + aCepat + '</span>' : '')
-                + (p.akkAlpaHHMM !== '00:00' ? '<span class="akk-badge" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ' + p.akkAlpaHHMM + '</span>' : '')
-                + (aTotal !== '00:00' ? '<span class="akk-badge akk-total">Σ Total: ' + aTotal + '</span>' : '')
+                + (mT > 0 ? '<span class="akk-badge akk-lambat">⏰ Lambat: ' + aLambat + '</span>' : '')
+                + (mC > 0 ? '<span class="akk-badge akk-cepat">🏃 Cepat: ' + aCepat + '</span>' : '')
+                + (p.all_alpa > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.12);color:var(--danger)">❌ TB: ' + toHHMM(p.all_alpa * 450) + '</span>' : '')
+                + (mAllTotal_Local > 0 ? '<span class="akk-badge akk-total">Σ Total: ' + aTotal + '</span>' : '')
                 + (p.all_izin > 0 ? '<span class="akk-badge" style="background:rgba(245,158,11,.1);color:var(--warning)">🙏 ' + p.all_izin + '×</span>' : '')
                 + (p.all_sakit > 0 ? '<span class="akk-badge" style="background:rgba(239,68,68,.1);color:var(--danger)">🤒 ' + p.all_sakit + '×</span>' : '')
                 + (p.all_tugas > 0 ? '<span class="akk-badge" style="background:rgba(139,92,246,.1);color:#a78bfa">💼 ' + p.all_tugas + '×</span>' : '')
@@ -11545,7 +11553,12 @@ File di Google Drive juga akan dihapus.`)) return;
         /* ─────────────────────────────────────────
            TAMPILAN RANGE — KARTU PREMIUM (V2)
            ───────────────────────────────────────── */
-        const mAllTotal = (p.all_menit_terlambat || 0) + (p.all_menit_lebih_awal || 0);
+        // ── Akumulasi Waktu (All-Time) ──
+        const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
+        const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
+        const mAlpa = (p.all_alpa || 0) * 450;
+        const mAllTotal = mT + mC + mAlpa;
+
         const akkTotalWaktuFmt = (function () {
           const h = Math.floor(mAllTotal / 60), m = mAllTotal % 60;
           return h > 0 ? `${h}j ${m}m` : `${m}m`;
@@ -11553,8 +11566,16 @@ File di Google Drive juga akan dihapus.`)) return;
 
         // ── Kedisiplinan masuk ──
         const dPct = p.disiplinPct ?? 0;
-        const dLabel = p.disiplinLabel || '—';
-        const dLevel = p.disiplinLevel || 0;
+        let dLabel = p.disiplinLabel;
+        let dLevel = p.disiplinLevel;
+
+        if (dLevel === undefined || dLevel === null) {
+          if (dPct >= 95) { dLabel = 'Sangat Disiplin'; dLevel = 4; }
+          else if (dPct >= 80) { dLabel = 'Disiplin'; dLevel = 3; }
+          else if (dPct >= 60) { dLabel = 'Cukup'; dLevel = 2; }
+          else { dLabel = 'Kurang'; dLevel = 1; }
+        }
+
         const dAllPct = p.disiplinAllPct ?? null;
         const dIcon = dLevel === 4 ? '🌟' : dLevel === 3 ? '👍' : dLevel === 2 ? '⚠️' : '🔴';
         const dColor = dLevel === 4 ? 'var(--success)' : dLevel === 3 ? 'var(--info)' : dLevel === 2 ? 'var(--warning)' : 'var(--danger)';
@@ -11571,8 +11592,8 @@ File di Google Drive juga akan dihapus.`)) return;
           <div class="rekap-footer-all">
             <span class="all-time-title">📈 Ringkasan Seluruh Waktu</span>
             <div class="all-time-badges">
-              ${p.totalLambatAllHHMM && p.totalLambatAllHHMM !== '00:00' ? `<span class="badge-all">⏰ Lambat: ${p.totalLambatAllHHMM}</span>` : ''}
-              ${p.totalCepatAllHHMM && p.totalCepatAllHHMM !== '00:00' ? `<span class="badge-all">🏃 Cepat: ${p.totalCepatAllHHMM}</span>` : ''}
+              ${mT > 0 ? `<span class="badge-all">⏰ Lambat: ${toHHMM(mT)}</span>` : ''}
+              ${mC > 0 ? `<span class="badge-all">🏃 Cepat: ${toHHMM(mC)}</span>` : ''}
               ${p.all_alpa > 0 ? `<span class="badge-all" style="color:var(--danger)">❌ TB: ${p.all_alpa}×</span>` : ''}
               ${dAllPct !== null ? `<span class="badge-all">🎯 Disiplin: ${dAllPct}%</span>` : ''}
               ${p.all_izin > 0 ? `<span class="badge-all">🙏 Izin: ${p.all_izin}</span>` : ''}

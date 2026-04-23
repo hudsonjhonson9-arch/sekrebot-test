@@ -7244,10 +7244,37 @@
       const btnPL = $('btnPulangLuar'), formPL = $('pulangLuarForm');
       if (btnPL) btnPL.classList.toggle('show', isJamPulang && !btnPL.disabled);
       if (formPL) formPL.classList.toggle('show', isJamPulang && !$('btnPulangLuar')?.disabled);
-      const lh = LOK_DEF[H_ID[h]] || [];
-      $('lokasiList').innerHTML = lh.length
-        ? lh.map(l => `<div class="lokasi-item"><div class="lokasi-dot"></div><div class="lokasi-name">${l}</div></div>`).join('')
-        : `<div class="lokasi-item"><div class="lokasi-dot" style="background:var(--danger)"></div><div class="lokasi-name" style="color:var(--muted)">Tidak ada lokasi aktif hari ini</div></div>`;
+     const lh = LOK_DEF[H_ID[h]] || [];
+      const isWeekendToday = (h === 0 || h === 6); // 0=Minggu, 6=Sabtu
+      
+      if (lh.length) {
+        // Ada lokasi hari ini → wajib dalam radius
+        $('lokasiList').innerHTML = lh.map(l =>
+          `<div class="lokasi-item">
+            <div class="lokasi-dot"></div>
+            <div class="lokasi-name">${l}</div>
+          </div>`
+        ).join('');
+      } else if (isWeekendToday) {
+        // Sabtu/Minggu tanpa jadwal → tidak bisa absen
+        $('lokasiList').innerHTML =
+          `<div class="lokasi-item">
+            <div class="lokasi-dot" style="background:var(--muted)"></div>
+            <div class="lokasi-name" style="color:var(--muted)">🏠 Hari libur — tidak ada jadwal absen</div>
+          </div>`;
+      } else {
+        // Senin–Jumat tanpa lokasi → WFH
+        $('lokasiList').innerHTML =
+          `<div style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);border-radius:10px;padding:8px 10px;margin-top:4px">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="font-size:16px">🏠</span>
+              <div>
+                <div style="font-size:11px;font-weight:800;color:#60a5fa">WFH Hari Ini</div>
+                <div style="font-size:9px;color:var(--muted);margin-top:1px">Tidak ada lokasi kantor yang dijadwalkan — absen diterima dari mana saja</div>
+              </div>
+            </div>
+          </div>`;
+      }
     }
     updateClock(); setInterval(updateClock, 1000);
 

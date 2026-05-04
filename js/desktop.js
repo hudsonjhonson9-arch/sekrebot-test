@@ -15,7 +15,7 @@
       try {
         // Muat daftar pegawai
         const ur = await apiGet(P.userList + '?format=full');
-        const ud = ur.ok ? await ur.json() : [];
+        const ud = ur.ok ? ((ur.rows?.length ?? 0) ? ur.rows : parseApiResponse(ur.data)) : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
         // Urutkan berdasarkan ID (numerik)

@@ -49,7 +49,7 @@
           // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
           const res = await apiGet(P.seragamTypeList);
           if (!postOk) throw 0;
-          const d = res;
+          const d = res?.data ?? {};
           rows = d.data || d || [];
           _seragamTypeRawCache = rows;
         }
@@ -365,14 +365,14 @@
     async function loadSeragamPublik() {
       // Paralelkan kedua request sekaligus — tidak tunggu satu selesai dulu
       const [typeResult, schedResult] = await Promise.allSettled([
-        apiFetch(P.seragamTypeList, { method: 'GET' }),
+        apiGet(P.seragamTypeList),
         apiFetch(P.seragamGet, { method: 'GET' })
       ]);
 
       // Proses seragamTypeList
       if (typeResult.status === 'fulfilled' && typeResult.value.ok) {
         try {
-          const d = await typeResult.value.json();
+          const d = typeResult.value?.data ?? {};
           const rows = d.data || d || [];
           _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
           _applySeragamTypeRows(rows);
@@ -382,7 +382,7 @@
       // Proses jadwal seragam per hari
       if (schedResult.status === 'fulfilled' && schedResult.value.ok) {
         try {
-          const d = await schedResult.value.json();
+          const d = schedResult.value?.data ?? {};
           const rows = d.data || d || [];
           if (Array.isArray(rows) && rows.length) {
             const map = {};

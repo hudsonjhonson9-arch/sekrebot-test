@@ -86,7 +86,7 @@
         // Or fetch single if needed. For now, try logic: fetch all or find in cache
         const ur = await apiGet(P.userList + '?user_id=' + uid);
         if (!ur.ok) return;
-        const res = await ur.json();
+        const res = (ur.rows?.length ?? 0) ? ur.rows : parseApiResponse(ur.data);
         const p = res.single ? res : (res.data ? res.data[0] : null);
         if (!p) return;
 
@@ -189,7 +189,7 @@
       if (!confirm(`Hapus pegawai "${nama}" (${uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
       try {
         const res = await apiPost(P.userDel, { id: uid });
-        const d = res;
+        const d = res?.data ?? {};
         if (d.ok !== false) {
           loadPegawaiMgmt();
         } else {

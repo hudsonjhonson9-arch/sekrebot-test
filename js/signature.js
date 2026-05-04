@@ -355,7 +355,7 @@
       try {
         const res = await apiGet(`${P.signatureGet}?telegram_id=${uid}`);
         if (sigOk) {
-          const d = res;
+          const d = res?.data ?? {};
           const sig = d.signature || d.data?.signature || null;
           if (sig) {
             _sigCache[uid] = sig;
@@ -375,17 +375,17 @@
       try {
         // Parallel: daftar pegawai + daftar tanda tangan
         const [ur, sr] = await Promise.allSettled([
-          apiFetch(P.userList + '?format=full', { method: 'GET' }),
-          apiFetch(P.signatureList, { method: 'GET' })
+          apiGet(P.userList + '?format=full'),
+          apiGet(P.signatureList)
         ]);
 
         const users = ur.status === 'fulfilled' && ur.value.ok
-          ? await ur.value.json().then(d => Array.isArray(d) ? d : (d.data || []))
+          ? (ur.value.rows.length ? ur.value.rows : parseApiResponse(ur.value.data))
           : [];
 
         let sigMap = {};
         if (sr.status === 'fulfilled' && sr.value.ok) {
-          const sd = await sr.value.json();
+          const sd = sr.value?.data ?? {};
           const arr = Array.isArray(sd) ? sd : (sd.data || []);
           arr.forEach(s => { sigMap[String(s.telegram_id || s.id || '')] = s; });
         }

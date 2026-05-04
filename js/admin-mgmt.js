@@ -30,8 +30,7 @@
         try {
           const ur = await apiGet(P.userList + '?format=full');
           if (ur.ok) {
-            const ud = await ur.json();
-            const users = Array.isArray(ud) ? ud : (ud.data || []);
+            const users = (ur.rows?.length ?? 0) ? ur.rows : (Array.isArray(ur.data) ? ur.data : (ur.data?.data || []));
             users.forEach(u => {
               const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
               if (uid) {
@@ -120,11 +119,7 @@
       }
       if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
       try {
-        const { ok, data: res } = await apiPost(P.adminDel, { telegram_id: tgId }); // was: apiFetch(P.adminDel, {
-          method: 'DELETE',
-          body: JSON.stringify({ ditambahkan_oleh: MY_ID })
-        });
-        const data = res.catch(() => ({}));
+        const { ok, data } = await apiPost(P.adminDel, { telegram_id: tgId, ditambahkan_oleh: MY_ID });
         if (!ok || data?.ok === false) {
           _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menghapus admin.');
           return;

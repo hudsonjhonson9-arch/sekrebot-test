@@ -28,14 +28,19 @@
           if (!nip) throw new Error('Silakan masukkan NIP');
 
           const res = await apiGet(`${P.userList}?nip=${nip}`);
-          const d = res;
+          if (!res.ok) throw new Error('Server tidak merespons. Coba lagi.');
 
-          // API n8n versi single mengembalikan { ok: true, single: true, ... }
-          // API n8n versi list mengembalikan { ok: true, data: [...] }
+          // Tangani berbagai format response n8n:
+          // - Array of objects: res.rows = [{id, nip, ...}]
+          // - Single object: res.data = {single: true, id, nip, ...}
+          const rawData = res.data;
           let user = null;
-          if (d.single) user = d;
-          else if (d.data && Array.isArray(d.data)) {
-            user = d.data.find(u => String(u.nip || '').trim() === nip);
+          if (res.rows && res.rows.length) {
+            user = res.rows.find(u => String(u.nip || '').trim() === nip)
+                || res.rows[0];
+          } else if (rawData && !Array.isArray(rawData)) {
+            // Single-object response (n8n versi lama)
+            if (rawData.single || rawData.id || rawData.nip) user = rawData;
           }
 
           if (!user || user.error || !user.id) throw new Error('NIP tidak terdaftar. Silakan daftar baru.');
@@ -47,8 +52,8 @@
 
           // Login Success
           MY_ID = user.telegram_id || user.id;
-          localStorage.setItem('tg_user_id_v5', String(MY_ID));
-          localStorage.setItem('tg_user_obj_v5', JSON.stringify(user));
+          localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
+          localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
           location.reload(); // Refresh to init with new ID
         } else {
           // Register Mode
@@ -64,12 +69,11 @@
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
 
-          const { ok: regOk, data: res } = await apiPost(P.userAdd || P.faceRegister, payload);
-          const d = res;
-          if (!regOk || d?.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
+          const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);
+          if (!regOk || d?.ok === false) throw new Error(d?.message || 'Pendaftaran gagal');
 
           MY_ID = payload.telegram_id;
-          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
           location.reload();
         }
       } catch (err) {

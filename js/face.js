@@ -220,7 +220,7 @@
       try {
         const res = await apiGet(`${P.faceGet}?user_id=${uidStr}`);
         if (!faceRegOk) return;
-        const json = res;
+        const json = res?.data ?? {};
         const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();

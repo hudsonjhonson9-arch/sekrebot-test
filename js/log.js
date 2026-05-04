@@ -13,7 +13,7 @@
     async function fetchLogData(userId) {
       const res = await apiGet(`${P.log}?user_id=${userId || ''}`);
       if (!res.ok) throw new Error('Fetch gagal');
-      let rows = res.rows;
+      let rows = res.rows ?? [];
       if (userId) { rows = rows.filter(r => Number(getField(r, 'ID', 'id')) === userId); }
       rows.sort((a, b) => {
         const ta = getField(a, 'Tanggal', 'tanggal'), tb = getField(b, 'Tanggal', 'tanggal');

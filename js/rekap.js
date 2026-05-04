@@ -107,7 +107,7 @@
           let allRowsRaw = [], periodRowsRaw = [];
           try {
             const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}`);
-            if (resAll.ok) allRowsRaw = parseApiResponse(await resAll.json());
+            if (resAll.ok) allRowsRaw = (resAll.rows?.length ?? 0) ? resAll.rows : parseApiResponse(resAll.data);
           } catch (_) { }
           periodRowsRaw = allRowsRaw.filter(r => {
             const t = getField(r, 'Tanggal', 'tanggal');

@@ -279,7 +279,7 @@
       try {
         const res = await apiGet(`${P.ketList}?user_id=${MY_ID || ''}`);
         if (!ketOk) throw 0;
-        const d = res;
+        const d = res?.data ?? {};
         const rows = (d.data || d.rows || []);
         ketStatusCache = rows;
         ketStatusLoaded = true;
@@ -426,7 +426,7 @@
         // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
         const res = await apiGet(`${P.ketList}?is_admin=true&status=PENDING`);
         if (!ketOk) throw 0;
-        const d = res;
+        const d = res?.data ?? {};
         const rows = (d.data || d.rows || []).filter(r => {
           const st = (r.status || r.Status || '').toUpperCase();
           return st === 'PENDING';

@@ -23,7 +23,7 @@
         try {
           const res = await apiGet(`${P.userList}?user_id=${uid}`);
           if (!docOk) throw new Error('Network Error');
-          const json = res;
+          const json = res?.data ?? {};
           const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
 
           if (d && (d.nama || d.Nama)) {
@@ -179,7 +179,7 @@
       try {
         const res = await apiGet(`${P.dokumenList}?user_id=${MY_ID || ''}`);
         if (!docOk) throw 0;
-        const json = res;
+        const json = res?.data ?? {};
         const docs = Array.isArray(json) ? json : (json.data || []);
         dokumenLoaded = true;
         if (!docs.length) {
@@ -275,8 +275,7 @@
           if (!nama || !link) { showMsg('⚠️ Nama & link wajib diisi', '#f59e0b'); btn.disabled = false; btn.textContent = '💾 Simpan Dokumen'; return; }
           payload = { user_id: MY_ID, nama_dokumen: nama, jenis: $('dokJenis2').value, link, mode: 'link' };
         }
-        const { ok: docOk, data: res } = await apiPost(P.dokumenAdd, payload);
-        const d = res;
+        const { ok: docOk, data: d } = await apiPost(P.dokumenAdd, payload);
         if (d.ok) {
           $('dokProgressFill').style.width = '100%';
           showMsg('✅ Dokumen berhasil disimpan!', '#4ade80');
@@ -295,7 +294,7 @@
 File di Google Drive juga akan dihapus.`)) return;
       try {
         const res = await apiPost(P.dokumenDel, { user_id: MY_ID, id });
-        const d = res;
+        const d = res?.data ?? {};
         if (d.ok) { dokumenLoaded = false; loadDokumen(); }
         else alert('❌ ' + (d.message || 'Gagal menghapus'));
       } catch { alert('❌ Koneksi gagal'); }

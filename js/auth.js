@@ -1,0 +1,106 @@
+/* ════ AUTH — LOGIN, REGISTER, LOGOUT ════ */
+
+    // ── AUTH LOGIC (LOGIN & REGISTRATION) ──
+    function switchAuthTab(mode) {
+      if (mode === 'login') {
+        $('tabLogin').classList.add('active');
+        $('tabRegister').classList.remove('active');
+        $('formLogin').style.display = 'block';
+        $('formRegister').style.display = 'none';
+      } else {
+        $('tabLogin').classList.remove('active');
+        $('tabRegister').classList.add('active');
+        $('formLogin').style.display = 'none';
+        $('formRegister').style.display = 'block';
+      }
+    }
+
+    async function handleAuthAction(mode) {
+      const btn = mode === 'login' ? $('btnLogin') : $('btnRegister');
+      const originalText = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
+
+      try {
+        if (mode === 'login') {
+          const nip = $('loginNip').value.trim();
+          if (!nip) throw new Error('Silakan masukkan NIP');
+
+          const res = await apiFetch(`${P.userList}?nip=${nip}`, { method: 'GET' });
+          const d = await res.json();
+
+          // API n8n versi single mengembalikan { ok: true, single: true, ... }
+          // API n8n versi list mengembalikan { ok: true, data: [...] }
+          let user = null;
+          if (d.single) user = d;
+          else if (d.data && Array.isArray(d.data)) {
+            user = d.data.find(u => String(u.nip || '').trim() === nip);
+          }
+
+          if (!user || user.error || !user.id) throw new Error('NIP tidak terdaftar. Silakan daftar baru.');
+
+          // Verifikasi akhir untuk memastikan NIP benar
+          if (String(user.nip || '').trim() !== nip) {
+            throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
+          }
+
+          // Login Success
+          MY_ID = user.telegram_id || user.id;
+          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          localStorage.setItem('tg_user_obj_v5', JSON.stringify(user));
+          location.reload(); // Refresh to init with new ID
+        } else {
+          // Register Mode
+          const payload = {
+            nama: $('regNama').value.trim(),
+            nip: $('regNip').value.trim(),
+            jabatan: $('regJabatan').value.trim(),
+            bidang: $('regBidang').value,
+            pangkat: $('regPangkat').value,
+            telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
+            instansi_id: $('regInstansi').value || getScopedInstansiId()
+          };
+
+          if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
+
+          const res = await apiFetch(P.userAdd || P.faceRegister, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          const d = await res.json();
+          if (!res.ok || d.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
+
+          MY_ID = payload.telegram_id;
+          localStorage.setItem('tg_user_id_v5', String(MY_ID));
+          location.reload();
+        }
+      } catch (err) {
+        alert('⚠️ ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+
+    // Global Logout Handler
+    async function handleLogout() {
+      if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
+      console.log('[Auth] Logging out user...');
+      localStorage.clear();
+      
+      // Force return to login screen
+      location.href = location.pathname; 
+    }
+
+    function _checkIdentityOnLoad() {
+      if (!MY_ID) {
+        $('authOverlay').style.display = 'flex';
+        const splash = $('appSplash');
+        if (splash) splash.remove(); // No need splash if no auth
+        return false;
+      }
+      return true;
+    }
+

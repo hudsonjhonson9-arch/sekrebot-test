@@ -14,7 +14,7 @@
 
       try {
         // Muat daftar pegawai
-        const ur = await apiFetch(P.userList + '?format=full', { method: 'GET' });
+        const ur = await apiGet(P.userList + '?format=full');
         const ud = ur.ok ? await ur.json() : [];
         let users = Array.isArray(ud) ? ud : (ud.data || []);
 
@@ -128,9 +128,9 @@
       container.innerHTML = '<span class="spin-sm"></span>';
       
       try {
-        const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
+        const res = await apiGet(`${P.userList}?user_id=${uid}`);
         if (!res.ok) throw 0;
-        const json = await res.json();
+        const json = res.data ?? {};
         const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
         
         if (d && d.face_photo) {

@@ -33,9 +33,9 @@
     async function fetchUserListOrder() {
       if (userListOrder.length > 0) return userListOrder;
       try {
-        const res = await apiFetch(`${P.userList}`, { method: 'GET' });
-        if (!res.ok) return [];
-        const json = await res.json();
+        const res = await apiGet(`${P.userList}`);
+        if (!kirimOk) return [];
+        const json = kirimData;
         const rows = parseApiResponse(json);
         userListOrder = rows.map((r, idx) => ({
           id: String(getField(r, 'id', 'ID') || '').trim(),
@@ -94,9 +94,9 @@
           }
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
-          if (res.ok) {
-            const json = await res.json();
+          const res = await apiGet(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`);
+          if (kirimOk) {
+            const json = kirimData;
             const d = Array.isArray(json) ? json[0] : json;
             if (d?.pegawai?.length) { ringkasan = d.ringkasan || {}; pegawai = d.pegawai; rekapOK = true; }
           }
@@ -106,7 +106,7 @@
         if (!rekapOK) {
           let allRowsRaw = [], periodRowsRaw = [];
           try {
-            const resAll = await apiFetch(`${P.log}?dari=${dari}&sampai=${sampai}`, { method: 'GET' });
+            const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}`);
             if (resAll.ok) allRowsRaw = parseApiResponse(await resAll.json());
           } catch (_) { }
           periodRowsRaw = allRowsRaw.filter(r => {
@@ -1047,12 +1047,12 @@
       };
 
       try {
-        const res = await apiFetch(P.kirimRekap, { method: 'POST', body: JSON.stringify(payload) });
-        let d = {}; try { d = await res.json(); } catch (_) { }
-        if (res.ok) {
+        const { ok: kirimOk, data: kirimData } = await apiPost(P.kirimRekap, payload);
+        let d = {}; try { d = kirimData; } catch (_) { }
+        if (kirimOk) {
           showRekapToast('success', '✅ Rekap berhasil dikirim ke Telegram! Cek bot Anda.');
         } else {
-          throw new Error('Server ' + res.status);
+          throw new Error('Server ' + 200);
         }
       } catch (e) {
         console.warn('kirimRekap error:', e);

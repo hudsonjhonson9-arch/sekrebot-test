@@ -276,9 +276,9 @@
           savedAt: new Date().toISOString(),
           savedBy: MY_ID
         };
-        const res = await apiFetch(P.signatureSave, { method: 'POST', body: JSON.stringify(payload) });
+        const { ok: sigOk, data: res } = await apiPost(P.signatureSave, payload);
 
-        if (res.ok) {
+        if (sigOk) {
           // Cache lokal
           _sigCache[String(_sigTargetId)] = dataUrl;
           try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch (_) { }
@@ -291,7 +291,7 @@
           // Tutup overlay setelah 1.5 detik
           setTimeout(() => closeSignaturePad(), 1500);
         } else {
-          throw new Error('Server error ' + res.status);
+          throw new Error('Server error ' + 200);
         }
       } catch (e) {
         // Fallback: simpan lokal saja
@@ -353,9 +353,9 @@
 
       // Fetch dari server
       try {
-        const res = await apiFetch(`${P.signatureGet}?telegram_id=${uid}`, { method: 'GET' });
-        if (res.ok) {
-          const d = await res.json();
+        const res = await apiGet(`${P.signatureGet}?telegram_id=${uid}`);
+        if (sigOk) {
+          const d = res;
           const sig = d.signature || d.data?.signature || null;
           if (sig) {
             _sigCache[uid] = sig;

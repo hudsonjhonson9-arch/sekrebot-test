@@ -37,9 +37,8 @@
 
         let sigMap = {};
         try {
-          const sigRes = await apiFetch(P.signatureList, { method: 'GET' });
-          const sigJson = sigRes.ok ? await sigRes.json() : {};
-          const sigData = sigJson.data || sigJson || [];
+          const { ok: sigListOk, data: sigRaw } = await apiGet(P.signatureList);
+          const sigData = sigListOk ? (parseApiResponse(sigRaw) || []) : [];
           if (Array.isArray(sigData)) {
             sigData.forEach(s => {
               if (s.signature && s.signature.length > 100) {
@@ -212,17 +211,7 @@
         doc.save(fileName);
 
         const pdfBase64 = doc.output('datauristring').split(',')[1];
-        await apiFetch(P.kirimRekap, {
-          method: 'POST',
-          body: JSON.stringify({
-            chat_id: String(MY_ID || REKAP_CHAT_ID || ''),
-            pdf_base64: pdfBase64,
-            namaFilePdf: fileName,
-            tanggal_label: tanggalLabel,
-            dari: dari,
-            sampai: sampai
-          })
-        });
+        await apiPost(P.kirimRekap, { chat_id: REKAP_CHAT_ID, pesan: pdfMsg });
         showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
 
       } catch (e) {

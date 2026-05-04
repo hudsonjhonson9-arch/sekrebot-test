@@ -27,8 +27,8 @@
           const nip = $('loginNip').value.trim();
           if (!nip) throw new Error('Silakan masukkan NIP');
 
-          const res = await apiFetch(`${P.userList}?nip=${nip}`, { method: 'GET' });
-          const d = await res.json();
+          const res = await apiGet(`${P.userList}?nip=${nip}`);
+          const d = res;
 
           // API n8n versi single mengembalikan { ok: true, single: true, ... }
           // API n8n versi list mengembalikan { ok: true, data: [...] }
@@ -64,12 +64,9 @@
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
 
-          const res = await apiFetch(P.userAdd || P.faceRegister, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          });
-          const d = await res.json();
-          if (!res.ok || d.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
+          const { ok: regOk, data: res } = await apiPost(P.userAdd || P.faceRegister, payload);
+          const d = res;
+          if (!regOk || d?.ok === false) throw new Error(d.message || 'Pendaftaran gagal');
 
           MY_ID = payload.telegram_id;
           localStorage.setItem('tg_user_id_v5', String(MY_ID));

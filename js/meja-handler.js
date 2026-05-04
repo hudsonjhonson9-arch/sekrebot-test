@@ -90,10 +90,10 @@
       };
 
       try {
-        const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
-        const d = await res.json().catch(() => ({}));
+        const { ok: mejaOk, data: res } = await apiPost(P.absen, payload);
+        const d = res.catch(() => ({}));
 
-        if (res.ok && d.ok !== false && d.validasi?.is_valid !== false) {
+        if (mejaOk && d.ok !== false && d.validasi?.is_valid !== false) {
           const jenis = d.jenis_absen || d.validasi?.jenis_absen || 'ABSEN BERHASIL';
           const ismasuk = jenis.toUpperCase().includes('MASUK');
           if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;

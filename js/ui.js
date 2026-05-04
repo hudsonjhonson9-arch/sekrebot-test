@@ -260,10 +260,9 @@
 
     async function fetchJamPeriode() {
       try {
-        const res = await apiFetch(P.jamPeriodeList, { method: 'GET' });
-        if (!res.ok) return;
-        const json = await res.json();
-        const list = json.data || json.list || (Array.isArray(json) ? json : []);
+        const { ok: jpOk, data: json } = await apiGet(P.jamPeriodeList);
+        if (!jpOk) return;
+        const list = json?.data || json?.list || parseApiResponse(json);
         jamPeriodeList = list.map(p => ({
           id: p.id || p.ID || p.Id || '',
           nama: p.nama || p.Nama || p.name || p.Name || '',

@@ -11,10 +11,9 @@
      * @returns {Promise<Object[]>} Array baris log, sudah difilter & diurutkan
      */
     async function fetchLogData(userId) {
-      const res = await apiFetch(`${P.log}?user_id=${userId || ''}`, { method: 'GET' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      let rows = parseApiResponse(json);
+      const res = await apiGet(`${P.log}?user_id=${userId || ''}`);
+      if (!res.ok) throw new Error('Fetch gagal');
+      let rows = res.rows;
       if (userId) { rows = rows.filter(r => Number(getField(r, 'ID', 'id')) === userId); }
       rows.sort((a, b) => {
         const ta = getField(a, 'Tanggal', 'tanggal'), tb = getField(b, 'Tanggal', 'tanggal');

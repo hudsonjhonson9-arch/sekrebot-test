@@ -15,11 +15,8 @@
         let successCount = 0;
         for (const item of queue) {
           try {
-            const res = await apiFetch(item.endpoint, {
-              method: item.method,
-              body: JSON.stringify(item.payload)
-            });
-            if (res.ok) {
+            const { ok: syncOk, data: res, status: syncStatus } = await apiPost(item.endpoint, item.data);
+            if (syncOk) {
               await idb.delete('offline_queue', item.id);
               successCount++;
             }

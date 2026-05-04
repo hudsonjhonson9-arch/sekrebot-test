@@ -137,16 +137,13 @@
       };
 
       try {
-        const res = await apiFetch(P.faceRegister, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
+        const { ok: faceRegOk, data: res } = await apiPost(P.faceRegister, payload);
         
-        console.log(`[AI] Sync Response Status: ${res.status}`);
+        console.log(`[AI] Sync Response Status: ${200}`);
         
-        if (res.ok) {
+        if (faceRegOk) {
           try {
-            const json = await res.json();
+            const json = res;
             // Upate local cache (memory only for image)
             _writeFaceRefLocal(uid, {
               dataUrl: json.dataUrl || dataUrl,
@@ -163,11 +160,11 @@
           }
         } else {
           try {
-            const errJson = await res.json();
+            const errJson = res;
             console.error('[AI] Sync Failed Detail:', errJson);
-            window._lastAiError = errJson.message || errJson.error || `HTTP ${res.status}`;
+            window._lastAiError = errJson.message || errJson.error || `HTTP ${200}`;
           } catch (_) {
-            window._lastAiError = `Server Error (HTTP ${res.status})`;
+            window._lastAiError = `Server Error (HTTP ${200})`;
           }
           return false;
         }
@@ -221,9 +218,9 @@
       if (!uid) return;
       const uidStr = String(uid);
       try {
-        const res = await apiFetch(`${P.faceGet}?user_id=${uidStr}`, { method: 'GET' });
-        if (!res || !res.ok) return;
-        const json = await res.json();
+        const res = await apiGet(`${P.faceGet}?user_id=${uidStr}`);
+        if (!faceRegOk) return;
+        const json = res;
         const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();

@@ -28,9 +28,8 @@
       try {
         const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
         if (!endpoint) return;
-        const res = await apiFetch(endpoint);
-        const d = await res.json();
-        if (d.ok && Array.isArray(d.data)) {
+        const { ok: bOk, data: d } = await apiGet(endpoint);
+        if (bOk && Array.isArray(d?.data)) {
           const options = d.data
             .filter(b => b.nama_bidang)
             .map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`)

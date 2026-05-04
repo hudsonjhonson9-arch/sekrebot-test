@@ -421,11 +421,11 @@
           }
 
           try {
-            const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
-            let d = {}; try { d = await res.json() } catch (_) { }
+            const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
+            const d = absenData || {};
             const ket = d?.validasi?.keterangan || d?.message || 'Data absen diterima';
             const lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
-            const ok = d?.validasi?.is_valid !== false;
+            const isValid = d?.validasi?.is_valid !== false;
             if (lokNm) { $('gpsLokasi').textContent = lokNm; const clb = $('clockLocBadge'); if (clb) { clb.textContent = '📍 ' + lokNm; clb.className = 'clock-loc-badge'; } }
 
             // Info foto di pesan sukses
@@ -435,7 +435,7 @@
 
             const kode_tolak = d?.validasi?.kode_tolak || '';
 
-            if (ok) {
+            if (isValid) {
               showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'success', '✅', 'Absen Berhasil!',
                 `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)${fotoKet}`);
               setBtnL('btnAbsen', false, '✅ Absen Tercatat');
@@ -571,10 +571,10 @@
           }
 
           try {
-            const res = await apiFetch(P.absen, { method: 'POST', body: JSON.stringify(payload) });
-            let d = {}; try { d = await res.json(); } catch (_) { }
-            const ok = d?.validasi?.is_valid !== false;
-            if (ok) {
+            const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
+            const d = absenData || {};
+            const isValid = d?.validasi?.is_valid !== false;
+            if (isValid) {
               showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'success', '✅', 'Pulang Lapangan Tercatat!',
                 `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
               $('btnPulangLuar').disabled = true;

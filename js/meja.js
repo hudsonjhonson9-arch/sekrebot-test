@@ -76,7 +76,7 @@
       try {
         const [gps, res] = await Promise.all([
           _getMejaGps(),
-          apiFetch(P.faceGetAll, { method: 'GET' })
+          apiGet(P.faceGetAll)
         ]);
 
         _mejaGpsLocation = gps;
@@ -90,8 +90,7 @@
         }
 
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : (data.data || []);
+        const list = parseApiResponse(res.data);
 
         window._mejaUserMap = {};
         _allFaceDescriptors = list.filter(f => {

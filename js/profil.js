@@ -21,9 +21,9 @@
       while (attempt < maxAttempts) {
         attempt++;
         try {
-          const res = await apiFetch(`${P.userList}?user_id=${uid}`, { method: 'GET' });
-          if (!res.ok) throw new Error('Network Error');
-          const json = await res.json();
+          const res = await apiGet(`${P.userList}?user_id=${uid}`);
+          if (!docOk) throw new Error('Network Error');
+          const json = res;
           const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
 
           if (d && (d.nama || d.Nama)) {
@@ -177,9 +177,9 @@
       if (!el) return;
       el.innerHTML = `<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>`;
       try {
-        const res = await apiFetch(`${P.dokumenList}?user_id=${MY_ID || ''}`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const json = await res.json();
+        const res = await apiGet(`${P.dokumenList}?user_id=${MY_ID || ''}`);
+        if (!docOk) throw 0;
+        const json = res;
         const docs = Array.isArray(json) ? json : (json.data || []);
         dokumenLoaded = true;
         if (!docs.length) {
@@ -275,8 +275,8 @@
           if (!nama || !link) { showMsg('⚠️ Nama & link wajib diisi', '#f59e0b'); btn.disabled = false; btn.textContent = '💾 Simpan Dokumen'; return; }
           payload = { user_id: MY_ID, nama_dokumen: nama, jenis: $('dokJenis2').value, link, mode: 'link' };
         }
-        const res = await apiFetch(P.dokumenAdd, { method: 'POST', body: JSON.stringify(payload) });
-        const d = await res.json();
+        const { ok: docOk, data: res } = await apiPost(P.dokumenAdd, payload);
+        const d = res;
         if (d.ok) {
           $('dokProgressFill').style.width = '100%';
           showMsg('✅ Dokumen berhasil disimpan!', '#4ade80');
@@ -294,8 +294,8 @@
       if (!confirm(`Hapus dokumen "${nama}"?
 File di Google Drive juga akan dihapus.`)) return;
       try {
-        const res = await apiFetch(P.dokumenDel, { method: 'POST', body: JSON.stringify({ user_id: MY_ID, id }) });
-        const d = await res.json();
+        const res = await apiPost(P.dokumenDel, { user_id: MY_ID, id });
+        const d = res;
         if (d.ok) { dokumenLoaded = false; loadDokumen(); }
         else alert('❌ ' + (d.message || 'Gagal menghapus'));
       } catch { alert('❌ Koneksi gagal'); }

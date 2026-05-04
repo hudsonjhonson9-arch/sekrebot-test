@@ -43,21 +43,20 @@
                   <div class="shimmer" style="height:32px;border-radius:8px"></div>`;
       try {
         const todayStr = fmtD(nowWITA());
-        const res = await apiFetch(`${P.log}?user_id=${uid || ''}&tanggal=${todayStr}`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const json = await res.json();
-        let rows = parseApiResponse(json);
-        rows = rows.filter(r => {
+        const { ok: logOk, rows } = await apiGet(P.log, { user_id: uid || '', tanggal: todayStr });
+        if (!logOk) throw 0;
+        let rowsMut = rows;
+        rowsMut = rowsMut.filter(r => {
           const rowUid = Number(getField(r, 'ID', 'id'));
           const tgl = getField(r, 'Tanggal', 'tanggal');
           const byMe = uid ? (rowUid === uid) : true;
           return byMe && tgl === todayStr;
         });
-        rows.sort((a, b) => {
+        rowsMut.sort((a, b) => {
           const ja = getField(a, 'Jam', 'jam'), jb = getField(b, 'Jam', 'jam');
           return ja.localeCompare(jb);
         });
-        renderTodayHistory(rows);
+        renderTodayHistory(rowsMut);
       } catch (e) {
         el.innerHTML = `<div class="today-empty">🔌 Gagal memuat. Pastikan n8n aktif.</div>`;
       } finally {
@@ -175,10 +174,9 @@
       } else {
         // Cache kosong — fetch sekali, tidak simpan ke ketStatusCache agar tidak mempengaruhi UI ket
         try {
-          const resKet = await apiFetch(`${P.ketList}?user_id=${MY_ID}`, { method: 'GET' });
-          if (resKet.ok) {
-            const dKet = await resKet.json();
-            const ketRows = dKet.data || dKet.rows || [];
+          const { ok: ckOk, data: dKet } = await apiGet(P.ketList, { user_id: MY_ID });
+          if (ckOk) {
+            const ketRows = dKet?.data || dKet?.rows || parseApiResponse(dKet);
             if (_checkKetRows(ketRows)) {
               console.log('autoUpdateStatusAktif: ada keterangan aktif hari ini, skip update status');
               return;
@@ -189,14 +187,7 @@
 
       // Update status ke AKTIF
       try {
-        await apiFetch(P.updateStatus, {
-          method: 'POST', body: JSON.stringify({
-            user_id: MY_ID,
-            status_baru: 'AKTIF',
-            alasan: 'Absen masuk otomatis',
-            timestamp: Math.floor(Date.now() / 1000)
-          })
-        });
+        await apiPost(P.updateStatus, { user_id: MY_ID, status, tanggal: todayStr });
         if (userProfile) { userProfile.status = 'AKTIF'; applyProfile(); }
       } catch (_) { }
     }

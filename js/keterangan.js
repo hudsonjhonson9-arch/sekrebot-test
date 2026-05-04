@@ -211,8 +211,8 @@
       }
 
       try {
-        const res = await apiFetch(P.ket, { method: 'POST', body: JSON.stringify(payload) });
-        let d = {}; try { d = await res.json() } catch (_) { }
+        const { ok: ketOk, data: res } = await apiPost(P.ket, payload);
+        let d = {}; try { d = res } catch (_) { }
         // Tampilkan pesan sesuai jenis & status dari server
         if (d.ok === false) {
           showResult('ketResult', 'ketRIcon', 'ketRTitle', 'ketRMsg', 'warning', '⚠️', 'Gagal Mengajukan', d.message || 'Terjadi kesalahan.');
@@ -277,9 +277,9 @@
       if (btn) btn.disabled = true;
       dom.shimmer(el.id || 'ketList', 2);
       try {
-        const res = await apiFetch(`${P.ketList}?user_id=${MY_ID || ''}`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const d = await res.json();
+        const res = await apiGet(`${P.ketList}?user_id=${MY_ID || ''}`);
+        if (!ketOk) throw 0;
+        const d = res;
         const rows = (d.data || d.rows || []);
         ketStatusCache = rows;
         ketStatusLoaded = true;
@@ -375,14 +375,12 @@
       const origTgl = $('editKetOrigTglMulai').value;
       setBtnL('btnSimpanEdit', true, 'Menyimpan...');
       try {
-        const res = await apiFetch(P.ketEdit, {
-          method: 'POST', body: JSON.stringify({
+        const res = await apiPost(P.ketEdit, {
             user_id: MY_ID, id_ket: idKet, orig_tanggal: origTgl,
             jenis: editSelectedJenis, tgl_mulai: tm, tgl_selesai: ts, keterangan: k,
             timestamp: Math.floor(Date.now() / 1000)
-          })
-        });
-        let d = {}; try { d = await res.json() } catch (_) { }
+          });
+        let d = {}; try { d = res } catch (_) { }
         if (d.ok !== false) {
           showResult('editKetResult', 'editKetRIcon', 'editKetRTitle', 'editKetRMsg', 'success', '✅', 'Berhasil', 'Keterangan berhasil diperbarui.');
           dom.show('editKetResult', 'flex');
@@ -407,14 +405,12 @@
       const jenis = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING', '').trim();
       if (!confirm(`Hapus pengajuan ${jenis}\n${tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
       try {
-        const res = await apiFetch(P.ketDelete, {
-          method: 'POST', body: JSON.stringify({
+        const res = await apiPost(P.ketDelete, {
             user_id: MY_ID, id_ket: idKet,
             tgl_mulai: tgl, tgl_selesai: tgl, tanggal: tgl,
             timestamp: Math.floor(Date.now() / 1000)
-          })
-        });
-        let d = {}; try { d = await res.json() } catch (_) { }
+          });
+        let d = {}; try { d = res } catch (_) { }
         if (d.ok === false) { alert('Gagal: ' + (d.message || 'Terjadi kesalahan.')); return; }
         loadKetStatus();
       } catch { alert('Gagal menghapus. Coba lagi.'); }
@@ -428,9 +424,9 @@
       dom.shimmer(el.id || 'ketHistoryList', 1);
       try {
         // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
-        const res = await apiFetch(`${P.ketList}?is_admin=true&status=PENDING`, { method: 'GET' });
-        if (!res.ok) throw 0;
-        const d = await res.json();
+        const res = await apiGet(`${P.ketList}?is_admin=true&status=PENDING`);
+        if (!ketOk) throw 0;
+        const d = res;
         const rows = (d.data || d.rows || []).filter(r => {
           const st = (r.status || r.Status || '').toUpperCase();
           return st === 'PENDING';
@@ -474,13 +470,11 @@
       const konfirm = $('konfirmasiResult');
       if (konfirm) konfirm.style.display = 'none';
       try {
-        const res = await apiFetch(P.ketApprove, {
-          method: 'POST', body: JSON.stringify({
+        const res = await apiPost(P.ketApprove, {
             id_ket: idKet, action, jenis, tanggal,
             admin_id: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000)
-          })
-        });
-        let d = {}; try { d = await res.json() } catch (_) { }
+          });
+        let d = {}; try { d = res } catch (_) { }
         if (d.ok !== false) {
           // Hilangkan item dari DOM
           const el = document.getElementById('konfirm-' + idKet);

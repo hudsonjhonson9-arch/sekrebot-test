@@ -566,6 +566,12 @@
         const ctx = cnv.getContext('2d');
         ctx.clearRect(0, 0, cnv.width, cnv.height);
       }
+
+      // Ensure NO hidden element is blocking pointer events
+      const camOverlay = $('camOverlay');
+      if (camOverlay && camOverlay.classList.contains('hidden')) {
+          camOverlay.style.pointerEvents = 'none';
+      }
     }
 
     // Wrapper Timeout untuk menghindari AI Hang selamanya
@@ -790,7 +796,11 @@
       _absenCallbackAfterCam = onDone;
       window._isMejaMode = isMeja;
 
-      $('camOverlay').classList.remove('hidden');
+      const overlay = $('camOverlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.style.pointerEvents = 'auto';
+      }
       $('modelLoading').style.display = 'block';
       if ($('mlTitle')) $('mlTitle').textContent = 'Memuat Model AI Deteksi Wajah'; // Reset Judul Loading
       if ($('mlHint')) $('mlHint').textContent = 'Harap tunggu sebentar...';
@@ -958,7 +968,11 @@
       stopCamStream();
 
       // Tutup Modal
-      $('camOverlay').classList.add('hidden');
+      const overlay = $('camOverlay');
+      if (overlay) {
+          overlay.classList.add('hidden');
+          overlay.style.pointerEvents = 'none';
+      }
       setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
 
       // Kembalikan UI ke kondisi awal
@@ -975,6 +989,9 @@
       const cb = _absenCallbackAfterCam;
       _absenCallbackAfterCam = null;
       _captureData = null;
+      
+      // Final global safety check
+      _forceResetAiState(true);
 
       // Panggil onCancel HANYA jika ditutup manual oleh pengguna (bukan setelah onDone selesai)
       if (triggeredByUser && cb && typeof cb === 'object' && typeof cb.onCancel === 'function') {

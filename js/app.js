@@ -24,12 +24,15 @@
         updateClock();
 
         // Tertiary/Lazy: Background tasks that don't block the main UI
-        setTimeout(() => {
-          loadFaceFromServer();
+        setTimeout(async () => {
+          await loadFaceFromServer();
           loadBidangList();
           // Optimasi: Pre-load AI model di latar belakang agar siap saat tombol diklik
           loadAIModels().catch(e => console.warn('[AI] Background pre-load failed:', e));
-        }, 2000);
+          
+          // Check face registration requirement AFTER loading from server
+          _cekWajibFace();
+        }, 1500);
 
         const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
         switchTab(lastTab);
@@ -38,9 +41,6 @@
           const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';
           switchAdminSection(lastSection);
         }
-
-        // Check face registration requirement
-        _cekWajibFace();
 
         // Manage Logout Button Visibility
         const logoutSec = $('logoutSection');

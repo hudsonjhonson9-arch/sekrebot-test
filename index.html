@@ -31,63 +31,7 @@
 
 <body>
   <div id="offlineBanner" class="offline-banner">⚠️ ANDA SEDANG OFFLINE (MODE OFFLINE)</div>
-  <div id="authOverlay" class="auth-overlay" style="display:none">
-    <div class="auth-card">
-      <div class="auth-title">Selamat Datang</div>
-      <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
 
-      <div class="auth-tabs">
-        <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
-        <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
-      </div>
-
-      <!-- Login Form -->
-      <div id="formLogin">
-        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
-        <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
-      </div>
-
-      <!-- Register Form -->
-      <div id="formRegister" style="display:none">
-        <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
-        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
-        <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
-
-        <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
-          <option value="">— Memuat Instansi... —</option>
-        </select>
-
-        <select id="regBidang" class="form-input-auth">
-          <option value="">— Pilih Bidang —</option>
-        </select>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
-          <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
-            <option value="">— Jenis —</option>
-            <option value="PNS">PNS</option>
-            <option value="PPPK">PPPK</option>
-          </select>
-          <select id="regPangkat" class="form-input-auth">
-            <option value="">— Pangkat —</option>
-          </select>
-        </div>
-        <button id="btnRegister" class="btn-auth" onclick="handleAuthAction('register')">Daftar Akun 📋</button>
-      </div>
-
-      <div class="auth-footer">
-        Sistem Absensi<br>© 2026 Sekretariat Daerah
-      </div>
-    </div>
-  </div>
-
-  <div id="appSplash">
-    <div class="splash-logo">🏛️</div>
-    <div class="splash-title">BAPPERIDA Sumba Barat</div>
-    <div class="splash-sub">Memuat aplikasi absensi...</div>
-    <div class="splash-bar">
-      <div class="splash-progress"></div>
-    </div>
-  </div>
   <div class="app">
     <!-- Header -->
     <div class="header">
@@ -225,198 +169,7 @@
     <!-- ════════════════════════════════════════════════════════
          KAMERA / FACE SCAN OVERLAY (REVISED)
     ════════════════════════════════════════════════════════ -->
-    <div class="cam-overlay hidden" id="camOverlay">
-      <div class="cam-header">
-        <div>
-          <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
-        </div>
-        <!-- Tombol Flash Dihapus, Tombol Close langsung memanggil closeCamOverlay -->
-        <button class="cam-close" id="camCloseBtn" onclick="closeCamByUser()">✕</button>
-      </div>
-      <div class="cam-body" id="camBody">
 
-        <!-- Loading model -->
-        <div class="model-loading" id="modelLoading">
-          <div style="width:100%;max-width:300px;text-align:center">
-            <div style="font-size:28px;margin-bottom:10px">🧠</div>
-            <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px" id="mlTitle">Memuat Model
-              AI Deteksi Wajah</div>
-            <div
-              style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
-              <div id="mlProgressBar"
-                style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);border-radius:3px;transition:width .4s ease">
-              </div>
-            </div>
-            <div id="mlPercent" style="font-size:10px;color:var(--gold);font-weight:700;margin-bottom:10px">0%</div>
-          </div>
-        </div>
-
-        <!-- Video stream + canvas overlay -->
-        <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
-          <video id="camVideo" autoplay playsinline muted></video>
-          <canvas id="camCanvas"></canvas>
-          <div class="face-guide" id="faceGuideWrap">
-            <div class="face-oval" id="faceOval"></div>
-          </div>
-          <div class="cam-corner tl"></div>
-          <div class="cam-corner tr"></div>
-          <div class="cam-corner bl"></div>
-          <div class="cam-corner br"></div>
-          <div class="cam-scan-line" id="camScanLine"></div>
-          <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
-
-          <!-- Overlay Hasil Meja Absen (Otomatis) -->
-          <div id="mejaOverlayResult"
-            style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; animation:slideUp 0.3s;">
-            <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
-            <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA PEGAWAI</div>
-            <div id="moStatus"
-              style="font-size:14px; font-weight:700; color:#fff; margin-top:5px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.1);">
-              BERHASIL ABSEN</div>
-            <div id="moDetail" style="font-size:11px; color:var(--muted); margin-top:12px; line-height:1.4;">Jam 08:00
-              WITA</div>
-          </div>
-        </div>
-
-        <!-- Slider Zoom (Baru) -->
-        <div class="cam-zoom-wrap" id="camZoomWrap">
-          <span style="font-size:14px; opacity:0.7">🔍⁻</span>
-          <input type="range" id="camZoomSlider" class="zoom-slider" min="1" max="3" step="0.1" value="1"
-            oninput="setCamZoom(this.value)">
-          <span style="font-size:14px; opacity:0.7">🔍⁺</span>
-          <span id="camZoomVal" style="font-size:10px; font-weight:700; color:var(--gold); min-width:30px">1.0x</span>
-        </div>
-
-        <!-- Status deteksi wajah -->
-        <div class="cam-status idle" id="camStatus" style="display:none">
-          <div class="cam-status-icon" id="camStatusIcon">🔍</div>
-          <div class="cam-status-text">
-            <div class="cam-status-title" id="camStatusTitle">Mendeteksi wajah...</div>
-            <div class="cam-status-sub" id="camStatusSub">Hadapkan wajah ke kamera</div>
-          </div>
-        </div>
-
-        <!-- Face Recognition Reg Info -->
-        <div id="faceRegCard" style="display:none;width:100%;max-width:320px;flex-shrink:0">
-          <div
-            style="background:var(--card-bg);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:9px 13px;margin-bottom:6px">
-            <div style="display:flex;align-items:center;gap:9px">
-              <div class="face-reg-thumb empty" id="faceRegThumbWrap" style="width:36px;height:36px;border-radius:8px">
-                <img id="faceRegThumb" src="" alt=""
-                  style="display:none;width:100%;height:100%;border-radius:6px;object-fit:cover">
-                <span id="faceRegThumbEmpty">👤</span>
-              </div>
-              <div class="face-reg-info" style="flex:1;min-width:0">
-                <div
-                  style="font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--muted);text-transform:uppercase;margin-bottom:2px">
-                  🧠 Face Recognition</div>
-                <div class="face-reg-status" id="faceRegStatus" style="font-size:10px;font-weight:700">Belum ada data
-                  wajah</div>
-                <div id="faceRegSub" style="font-size:8px;color:var(--muted)">Daftarkan wajah untuk login AI</div>
-              </div>
-              <button class="face-reg-btn" id="btnRegisterFace" onclick="registerFaceFromPreview()"
-                style="font-size:8.5px;padding:4px 9px">📷 Daftar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Liveness Sederhana -->
-        <div id="livenessMini"
-          style="display:none; width:100%; max-width:320px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); padding:10px; border-radius:10px; text-align:center; font-size:12px; font-weight:700; color:var(--gold);">
-          <span id="lsIcon">🔍</span> <span id="lsText">Verifikasi Keaslian Wajah...</span>
-        </div>
-
-        <!-- Preview hasil foto (Hanya untuk absen personal) -->
-        <div class="cam-preview" id="camPreview">
-          <img id="camPreviewImg" src="" alt="Foto Absen">
-          <div class="cam-preview-info" id="camPreviewInfo"></div>
-        </div>
-
-        <!-- Tombol ambil foto (Sembunyi otomatis jika Meja Absen) -->
-        <button class="btn-capture" id="btnCapture" onclick="doCapture()" disabled>
-          📸 Ambil Foto & Lanjutkan
-        </button>
-
-      </div>
-    </div>
-
-    <!-- ════════════════════════════════════════════════════════
-         KAMERA BUKTI / KETERANGAN SCAN OVERLAY
-    ════════════════════════════════════════════════════════ -->
-    <div class="cam-overlay hidden" id="buktiOverlay">
-      <div class="cam-header">
-        <div>
-          <div class="cam-title">📷 Ambil Foto Bukti</div>
-        </div>
-        <button class="cam-close" onclick="closeBuktiOverlay()">✕</button>
-      </div>
-      <div class="cam-body">
-        <div class="cam-video-wrap" style="display:block">
-          <video id="buktiVideo" autoplay playsinline muted></video>
-          <div class="cam-corner tl"></div>
-          <div class="cam-corner tr"></div>
-          <div class="cam-corner bl"></div>
-          <div class="cam-corner br"></div>
-        </div>
-        <div class="cam-status idle" id="buktiStatus" style="display:flex">
-          <div class="cam-status-icon">📷</div>
-          <div class="cam-status-text">
-            <div class="cam-status-title">Kamera Siap</div>
-            <div class="cam-status-sub">Arahkan ke dokumen/bukti lalu tekan Ambil Foto</div>
-          </div>
-        </div>
-        <div class="cam-preview" id="buktiPreviewCam">
-          <img id="buktiPreviewCamImg" src="" alt="Foto Bukti">
-        </div>
-        <button class="btn-capture" id="btnBuktiCapture" onclick="doBuktiCapture()">
-          📸 Ambil Foto Bukti
-        </button>
-      </div>
-    </div>
-
-    <!-- ══ MODAL PAKSA DAFTAR WAJAH ══ -->
-    <div id="faceRequiredModal"
-      style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(5,12,30,.97);flex-direction:column;align-items:center;justify-content:center;padding:24px">
-      <div
-        style="width:100%;max-width:360px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:24px 20px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">🧠</div>
-        <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:8px">Daftarkan Wajah Anda</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:20px">
-          Sistem absensi memerlukan data wajah Anda untuk verifikasi identitas.<br>
-          <span style="color:var(--gold);font-weight:700">Wajib didaftarkan sebelum bisa absen.</span>
-        </div>
-        <div id="faceRequiredStatus" style="font-size:10px;color:var(--muted);margin-bottom:16px;min-height:16px"></div>
-        <button onclick="daftarWajahPaksa()" id="btnDaftarWajahPaksa"
-          style="width:100%;padding:14px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-          <span>📷</span><span id="btnDaftarWajahTxt">Daftarkan Wajah Sekarang</span>
-        </button>
-        <div style="font-size:9px;color:var(--muted);margin-top:12px;opacity:.6">
-          Data wajah disimpan aman di server dan hanya digunakan untuk verifikasi absensi.
-        </div>
-      </div>
-    </div>
-
-    <!-- Fix #7: Modal Konfirmasi Absen (preview sebelum submit) -->
-    <div id="absenConfirmModal"
-      style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(5,12,30,.85);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;padding-bottom:24px">
-      <div
-        style="width:100%;max-width:420px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px 20px 16px 16px;padding:20px;animation:slideInBottom .25s ease">
-        <div
-          style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;letter-spacing:.08em;margin-bottom:16px">
-          KONFIRMASI ABSEN</div>
-        <!-- Preview info -->
-        <div id="absenConfirmContent" style="margin-bottom:18px"></div>
-        <!-- Tombol aksi -->
-        <div style="display:flex;gap:10px">
-          <button onclick="_confirmAbsenBatal()"
-            style="flex:1;padding:13px;border-radius:13px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);color:var(--danger);font-size:13px;font-weight:700;cursor:pointer">&#10005;
-            Batal</button>
-          <button onclick="_confirmAbsenLanjut()" id="btnConfirmLanjut"
-            style="flex:2;padding:13px;border-radius:13px;background:linear-gradient(135deg,var(--gold),#9b6e1a);border:none;color:var(--navy);font-size:13px;font-weight:800;cursor:pointer">&#9989;
-            Ya, Absen Sekarang</button>
-        </div>
-      </div>
-    </div>
 
     <!-- ══ TAB KETERANGAN ══ -->
     <div class="panel" id="panel-ket">
@@ -1414,129 +1167,200 @@
 
   </div><!-- .app -->
 
-  <!-- ══ SIGNATURE PAD OVERLAY ══ -->
-  <div class="sig-overlay hidden" id="sigOverlay">
+  <!-- ════════════════════════════════════════════════════════
+       APP OVERLAYS (Positioned at end for correct z-index stacking)
+  ════════════════════════════════════════════════════════ -->
+
+  <!-- 1. Auth Overlay -->
+  <div id="authOverlay" class="auth-overlay" style="display:none">
+    <div class="auth-card">
+      <div class="auth-title">Selamat Datang</div>
+      <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
+      <div class="auth-tabs">
+        <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
+        <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
+      </div>
+      <div id="formLogin">
+        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
+        <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
+      </div>
+      <div id="formRegister" style="display:none">
+        <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
+        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
+        <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
+        <select id="regInstansi" class="form-input-auth" onchange="fetchInstansiList(this.value)">
+          <option value="">— Memuat Instansi... —</option>
+        </select>
+        <select id="regBidang" class="form-input-auth">
+          <option value="">— Pilih Bidang —</option>
+        </select>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
+          <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
+            <option value="">— Jenis —</option>
+            <option value="PNS">PNS</option>
+            <option value="PPPK">PPPK</option>
+          </select>
+          <select id="regPangkat" class="form-input-auth">
+            <option value="">— Pangkat —</option>
+          </select>
+        </div>
+        <button id="btnRegister" class="btn-auth" onclick="handleAuthAction('register')">Daftar Akun 📋</button>
+      </div>
+      <div class="auth-footer">Sistem Absensi<br>© 2026 Sekretariat Daerah</div>
+    </div>
+  </div>
+
+  <!-- 2. Modal Paksa Daftar Wajah -->
+  <div id="faceRequiredModal"
+    style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(5,12,30,.97);flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div style="width:100%;max-width:360px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:24px 20px;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🧠</div>
+      <div style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:8px">Daftarkan Wajah Anda</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+        Sistem absensi memerlukan data wajah Anda untuk verifikasi identitas.<br>
+        <span style="color:var(--gold);font-weight:700">Wajib didaftarkan sebelum bisa absen.</span>
+      </div>
+      <div id="faceRequiredStatus" style="font-size:10px;color:var(--muted);margin-bottom:16px;min-height:16px"></div>
+      <button onclick="daftarWajahPaksa()" id="btnDaftarWajahPaksa" class="btn-primary" style="width:100%;padding:14px;border-radius:13px;font-size:14px">
+        <span>📷</span><span id="btnDaftarWajahTxt">Daftarkan Wajah Sekarang</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Kamera / Face Scan Overlay (Z-Index HIGHER than other modals) -->
+  <div class="cam-overlay hidden" id="camOverlay" style="z-index: 20000;">
+    <div class="cam-header">
+      <div class="cam-title" id="camHeaderTitle">📷 Verifikasi Wajah</div>
+      <button class="cam-close" onclick="closeCamByUser()">✕</button>
+    </div>
+    <div class="cam-body">
+      <div class="model-loading" id="modelLoading">
+        <div style="width:100%;max-width:300px;text-align:center">
+          <div style="font-size:28px;margin-bottom:10px">🧠</div>
+          <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px" id="mlTitle">Memuat Model AI</div>
+          <div style="width:100%;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:8px">
+            <div id="mlProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);transition:width .4s ease"></div>
+          </div>
+          <div id="mlPercent" style="font-size:10px;color:var(--gold);font-weight:700">0%</div>
+        </div>
+      </div>
+      <div class="cam-video-wrap" id="camVideoWrap" style="display:none">
+        <video id="camVideo" autoplay playsinline muted></video>
+        <canvas id="camCanvas"></canvas>
+        <div class="face-guide" id="faceGuideWrap"><div class="face-oval"></div></div>
+        <div class="cam-scan-line"></div>
+        <div class="cam-face-badge" id="camFaceBadge" style="display:none">👤 Mendeteksi...</div>
+        <div id="mejaOverlayResult" style="display:none; position:absolute; inset:0; background:rgba(10,22,40,0.95); z-index:10; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;">
+          <div id="moIcon" style="font-size:50px; margin-bottom:10px;">✅</div>
+          <div id="moNama" style="font-size:18px; font-weight:800; color:var(--gold);">NAMA</div>
+          <div id="moStatus" style="font-size:14px; font-weight:700; color:#fff; margin-top:5px; padding:4px 10px; border-radius:6px; background:rgba(255,255,255,0.1);">BERHASIL</div>
+        </div>
+      </div>
+      <div class="cam-zoom-wrap" id="camZoomWrap">
+        <input type="range" id="camZoomSlider" class="zoom-slider" min="1" max="3" step="0.1" value="1" oninput="setCamZoom(this.value)">
+        <span id="camZoomVal" style="font-size:10px; font-weight:700; color:var(--gold); margin-left:8px">1.0x</span>
+      </div>
+      <div class="cam-status idle" id="camStatus" style="display:none">
+        <div class="cam-status-icon" id="camStatusIcon">🔍</div>
+        <div class="cam-status-text">
+          <div class="cam-status-title" id="camStatusTitle">Mendeteksi...</div>
+          <div class="cam-status-sub" id="camStatusSub">Hadapkan wajah</div>
+        </div>
+      </div>
+      <div id="faceRegCard" style="display:none;width:100%;max-width:320px;margin-top:10px">
+         <!-- info reg wajah -->
+      </div>
+      <div id="livenessMini" style="display:none; width:100%; max-width:320px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.3); padding:10px; border-radius:10px; text-align:center; color:var(--gold);">
+        <span id="lsIcon">🔍</span> <span id="lsText">Verifikasi...</span>
+      </div>
+      <div class="cam-preview" id="camPreview"><img id="camPreviewImg" src=""></div>
+      <button class="btn-capture" id="btnCapture" onclick="doCapture()" disabled>📸 Ambil Foto & Lanjutkan</button>
+    </div>
+  </div>
+
+  <!-- 4. Kamera Bukti Overlay -->
+  <div class="cam-overlay hidden" id="buktiOverlay" style="z-index: 20001;">
+    <div class="cam-header">
+      <div class="cam-title">📷 Ambil Foto Bukti</div>
+      <button class="cam-close" onclick="closeBuktiOverlay()">✕</button>
+    </div>
+    <div class="cam-body">
+      <div class="cam-video-wrap" style="display:block">
+        <video id="buktiVideo" autoplay playsinline muted></video>
+      </div>
+      <div class="cam-preview" id="buktiPreviewCam"><img id="buktiPreviewCamImg" src=""></div>
+      <button class="btn-capture" id="btnBuktiCapture" onclick="doBuktiCapture()">📸 Ambil Foto Bukti</button>
+    </div>
+  </div>
+
+  <!-- 5. Signature Pad Overlay -->
+  <div class="sig-overlay hidden" id="sigOverlay" style="z-index: 10002;">
     <div class="sig-header">
       <div class="sig-title">✍️ <span id="sigOverlayTitle">Tanda Tangan Digital</span></div>
       <button class="sig-close" onclick="closeSignaturePad()">✕</button>
     </div>
     <div class="sig-body">
-      <!-- Mode tabs -->
       <div class="sig-mode-tabs">
         <button class="sig-mode-tab active" id="sigTabDraw" onclick="switchSigMode('draw')">✏️ Gambar</button>
-        <button class="sig-mode-tab" id="sigTabPhoto" onclick="switchSigMode('photo')">📷 Upload Foto</button>
+        <button class="sig-mode-tab" id="sigTabPhoto" onclick="switchSigMode('photo')">📷 Upload</button>
       </div>
-
-      <!-- DRAW MODE -->
-      <div id="sigDrawPanel" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px">
-        <div
-          style="font-size:9px;color:var(--muted);text-align:center;background:var(--gold-dim);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:5px 12px;width:100%;max-width:360px">
-          Tulis tanda tangan menggunakan jari atau stylus
-        </div>
+      <div id="sigDrawPanel" style="width:100%;display:flex;flex-direction:column;align-items:center">
         <div class="sig-canvas-wrap" id="sigCanvasWrap">
           <canvas id="sigCanvas"></canvas>
           <div class="sig-empty-hint" id="sigEmptyHint">Tanda tangan di sini...</div>
         </div>
       </div>
-
-      <!-- PHOTO MODE -->
-      <div id="sigPhotoPanel" style="width:100%;display:none;flex-direction:column;align-items:center;gap:10px">
-        <div
-          style="font-size:9px;color:var(--muted);text-align:center;background:var(--gold-dim);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:5px 12px;width:100%;max-width:360px">
-          Upload foto tanda tangan Anda dari galeri atau kamera
-        </div>
-        <div class="sig-upload-wrap">
-          <div id="sigUploadZone" class="sig-upload-zone" onclick="$('sigFileInput').click()">
-            <div class="sig-upload-zone-icon">📁</div>
-            <div class="sig-upload-zone-text">Tap untuk pilih foto</div>
-            <div class="sig-upload-zone-sub">JPG / PNG · Maks 5MB · Tanda tangan di atas kertas putih</div>
-          </div>
-          <input type="file" id="sigFileInput" accept="image/*" style="display:none" onchange="onSigFileChange(event)">
-          <div id="sigUploadPreview" style="display:none">
-            <div class="sig-upload-preview">
-              <img id="sigUploadImg" src="" alt="Preview">
-            </div>
-            <button class="sig-upload-change" onclick="$('sigFileInput').click()">🔄 Ganti Foto</button>
-          </div>
-        </div>
+      <div id="sigPhotoPanel" style="width:100%;display:none;flex-direction:column;align-items:center">
+        <div id="sigUploadZone" class="sig-upload-zone" onclick="$('sigFileInput').click()">Tap untuk pilih foto</div>
+        <input type="file" id="sigFileInput" accept="image/*" style="display:none" onchange="onSigFileChange(event)">
+        <div id="sigUploadPreview" style="display:none"><img id="sigUploadImg" src=""></div>
       </div>
-
-      <!-- Actions -->
       <div class="sig-actions">
         <button class="sig-btn-clear" onclick="clearSignaturePad()">🗑 Hapus</button>
-        <button class="sig-btn-save" id="btnSaveSig" onclick="saveSignature()">
-          <span>💾</span><span id="btnSaveSigTxt">Simpan Tanda Tangan</span>
-        </button>
+        <button class="sig-btn-save" id="btnSaveSig" onclick="saveSignature()">💾 Simpan</button>
       </div>
       <div id="sigMsg" style="display:none" class="sig-msg"></div>
     </div>
   </div>
 
-  <!-- ══ MODAL MANUAL LOG (ADMIN) ══ -->
-  <div id="logModal" class="sig-overlay"
-    style="display:none; align-items:center; justify-content:center; padding:20px; z-index:999999;">
-    <div class="card"
-      style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
-      <div
-        style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
-        <div style="display:flex; align-items:center; gap:8px">
-          <span id="logModalIcon" style="font-size:18px">➕</span>
-          <div id="logModalTitle" style="font-size:11px; font-weight:800; color:var(--white)">TAMBAH LOG MANUAL</div>
-        </div>
-        <button onclick="closeLogEditor()"
-          style="background:transparent; border:none; color:var(--muted); font-size:18px; cursor:pointer">✕</button>
+  <!-- 6. Modal Konfirmasi Absen -->
+  <div id="absenConfirmModal" style="display:none;position:fixed;inset:0;z-index:10003;background:rgba(5,12,30,.85);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;padding-bottom:24px">
+    <div style="width:100%;max-width:420px;background:var(--card-bg);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:20px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-bottom:16px">KONFIRMASI ABSEN</div>
+      <div id="absenConfirmContent" style="margin-bottom:18px"></div>
+      <div style="display:flex;gap:10px">
+        <button onclick="_confirmAbsenBatal()" class="btn-secondary" style="flex:1">Batal</button>
+        <button onclick="_confirmAbsenLanjut()" id="btnConfirmLanjut" class="btn-primary" style="flex:2">Ya, Absen Sekarang</button>
       </div>
-
-      <input type="hidden" id="editLogId">
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Pegawai</label>
-        <select id="inLogPegawai" class="form-input">
-          <option value="">— Pilih Pegawai —</option>
-        </select>
-      </div>
-
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:9px">Tanggal</label>
-          <input type="date" id="inLogTanggal" class="form-input">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label" style="font-size:9px">Jam</label>
-          <input type="time" id="inLogJam" class="form-input">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Jenis Absen</label>
-        <select id="inLogJenis" class="form-input">
-          <option value="MASUK">MASUK</option>
-          <option value="PULANG">PULANG</option>
-          <option value="IZIN">IZIN</option>
-          <option value="SAKIT">SAKIT</option>
-          <option value="TUGAS">TUGAS</option>
-          <option value="TUBEL">TUBEL (TUGAS BELAJAR)</option>
-          <option value="CUTI">CUTI</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label" style="font-size:9px">Keterangan (Opsional)</label>
-        <input type="text" id="inLogKet" class="form-input" placeholder="Misal: Lupa absen, error GPS...">
-      </div>
-
-      <div class="result-card" id="logFormResult" style="display:none; margin-bottom:12px">
-        <div class="r-icon" id="logFormRIcon"></div>
-        <div class="r-title" id="logFormRTitle"></div>
-        <div class="r-msg" id="logFormRMsg"></div>
-      </div>
-
-      <button class="btn-admin" id="btnSaveLog" onclick="saveLog()" style="margin:0; height:45px">
-        <span>💾</span><span id="btnSaveLogTxt">Simpan Log</span>
-      </button>
     </div>
   </div>
 
+  <!-- 7. Modal Manual Log (Admin) -->
+  <div id="logModal" class="sig-overlay" style="display:none; align-items:center; justify-content:center; padding:20px; z-index:10004;">
+    <div class="card" style="width:100%; max-width:380px; background:rgba(15,23,42,0.95); backdrop-filter:blur(20px); border:1px solid var(--border);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border)">
+        <div style="display:flex; align-items:center; gap:8px"><span id="logModalIcon">➕</span> <div id="logModalTitle" style="font-size:11px; font-weight:800">TAMBAH LOG MANUAL</div></div>
+        <button onclick="closeLogEditor()" style="background:transparent; border:none; color:var(--muted); font-size:18px">✕</button>
+      </div>
+      <input type="hidden" id="editLogId">
+      <div class="form-group"><label class="form-label">Pegawai</label><select id="inLogPegawai" class="form-input"><option value="">— Pilih Pegawai —</option></select></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+        <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="inLogTanggal" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Jam</label><input type="time" id="inLogJam" class="form-input"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Jenis Absen</label><select id="inLogJenis" class="form-input"><option value="MASUK">MASUK</option><option value="PULANG">PULANG</option></select></div>
+      <div class="form-group"><label class="form-label">Keterangan</label><input type="text" id="inLogKet" class="form-input"></div>
+      <button class="btn-admin" id="btnSaveLog" onclick="saveLog()" style="margin:0; height:45px">💾 Simpan Log</button>
+    </div>
+  </div>
+
+  <!-- 8. Splash Screen -->
+  <div id="appSplash" style="z-index: 99999;">
+    <div class="splash-logo">🏛️</div>
+    <div class="splash-title">BAPPERIDA Sumba Barat</div>
+    <div class="splash-sub">Memuat aplikasi absensi...</div>
+    <div class="splash-bar"><div class="splash-progress"></div></div>
+  </div>
 
   <!-- ════ APP SCRIPTS (urutan load penting) ════ -->
   <!-- 1. Config & constants — harus pertama -->

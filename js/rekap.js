@@ -35,15 +35,14 @@
       try {
         const res = await apiGet(P.userList);
         if (!res.ok) return [];
-        const json = kirimData;
-        const rows = parseApiResponse(json);
+        const rows = res.rows || parseApiResponse(res.data) || [];
         userListOrder = rows.map((r, idx) => ({
           id: String(getField(r, 'id', 'ID') || '').trim(),
           nama: getField(r, 'nama', 'Nama', 'username', 'Username') || '',
           jabatan: getField(r, 'jabatan', 'Jabatan') || '',
           pangkat: getField(r, 'pangkat', 'Pangkat') || '',
           nip: getField(r, 'nip', 'NIP') || '',
-          urutan: idx
+          urutan: Number(getField(r, 'no', 'No', 'urutan', 'Urutan') || (idx + 1))
         }));
         return userListOrder;
       } catch (e) { return []; }
@@ -94,9 +93,9 @@
           }
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-          const res = await apiGet(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`);
+          const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
           if (res.ok) {
-            const json = kirimData;
+            const json = await res.json();
             const d = Array.isArray(json) ? json[0] : json;
             if (d?.pegawai?.length) { ringkasan = d.ringkasan || {}; pegawai = d.pegawai; rekapOK = true; }
           }
@@ -157,13 +156,14 @@
         const getJabatanScore = (j) => {
           if (!j) return 0;
           const s = String(j).toUpperCase();
-          // Prioritas 1: Pimpinan Tertinggi (Kepala Dinas/Badan/Kantor)
           if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('KEPALA KANTOR') || s === 'KEPALA') return 100;
-          // Prioritas 2: Sekretaris
           if (s.includes('SEKRETARIS')) return 90;
-          // Prioritas 3: Kepala Bidang
           if (s.includes('KEPALA BIDANG') || s.includes('KABID')) return 80;
-          return 0;
+          if (s.includes('KASUBAG') || s.includes('KETUA TIM') || s.includes('KOORDINATOR') || s.includes('SUB KOORDINATOR')) return 70;
+          if (s.includes('FUNGSIONAL') || s.includes('AHLI MUDA') || s.includes('AHLI MADYA')) return 60;
+          if (s.includes('STAF') || s.includes('PELAKSANA')) return 50;
+          if (s.includes('NON ASN') || s.includes('HONORER') || s.includes('THL') || s.includes('KONTRAK')) return 40;
+          return 10;
         };
 
         const getPangkatScore = (p) => {
@@ -181,32 +181,29 @@
           return 0;
         };
 
-        const getBirthScore = (nip) => {
-          const clean = String(nip || '').replace(/\D/g, ''); 
-          if (clean.length >= 8) {
-            const datePart = clean.substring(0, 8);
-            if (/^\d{8}$/.test(datePart)) return parseInt(datePart);
-          }
-          return 99999999;
+        const getNipScore = (nip) => {
+          // NIP BAPPERIDA: 18 digits (YYYYMMDD YYYYMM G SSS)
+          // Lower NIP = Older Birth Date/Appointment = Senior
+          return String(nip || '999999999999999999').replace(/\D/g, '');
         };
 
         pegawai.sort((a, b) => {
-          // 1. Urutkan berdasarkan JABATAN (Kepala > Sekretaris > Kabid)
+          // 1. Urutkan berdasarkan JABATAN (Kepala > Sekretaris > Kabid > dst)
           const jabA = getJabatanScore(a.jabatan);
           const jabB = getJabatanScore(b.jabatan);
           if (jabA !== jabB) return jabB - jabA;
 
-          // 2. Urutkan berdasarkan PANGKAT (Tertinggi -> Terendah)
+          // 2. Urutkan berdasarkan PANGKAT (Tertinggi IV/E -> Terendah I/A)
           const rankA = getPangkatScore(a.pangkat);
           const rankB = getPangkatScore(b.pangkat);
           if (rankA !== rankB) return rankB - rankA;
 
-          // 3. Urutkan berdasarkan UMUR (Tertua -> Termuda via NIP)
-          const birthA = getBirthScore(a.nip);
-          const birthB = getBirthScore(b.nip);
-          if (birthA !== birthB) return birthA - birthB; 
+          // 3. Urutkan berdasarkan NIP (Seniority: Lower NIP first)
+          const nipA = getNipScore(a.nip);
+          const nipB = getNipScore(b.nip);
+          if (nipA !== nipB) return nipA.localeCompare(nipB); 
 
-          // 4. Urutkan berdasarkan Nama Tagihan
+          // 4. Urutkan berdasarkan Nama (A-Z)
           return (a.nama || '').localeCompare(b.nama || '', 'id');
         });
         window.userListOrder = pegawai; // Save globally for saveLog() reference

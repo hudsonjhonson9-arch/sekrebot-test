@@ -10,19 +10,29 @@
       try {
         const res = await apiGet(P.userList + '?format=full');
         if (!res.ok) throw new Error('Refresh failed');
-        const ud = res;
-        const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID));
+        const users = (res.rows || []).filter(u => u && (u.id || u.ID));
 
         if (!users.length) {
           el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada data pegawai</div></div>`;
           return;
         }
 
-        // Urutkan berdasarkan "no" (No Pegawai) secara numerik
+        // Urutkan berdasarkan HIERARKI (Jabatan > Pangkat > NIP > Nama)
         users.sort((a, b) => {
-          const valA = parseInt(a.no || a.No || 9999);
-          const valB = parseInt(b.no || b.No || 9999);
-          return valA - valB;
+          if (!a || !b) return 0;
+          const jabA = getJabatanScore(a.jabatan || a.Jabatan);
+          const jabB = getJabatanScore(b.jabatan || b.Jabatan);
+          if (jabA !== jabB) return jabB - jabA;
+
+          const rankA = getPangkatScore(a.pangkat || a.Pangkat);
+          const rankB = getPangkatScore(b.pangkat || b.Pangkat);
+          if (rankA !== rankB) return rankB - rankA;
+
+          const nipA = getNipScore(a.nip || a.NIP);
+          const nipB = getNipScore(b.nip || b.NIP);
+          if (nipA !== nipB) return nipA.localeCompare(nipB);
+
+          return String(a.nama || a.Nama || '').localeCompare(String(b.nama || b.Nama || ''), 'id');
         });
 
         el.innerHTML = users.map(u => {
@@ -87,8 +97,11 @@
         const ur = await apiGet(P.userList + '?user_id=' + uid);
         if (!ur.ok) return;
         const res = (ur.rows?.length ?? 0) ? ur.rows : parseApiResponse(ur.data);
-        const p = res.single ? res : (res.data ? res.data[0] : null);
-        if (!p) return;
+        const p = Array.isArray(res) ? res[0] : (res.single ? res : (res.data ? res.data[0] : null));
+        if (!p) {
+          console.warn('[Edit] Pegawai tidak ditemukan:', uid);
+          return;
+        }
 
         dom.setText('pegawaiFormTitle', '✍️ EDIT DATA PEGAWAI');
         $('editPegawaiId').value = uid;
@@ -145,11 +158,10 @@
         const mainPayload = { id, nama, no, nip, jabatan, pangkat, bidang, role, status, instansi_id: 'bapperida' };
 
         // apiPost handles method+body
-        const { ok: saveOk, data: res } = await apiPost(path, payload);
-        const d = res.catch(() => ({}));
+        const { ok: saveOk, data: d } = await apiPost(path, mainPayload);
 
-        if (!saveOk || d?.ok === false) {
-          showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', d.message || 'Gagal menyimpan data pegawai.');
+        if (!saveOk || (d && d.ok === false)) {
+          showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'fail', '❌', 'Gagal', (d && d.message) || 'Gagal menyimpan data pegawai.');
         } else {
           // ── SYNC ADMIN LOGIC (Request User) ──
           // Jika role adalah ADMIN atau SUPERADMIN, sync ke webhook admin-add

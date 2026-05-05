@@ -242,3 +242,57 @@
       $('gpsCard').classList.add('show');
     }
 
+    /**
+     * Menghitung skor hierarki jabatan untuk keperluan sorting.
+     * Semakin tinggi skor, semakin tinggi posisi dalam hierarki.
+     * @param {string} j - Nama jabatan
+     * @returns {number} Skor 0-100
+     */
+    function getJabatanScore(j) {
+      if (!j) return 0;
+      const s = String(j).toUpperCase();
+      // Level 1: Pimpinan Tertinggi
+      if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('KEPALA KANTOR') || s === 'KEPALA') return 100;
+      // Level 2: Sekretaris
+      if (s.includes('SEKRETARIS')) return 90;
+      // Level 3: Kepala Bidang / Kabid
+      if (s.includes('KEPALA BIDANG') || s.includes('KABID')) return 80;
+      // Level 4: Pengawas / Sub-koordinator / Kasubag
+      if (s.includes('KASUBAG') || s.includes('KEPALA SUB') || s.includes('KETUA TIM') || s.includes('KOORDINATOR') || s.includes('SUB KOORDINATOR')) return 70;
+      // Level 5: Fungsional Ahli
+      if (s.includes('FUNGSIONAL') || s.includes('AHLI MUDA') || s.includes('AHLI MADYA') || s.includes('AHLI PERTAMA')) return 60;
+      // Level 6: Pelaksana / Staf
+      if (s.includes('STAF') || s.includes('PELAKSANA') || s.includes('ADMIN')) return 50;
+      // Level 7: Non-ASN / Kontrak
+      if (s.includes('NON ASN') || s.includes('HONORER') || s.includes('THL') || s.includes('KONTRAK') || s.includes('PRAMU')) return 40;
+      return 10;
+    }
+
+    /**
+     * Menghitung skor hierarki pangkat/golongan.
+     * @param {string} p - String pangkat (e.g. IV/E)
+     * @returns {number} Skor 0-17
+     */
+    function getPangkatScore(p) {
+      if (!p) return 0;
+      const s = String(p).toUpperCase();
+      if (s.includes('IV/E')) return 17; if (s.includes('IV/D')) return 16;
+      if (s.includes('IV/C')) return 15; if (s.includes('IV/B')) return 14;
+      if (s.includes('IV/A')) return 13; if (s.includes('III/D')) return 12;
+      if (s.includes('III/C')) return 11; if (s.includes('III/B')) return 10;
+      if (s.includes('III/A')) return 9;  if (s.includes('II/D')) return 8;
+      if (s.includes('II/C')) return 7;  if (s.includes('II/B')) return 6;
+      if (s.includes('II/A')) return 5;  if (s.includes('I/D')) return 4;
+      if (s.includes('I/C')) return 3;  if (s.includes('I/B')) return 2;
+      if (s.includes('I/A')) return 1;
+      return 0;
+    }
+
+    /**
+     * Menghitung skor NIP (senioritas).
+     * @param {string} nip - Nomor Induk Pegawai
+     * @returns {string} String NIP yang hanya berisi angka untuk localeCompare
+     */
+    function getNipScore(nip) {
+      return String(nip || '999999999999999999').replace(/\D/g, '');
+    }

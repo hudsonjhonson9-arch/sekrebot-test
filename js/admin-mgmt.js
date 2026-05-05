@@ -30,8 +30,9 @@
         try {
           const ur = await apiGet(P.userList + '?format=full');
           if (ur.ok) {
-            const users = (ur.rows?.length ?? 0) ? ur.rows : (Array.isArray(ur.data) ? ur.data : (ur.data?.data || []));
+            const users = ur.rows || [];
             users.forEach(u => {
+              if (!u) return;
               const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
               if (uid) {
                 namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
@@ -87,14 +88,13 @@
         return;
       }
       try {
-        const res = await apiPost(P.adminAdd, {
+        const { ok: addOk, data: d } = await apiPost(P.adminAdd, {
             telegram_id: tgId, nama, role,
             ditambahkan_oleh: MY_ID,
             timestamp: Math.floor(Date.now() / 1000)
           });
-        const data = res.catch(() => ({}));
-        if (!ok || data?.ok === false) {
-          _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menambahkan admin.');
+        if (!addOk || (d && d.ok === false)) {
+          _showAdminMgmtResult('warning', '⚠️', 'Ditolak', (d && d.message) || 'Gagal menambahkan admin.');
           return;
         }
         ADMIN_IDS.push(tgId);

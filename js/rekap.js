@@ -33,8 +33,8 @@
     async function fetchUserListOrder() {
       if (userListOrder.length > 0) return userListOrder;
       try {
-        const res = await apiGet(`${P.userList}`);
-        if (!kirimOk) return [];
+        const res = await apiGet(P.userList);
+        if (!res.ok) return [];
         const json = kirimData;
         const rows = parseApiResponse(json);
         userListOrder = rows.map((r, idx) => ({
@@ -95,7 +95,7 @@
           const hariKerjaParam = _countHK(dari, sampai);
           const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
           const res = await apiGet(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`);
-          if (kirimOk) {
+          if (res.ok) {
             const json = kirimData;
             const d = Array.isArray(json) ? json[0] : json;
             if (d?.pegawai?.length) { ringkasan = d.ringkasan || {}; pegawai = d.pegawai; rekapOK = true; }
@@ -1049,7 +1049,7 @@
       try {
         const { ok: kirimOk, data: kirimData } = await apiPost(P.kirimRekap, payload);
         let d = {}; try { d = kirimData; } catch (_) { }
-        if (kirimOk) {
+        if (res.ok) {
           showRekapToast('success', '✅ Rekap berhasil dikirim ke Telegram! Cek bot Anda.');
         } else {
           throw new Error('Server ' + 200);

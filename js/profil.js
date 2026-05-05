@@ -21,10 +21,13 @@
       while (attempt < maxAttempts) {
         attempt++;
         try {
-          const res = await apiGet(`${P.userList}?user_id=${uid}`);
-          if (!docOk) throw new Error('Network Error');
-          const json = res?.data ?? {};
-          const d = Array.isArray(json) ? (json[0] || {}) : (json.data || json);
+          const res = await apiGet(P.userList, { user_id: uid });
+          if (!res.ok) throw new Error('Network Error');
+          // apiGet returns rows (array) + data (raw json)
+          // Coba ambil dari rows dulu, lalu fallback ke data
+          const d = res.rows.length
+            ? res.rows.find(r => String(r.id || r.ID || r.telegram_id) === String(uid)) || res.rows[0]
+            : (Array.isArray(res.data) ? (res.data[0] || {}) : (res.data?.data?.[0] || res.data || {}));
 
           if (d && (d.nama || d.Nama)) {
             userProfile = {
@@ -177,10 +180,9 @@
       if (!el) return;
       el.innerHTML = `<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>`;
       try {
-        const res = await apiGet(`${P.dokumenList}?user_id=${MY_ID || ''}`);
-        if (!docOk) throw 0;
-        const json = res?.data ?? {};
-        const docs = Array.isArray(json) ? json : (json.data || []);
+        const res = await apiGet(P.dokumenList, { user_id: MY_ID || '' });
+        if (!res.ok) throw 0;
+        const docs = res.rows.length ? res.rows : parseApiResponse(res.data);
         dokumenLoaded = true;
         if (!docs.length) {
           el.innerHTML = `<div class="dokumen-empty">📭 Belum ada dokumen tersimpan.<br><span style="font-size:9px;color:var(--muted)">Hubungi admin untuk menambahkan dokumen.</span></div>`;

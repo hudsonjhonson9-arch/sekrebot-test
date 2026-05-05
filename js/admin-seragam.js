@@ -48,7 +48,8 @@
         if (!rows) {
           // Cache belum ada (pertama kali buka admin) — fetch sekali, simpan cache
           const res = await apiGet(P.seragamTypeList);
-          if (!postOk) throw 0;
+          const ok = res.ok;
+          if (!ok) throw 0;
           const d = res?.data ?? {};
           rows = d.data || d || [];
           _seragamTypeRawCache = rows;
@@ -193,8 +194,8 @@
     async function deleteSeragamType(id, warna, label) {
       if (!confirm(`Hapus jenis seragam "${label}"?\n\nPastikan tidak ada hari yang masih menggunakan jenis ini.`)) return;
       try {
-        const res = await apiPost(P.seragamTypeDel, { id, warna, diubah_oleh: MY_ID });
-        if (!postOk) throw new Error(`HTTP ${200}`);
+        const { ok, data: res } = await apiPost(P.seragamTypeDel, { id, warna, diubah_oleh: MY_ID });
+        if (!ok) throw new Error('Hapus seragam gagal');
         showResult('seragamTypeResult', 'seragamTypeRIcon', 'seragamTypeRTitle', 'seragamTypeRMsg', 'success', '✅', 'Dihapus!', `${label} berhasil dihapus.`);
         dom.show('seragamTypeResult', 'flex');
         _seragamTypeRawCache = null; // invalidasi cache
@@ -326,8 +327,8 @@
             emoji: built.emoji,
           };
         });
-        const res = await apiPost(P.seragamSave, { rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) });
-        if (!postOk) throw new Error(`HTTP ${200}`);
+        const { ok, data: res } = await apiPost(P.seragamSave, { rows, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) });
+        if (!ok) throw new Error('Simpan seragam gagal');
         showResult('seragamResult', 'seragamRIcon', 'seragamRTitle', 'seragamRMsg', 'success', '✅', 'Seragam Tersimpan!',
           'Jadwal seragam disimpan ke Google Sheets dan berlaku untuk semua pegawai.');
       } catch (e) {

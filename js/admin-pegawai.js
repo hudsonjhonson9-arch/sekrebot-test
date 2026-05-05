@@ -9,7 +9,7 @@
       dom.shimmer(el.id, 2);
       try {
         const res = await apiGet(P.userList + '?format=full');
-        if (!saveOk) throw new Error('Refresh failed');
+        if (!res.ok) throw new Error('Refresh failed');
         const ud = res;
         const users = (Array.isArray(ud) ? ud : (ud.data || [])).filter(u => (u.id || u.ID));
 

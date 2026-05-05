@@ -231,8 +231,10 @@
       try {
         const res = await apiGet(P.faceToggle);
         if (!res.ok) throw 0;
-        const d = res?.data ?? {};
-        FACE_RECOGNITION_ENABLED = d.enabled !== false;
+        // Handle both {enabled:true} and [{enabled:true}] formats
+        const rawFT = res.rows.length ? res.rows[0] : (res?.data ?? {});
+        const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
+        FACE_RECOGNITION_ENABLED = d?.enabled !== false;
       } catch {
         // fallback localStorage
         try {
@@ -291,7 +293,7 @@
       try {
         const res = await apiGet(P.lokasiList);
         if (!res.ok) throw 0;
-        const json = res?.data ?? {};
+        const json = res.rows.length ? res.rows : parseApiResponse(res.data);
         const list = Array.isArray(json) ? json : (json.data || []);
         if (!list.length) return;
         const newLOK = {};
@@ -464,7 +466,7 @@
       try {
         const res = await apiGet(P.userList);
         if (!res.ok) throw 0;
-        const json = res?.data ?? {};
+        const json = res.rows.length ? res.rows : parseApiResponse(res.data);
 
         // Response format: { ok, data: [...], total } — ambil dari data
         const pegawai = (Array.isArray(json)

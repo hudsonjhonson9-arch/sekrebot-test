@@ -61,7 +61,7 @@
         console.log('[Bidang] Fetching for:', instansiId);
         const res = await apiGet(`${P.bidangList}?instansi_id=${instansiId}`);
         if (!res.ok) throw new Error(res.status);
-        const json = res?.data ?? {};
+        const json = res.rows.length ? res.rows : parseApiResponse(res.data);
         
         let data = [];
         if (Array.isArray(json)) data = json;
@@ -90,7 +90,7 @@
       try {
         const res = await apiGet(P.liburList);
         if (!res.ok) return;
-        const d = res?.data ?? {};
+        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = d.data || d.rows || [];
         hariLiburMap = {};
         rows.forEach(r => {
@@ -107,7 +107,7 @@
       try {
         const res = await apiGet(`${P.userList}`);
         if (!res.ok) return;
-        const d = res?.data ?? {};
+        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = Array.isArray(d) ? d : (d.data || d.rows || []);
         jamPegawaiMap = {};
         rows.forEach(r => {
@@ -199,7 +199,7 @@
       try {
         const res = await apiGet(P.liburList);
         if (!res.ok) throw 0;
-        const d = res?.data ?? {};
+        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = (d.data || d.rows || [])
           .filter(r => String(r.tanggal || r.Tanggal || '').trim())
           .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));

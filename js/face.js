@@ -218,9 +218,11 @@
       if (!uid) return;
       const uidStr = String(uid);
       try {
-        const res = await apiGet(`${P.faceGet}?user_id=${uidStr}`);
-        if (!faceRegOk) return;
-        const json = res?.data ?? {};
+        const res = await apiGet(P.faceGet, { user_id: uidStr });
+        if (!res.ok) return;
+        // data may be object {face_photo, descriptor} or wrapped in array
+        const rawFace = res.rows.length ? res.rows[0] : res.data;
+        const json = Array.isArray(rawFace) ? rawFace[0] : (rawFace ?? {});
         const photo = json.face_photo || json.dataUrl || json.foto_base64 || null;
         const descriptor = json.face_histogram || json.face_descriptor || json.descriptor || json.histogram || null;
         const savedAt = json.face_saved_at || json.saved_at || json.savedAt || new Date().toISOString();

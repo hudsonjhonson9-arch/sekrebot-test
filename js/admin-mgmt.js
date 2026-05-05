@@ -150,10 +150,11 @@
     async function _getJamAbsen() {
       if (_jamAbsenCache) return _jamAbsenCache;
       if (_jamAbsenPromise) return _jamAbsenPromise;
-      _jamAbsenPromise = apiFetch(P.jamAbsen, { method: 'GET' })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-        .then(d => {
-          _jamAbsenCache = d.data || d;
+      _jamAbsenPromise = apiGet(P.jamAbsen)
+        .then(res => {
+          if (!res.ok) return Promise.reject(new Error('HTTP error'));
+          const raw = res.data;
+          _jamAbsenCache = (Array.isArray(raw) ? raw[0] : raw?.data || raw) || {};
           // Sinkronisasi role ke map global dari admin_list (bukan user_list)
           if (_jamAbsenCache.admin_roles) {
             Object.entries(_jamAbsenCache.admin_roles).forEach(([uid, role]) => {

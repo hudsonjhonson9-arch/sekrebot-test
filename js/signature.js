@@ -353,8 +353,8 @@
 
       // Fetch dari server
       try {
-        const res = await apiGet(`${P.signatureGet}?telegram_id=${uid}`);
-        if (sigOk) {
+        const res = await apiGet(P.signatureGet, { telegram_id: uid });
+        if (res.ok) {
           const d = res?.data ?? {};
           const sig = d.signature || d.data?.signature || null;
           if (sig) {

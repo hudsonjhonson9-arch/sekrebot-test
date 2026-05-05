@@ -277,10 +277,9 @@
       if (btn) btn.disabled = true;
       dom.shimmer(el.id || 'ketList', 2);
       try {
-        const res = await apiGet(`${P.ketList}?user_id=${MY_ID || ''}`);
-        if (!ketOk) throw 0;
-        const d = res?.data ?? {};
-        const rows = (d.data || d.rows || []);
+        const res = await apiGet(P.ketList, { user_id: MY_ID || '' });
+        if (!res.ok) throw 0;
+        const rows = res.rows.length ? res.rows : parseApiResponse(res.data);
         ketStatusCache = rows;
         ketStatusLoaded = true;
         renderKetStatusList(rows);
@@ -380,8 +379,8 @@
             jenis: editSelectedJenis, tgl_mulai: tm, tgl_selesai: ts, keterangan: k,
             timestamp: Math.floor(Date.now() / 1000)
           });
-        let d = {}; try { d = res } catch (_) { }
-        if (d.ok !== false) {
+        const d = res?.data ?? {};
+        if (res.ok && d.ok !== false) {
           showResult('editKetResult', 'editKetRIcon', 'editKetRTitle', 'editKetRMsg', 'success', '✅', 'Berhasil', 'Keterangan berhasil diperbarui.');
           dom.show('editKetResult', 'flex');
           setTimeout(() => { closeKetModalDirect(); loadKetStatus(); }, 1200);
@@ -425,8 +424,8 @@
       try {
         // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
         const res = await apiGet(`${P.ketList}?is_admin=true&status=PENDING`);
-        if (!ketOk) throw 0;
-        const d = res?.data ?? {};
+        if (!res.ok) throw 0;
+        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = (d.data || d.rows || []).filter(r => {
           const st = (r.status || r.Status || '').toUpperCase();
           return st === 'PENDING';
@@ -474,8 +473,8 @@
             id_ket: idKet, action, jenis, tanggal,
             admin_id: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000)
           });
-        let d = {}; try { d = res } catch (_) { }
-        if (d.ok !== false) {
+        const d = res?.data ?? {};
+        if (res.ok && d.ok !== false) {
           // Hilangkan item dari DOM
           const el = document.getElementById('konfirm-' + idKet);
           if (el) { el.style.opacity = '0.3'; el.style.pointerEvents = 'none'; }

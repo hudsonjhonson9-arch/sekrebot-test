@@ -91,10 +91,10 @@
     const JAM_MASUK_DEFAULT = '08:00';
     /** Jam pulang default (format HH:MM) */
     const JAM_PULANG_DEFAULT = '14:30';
-    /** Jam masuk default dalam menit dari tengah malam */
-    const JAM_MASUK_MENIT = 8 * 60;        // 480
-    /** Jam pulang default dalam menit dari tengah malam */
-    const JAM_PULANG_MENIT = 14 * 60 + 30; // 870
+    /** Jam masuk default dalam menit dari tengah malam (mutable — bisa diubah admin) */
+    let JAM_MASUK_MENIT = 8 * 60;        // 480
+    /** Jam pulang default dalam menit dari tengah malam (mutable — bisa diubah admin) */
+    let JAM_PULANG_MENIT = 14 * 60 + 30; // 870
 
     /** Storage keys yang dipakai di localStorage */
     const STORAGE_KEYS = {

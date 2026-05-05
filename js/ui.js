@@ -194,8 +194,8 @@
 
     /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */
     // Default: masuk ≤ 08:00, pulang ≥ 14:30
-    let JAM_MASUK_MENIT = 8 * 60;    // 480
-    let JAM_PULANG_MENIT = 14 * 60 + 30; // 870
+    // JAM_MASUK_MENIT dan JAM_PULANG_MENIT sudah di-declare di constants.js
+    // Di-override lewat loadJamFromStorage() & loadJamAbsen()
     function toMenitStr(str) { const [h, m] = (str || '').split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; }
     function menitToStr(m) { return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }
 

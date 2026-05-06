@@ -134,50 +134,91 @@ async function loadRekap() {
     $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
     const order = await orderPromise;
-    // Enrich jabatan dari user_list jika belum ada, lalu sort by urutan
+    // Helper to get field case-insensitively
+    const gf = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
+        const uk = k.toUpperCase(), lk = k.toLowerCase();
+        if (obj[uk] !== undefined && obj[uk] !== null && obj[uk] !== '') return obj[uk];
+        if (obj[lk] !== undefined && obj[lk] !== null && obj[lk] !== '') return obj[lk];
+      }
+      return '';
+    };
+
+    // Enrich jabatan dari user_list jika belum ada
     if (order.length > 0) {
       pegawai = pegawai.map(p => {
-        const match = order.find(u =>
-          u.id === String(p.id || '') ||
-          u.nama.toLowerCase().trim() === (p.nama || '').toLowerCase().trim() ||
-          (u.nip && u.nip === p.nip));
-        return match
-          ? {
-            ...p,
-            nama: p.nama && p.nama !== '—' ? p.nama : match.nama,
-            nip: p.nip && p.nip !== '—' ? p.nip : match.nip,
-            jabatan: (p.jabatan && p.jabatan !== '—' && p.jabatan.trim() !== '') ? p.jabatan : match.jabatan,
-            pangkat: (p.pangkat && p.pangkat !== '—' && p.pangkat.trim() !== '') ? p.pangkat : match.pangkat,
-            urutan: p.urutan ?? match.urutan
+        const pId = gf(p, 'id', 'ID', 'telegram_id');
+        const pNama = (gf(p, 'nama', 'Nama') || '').toLowerCase().trim();
+        const pNip = gf(p, 'nip', 'NIP');
+
+        const match = order.find(u => {
+          const uId = gf(u, 'id', 'ID', 'telegram_id');
+          const uNama = (gf(u, 'nama', 'Nama') || '').toLowerCase().trim();
+          const uNip = gf(u, 'nip', 'NIP');
+          if (pId && uId && String(pId) === String(uId)) return true;
+          if (pNip && uNip && pNip === uNip) return true;
+          if (pNama && uNama) {
+            if (pNama === uNama) return true;
+            const strip = (s) => s.replace(/,?\s+(s\.?[a-z]*|m\.?[a-z]*|drs|dra|ir|h\.|hj\.)(\s|$)/gi, '').trim();
+            if (strip(pNama) === strip(uNama)) return true;
           }
-          : p;
+          return false;
+        });
+
+        if (match) {
+          return {
+            ...p,
+            nama: (match.nama && match.nama !== '—') ? match.nama : p.nama,
+            nip: (match.nip && match.nip !== '—') ? match.nip : p.nip,
+            jabatan: (match.jabatan && match.jabatan !== '—') ? match.jabatan : p.jabatan,
+            pangkat: (match.pangkat && match.pangkat !== '—') ? match.pangkat : p.pangkat,
+            urutan: match.urutan ?? p.urutan
+          };
+        }
+        return p;
       });
     }
-        pegawai.sort((a, b) => {
-          if (!a || !b) return 0;
-          // 1. Urutkan berdasarkan JABATAN (Kepala > Sekretaris > Kabid > dst)
-          const jabA = getJabatanScore(a.jabatan);
-          const jabB = getJabatanScore(b.jabatan);
-          if (jabA !== jabB) return jabB - jabA;
 
-          // 2. Urutkan berdasarkan PANGKAT (Tertinggi IV/E -> Terendah I/A)
-          const rankA = getPangkatScore(a.pangkat);
-          const rankB = getPangkatScore(b.pangkat);
-          if (rankA !== rankB) return rankB - rankA;
+    // Sort strictly by hierarchy
+    pegawai.sort((a, b) => {
+      if (!a || !b) return 0;
+      // 1. Urutkan berdasarkan JABATAN (Kepala > Sekretaris > Kabid > dst)
+      const jabA = getJabatanScore(a.jabatan);
+      const jabB = getJabatanScore(b.jabatan);
+      if (jabA !== jabB) return jabB - jabA;
 
-          // 3. Urutkan berdasarkan NIP (Seniority: Lower NIP first)
-          const nipA = getNipScore(a.nip);
-          const nipB = getNipScore(b.nip);
-          if (nipA !== nipB) return nipA.localeCompare(nipB); 
+      // 2. Tipe Pegawai (PNS > PPPK) - Khusus untuk Staff (Jabatan < 70)
+      if (jabA < 70) {
+        const pA = (a.pangkat || '').toUpperCase();
+        const pB = (b.pangkat || '').toUpperCase();
+        const isPnsA = pA.includes('/') || pA.includes('JURU') || pA.includes('PENGATUR') || pA.includes('PENATA') || pA.includes('PEMBINA');
+        const isPnsB = pB.includes('/') || pB.includes('JURU') || pB.includes('PENGATUR') || pB.includes('PENATA') || pB.includes('PEMBINA');
+        if (isPnsA !== isPnsB) return isPnsB ? 1 : -1;
+      }
 
-          // 4. Urutkan berdasarkan Nama (A-Z)
-          return String(a.nama || '').localeCompare(String(b.nama || ''), 'id');
-        });
+      // 3. Urutkan berdasarkan PANGKAT (Tertinggi IV/E -> Terendah I/A)
+      const rankA = getPangkatScore(a.pangkat);
+      const rankB = getPangkatScore(b.pangkat);
+      if (rankA !== rankB) return rankB - rankA;
+
+      // 4. Urutkan berdasarkan NIP (Seniority: Lower NIP first = Older)
+      const nipA = getNipScore(a.nip);
+      const nipB = getNipScore(b.nip);
+      if (nipA !== nipB) return nipA.localeCompare(nipB);
+
+      // 5. Urutkan berdasarkan Nama (A-Z)
+      const namaA = (a.nama || '').toLowerCase().trim();
+      const namaB = (b.nama || '').toLowerCase().trim();
+      return namaA.localeCompare(namaB, 'id');
+    });
+
     window.userListOrder = pegawai; // Save globally for saveLog() reference
 
 
     lastRekapPegawai = pegawai;
     rekapLoaded = true;
+
     renderRekap(pegawai);
   } catch (e) {
     console.warn('loadRekap error:', e);
@@ -573,8 +614,24 @@ function renderRekap(pg) {
           : terlambatMnt > 0 || cepatMnt > 0 ? 'var(--warning)'
             : 'var(--success)';
 
+      // Serialize pins for map initialization
+      const parsePin = (log, label, color) => {
+        if(!log) return null;
+        let lat = parseFloat(log.latitude || log.Latitude || log.lat || '');
+        let lng = parseFloat(log.longitude || log.Longitude || log.lng || '');
+        const koor = log.koordinat || log.Koordinat || '';
+        if (koor && koor !== '-') {
+          const parts = koor.split(',');
+          if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
+        }
+        if(!lat || !lng) return null;
+        return { lat, lng, label, color };
+      };
+      const pinsData = [parsePin(p._rawMasukLog, 'M', '#10b981'), parsePin(p._rawPulangLog, 'P', '#3b82f6')].filter(Boolean);
+
       return `
-      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12);">
+      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); cursor:pointer;" 
+           onclick="if(window.toggleRekapMap) window.toggleRekapMap(this, ${JSON.stringify(pinsData).replace(/"/g, '&quot;')}); else { const d=this.querySelector('.lokasi-detail'); if(d) d.style.display = d.style.display==='none'?'block':'none'; }">
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
@@ -583,7 +640,7 @@ function renderRekap(pg) {
           <div style="flex:1;min-width:0">
             <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
             ${jabatanStr}
-            <div class="pegawai-jabatan" style="margin-top:2px">NIP: ${nip} · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+            <div class="pegawai-jabatan" style="margin-top:2px">NIP: ${nip} · ${p.pangkat || '—'} · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
             ${periodeHarianNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeHarianNama}</div>` : ''}
           </div>
           <!-- Badge status utama -->
@@ -594,26 +651,40 @@ function renderRekap(pg) {
         </div>
 
         <!-- ── CARD JAM MASUK / PULANG ── -->
+        ${isKet ? `
+          <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden; margin-bottom:8px;">
+            ${IS_ADMIN && p._rawKetLog ? `
+              <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog).replace(/"/g, '&quot;')})" 
+                      style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
+                      onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
+                      title="Edit Log Keterangan">✏️</button>
+            ` : ''}
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:32px;line-height:1">${masukIcon}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:800;color:${masukColor}">${masukLabel}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:pre-wrap;">${(p._rawKetLog?.Ket || p._rawKetLog?.ket || 'Keterangan').trim()}</div>
+              </div>
+            </div>
+          </div>
+        ` : `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
 
           <!-- JAM MASUK -->
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
             ${IS_ADMIN ? (p._rawMasukLog || p._rawKetLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
+              <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Masuk">✏️</button>
             ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', null, 'MASUK')" 
+              <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', null, 'MASUK')" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
             `) : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
-            ${izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0
-          ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${masukIcon}</div>
-                 <div style="font-size:10px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
-          : rawMasuk
+            ${rawMasuk
             ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${rawMasuk.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
             : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
@@ -625,21 +696,18 @@ function renderRekap(pg) {
           <!-- JAM PULANG -->
           <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
             ${IS_ADMIN ? (p._rawPulangLog || p._rawKetLog ? `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
+              <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Edit Log Pulang">✏️</button>
             ` : `
-              <button onclick="openLogEditor('${p.id}', '${_dari}', null, 'PULANG')" 
+              <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', null, 'PULANG')" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:var(--muted); cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
             `) : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
-            ${isKet
-          ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">—</div>
-                 <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
-          : rawPulang
+            ${rawPulang
             ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${rawPulang.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
             : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
@@ -648,6 +716,7 @@ function renderRekap(pg) {
             <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}</div>
           </div>
         </div>
+        `}
 
         <!-- ── BADGE STATUS BAWAH ── -->
         <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
@@ -674,6 +743,72 @@ function renderRekap(pg) {
           ${isAlpa ? `<span class="pbar-item" style="background:rgba(239,68,68,.15);color:var(--danger)">❌ TB</span>` : ''}
           ${terlambatMnt > 0 ? `<span class="pbar-item pb-total-akk" style="font-family:'JetBrains Mono',monospace">⏱ +${terlambatMnt}m</span>` : ''}
           ${cepatMnt > 0 ? `<span class="pbar-item pb-luar-pulang" style="font-family:'JetBrains Mono',monospace">🏃 -${cepatMnt}m</span>` : ''}
+        </div>
+
+        <!-- ── LOKASI DETAIL ── -->
+        <div class="lokasi-detail" onclick="event.stopPropagation()" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1); font-size:10px; color:var(--muted); text-align:left; line-height:1.4;">
+          ${(function() {
+            const parseLog = (log) => {
+              if(!log) return null;
+              let lat = parseFloat(log.latitude || log.Latitude || log.lat || '');
+              let lng = parseFloat(log.longitude || log.Longitude || log.lng || '');
+              const koor = log.koordinat || log.Koordinat || '';
+              if (koor && koor !== '-') {
+                const parts = koor.split(',');
+                if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
+              }
+              const loc = log.Lokasi || log.lokasi || '';
+              return { lat, lng, loc, raw: log };
+            };
+            const m = parseLog(p._rawMasukLog);
+            const pu = parseLog(p._rawPulangLog);
+            const k = parseLog(p._rawKetLog);
+            
+            let html = '';
+            const renderLocText = (title, color, loc) => {
+               if(!loc) return '';
+               return `<div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;"><strong style="color:${color}">${title}:</strong> <span style="color:rgba(255,255,255,.75)">${loc}</span></div>`;
+            };
+
+            const pins = [];
+            if (m && m.lat && m.lng) {
+              pins.push({ lat: m.lat, lng: m.lng, color: '#10b981', label: 'M' });
+              html += `<div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--success);font-weight:700;font-size:11px;">🟢 Masuk</div><a href="https://www.google.com/maps?q=${m.lat},${m.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
+              if(m.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${m.loc}</div>`;
+            } else if (m) {
+              html += renderLocText('🟢 Masuk', 'var(--success)', m.loc);
+            }
+
+            if (pu && pu.lat && pu.lng) {
+              pins.push({ lat: pu.lat, lng: pu.lng, color: '#3b82f6', label: 'P' });
+              html += `<div style="margin-bottom:4px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--info);font-weight:700;font-size:11px;">🔵 Pulang</div><a href="https://www.google.com/maps?q=${pu.lat},${pu.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
+              if(pu.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${pu.loc}</div>`;
+            } else if (pu) {
+              html += renderLocText('🔵 Pulang', 'var(--info)', pu.loc);
+            }
+
+            if (k) {
+               html += renderLocText('📝 Ket', masukColor, k.loc);
+            }
+
+            if (pins.length > 0) {
+              let linkUrl = pins.length === 2 
+                ? `https://www.google.com/maps/dir/${pins[0].lat},${pins[0].lng}/${pins[1].lat},${pins[1].lng}` 
+                : `https://www.google.com/maps?q=${pins[0].lat},${pins[0].lng}`;
+
+              html += `
+                <div style="margin-top:12px;display:flex;justify-content:center;">
+                  <a href="${linkUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:9px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:5px;padding:4px 10px;text-decoration:none;">
+                    📍 Buka Rute di Google Maps
+                  </a>
+                </div>
+                <div class="rekap-map-container" style="width:100%;height:160px;border-radius:10px;margin-top:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);"></div>
+              `;
+            }
+
+            if(!html) return `<div style="text-align:center;font-style:italic;opacity:0.6;padding:10px 0;">Tidak ada info lokasi GPS</div>`;
+            return html;
+          })()}
         </div>
 
         ${(function () {
@@ -767,7 +902,7 @@ function renderRekap(pg) {
             <div style="flex:1;min-width:0">
               <div class="pegawai-name">${nama}</div>
               ${jabatanStr}
-              <div class="pegawai-jabatan">NIP: ${nip} · ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+              <div class="pegawai-jabatan">NIP: ${nip} · ${p.pangkat || '—'} · ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
             </div>
           </div>
 
@@ -1027,3 +1162,34 @@ async function downloadRekap() {
   }
 }
 
+// Global function to toggle and initialize Leaflet map for each card
+window.toggleRekapMap = function(cardEl, pins) {
+  const d = cardEl.querySelector('.lokasi-detail'); 
+  if(!d) return;
+  const isHidden = d.style.display === 'none';
+  d.style.display = isHidden ? 'block' : 'none';
+  if (isHidden && window.L) {
+    const mc = d.querySelector('.rekap-map-container');
+    if (mc && !mc.dataset.init) {
+      mc.dataset.init = '1';
+      setTimeout(() => {
+        if(!pins || !pins.length) return;
+        const map = L.map(mc, { zoomControl: false });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+        const bounds = [];
+        pins.forEach(pin => {
+          bounds.push([pin.lat, pin.lng]);
+          L.marker([pin.lat, pin.lng], {
+            icon: L.divIcon({
+              className: 'custom-pin',
+              html: `<div style="background:${pin.color};width:24px;height:24px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);">${pin.label}</div>`,
+              iconSize: [24, 24], iconAnchor: [12, 12]
+            })
+          }).addTo(map);
+        });
+        if(bounds.length > 1) map.fitBounds(bounds, { padding: [20,20], maxZoom: 16 });
+        else map.setView(bounds[0], 16);
+      }, 100);
+    }
+  }
+};

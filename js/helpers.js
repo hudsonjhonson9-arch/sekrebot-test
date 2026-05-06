@@ -26,6 +26,7 @@
      * @returns {any} Nilai pertama yang ditemukan, atau undefined
      */
         function getField(r, ...keys) {
+      if (!r) return '';
       for (const k of keys) {
         if (r[k] !== undefined && r[k] !== null && r[k] !== '') return r[k];
       }
@@ -250,22 +251,27 @@
      */
     function getJabatanScore(j) {
       if (!j) return 0;
-      const s = String(j).toUpperCase();
-      // Level 1: Pimpinan Tertinggi
-      if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('KEPALA KANTOR') || s === 'KEPALA') return 100;
+      const s = String(j).toUpperCase().trim();
+      // Level 1: Pimpinan Tertinggi (Kepala Badan / Dinas / Inspektur)
+      if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('KEPALA KANTOR') || s.includes('KEPALA BAPPERIDA') || s.includes('KEPALA BAPPEDA') || s.includes('INSPEKTUR') || s === 'KEPALA') return 100;
+      if (s.startsWith('KEPALA ') && !s.includes('BIDANG') && !s.includes('SUB')) return 100;
+
       // Level 2: Sekretaris
       if (s.includes('SEKRETARIS')) return 90;
-      // Level 3: Kepala Bidang / Kabid
-      if (s.includes('KEPALA BIDANG') || s.includes('KABID')) return 80;
-      // Level 4: Pengawas / Sub-koordinator / Kasubag
-      if (s.includes('KASUBAG') || s.includes('KEPALA SUB') || s.includes('KETUA TIM') || s.includes('KOORDINATOR') || s.includes('SUB KOORDINATOR')) return 70;
-      // Level 5: Fungsional Ahli
-      if (s.includes('FUNGSIONAL') || s.includes('AHLI MUDA') || s.includes('AHLI MADYA') || s.includes('AHLI PERTAMA')) return 60;
-      // Level 6: Pelaksana / Staf
-      if (s.includes('STAF') || s.includes('PELAKSANA') || s.includes('ADMIN')) return 50;
-      // Level 7: Non-ASN / Kontrak
-      if (s.includes('NON ASN') || s.includes('HONORER') || s.includes('THL') || s.includes('KONTRAK') || s.includes('PRAMU')) return 40;
-      return 10;
+
+      // Level 3: Kepala Bidang / Kabid / Inspektur Pembantu / Irban
+      if (s.includes('KEPALA BIDANG') || s.includes('KABID') || s.includes('INSPEKTUR PEMBANTU') || s.includes('IRBAN')) return 80;
+
+      // Level 4: Pengawas / Kasubag / Kasubbid / Ketua Tim / Koordinator
+      if (s.includes('KASUBAG') || s.includes('KASUBBID') || s.includes('KEPALA SUB') || s.includes('KETUA TIM') || s.includes('KOORDINATOR') || s.includes('SUB KOORDINATOR') || s.includes('SUBKOR')) return 70;
+
+      // Level 5: Seluruh Staf / Pelaksana / Fungsional (PNS & PPPK)
+      if (s.includes('STAF') || s.includes('PELAKSANA') || s.includes('ADMIN') || s.includes('PERENCANA') || s.includes('ANALIS') || s.includes('PRANATA') || s.includes('PENELAAH') || s.includes('FASILITATOR') || s.includes('OPERATOR') || s.includes('PENATA LAYANAN') || s.includes('FUNGSIONAL') || s.includes('AHLI') || s.includes('DOKTER') || s.includes('GURU') || s.includes('BIDAN') || s.includes('PERAWAT')) return 50;
+      
+      // Level 6: Non-ASN / Kontrak / Pendukung
+      if (s.includes('NON ASN') || s.includes('HONORER') || s.includes('THL') || s.includes('KONTRAK') || s.includes('PRAMU') || s.includes('DRIVER') || s.includes('SOPIR') || s.includes('PENJAGA')) return 40;
+      
+      return 50;
     }
 
     /**
@@ -274,17 +280,39 @@
      * @returns {number} Skor 0-17
      */
     function getPangkatScore(p) {
-      if (!p) return 0;
-      const s = String(p).toUpperCase();
-      if (s.includes('IV/E')) return 17; if (s.includes('IV/D')) return 16;
-      if (s.includes('IV/C')) return 15; if (s.includes('IV/B')) return 14;
-      if (s.includes('IV/A')) return 13; if (s.includes('III/D')) return 12;
-      if (s.includes('III/C')) return 11; if (s.includes('III/B')) return 10;
-      if (s.includes('III/A')) return 9;  if (s.includes('II/D')) return 8;
-      if (s.includes('II/C')) return 7;  if (s.includes('II/B')) return 6;
-      if (s.includes('II/A')) return 5;  if (s.includes('I/D')) return 4;
-      if (s.includes('I/C')) return 3;  if (s.includes('I/B')) return 2;
-      if (s.includes('I/A')) return 1;
+      if (!p || p === '—') return 0;
+      // Normalisasi: hilangkan spasi, ganti titik/strip dengan slash, ke UPPERCASE
+      const s = String(p).toUpperCase().replace(/\s/g, '').replace(/[\.\-]/g, '/');
+      
+      // Level IV / Ahli Utama / Madya
+      if (s.includes('IV/E') || s.includes('GOL/XVII')) return 17;
+      if (s.includes('IV/D') || s.includes('GOL/XVI') || s.includes('AHLIUTAMA')) return 16;
+      if (s.includes('IV/C') || s.includes('GOL/XV')) return 15;
+      if (s.includes('IV/B') || s.includes('GOL/XIV')) return 14;
+      if (s.includes('IV/A') || s.includes('GOL/XIII') || s.includes('AHLIMADYA')) return 13;
+      
+      // Level III / Ahli Muda / Pertama
+      if (s.includes('III/D') || s.includes('GOL/XII')) return 12;
+      if (s.includes('III/C') || s.includes('GOL/XI') || s.includes('AHLIMUDA')) return 11;
+      if (s.includes('III/B') || s.includes('GOL/X')) return 10;
+      if (s.includes('III/A') || s.includes('GOL/IX') || s.includes('AHLIPERTAMA')) return 9;
+      
+      // Level II / Penyelia / Mahir / Terampil
+      if (s.includes('II/D') || s.includes('GOL/VIII') || s.includes('PENYELIA')) return 8;
+      if (s.includes('II/C') || s.includes('GOL/VII') || s.includes('MAHIR')) return 7;
+      if (s.includes('II/B') || s.includes('GOL/VI')) return 6;
+      if (s.includes('II/A') || s.includes('GOL/V') || s.includes('TERAMPIL')) return 5;
+      
+      // Level I
+      if (s.includes('I/D') || s.includes('GOL/IV')) return 4;
+      if (s.includes('I/C') || s.includes('GOL/III')) return 3;
+      if (s.includes('I/B') || s.includes('GOL/II')) return 2;
+      if (s.includes('I/A') || s.includes('GOL/I')) return 1;
+      
+      // Fallback untuk pencocokan kata kunci dasar jika normalisasi di atas tidak kena
+      const raw = String(p).toUpperCase();
+      if (raw.includes('III/A') || raw.includes('GOLONGAN IX') || raw.includes('AHLI PERTAMA')) return 9;
+      
       return 0;
     }
 

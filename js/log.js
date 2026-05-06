@@ -14,7 +14,15 @@
       const res = await apiGet(`${P.log}?user_id=${userId || ''}`);
       if (!res.ok) throw new Error('Fetch gagal');
       let rows = res.rows ?? [];
-      if (userId) { rows = rows.filter(r => Number(getField(r, 'ID', 'id')) === userId); }
+      // Server already filters by user_id; client-side guard checks telegram_id fields
+      if (userId) {
+        rows = rows.filter(r => {
+          const tid = Number(r.telegram_id || r.user_id || r.ID_User || r.id_user || 0);
+          const rid = Number(r.id || r.ID || 0);
+          // Keep row if telegram_id matches OR if server already filtered (all rows belong to user)
+          return tid === userId || tid === 0; // tid===0 means field missing → trust server filter
+        });
+      }
       rows.sort((a, b) => {
         const ta = getField(a, 'Tanggal', 'tanggal'), tb = getField(b, 'Tanggal', 'tanggal');
         if (ta !== tb) return tb.localeCompare(ta);
@@ -81,8 +89,6 @@
       const HARI_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
       const BULAN_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-      // GPS cache keyed by date for map modal
-      window._logGpsCache = {};
       el.innerHTML = Object.entries(byDate).map(([tgl, rows]) => {
         // ── Jam batas per tanggal (periode khusus atau global) ──
         const _jamTgl = getJamForTanggal(tgl);
@@ -122,20 +128,21 @@
         const lokasi = (lokasiRaw || '').trim() || '—';
 
         // GPS koordinat masuk & pulang
-        const _latM  = parseFloat(getField(rMasuk,  'latitude',  'Latitude',  'lat') || '') || null;
-        const _lngM  = parseFloat(getField(rMasuk,  'longitude', 'Longitude', 'lng') || '') || null;
-        const _latP  = parseFloat(getField(rPulang, 'latitude',  'Latitude',  'lat') || '') || null;
-        const _lngP  = parseFloat(getField(rPulang, 'longitude', 'Longitude', 'lng') || '') || null;
+        const parseKoor = (r) => {
+          let lat = parseFloat(getField(r, 'latitude', 'Latitude', 'lat') || '');
+          let lng = parseFloat(getField(r, 'longitude', 'Longitude', 'lng') || '');
+          const koor = getField(r, 'koordinat', 'Koordinat');
+          if (koor) {
+            const parts = koor.split(',');
+            if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
+          }
+          return (lat && lng) ? {lat, lng} : null;
+        };
+        const gpsM = parseKoor(rMasuk);
+        const gpsP = parseKoor(rPulang);
+        const _latM  = gpsM?.lat || null, _lngM = gpsM?.lng || null;
+        const _latP  = gpsP?.lat || null, _lngP = gpsP?.lng || null;
         const _hasGps = (_latM && _lngM) || (_latP && _lngP);
-        if (_hasGps) {
-          window._logGpsCache[tgl] = {
-            masuk:  _latM && _lngM ? { lat: _latM, lng: _lngM, jam: jamMasuk  } : null,
-            pulang: _latP && _lngP ? { lat: _latP, lng: _lngP, jam: jamPulang } : null,
-            lokasi, tgl: tglLabel
-          };
-        }
-
-        // GPS koordinat masuk & pulang (dari kolom latitude/longitude di Supabase)
 
         // Encode GPS data ke data-attribute untuk ditangkap onclick
         const _gpsAttr = _hasGps ? JSON.stringify({
@@ -194,9 +201,6 @@
           ? `${ketTglMulai} s.d. ${ketTglSelesai} <span style="font-weight:700;color:${masukColor}">(${ketDurasi} hari)</span>`
           : ketTglMulai || '';
 
-        // ── Inline map ID for this day ──
-        const _mapId = 'logMap_' + tgl.replace(/-/g, '');
-
         return `<div class="log-item" style="display:block;padding:0;border-color:${cardBorder};position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTop}"></div>
 
@@ -210,24 +214,20 @@
         <div style="font-size:16px">${masukIcon}</div>
       </div>
 
-      <!-- ── KETERANGAN: tampilan gabungan full-width ── -->
       ${isKet ? `
+      <!-- ── KETERANGAN: satu kotak penuh ── -->
       <div style="margin:0 10px 8px;background:${masukBg};border:1px solid ${masukColor}44;border-radius:10px;padding:10px 12px">
-        <!-- Jenis + ikon -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:10px">
           <div style="font-size:22px;line-height:1">${masukIcon}</div>
-          <div>
-            <div style="font-size:11px;font-weight:800;color:${masukColor}">${masukLabel}</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:1px;text-transform:uppercase;letter-spacing:.05em">${ketJenis || 'Keterangan'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:800;color:${masukColor}">${masukLabel}</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.05em">${ketJenis || 'Keterangan'}</div>
+            ${ketTglRange ? `<div style="font-size:8.5px;color:var(--muted);margin-top:4px">📅 ${ketTglRange}</div>` : ''}
+            ${ketTeks ? `<div style="font-size:9px;color:rgba(255,255,255,.75);margin-top:5px;line-height:1.5;background:rgba(0,0,0,.2);border-radius:6px;padding:5px 8px;white-space:pre-wrap">${ketTeks}</div>` : ''}
           </div>
         </div>
-        <!-- Tanggal range (jika multi-hari) -->
-        ${ketTglRange ? `<div style="font-size:8.5px;color:var(--muted);margin-bottom:5px">📅 ${ketTglRange}</div>` : ''}
-        <!-- Teks keterangan -->
-        ${ketTeks ? `<div style="font-size:9px;color:rgba(255,255,255,.75);line-height:1.5;background:rgba(0,0,0,.2);border-radius:6px;padding:6px 8px;white-space:pre-wrap">${ketTeks}</div>` : '<div style="font-size:9px;color:var(--muted);font-style:italic">Tidak ada keterangan tambahan.</div>'}
-      </div>
-      ` : `
-      <!-- ── NORMAL: Grid jam masuk/pulang ── -->
+      </div>` : `
+      <!-- ── NORMAL: 2 kotak masuk / pulang ── -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 10px 8px">
         <div style="background:${masukBg};border:1px solid ${masukColor}44;border-radius:9px;padding:7px 9px">
           <div style="font-size:7.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">🟢 Jam Masuk</div>
@@ -241,33 +241,27 @@
           <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:2px">${pulangIcon} ${pulangLabel}</div>
           <div style="font-size:7.5px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}${periodeNama ? '' : ' (Global)'}</div>
         </div>
-      </div>
-      `}
+      </div>`}
 
-      <!-- Footer: lokasi + tombol peta -->
-      <div style="padding:0 10px 9px;display:flex;flex-direction:column;gap:3px">
+      <!-- Footer: lokasi + koordinat maps -->
+      <div style="padding:0 10px 9px;display:flex;flex-direction:column;gap:4px">
         <div style="font-size:9px;color:var(--muted);display:flex;align-items:center;gap:5px">
           <span>📍</span>
           <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lokasi}</span>
-          ${_hasGps ? `<button onclick="_showLogMap('${tgl}','${_mapId}')" style="flex-shrink:0;font-size:8px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);border-radius:5px;padding:2px 7px;cursor:pointer" id="btn_${_mapId}">🗺️ Peta</button>` : ''}
         </div>
+        ${_hasGps ? `<div style="display:flex;gap:5px;flex-wrap:wrap">
+          ${_latM && _lngM ? `<a href="https://www.google.com/maps?q=${_latM},${_lngM}" target="_blank" rel="noopener"
+            style="display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:700;color:#22c55e;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:5px;padding:3px 8px;text-decoration:none">
+            <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0"></span>
+            Masuk${jamMasuk ? ' ' + jamMasuk.slice(0,5) : ''} ↗
+          </a>` : ''}
+          ${_latP && _lngP ? `<a href="https://www.google.com/maps?q=${_latP},${_lngP}" target="_blank" rel="noopener"
+            style="display:inline-flex;align-items:center;gap:4px;font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none">
+            <span style="width:6px;height:6px;border-radius:50%;background:#60a5fa;flex-shrink:0"></span>
+            Pulang${jamPulang ? ' ' + jamPulang.slice(0,5) : ''} ↗
+          </a>` : ''}
+        </div>` : ''}
       </div>
-
-      <!-- ── Inline map (tersembunyi, muncul di bawah kartu saat tombol Peta ditekan) ── -->
-      ${_hasGps ? `<div id="${_mapId}" style="display:none;border-top:1px solid rgba(255,255,255,.08)">
-        <!-- Legend -->
-        <div style="display:flex;gap:10px;padding:8px 12px 4px">
-          ${_latM && _lngM ? `<div style="display:flex;align-items:center;gap:4px;font-size:8.5px;color:var(--muted)"><div style="width:9px;height:9px;border-radius:50%;background:#22c55e"></div>Masuk${jamMasuk ? ' ' + jamMasuk.slice(0,5) : ''}</div>` : ''}
-          ${_latP && _lngP ? `<div style="display:flex;align-items:center;gap:4px;font-size:8.5px;color:var(--muted)"><div style="width:9px;height:9px;border-radius:50%;background:#60a5fa"></div>Pulang${jamPulang ? ' ' + jamPulang.slice(0,5) : ''}</div>` : ''}
-        </div>
-        <!-- Map tile -->
-        <div id="${_mapId}_tile" style="width:100%;height:220px"></div>
-        <!-- Coord buttons -->
-        <div style="display:flex;gap:6px;padding:8px 12px 12px;flex-wrap:wrap">
-          ${_latM && _lngM ? `<button onclick="_openGoogleMaps(${_latM},${_lngM})" style="font-size:8px;font-weight:700;color:#22c55e;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 10px;cursor:pointer">🟢 Buka Masuk di Maps</button>` : ''}
-          ${_latP && _lngP ? `<button onclick="_openGoogleMaps(${_latP},${_lngP})" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:4px 10px;cursor:pointer">🔵 Buka Pulang di Maps</button>` : ''}
-        </div>
-      </div>` : ''}
 
     </div>`;
       }).join('');
@@ -424,141 +418,3 @@
       });
       renderLog(filtered);
     }
-
-
-    /* ════ LOG MAP MODAL ════ */
-
-    const _logMapInstances = {};  // { mapId: true } — tracker kartu yang sedang terbuka
-
-    /**
-     * Toggle peta inline di bawah kartu log harian.
-     * @param {string} tgl   - Tanggal YYYY-MM-DD (key ke _logGpsCache)
-     * @param {string} mapId - ID elemen map wrapper di dalam kartu
-     */
-    function _showLogMap(tgl, mapId) {
-      const gps = window._logGpsCache && window._logGpsCache[tgl];
-      if (!gps) return;
-
-      const wrapper = document.getElementById(mapId);
-      if (!wrapper) return;
-
-      const btn = document.getElementById('btn_' + mapId);
-      const isOpen = wrapper.style.display !== 'none';
-
-      if (isOpen) {
-        // ── Tutup ──
-        wrapper.style.display = 'none';
-        if (btn) btn.textContent = '🗺️ Peta';
-        // Google Maps Static = hanya <img>, cukup kosongkan innerHTML
-        const tileEl = document.getElementById(mapId + '_tile');
-        if (tileEl) tileEl.innerHTML = '';
-        delete _logMapInstances[mapId];
-        return;
-      }
-
-      // ── Buka ──
-      wrapper.style.display = 'block';
-      if (btn) btn.textContent = '✕ Tutup Peta';
-
-      // Render map setelah div visible (butuh ukuran DOM valid)
-      setTimeout(() => _initInlineLogMap(mapId, gps), 80);
-    }
-
-    /**
-     * Render Google Maps Static API image inline di dalam kartu log.
-     * Tidak perlu JS SDK — cukup <img> dengan URL Static Maps.
-     * Jika ada 2 titik, gambar garis putus-putus + 2 marker berwarna.
-     */
-    function _initInlineLogMap(mapId, gps) {
-      const tileEl = document.getElementById(mapId + '_tile');
-      if (!tileEl) return;
-
-      const pts = [];
-      if (gps.masuk)  pts.push({ ...gps.masuk,  color: '0xDC2626', label: 'M' }); // merah
-      if (gps.pulang) pts.push({ ...gps.pulang, color: '0x2563EB', label: 'P' }); // biru
-
-      if (!pts.length) return;
-
-      // ── Hitung center & zoom otomatis ──
-      const avgLat = pts.reduce((s, p) => s + p.lat, 0) / pts.length;
-      const avgLng = pts.reduce((s, p) => s + p.lng, 0) / pts.length;
-
-      // Zoom: 16 untuk 1 titik, 15 jika jarak dekat, lebih kecil jika jauh
-      let zoom = 17;
-      if (pts.length === 2) {
-        const dlat = Math.abs(pts[0].lat - pts[1].lat);
-        const dlng = Math.abs(pts[0].lng - pts[1].lng);
-        const maxD = Math.max(dlat, dlng);
-        zoom = maxD < 0.002 ? 16 : maxD < 0.01 ? 14 : maxD < 0.05 ? 12 : 10;
-      }
-
-      // ── Bangun URL Google Maps Static API ──
-      // Gunakan style dark agar match dengan tema app
-      const W = tileEl.offsetWidth || 360;
-      const H = 220;
-      const scale = window.devicePixelRatio >= 2 ? 2 : 1;
-
-      const markerParams = pts.map(p =>
-        `markers=color:${p.color}%7Clabel:${p.label}%7C${p.lat},${p.lng}`
-      ).join('&');
-
-      // Garis antara dua titik (path)
-      const pathParam = pts.length === 2
-        ? `&path=color:0xFFFFFF44%7Cweight:2%7C${pts[0].lat},${pts[0].lng}%7C${pts[1].lat},${pts[1].lng}`
-        : '';
-
-      // Style dark map (Google Maps JSON styling)
-      const darkStyle = [
-        'style=element:geometry%7Ccolor:0x212121',
-        'style=element:labels.icon%7Cvisibility:off',
-        'style=element:labels.text.fill%7Ccolor:0x757575',
-        'style=element:labels.text.stroke%7Ccolor:0x212121',
-        'style=feature:road%7Celement:geometry%7Ccolor:0x383838',
-        'style=feature:road.arterial%7Celement:geometry%7Ccolor:0x373737',
-        'style=feature:water%7Celement:geometry%7Ccolor:0x000000',
-        'style=feature:poi%7Celement:geometry%7Ccolor:0x181818',
-      ].join('&');
-
-      const staticUrl = `https://maps.googleapis.com/maps/api/staticmap`
-        + `?center=${avgLat},${avgLng}&zoom=${zoom}&size=${W}x${H}&scale=${scale}`
-        + `&maptype=roadmap&${markerParams}${pathParam}`
-        + `&${darkStyle}`
-        + `&key=AIzaSyD-placeholder`; // ← Ganti dengan Google Maps API Key
-
-      // ── Render: img Static Map + link buka di Google Maps ──
-      // Hitung link buka di Google Maps (semua titik)
-      const mapsLink = pts.length === 2
-        ? `https://www.google.com/maps/dir/${pts[0].lat},${pts[0].lng}/${pts[1].lat},${pts[1].lng}`
-        : `https://www.google.com/maps?q=${pts[0].lat},${pts[0].lng}`;
-
-      tileEl.innerHTML = `
-        <a href="${mapsLink}" target="_blank" rel="noopener" style="display:block;position:relative;cursor:pointer">
-          <img src="${staticUrl}" alt="Peta lokasi absen"
-            style="width:100%;height:${H}px;object-fit:cover;display:block"
-            onerror="this.parentElement.outerHTML=_mapFallback(${avgLat},${avgLng},'${mapsLink}')" />
-          <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:3px 8px;font-size:9px;font-weight:700;color:#fff">
-            🗺️ Buka Google Maps ↗
-          </div>
-        </a>`;
-    }
-
-    /**
-     * Fallback jika Static Maps gagal (API key belum diset / quota habis):
-     * Tampilkan iframe Google Maps Embed (tidak perlu API key untuk mode dasar).
-     */
-    function _mapFallback(lat, lng, mapsLink) {
-      return `<div style="height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#111;color:var(--muted)">
-        <div style="font-size:20px">🗺️</div>
-        <div style="font-size:10px;text-align:center;padding:0 16px">Peta tidak dapat dimuat.<br>Buka langsung di Google Maps.</div>
-        <a href="${mapsLink}" target="_blank" rel="noopener"
-          style="font-size:9px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);border-radius:6px;padding:5px 12px;text-decoration:none">
-          Buka di Google Maps ↗
-        </a>
-      </div>`;
-    }
-
-    /** Buka koordinat di Google Maps */
-    function _openGoogleMaps(lat, lng) {
-      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
-    }
-

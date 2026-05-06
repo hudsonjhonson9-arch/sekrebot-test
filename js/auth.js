@@ -52,7 +52,9 @@
 
           // Login Success
           MY_ID = user.telegram_id || user.id;
+          const userNip = String(user.nip || '').trim();
           localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
+          localStorage.setItem('MY_NIP', userNip); // Store NIP as primary key
           localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
           location.reload(); // Refresh to init with new ID
         } else {
@@ -74,6 +76,7 @@
 
           MY_ID = payload.telegram_id;
           localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
+          localStorage.setItem('MY_NIP', String(payload.nip));
           location.reload();
         }
       } catch (err) {

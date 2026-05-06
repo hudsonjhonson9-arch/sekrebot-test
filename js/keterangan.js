@@ -179,6 +179,7 @@
       }
       setBtnL('btnKet', true, 'Mengirim...');
       const payload = {
+        nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
         user: {
           id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
           nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''

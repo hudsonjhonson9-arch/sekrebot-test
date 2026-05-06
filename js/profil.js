@@ -192,22 +192,50 @@
           'SK': '📜', 'SKEP': '📜', 'IJAZAH': '🎓', 'SERTIFIKAT': '🏅',
           'SKP': '📊', 'FOTO': '🖼️', 'KTP': '🪪', 'DEFAULT': '📄'
         };
-        el.innerHTML = docs.map(d => {
+        // Simpan base64 ke cache global agar onclick bisa akses tanpa DOM encoding
+        window._dokCache = {};
+        el.innerHTML = docs.map((d, idx) => {
           const nama = d.nama_dokumen || d.nama || d.name || 'Dokumen';
-          const link = d.link || d.webViewLink || d.url || '#';
+          const link = d.link || d.webViewLink || d.url || '';
           const jenis = (d.jenis || d.kategori || 'DEFAULT').toUpperCase();
           const icon = JENIS_ICON[jenis] || JENIS_ICON['DEFAULT'];
           const tanggal = d.tanggal || d.uploadedAt || '';
           const id = d.id || '';
           const namaEsc = nama.replace(/'/g, "\'");
+
+          // Deteksi tipe konten: base64 atau link eksternal
+          const b64    = d.file_base64 || d.base64 || d.content || '';
+          const mime   = d.mime_type || d.mime || (b64.startsWith('/9j/') ? 'image/jpeg' : 'application/octet-stream');
+          const isPdf  = mime.includes('pdf') || (link && link.endsWith('.pdf'));
+          const isImg  = mime.startsWith('image/') || ['FOTO','KTP'].includes(jenis);
+          const hasB64 = b64.length > 100;
+          const cacheKey = 'dok_' + idx;
+
+          if (hasB64) window._dokCache[cacheKey] = { b64, mime, nama };
+
+          // Buat href: data-uri jika base64, link jika ada URL, '#' jika tidak ada
+          const href = hasB64
+            ? null   // dibuka via JS onclick (Base64 Blob URL)
+            : (link && link !== '#' ? link : null);
+
+          const openAttr = hasB64
+            ? `onclick="_openDokBase64('${cacheKey}')" style="cursor:pointer"`
+            : href
+              ? `href="${href}" target="_blank" rel="noopener"`
+              : `onclick="alert('Dokumen belum memiliki file atau link.')" style="cursor:pointer"`;
+
+          const arrowIcon = hasB64
+            ? (isPdf ? '📄' : isImg ? '🖼️' : '↗')
+            : (href ? '↗' : '—');
+
           return `<div class="dokumen-item" style="cursor:default">
-        <a href="${link}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:10px;flex:1;text-decoration:none;min-width:0">
+        <a ${openAttr} style="display:flex;align-items:center;gap:10px;flex:1;text-decoration:none;min-width:0">
           <div class="dokumen-icon">${icon}</div>
           <div class="dokumen-info">
             <div class="dokumen-nama">${nama}</div>
-            <div class="dokumen-meta">${jenis}${tanggal ? ' · ' + tanggal : ''}</div>
+            <div class="dokumen-meta">${jenis}${tanggal ? ' · ' + tanggal : ''}${hasB64 ? ' · ' + (isPdf ? 'PDF' : isImg ? 'Gambar' : 'File') : ''}</div>
           </div>
-          <div class="dokumen-arrow">↗</div>
+          <div class="dokumen-arrow">${arrowIcon}</div>
         </a>
         <button class="dokumen-del" onclick="hapusDokumen('${id}','${namaEsc}')" title="Hapus">🗑️</button>
       </div>`;
@@ -304,3 +332,49 @@ File di Google Drive juga akan dihapus.`)) return;
 
     function setT(id, v) { const e = $(id); if (e) e.textContent = v; }
 
+
+    /* ════ DOKUMEN — BUKA BASE64 FILE ════ */
+
+    /**
+     * Buka dokumen base64 (PDF / gambar) di tab baru via Blob URL.
+     * Tidak perlu server — file dibuka langsung dari data yang ada di cache.
+     * @param {string} key - Key ke window._dokCache
+     */
+    function _openDokBase64(key) {
+      const item = window._dokCache && window._dokCache[key];
+      if (!item || !item.b64) {
+        alert('Data dokumen tidak tersedia. Coba refresh halaman.');
+        return;
+      }
+
+      try {
+        // Decode base64 → Uint8Array → Blob → Blob URL
+        const binary = atob(item.b64);
+        const bytes  = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+        const blob    = new Blob([bytes], { type: item.mime || 'application/octet-stream' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Buka di tab baru
+        const a = document.createElement('a');
+        a.href   = blobUrl;
+        a.target = '_blank';
+        a.rel    = 'noopener';
+        // Untuk PDF: browser otomatis menampilkan; untuk gambar: ditampilkan inline
+        // Untuk file lain: trigger download dengan nama asli
+        const isPdf = (item.mime || '').includes('pdf');
+        const isImg = (item.mime || '').startsWith('image/');
+        if (!isPdf && !isImg) a.download = item.nama || 'dokumen';
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Revoke setelah 60 detik agar tidak bocor memori
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (e) {
+        console.error('[Dokumen] Gagal membuka base64:', e);
+        alert('Gagal membuka dokumen. Format base64 tidak valid.');
+      }
+    }

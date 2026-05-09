@@ -786,8 +786,8 @@
         overlay.style.pointerEvents = 'auto';
       }
       $('modelLoading').style.display = 'block';
-      if ($('mlTitle')) $('mlTitle').textContent = 'Memuat Model AI Deteksi Wajah'; // Reset Judul Loading
-      if ($('mlHint')) $('mlHint').textContent = 'Harap tunggu sebentar...';
+      if ($('mlTitle')) $('mlTitle').textContent = _modelsReady ? '📷 Membuka Kamera...' : 'Memuat Model AI Deteksi Wajah'; // Dynamic title
+      if ($('mlHint')) $('mlHint').textContent = _modelsReady ? 'Mengaktifkan sensor perangkat, harap tunggu...' : 'Harap tunggu sebentar...';
       $('camVideoWrap').style.display = 'none';
       $('camStatus').style.display = 'none';
       $('faceRegCard').style.display = 'none';

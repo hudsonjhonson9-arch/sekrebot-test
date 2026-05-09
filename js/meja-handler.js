@@ -68,16 +68,18 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
     return;
   }
 
-  // JIKA WAJAH DIKENAL
-  const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: '-' };
-  const score = Math.max(0, Math.round((distance || 0) * 100)); // Arg 'distance' is now passing similarity score (0-1)
+  // JIKA WAJAH DIKENAL (telegramId sekarang berisi NIP dari meja.js)
+  const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: telegramId };
+  const score = Math.max(0, Math.round((distance || 0) * 100));
 
-  $('moIcon').textContent = '⏳';
-  $('moNama').textContent = user.nama;
-  $('moStatus').textContent = 'MEMERIKSA STATUS...';
-  $('moStatus').style.color = 'var(--gold)';
-  $('moStatus').style.background = 'rgba(201,168,76,0.2)';
-  $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
+  if ($('moIcon')) $('moIcon').textContent = '⏳';
+  if ($('moNama')) $('moNama').textContent = user.nama;
+  if ($('moStatus')) {
+    $('moStatus').textContent = 'MEMERIKSA STATUS...';
+    $('moStatus').style.color = 'var(--gold)';
+    $('moStatus').style.background = 'rgba(201,168,76,0.2)';
+  }
+  if ($('moDetail')) $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
 
   // ── START SUBMISSION PROCESS ──
   _isSubmitting = true; 
@@ -86,7 +88,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   try {
     const n = nowWITA();
     const payload = {
-      telegram_id: telegramId,
+      telegram_id: user.telegram_id || '', // Tetap kirim telegram_id jika ada
       nama: user.nama,
       nip: user.nip,
       pangkat: user.pangkat || '',
@@ -102,9 +104,11 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
       source: 'meja_absen'
     };
 
-    console.log('[Meja] Sending Payload to n8n:', payload);
+    // Paksa NIP masuk ke URL query agar n8n lebih mudah memproses
+    const targetPath = P.absen + (P.absen.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(user.nip);
+    console.log('[Meja] Sending Payload to n8n:', targetPath, payload);
 
-    const { ok: mejaOk, data: d } = await apiPost(P.absen, payload);
+    const { ok: mejaOk, data: d } = await apiPost(targetPath, payload);
     console.log('[Meja] Server Response:', { mejaOk, data: d });
 
     if (mejaOk && d && d.ok !== false && d.validasi?.is_valid !== false) {

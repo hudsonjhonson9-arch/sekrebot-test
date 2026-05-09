@@ -117,17 +117,19 @@
           let desc;
           try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
+          const nip = String(f.nip || f.NIP || tid); // Prioritaskan NIP sebagai ID matching
           const dLen = desc.length;
 
-          window._mejaUserMap[tid] = {
+          window._mejaUserMap[nip] = {
             nama: f.nama || f.Nama || tid,
-            nip: f.nip || f.NIP || '-',
+            nip: nip,
             pangkat: f.pangkat || '',
+            telegram_id: f.telegram_id || f.id || '',
             engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
             dim: dLen
           };
 
-          return { id: tid, descriptor: desc, engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi') };
+          return { id: nip, descriptor: desc, engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi') };
         });
 
         if (!_allFaceDescriptors.length) {

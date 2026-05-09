@@ -74,10 +74,10 @@
 
       $('moIcon').textContent = '⏳';
       $('moNama').textContent = user.nama;
-      $('moStatus').innerHTML = '<span class="spinner-mini"></span> MEMERIKSA STATUS...';
+      $('moStatus').textContent = 'MEMERIKSA STATUS...';
       $('moStatus').style.color = 'var(--gold)';
       $('moStatus').style.background = 'rgba(201,168,76,0.2)';
-      $('moDetail').textContent = `Verifikasi AI: ${score}%`;
+      $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
 
       _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 

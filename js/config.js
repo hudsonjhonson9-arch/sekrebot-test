@@ -199,17 +199,12 @@
       for (const base of [SERVER_1, SERVER_2]) {
         try {
           console.log(`[Fetch] Attempting: ${base}${path}`);
-          const ctrl = new AbortController();
-          const tid = setTimeout(() => ctrl.abort(), 15000); // 15s Timeout
-
-          const fetchOpts = { ...opts, signal: ctrl.signal };
+          const fetchOpts = { ...opts };
           fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
           if (opts.method === 'GET' || !opts.body) {
               delete fetchOpts.headers['Content-Type'];
           }
           const r = await fetch(base + path, fetchOpts);
-          clearTimeout(tid);
-
           if (r.ok || (r.status >= 400 && r.status < 500)) {
             console.log(`[Fetch] Success: ${base}${path}`);
             return r;

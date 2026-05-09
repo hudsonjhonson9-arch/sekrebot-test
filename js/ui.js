@@ -52,10 +52,16 @@
 
 
     async function checkHumanJsCache() {
-      const cached = await idb.get('master_data', 'human_script');
       const statusEl = $('humanJsStatus');
       const btnEl = $('btnDownloadHumanJs');
       if (statusEl) statusEl.textContent = 'Memeriksa...';
+
+      let cached = null;
+      try {
+        cached = await idb.get('master_data', 'human_script');
+      } catch (e) {
+        console.warn('Gagal memeriksa cache Human.js:', e);
+      }
 
       if (cached && cached.blob) {
         if (statusEl) { statusEl.textContent = '✅ Tersedia (Offline Ready)'; statusEl.style.color = 'var(--success)'; }

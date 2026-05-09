@@ -823,42 +823,30 @@
       let stream = null;
       const isPortrait = window.innerHeight > window.innerWidth;
       
-      // Tier 1: Optimized Wide View (Native Sensor Ratio)
       try {
-        console.log('[AI] Camera Tier 1: Optimized Wide View');
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: isPortrait ? 768 : 1024 },
-            height: { ideal: isPortrait ? 1024 : 768 },
-            aspectRatio: { ideal: isPortrait ? 0.75 : 1.3333333333 }
-          }
-        });
+        console.log('[AI] Camera Initialization: Fast Constraint');
+        const constraints = { video: { facingMode: 'user' } };
+        
+        // Pada perangkat mobile, meminta constraint resolusi spesifik seringkali 
+        // membuat browser bernegosiasi terlalu lama dengan hardware (menambah delay 2-4 detik).
+        // Jadi kita hanya request resolusi tinggi di desktop.
+        if (!_isMobileDevice()) {
+          constraints.video.width = { ideal: isPortrait ? 768 : 1024 };
+          constraints.video.height = { ideal: isPortrait ? 1024 : 768 };
+        }
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (e1) {
-        console.warn('[AI] Tier 1 Failed:', e1.name);
-        // Tier 2: Standard Mobile HD (More compatible across devices)
+        console.warn('[AI] Fast Constraint Failed:', e1.name);
         try {
-          console.log('[AI] Camera Tier 2: Standard Mobile HD');
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'user',
-              width: { ideal: isPortrait ? 720 : 1280 },
-              height: { ideal: isPortrait ? 1280 : 720 }
-            }
-          });
+          console.log('[AI] Camera Fallback: Basic');
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
         } catch (e2) {
-          console.warn('[AI] Tier 2 Failed:', e2.name);
-          // Tier 3: Absolute Fallback (Most compatible)
-          try {
-            console.log('[AI] Camera Tier 3: Absolute Fallback');
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          } catch (e3) {
-            console.error('[AI] All camera tiers failed:', e3);
-            $('modelLoading').style.display = 'block';
-            if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
-            if ($('mlHint')) $('mlHint').innerHTML = `<span style="color:var(--danger)">Gagal mengakses kamera: ${e3.name || 'Unknown Error'}.<br>Pastikan izin kamera sudah diberikan.</span>`;
-            return;
-          }
+          console.error('[AI] All camera tiers failed:', e2);
+          $('modelLoading').style.display = 'block';
+          if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
+          if ($('mlHint')) $('mlHint').innerHTML = `<span style="color:var(--danger)">Gagal mengakses kamera: ${e2.name || 'Unknown Error'}.<br>Pastikan izin kamera sudah diberikan.</span>`;
+          return;
         }
       }
 

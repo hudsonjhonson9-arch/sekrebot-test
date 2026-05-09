@@ -69,16 +69,28 @@
       _updateMejaCnt();
 
       const btn = $('btnMejaAbsen');
-      if (btn) { btn.disabled = true; $('btnMejaText').textContent = '⏳ Memuat Data...'; }
-      _setMejaStatus('processing', '⏳', 'Sinkronisasi Sistem...', 'Memuat data & lokasi');
+      if (btn) btn.style.display = 'none';
+      const btnStop = $('btnMejaStop');
+      if (btnStop) btnStop.style.display = 'flex';
 
-      // 1 & 2. Optimasi: Ambil GPS dan Database secara PARALEL untuk kecepatan maksimal
-      try {
-        const [gps, res] = await Promise.all([
-          _getMejaGps(),
-          apiGet(P.faceGetAll)
-        ]);
+      window._isMejaMode = true; // Set Global State
+      window._aiEngine = 'human'; // Force Human-AI for matching accuracy
+      _isMejaAbsen = true;
 
+      _setMejaStatus('processing', '⏳', 'Memuat Database & GPS...', 'Membuka kamera');
+
+      // 1. LANGSUNG BUKA KAMERA (Non-Blocking)
+      // Kamera butuh waktu 1-3 detik untuk menyala di HP, jadi kita lakukan paralel dengan fetch data
+      openCamOverlay('meja');
+      if ($('btnCapture')) $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
+      if ($('livenessMini')) $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
+      if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Menyiapkan Meja Absen...';
+
+      // 2. FETCH GPS DAN DATA WAJAH DI BACKGROUND
+      Promise.all([
+        _getMejaGps(),
+        apiGet(P.faceGetAll)
+      ]).then(([gps, res]) => {
         _mejaGpsLocation = gps;
         const locEl = $('mejaLocVal');
         const accEl = $('mejaLocAccuracy');
@@ -99,12 +111,6 @@
           let desc;
           try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { return false; }
           const dLen = Array.isArray(desc) ? desc.length : 0;
-
-          // Enhanced Matching logic for 1024 dimensions
-          const isHumanData = (f.face_model === 'human' || dLen >= 512);
-          const isFaceApiData = (f.face_model === 'faceapi' || dLen === 128);
-
-          // Allow all for visibility, we handle mismatch in matching loop
           return dLen === 128 || dLen === 512 || dLen === 1024;
         }).map(f => {
           const rawDesc = f.face_histogram || f.descriptor;
@@ -126,30 +132,18 @@
 
         if (!_allFaceDescriptors.length) {
           _setMejaStatus('idle', '⚠️', 'Tidak Ada Data Wajah', 'Daftarkan wajah pegawai terlebih dahulu');
-          if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
+          stopMejaAbsen();
           return;
         }
 
-        window._isMejaMode = true; // Set Global State
-        window._aiEngine = 'human'; // Force Human-AI for matching accuracy
-        _isMejaAbsen = true;
-
         _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
+        if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
 
-        if (btn) btn.style.display = 'none';
-        const btnStop = $('btnMejaStop');
-        if (btnStop) btnStop.style.display = 'flex';
-
-        // Buka Kamera
-        openCamOverlay('meja');
-        $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
-        $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
-        $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
-
-      } catch (e) {
+      }).catch(e => {
+        console.error('[Meja] Gagal inisialisasi background:', e);
         _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
-        if (btn) { btn.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
-      }
+        stopMejaAbsen();
+      });
     }
 
     /**

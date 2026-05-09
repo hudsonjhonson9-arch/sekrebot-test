@@ -297,8 +297,9 @@
       }
 
       // Thresholding (0.55 for similarity is standard for Human)
-      // PENTING: Untuk Meja Absen (1:N), gunakan threshold 0.55 agar lebih toleran terhadap noise
-      const threshold = FACE_THRESHOLD;
+      // PENTING: Untuk Meja Absen (1:N), gunakan threshold 0.50 agar lebih toleran terhadap noise/jarak di HP
+      const threshold = window._isMejaMode ? 0.50 : (typeof FACE_THRESHOLD !== 'undefined' ? FACE_THRESHOLD : 0.55);
+      
       if (bestMatch.score < threshold) {
         return { id: 'unknown', score: bestMatch.score };
       }
@@ -1205,7 +1206,7 @@
                   if (currentToken !== _matchSessionToken) return;
 
                   if (match && match.id !== 'unknown') {
-                    // STABILITY CHECK: ID harus sama selama 5 frame berturut-turut
+                    // STABILITY CHECK: ID harus sama selama beberapa frame berturut-turut
                     if (match.id === _lastMatchedId) {
                       _matchStabilityCount++;
                     } else {
@@ -1214,8 +1215,6 @@
                       return; // Baru satu frame, jangan tampilkan dulu
                     }
 
-                    if (_matchStabilityCount < 4) return; // Belum cukup stabil
-
                     const profile = window._mejaUserMap ? window._mejaUserMap[match.id] : null;
                     const nama = profile ? profile.nama : match.id;
                     const score = Math.round(match.score * 100);
@@ -1223,30 +1222,35 @@
                     // Update UI with identified person
                     if ($('lsText')) {
                       $('lsIcon').textContent = '✅';
-                      $('lsText').textContent = `ID Found: ${nama} (${score}%)`;
+                      $('lsText').textContent = `ID Ditemukan: ${nama} (${score}%)`;
                       $('lsText').style.color = '#4ade80';
                     }
+
+                    // Stability count check (3 frames are enough for Meja Mode)
+                    const requiredStability = 3;
+                    if (_matchStabilityCount < requiredStability) return;
 
                     // If liveness is also approved, trigger final capture
                     if (_isLive && !_autoCaptured && _livenessState.faceOk) {
                       _autoCaptured = true;
-                      console.log(`[AI] Continuous Match OK: ${nama} (Stable: ${_matchStabilityCount}). Finalizing...`);
+                      console.log(`[AI] Match Confirmed: ${nama} (Stability: ${_matchStabilityCount}). Finalizing...`);
                       setTimeout(() => {
-                        // Cek sekali lagi sebelum benar-benar doCapture
                         if (currentToken === _matchSessionToken && _livenessState.faceOk && match.id === _lastMatchedId) {
                           doCapture(match.id, detection.descriptor, match.score);
                         } else {
                           _autoCaptured = false;
                         }
-                      }, 400); // 400ms delay for confirmation
+                      }, 300);
                     }
                   } else {
                     _lastMatchedId = null;
                     _matchStabilityCount = 0;
-                    // Reset UI jika tidak ada match dalam frame ini
+                    
+                    // Reset UI jika tidak ada match
                     if (_isLive) {
-                      $('lsIcon').textContent = '🔍';
-                      $('lsText').textContent = 'Mencari Identitas di Database...';
+                      const isDataLoading = !_allFaceDescriptors || _allFaceDescriptors.length === 0;
+                      $('lsIcon').textContent = isDataLoading ? '⏳' : '🔍';
+                      $('lsText').textContent = isDataLoading ? 'Memuat Database Wajah...' : 'Mencari Identitas di Database...';
                       $('lsText').style.color = 'var(--gold)';
                     }
                   }

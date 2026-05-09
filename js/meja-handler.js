@@ -17,9 +17,20 @@
         return;
       }
 
-      // 2. LOCK PROSES
+      // LOCK PROSES
       if (window._mejaProcessing) return;
       window._mejaProcessing = true;
+
+      // Safety net: Paksa unlock setelah 15 detik jika terjadi hang
+      const safetyTimer = setTimeout(() => {
+        console.warn('[Meja] Safety timeout! Force-releasing all locks.');
+        _isSubmitting = false;
+        window._mejaProcessing = false;
+        _forceResetAiState(true);
+        if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';
+        _setMejaStatus('active', '⚠️', 'Timeout', 'Server tidak merespons, coba scan ulang');
+        startDetectLoop();
+      }, 15000);
 
       // 3. STOP DETEKSI SEGERA
       // Matikan deteksi wajah agar tidak menumpuk saat proses kirim data
@@ -90,8 +101,7 @@
       };
 
       try {
-        const { ok: mejaOk, data: res } = await apiPost(P.absen, payload);
-        const d = res.catch(() => ({}));
+        const { ok: mejaOk, data: d } = await apiPost(P.absen, payload);
 
         if (mejaOk && d.ok !== false && d.validasi?.is_valid !== false) {
           const jenis = d.jenis_absen || d.validasi?.jenis_absen || 'ABSEN BERHASIL';
@@ -128,10 +138,11 @@
         _mejaCnt.gagal++;
         _setMejaStatus('active', '🔌', 'Server Offline', 'Pastikan n8n berjalan');
       } finally {
+        clearTimeout(safetyTimer); // Batalkan safety timer karena sudah selesai normal
         _isSubmitting = false; // UNLOCK SUBMISSION
         _updateMejaCnt();
         setTimeout(() => {
-          overlay.style.display = 'none';
+          if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';
           _forceResetAiState(true);
           window._mejaProcessing = false;
           setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');

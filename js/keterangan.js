@@ -451,13 +451,14 @@
           const tglLabel = tglMulai === tglSelesai ? tglMulai : `${tglMulai} s.d. ${tglSelesai} (${durasi} hari)`;
           const ket = (r.keterangan || '').trim();
           const idKetEsc = idKet.replace(/'/g, "\'");
+          const nipEsc = nip.replace(/'/g, "\'");
           return `<div class="konfirm-item" id="konfirm-${idKet}">
         <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(IZIN)</span></div>
         <div class="konfirm-detail">🪪 ${nip} · 📅 ${tglLabel}<br>📝 ${ket || '—'}</div>
         <div style="font-size:8px;color:var(--muted);font-family:monospace;margin:3px 0 6px;opacity:.6">${idKet}</div>
         <div class="konfirm-actions">
-          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tglMulai}')">✅ Setujui</button>
-          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tglMulai}')">❌ Tolak</button>
+          <button class="konfirm-btn-ok" onclick="handleKonfirmasi('${idKetEsc}','APPROVE','${jenis}','${tglMulai}','${nipEsc}')">✅ Setujui</button>
+          <button class="konfirm-btn-no" onclick="handleKonfirmasi('${idKetEsc}','REJECT','${jenis}','${tglMulai}','${nipEsc}')">❌ Tolak</button>
         </div>
       </div>`;
         }).filter(Boolean).join('');
@@ -466,12 +467,12 @@
       }
     }
 
-    async function handleKonfirmasi(idKet, action, jenis, tanggal) {
+    async function handleKonfirmasi(idKet, action, jenis, tanggal, nip) {
       const konfirm = $('konfirmasiResult');
       if (konfirm) konfirm.style.display = 'none';
       try {
         const res = await apiPost(P.ketApprove, {
-            id_ket: idKet, action, jenis, tanggal,
+            id_ket: idKet, nip, action, jenis, tanggal,
             admin_id: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000)
           });
         const d = res?.data ?? {};

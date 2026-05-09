@@ -67,7 +67,7 @@
       window._faceRefCache[uid] = faceData;
     }
 
-    // ── Extract face descriptor ──
+    // ── Extract face descriptor menggunakan Human.js ──
     async function getFaceDescriptor(input) {
       let waitStart = Date.now();
       while (_isDetecting && (Date.now() - waitStart < 3000)) {
@@ -76,19 +76,15 @@
       const prevDetectState = _isDetecting;
       _isDetecting = true;
       try {
-        if (window._aiEngine === 'human' && HumanInstance) {
-          const res = await _detectWithTimeout(input, 8000); // ← gunakan timeout
-          return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
-        } else if (window.faceapi) {
-          const result = await faceapi.detectSingleFace(input).withFaceLandmarks().withFaceDescriptor();
-          return result ? result.descriptor : null;
-        }
+        if (!HumanInstance) return null;
+        const res = await _detectWithTimeout(input, 8000);
+        return (res && res.face && res.face.length > 0) ? res.face[0].embedding : null;
       } catch (e) {
         if (e.message === 'AI_TIMEOUT') setCamStatus('warn', '⚠️', 'AI Terlalu Lambat', '...');
+        return null;
       } finally {
-        _isDetecting = prevDetectState; // ← kembalikan state
+        _isDetecting = prevDetectState;
       }
-      return null;
     }
 
     // ── Extract descriptor from dataUrl (dengan retry 3x) ──
@@ -127,6 +123,7 @@
 
       const payload = {
         user_id: uid,
+        nip: localStorage.getItem('MY_NIP') || '',
         nama: nama || 'Pegawai',
         foto_base64: dataUrl,
         face_descriptor: descriptorArray,
@@ -315,64 +312,44 @@
      * @param {Float32Array|null} preDescriptor - Descriptor yang sudah dihitung sebelumnya (opsional)
      * @returns {Promise<{matched: boolean, score: number, message: string}>}
      */
-        async function matchFace(capturedDataUrl, preDescriptor = null) {
+    async function matchFace(capturedDataUrl, preDescriptor = null) {
       const ref = getFaceRef();
       if (!ref) return { score: -1, label: 'Belum ada data', cls: 'face-match-skip', capturedDescriptor: null };
 
       let refDesc = ref.descriptor;
-      // Handle stringified descriptor from DB
       if (typeof refDesc === 'string') {
         try { refDesc = JSON.parse(refDesc); } catch (e) { refDesc = null; }
       }
 
       let capturedDescArr = preDescriptor;
       if (!capturedDescArr && capturedDataUrl) {
-        const capturedDescRaw = await getDescriptorFromDataUrl(capturedDataUrl);
-        capturedDescArr = capturedDescRaw ? Array.from(capturedDescRaw) : null;
+        const raw = await getDescriptorFromDataUrl(capturedDataUrl);
+        capturedDescArr = raw ? Array.from(raw) : null;
       }
 
-      if (refDesc && capturedDescArr) {
+      if (refDesc && capturedDescArr && HumanInstance) {
         const refDim = refDesc.length;
         const capDim = capturedDescArr.length;
 
-        // Engine-aware matching logic
-        const engine = window._aiEngine || 'faceapi';
-
-        if (engine === 'human' && HumanInstance && refDim >= 512 && capDim >= 512) {
-          // Use Human Similarity
+        if (refDim >= 512 && capDim >= 512) {
           const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
           const score = Math.round(sim * 100);
-          const threshold = FACE_THRESHOLD; // Human threshold (Optimized for tolerance)
-
+          const threshold = FACE_THRESHOLD;
           let label, cls;
           if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
           else if (sim >= threshold - 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
           else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-
           return { score, label, cls, similarity: sim, capturedDescriptor: capturedDescArr };
-        } else {
-          // Use Face-API Euclidean Distance (Fallback if mismatch or faceapi)
-          if (refDim !== capDim) {
-            return {
-              score: 0,
-              label: `⚠️ Mismatch (${refDim} vs ${capDim})`,
-              cls: 'face-match-warn',
-              capturedDescriptor: capturedDescArr,
-              needsUpdate: true
-            };
-          }
-
-          const dist = euclideanDistance(refDesc, capturedDescArr);
-          const threshold = FACE_THRESHOLD;
-          const score = Math.max(0, Math.round((1 - dist / 0.75) * 100));
-
-          let label, cls;
-          if (dist <= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
-          else if (dist <= threshold + 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
-          else { label = `❌ Tidak Cocok ${score}%`; cls = 'face-match-warn'; }
-
-          return { score, label, cls, distance: dist, capturedDescriptor: capturedDescArr };
         }
+
+        // Dimensi tidak cocok (descriptor lama format face-api 128-dim)
+        return {
+          score: 0,
+          label: `⚠️ Data wajah lama — silakan daftarkan ulang`,
+          cls: 'face-match-warn',
+          capturedDescriptor: capturedDescArr,
+          needsUpdate: true
+        };
       }
 
       return { score: 0, label: '⚠️ Gagal ekstrak wajah', cls: 'face-match-warn', capturedDescriptor: capturedDescArr };
@@ -519,14 +496,15 @@
       vid.style.transform = `scaleX(-1) scale(${_camZoomLevel})`;
     }
 
-    /* ── Konfigurasi AI Engine (face-api.js vs Human) ── */
-    const FACE_API_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js';
-    const FACE_API_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+    /* ── Konfigurasi AI Engine (Human.js ONLY) ── */
     const HUMAN_CDN = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.2.1/dist/human.js';
     const HUMAN_MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.2.1/models/';
 
-    window._aiEngine = localStorage.getItem(STORAGE_KEYS.AI_ENGINE) || 'faceapi';
-    let _faceApiLoaded = false;
+    // Paksa selalu Human — hapus nilai lama jika sebelumnya faceapi
+    if (localStorage.getItem(STORAGE_KEYS.AI_ENGINE) === 'faceapi') {
+      localStorage.setItem(STORAGE_KEYS.AI_ENGINE, 'human');
+    }
+    window._aiEngine = 'human';
     let _humanLoaded = false;
     let HumanInstance = null;
     let _isDetecting = false; // Flag Pengaman Loop Deteksi
@@ -586,32 +564,34 @@
     function _refreshAiBadge() {
       const b = $('aiEngineBadge');
       if (!b) return;
-      const isHuman = window._aiEngine === 'human';
-      const eng = isHuman ? 'Human AI' : 'Face-API';
-      const dim = isHuman ? '1024-dim' : '128-dim';
-      b.textContent = `Mesin: ${eng} (${dim})`;
+      b.textContent = 'Mesin: Human AI (1024-dim)';
       b.style.color = 'var(--info)';
       b.style.opacity = '1';
     }
 
-    async function _loadFaceApiScript() {
-      if (window.faceapi) { _faceApiLoaded = true; return; }
-      return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = FACE_API_CDN;
-        s.async = false; // Execute in order
-        s.onload = () => {
-          // Double check global namespace
-          if (window.faceapi || typeof faceapi !== 'undefined') {
-            _faceApiLoaded = true;
-            resolve();
-          } else {
-            reject(new Error('Namespace faceapi tidak ditemukan setelah script dimuat'));
-          }
-        };
-        s.onerror = () => reject(new Error('Gagal mengunduh script face-api.js dari CDN'));
-        document.head.appendChild(s);
-      });
+    /**
+     * Deteksi backend terbaik yang didukung perangkat.
+     * Urutan: WebGL (tercepat) → WASM (stabil di mobile) → cpu (fallback)
+     */
+    async function _detectBestBackend() {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+        if (gl) {
+          gl.getExtension('WEBGL_lose_context')?.loseContext();
+          return 'webgl';
+        }
+      } catch (_) {}
+      return 'wasm';
+    }
+
+    /**
+     * Deteksi apakah device adalah perangkat mobile/HP dengan resource terbatas.
+     * Digunakan untuk menentukan inputSize yang optimal.
+     */
+    function _isMobileDevice() {
+      return (navigator.hardwareConcurrency || 4) <= 4 ||
+             /Android|iPhone|iPad/i.test(navigator.userAgent);
     }
 
     async function _loadHumanScript() {
@@ -629,157 +609,161 @@
         console.warn('[AI] Gagal membaca cache Human.js', e);
       }
 
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = srcToLoad;
-        s.onload = () => {
-          if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
-          if (window.Human) { _humanLoaded = true; resolve(); }
-          else reject(new Error('Namespace Human tidak ditemukan di script.'));
-        };
-        s.onerror = (e) => {
-          if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
-          reject(new Error('Gagal memuat Human.js dari ' + (srcToLoad.startsWith('blob:') ? 'Cache Lokal' : 'CDN')));
-        };
-        document.head.appendChild(s);
-      });
+      // Timeout eksplisit 20 detik untuk mencegah hang
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = srcToLoad;
+          s.onload = () => {
+            if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
+            if (window.Human) { _humanLoaded = true; resolve(); }
+            else reject(new Error('Namespace Human tidak ditemukan di script.'));
+          };
+          s.onerror = () => {
+            if (srcToLoad.startsWith('blob:')) URL.revokeObjectURL(srcToLoad);
+            reject(new Error('Gagal memuat Human.js dari ' + (srcToLoad.startsWith('blob:') ? 'Cache Lokal' : 'CDN')));
+          };
+          document.head.appendChild(s);
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Script load timeout (20s)')), 20000))
+      ]);
     }
 
 
-    // ── Terpadu: Muat Model AI (face-api atau Human) ──
+    // ── Muat Model Human.js (satu-satunya engine) ──
     /**
-     * Memuat model AI (face-api.js atau Human) secara on-demand.
+     * Memuat dan menginisialisasi Human.js secara on-demand.
      * Menampilkan progress bar di UI selama proses loading.
      * @returns {Promise<boolean>} true jika model berhasil dimuat
      */
-        async function loadAIModels() {
+    async function loadAIModels() {
       if (_modelsReady) return true;
-      if (_modelLoading) return false;
+      if (_modelLoading) {
+        // Tunggu hingga loading selesai (jika background pre-warm sedang berjalan)
+        return new Promise(resolve => {
+          const check = setInterval(() => {
+            if (!_modelLoading) { clearInterval(check); resolve(_modelsReady); }
+          }, 200);
+          setTimeout(() => { clearInterval(check); resolve(_modelsReady); }, 30000);
+        });
+      }
       _modelLoading = true;
 
       try {
-        const engine = window._aiEngine || 'faceapi';
-        console.log(`[AI] Memuat Engine: ${engine}...`);
+        console.log('[AI] Memuat Human.js Engine...');
 
-        if (engine === 'human') {
-          await _loadHumanScript();
-          _updateModelProgress(0, 10);
+        // Langkah 1: Muat Script
+        await _loadHumanScript();
+        _updateModelProgress(0, 15);
 
-          const config = {
-            backend: 'webgl',
-            modelBasePath: HUMAN_MODELS,
-            filter: { enabled: false }, // Matikan filter berat untuk HP
-            cacheModels: true, // Optimasi: Gunakan cache browser untuk model
-            face: {
+        // Langkah 2: Deteksi backend terbaik secara otomatis
+        const bestBackend = await _detectBestBackend();
+        const isMobile = _isMobileDevice();
+        const inputSize = isMobile ? 224 : 320; // Lebih kecil = lebih cepat di HP
+        console.log(`[AI] Device: ${isMobile ? 'Mobile' : 'Desktop'} | Backend: ${bestBackend} | InputSize: ${inputSize}`);
+
+        const config = {
+          backend: bestBackend,
+          modelBasePath: HUMAN_MODELS,
+          filter: { enabled: false },
+          cacheModels: true,
+          warmup: 'none', // Kita handle warmup sendiri
+          face: {
+            enabled: true,
+            detector: {
               enabled: true,
-              detector: { enabled: true, rotation: true, modelPath: 'blazeface.json', maxDetected: 1, minConfidence: 0.2, inputSize: 320 }, // Optimasi: 320 lebih cepat dari 416
-              mesh: { enabled: false }, // Optimasi: Nonaktifkan mesh jika tidak butuh fitur 3D/iris
-              iris: { enabled: false },
-              description: { enabled: true, modelPath: 'faceres.json' },
-              emotion: { enabled: false },
-              liveness: { enabled: true }
+              rotation: true,
+              modelPath: 'blazeface.json',
+              maxDetected: 1,
+              minConfidence: 0.2,
+              inputSize
             },
-            body: { enabled: false },
-            hand: { enabled: false },
-            object: { enabled: false },
-            gesture: { enabled: false }
-          };
+            mesh: { enabled: false },
+            iris: { enabled: false },
+            description: { enabled: true, modelPath: 'faceres.json' },
+            emotion: { enabled: false },
+            liveness: { enabled: true }
+          },
+          body: { enabled: false },
+          hand: { enabled: false },
+          object: { enabled: false },
+          gesture: { enabled: false },
+          segmentation: { enabled: false }
+        };
 
-          // Deteksi konstruktor yang benar
-          let HumanConstructor = window.Human;
-          if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
-          else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
+        // Langkah 3: Inisialisasi Instance
+        let HumanConstructor = window.Human;
+        if (window.Human && typeof window.Human.Human === 'function') HumanConstructor = window.Human.Human;
+        else if (window.Human && typeof window.Human.default === 'function') HumanConstructor = window.Human.default;
 
-          if (typeof HumanConstructor !== 'function') {
-            throw new Error('Gagal menemukan Class Human (window.Human bukan constructor).');
-          }
-
-          HumanInstance = new HumanConstructor(config);
-
-          // Cek Backend
-          if (HumanInstance.tf) {
-            try {
-              await HumanInstance.tf.setBackend('webgl');
-              await HumanInstance.tf.ready();
-            } catch (e) {
-              console.warn('[AI] WebGL gagal, fallback ke default backend');
-              // Biarkan Human memilih backend terbaik otomatis (wasm/cpu)
-            }
-          }
-
-          _updateModelProgress(0, 20);
-
-          // Timeout 15s for model load
-          const loadPromise = HumanInstance.load();
-          const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Reload timeout (15s)')), 15000));
-
-          await Promise.race([loadPromise, timeoutPromise]);
-          // Optimasi: Warmup hanya untuk modul wajah agar lebih cepat
-          await HumanInstance.warmup({ warmup: 'face' });
-
-          _updateModelProgress(2, 80);
-          _modelsReady = true;
-          _refreshAiBadge();
-        } else {
-          // DEFAULT: Face-API (vladmandic fork for better support)
-          await _loadFaceApiScript();
-          _updateModelProgress(0, 20);
-
-          // Enhanced loader with individual net error check
-          const nets = [
-            { net: window.faceapi.nets.ssdMobilenetv1, name: 'SSD Mobilenet' },
-            { net: window.faceapi.nets.faceLandmark68Net, name: 'Landmarks' },
-            { net: window.faceapi.nets.faceRecognitionNet, name: 'Recognition' }
-          ];
-
-          for (let i = 0; i < nets.length; i++) {
-            console.log(`[AI] Loading ${nets[i].name}...`);
-            await nets[i].net.loadFromUri(FACE_API_MODELS);
-            _updateModelProgress(i, 30);
-          }
-
-          // ── PRE-WARM FACE-API ──
-          console.log('[AI] Menghangatkan Face-API (pre-warm)...');
-          try {
-            const dummyCanvas = document.createElement('canvas');
-            dummyCanvas.width = 100; dummyCanvas.height = 100;
-            if (window.faceapi) {
-              await window.faceapi.detectSingleFace(dummyCanvas).withFaceLandmarks().withFaceDescriptor();
-            }
-          } catch (e) { console.warn('[AI] Pre-warm skipped:', e.message); }
-
-          _modelsReady = true;
-          _refreshAiBadge();
-          _updateModelProgress(2, 10);
+        if (typeof HumanConstructor !== 'function') {
+          throw new Error('Gagal menemukan Class Human (window.Human bukan constructor).');
         }
 
-        console.log(`[AI] ${engine} Berhasil Dimuat.`);
+        HumanInstance = new HumanConstructor(config);
+        _updateModelProgress(0, 30);
+
+        // Langkah 4: Set Backend TFJS
+        if (HumanInstance.tf) {
+          try {
+            await HumanInstance.tf.setBackend(bestBackend);
+            await HumanInstance.tf.ready();
+            console.log(`[AI] TFJS backend aktif: ${await HumanInstance.tf.getBackend()}`);
+          } catch (e) {
+            console.warn('[AI] Backend manual gagal, biarkan Human memilih otomatis:', e.message);
+          }
+        }
+
+        // Langkah 5: Load Model Weights (timeout 20 detik)
+        _updateModelProgress(0, 50);
+        await Promise.race([
+          HumanInstance.load(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timeout (20s)')), 20000))
+        ]);
+        _updateModelProgress(1, 70);
+
+        // Langkah 6: Warmup dengan canvas dummy kecil (compile shader sekali)
+        console.log('[AI] Warming up TFJS shaders...');
+        try {
+          const dummy = document.createElement('canvas');
+          dummy.width = inputSize; dummy.height = inputSize;
+          await HumanInstance.warmup({ warmup: 'face', canvas: dummy });
+        } catch (e) {
+          console.warn('[AI] Warmup error (non-fatal):', e.message);
+        }
+
+        _updateModelProgress(2, 90);
+        _modelsReady = true;
+        _modelLoading = false;
+        _refreshAiBadge();
+        console.log('[AI] Human.js siap digunakan.');
         return true;
 
       } catch (e) {
-        console.error('[AI] Gagal memuat engine:', e);
-
-        // AUTO FALLBACK
-        if (window._aiEngine === 'human') {
-          console.warn('[AI] Human gagal, mencoba fallback ke Face-API...');
-          _setMejaStatus('idle', '⚠️', 'Fallback ke Face-API', e.message);
-          window._aiEngine = 'faceapi';
-          _modelLoading = false;
-          _modelsReady = false;
-          // Notify user of the switch
-          setTimeout(() => alert(`⚠️ Human.js gagal dimuat:\n"${e.message}"\n\nSistem otomatis beralih ke Face-API sebagai cadangan.`), 100);
-          return await loadAIModels();
-        }
-
+        console.error('[AI] Gagal memuat Human.js:', e);
         _modelsReady = false;
         _modelLoading = false;
-        // Detailed error for debugging
-        alert(`Gagal memuat model AI:\n${e.message}\n\nPastikan koneksi internet stabil atau Hapus File Model lokal jika file sebelumnya gagal didownload utuh.`);
         return false;
       }
     }
 
-    // Proxy for backward compatibility if any
+    /**
+     * Pre-warm Human.js di background tanpa memblokir UI.
+     * Dipanggil 3 detik setelah app siap agar kamera terasa instan.
+     */
+    async function _prewarmHumanInBackground() {
+      if (_modelsReady || _modelLoading) return;
+      console.log('[AI] Background pre-warm dimulai...');
+      _refreshAiBadge();
+      try {
+        await loadAIModels();
+        console.log('[AI] Background pre-warm selesai — kamera siap instan.');
+      } catch (e) {
+        console.warn('[AI] Background pre-warm gagal (non-fatal):', e.message);
+      }
+    }
+
+    // Alias untuk kompatibilitas mundur
     async function loadFaceApiModels() { return loadAIModels(); }
 
     /* ── Buka overlay kamera ── */
@@ -914,16 +898,23 @@
         }
       }
 
-      // ── MODE VERIFIKASI WAJAH ── muat AI
-      const ready = await loadFaceApiModels();
-      if (!ready) {
-        setCamStatus('warn', '⚠️', 'AI Gagal Dimuat', 'Gunakan tombol manual untuk ambil foto');
-        if (btnCap) btnCap.disabled = false;
+      // ── MODE VERIFIKASI WAJAH — Muat AI atau langsung mulai jika sudah pre-warmed ──
+      if (_modelsReady) {
+        // AI sudah siap dari background pre-warm — langsung buka kamera!
+        console.log('[AI] Pre-warm sudah selesai, kamera langsung aktif.');
+        $('modelLoading').style.display = 'none';
+        $('camVideoWrap').style.display = 'block';
+        $('camStatus').style.display = 'flex';
+      } else {
+        const ready = await loadAIModels();
+        if (!ready) {
+          setCamStatus('warn', '⚠️', 'AI Gagal Dimuat', 'Gunakan tombol manual untuk ambil foto');
+          if (btnCap) btnCap.disabled = false;
+        }
+        $('modelLoading').style.display = 'none';
+        $('camVideoWrap').style.display = 'block';
+        $('camStatus').style.display = 'flex';
       }
-
-      $('modelLoading').style.display = 'none';
-      $('camVideoWrap').style.display = 'block';
-      $('camStatus').style.display = 'flex';
 
       if (MY_ID && !onDone?.isRegister && !window._isMejaMode) {
         updateFaceRegUI();
@@ -1157,8 +1148,7 @@
         try {
           let detection = null;
           if (window._aiEngine === 'human' && HumanInstance) {
-            // Gunakan konfigurasi deteksi yang lebih ringan khusus untuk loop liveness
-            const res = await _detectWithTimeout(vid, 5000); // Max 5 detik untuk loop
+            const res = await _detectWithTimeout(vid, 5000);
             if (res && res.face && res.face.length > 0) {
               const f = res.face[0];
               const liveScore = f.live || 0;
@@ -1168,13 +1158,15 @@
               const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
               detection = {
                 landmarks: { positions: f.landmarks || [] },
-                descriptor: f.embedding || null, // Capture embedding for live matching
+                descriptor: f.embedding || null,
                 _isHumanLive: isLive
               };
             }
           } else {
-            const d = await window.faceapi.detectSingleFace(vid, new window.faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks();
-            if (d) detection = d;
+            // Human belum siap, tunggu frame berikutnya
+            _detectLoop = requestAnimationFrame(loop);
+            _isDetecting = false;
+            return;
           }
 
           if (!detection) {
@@ -1193,33 +1185,8 @@
             _livenessState.faceOk = true;
             wrap.className = 'cam-video-wrap face-ok';
 
-            if (window._aiEngine === 'human') {
-              _isLive = detection._isHumanLive;
-            } else {
-              const landmarks = detection.landmarks.positions;
-              if (_lastLandmarks) {
-                let totalDist = 0;
-                for (let i = 0; i < landmarks.length; i++) {
-                  totalDist += Math.hypot(landmarks[i].x - _lastLandmarks[i].x, landmarks[i].y - _lastLandmarks[i].y);
-                }
-                const avgDist = totalDist / landmarks.length;
-                if (avgDist > 0.05 && avgDist < 5) _livenessScore += 1.5;
-
-                const eyeDist = Math.hypot(landmarks[36].x - landmarks[45].x, landmarks[36].y - landmarks[45].y);
-                const faceWidth = Math.hypot(landmarks[0].x - landmarks[16].x, landmarks[0].y - landmarks[16].y);
-                const ratio = eyeDist / faceWidth;
-
-                if (_livenessHistory.length > 5) {
-                  const prevRatio = _livenessHistory[_livenessHistory.length - 1];
-                  const diff = Math.abs(ratio - prevRatio);
-                  if (diff > 0.001) _livenessScore += 2;
-                }
-                _livenessHistory.push(ratio);
-                if (_livenessHistory.length > 30) _livenessHistory.shift();
-              }
-              _lastLandmarks = landmarks;
-              if (_livenessScore > 25) _isLive = true;
-            }
+            // Selalu gunakan Human liveness score
+            _isLive = detection._isHumanLive;
 
             if (_isLive) {
               setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');

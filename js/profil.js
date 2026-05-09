@@ -96,6 +96,15 @@
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
       }
 
+      // ── Sinkronisasi NIP (Self-healing if corrupted) ──
+      if (p.nip) {
+        const correctNip = String(p.nip).trim();
+        if (localStorage.getItem('MY_NIP') !== correctNip) {
+          console.log('[Profile] Syncing correct NIP to storage:', correctNip);
+          localStorage.setItem('MY_NIP', correctNip);
+        }
+      }
+
       renderReminders(p);
       updateProfilFaceUI();
     }
@@ -178,71 +187,107 @@
     async function loadDokumen() {
       const el = $('dokumenList');
       if (!el) return;
-      el.innerHTML = `<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>`;
+
+      // 1. Ambil dari Cache IndexedDB (Instant Render)
       try {
-        const res = await apiGet(P.dokumenList, { user_id: MY_ID || '' });
-        if (!res.ok) throw 0;
-        const docs = res.rows.length ? res.rows : parseApiResponse(res.data);
-        dokumenLoaded = true;
-        if (!docs.length) {
-          el.innerHTML = `<div class="dokumen-empty">📭 Belum ada dokumen tersimpan.<br><span style="font-size:9px;color:var(--muted)">Hubungi admin untuk menambahkan dokumen.</span></div>`;
-          return;
+        const cachedDocs = await idb.get('master_data', 'dokumen_list');
+        if (cachedDocs && cachedDocs.data && cachedDocs.data.length) {
+          _renderDokumenList(cachedDocs.data, el);
+          dokumenLoaded = true;
+        } else {
+          el.innerHTML = `<div class="shimmer" style="height:44px;border-radius:10px"></div><div class="shimmer" style="height:44px;border-radius:10px;margin-top:6px"></div>`;
         }
-        const JENIS_ICON = {
-          'SK': '📜', 'SKEP': '📜', 'IJAZAH': '🎓', 'SERTIFIKAT': '🏅',
-          'SKP': '📊', 'FOTO': '🖼️', 'KTP': '🪪', 'DEFAULT': '📄'
-        };
-        // Simpan base64 ke cache global agar onclick bisa akses tanpa DOM encoding
-        window._dokCache = {};
-        el.innerHTML = docs.map((d, idx) => {
-          const nama = d.nama_dokumen || d.nama || d.name || 'Dokumen';
-          const link = d.link || d.webViewLink || d.url || '';
-          const jenis = (d.jenis || d.kategori || 'DEFAULT').toUpperCase();
-          const icon = JENIS_ICON[jenis] || JENIS_ICON['DEFAULT'];
-          const tanggal = d.tanggal || d.uploadedAt || '';
-          const id = d.id || '';
-          const namaEsc = nama.replace(/'/g, "\'");
+      } catch (e) { console.warn('[Dokumen] Cache Error:', e); }
 
-          // Deteksi tipe konten: base64 atau link eksternal
-          const b64    = d.file_base64 || d.base64 || d.content || '';
-          const mime   = d.mime_type || d.mime || (b64.startsWith('/9j/') ? 'image/jpeg' : 'application/octet-stream');
-          const isPdf  = mime.includes('pdf') || (link && link.endsWith('.pdf'));
-          const isImg  = mime.startsWith('image/') || ['FOTO','KTP'].includes(jenis);
-          const hasB64 = b64.length > 100;
-          const cacheKey = 'dok_' + idx;
-
-          if (hasB64) window._dokCache[cacheKey] = { b64, mime, nama };
-
-          // Buat href: data-uri jika base64, link jika ada URL, '#' jika tidak ada
-          const href = hasB64
-            ? null   // dibuka via JS onclick (Base64 Blob URL)
-            : (link && link !== '#' ? link : null);
-
-          const openAttr = hasB64
-            ? `onclick="_openDokBase64('${cacheKey}')" style="cursor:pointer"`
-            : href
-              ? `href="${href}" target="_blank" rel="noopener"`
-              : `onclick="alert('Dokumen belum memiliki file atau link.')" style="cursor:pointer"`;
-
-          const arrowIcon = hasB64
-            ? (isPdf ? '📄' : isImg ? '🖼️' : '↗')
-            : (href ? '↗' : '—');
-
-          return `<div class="dokumen-item" style="cursor:default">
-        <a ${openAttr} style="display:flex;align-items:center;gap:10px;flex:1;text-decoration:none;min-width:0">
-          <div class="dokumen-icon">${icon}</div>
-          <div class="dokumen-info">
-            <div class="dokumen-nama">${nama}</div>
-            <div class="dokumen-meta">${jenis}${tanggal ? ' · ' + tanggal : ''}${hasB64 ? ' · ' + (isPdf ? 'PDF' : isImg ? 'Gambar' : 'File') : ''}</div>
-          </div>
-          <div class="dokumen-arrow">${arrowIcon}</div>
-        </a>
-        <button class="dokumen-del" onclick="hapusDokumen('${id}','${namaEsc}')" title="Hapus">🗑️</button>
-      </div>`;
-        }).join('');
+      // 2. Fetch dari Server di Background (Background Sync)
+      try {
+        const res = await apiGet(P.dokumenList, { 
+          user_id: MY_ID || '', 
+          nip: localStorage.getItem('MY_NIP') || '' 
+        });
+        if (res.ok) {
+          const docs = res.rows.length ? res.rows : parseApiResponse(res.data);
+          // Update Cache
+          await idb.set('master_data', { key: 'dokumen_list', data: docs, updated: Date.now() });
+          
+          // Re-render jika data belum dimuat atau untuk memastikan data terbaru
+          _renderDokumenList(docs, el);
+          dokumenLoaded = true;
+        } else if (!dokumenLoaded) throw 0;
       } catch {
-        el.innerHTML = `<div class="dokumen-empty">🔌 Gagal memuat dokumen.<br><span style="font-size:9px">Pastikan webhook dokumen aktif di n8n.</span></div>`;
+        if (!dokumenLoaded) {
+          el.innerHTML = `<div class="dokumen-empty">🔌 Gagal memuat dokumen.<br><span style="font-size:9px">Pastikan webhook dokumen aktif di n8n.</span></div>`;
+        }
       }
+    }
+
+    /**
+     * Helper untuk merender list HTML dokumen agar konsisten antara cache & server.
+     */
+    function _renderDokumenList(docs, el) {
+      if (!docs.length) {
+        el.innerHTML = `<div class="dokumen-empty">📭 Belum ada dokumen tersimpan.<br><span style="font-size:9px;color:var(--muted)">Hubungi admin untuk menambahkan dokumen.</span></div>`;
+        return;
+      }
+      const JENIS_ICON = {
+        'SK': '📜', 'SKEP': '📜', 'IJAZAH': '🎓', 'SERTIFIKAT': '🏅',
+        'SKP': '📊', 'FOTO': '🖼️', 'KTP': '🪪', 'DEFAULT': '📄'
+      };
+      if (!window._dokCache) window._dokCache = {};
+      
+      el.innerHTML = docs.map((d, idx) => {
+        const nama = d.nama_dokumen || d.nama || d.name || 'Dokumen';
+        const link = d.link || d.webViewLink || d.url || '';
+        const jenis = (d.jenis || d.kategori || 'DEFAULT').toUpperCase();
+        const icon = JENIS_ICON[jenis] || JENIS_ICON['DEFAULT'];
+        const tanggal = d.tanggal || d.uploadedAt || '';
+        const id = d.id || '';
+        const namaEsc = nama.replace(/'/g, "\\'");
+
+        const b64    = d.file_base64 || d.base64 || d.content || '';
+        const mime   = d.mime_type || d.mime || (b64.startsWith('/9j/') ? 'image/jpeg' : 'application/octet-stream');
+        const isPdf  = mime.includes('pdf') || (link && link.endsWith('.pdf'));
+        const isImg  = mime.startsWith('image/') || ['FOTO','KTP'].includes(jenis);
+        const hasB64 = b64.length > 100;
+        const cacheKey = 'dok_' + id; 
+
+        if (hasB64) window._dokCache[cacheKey] = { b64, mime, nama };
+
+        const openAttr = (hasB64 || id)
+          ? `onclick="_openDokumen('${id}', '${cacheKey}', '${namaEsc}', '${mime}', '${link}')"`
+          : (link && link !== '#' && link !== 'null')
+            ? `href="${link}" target="_blank" rel="noopener"`
+            : `onclick="alert('Dokumen belum memiliki file atau link.')"`;
+
+        const typeLabel = isPdf ? 'PDF' : isImg ? 'Image' : (link ? 'Link' : 'File');
+        const typeCls   = isPdf ? 'dok-pdf' : isImg ? 'dok-img' : 'dok-other';
+
+        return `
+        <div class="dok-card">
+          <div class="dok-card-main" ${openAttr}>
+            <div class="dok-icon-wrapper ${typeCls}">
+              <span class="dok-main-icon">${icon}</span>
+              <span class="dok-type-tag">${typeLabel}</span>
+            </div>
+            <div class="dok-content">
+              <div class="dok-title">${nama}</div>
+              <div class="dok-sub">
+                <span class="dok-tag">${jenis}</span>
+                <span class="dok-dot"></span>
+                <span class="dok-date">${tanggal ? tanggal.split('T')[0] : '—'}</span>
+              </div>
+            </div>
+            <div class="dok-action-view">
+              <i class="fas fa-external-link-alt"></i>
+            </div>
+          </div>
+          <div class="dok-card-side">
+            <button class="dok-btn-del" onclick="hapusDokumen('${id}','${namaEsc}')" title="Hapus">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
     }
     /* ════ DOKUMEN — TAMBAH & HAPUS ════ */
     let _dokTab = 'upload', _dokFile = null;
@@ -292,7 +337,9 @@
           });
           $('dokProgressFill').style.width = '60%';
           payload = {
-            user_id: MY_ID, nama_dokumen: nama,
+            user_id: MY_ID, 
+            nip: localStorage.getItem('MY_NIP') || '',
+            nama_dokumen: nama,
             jenis: $('dokJenis').value,
             file_base64: b64, file_name: _dokFile.name,
             mime_type: _dokFile.type,
@@ -303,7 +350,14 @@
           const nama = $('dokNama2').value.trim();
           const link = $('dokLink').value.trim();
           if (!nama || !link) { showMsg('⚠️ Nama & link wajib diisi', '#f59e0b'); btn.disabled = false; btn.textContent = '💾 Simpan Dokumen'; return; }
-          payload = { user_id: MY_ID, nama_dokumen: nama, jenis: $('dokJenis2').value, link, mode: 'link' };
+          payload = { 
+            user_id: MY_ID, 
+            nip: localStorage.getItem('MY_NIP') || '',
+            nama_dokumen: nama, 
+            jenis: $('dokJenis2').value, 
+            link, 
+            mode: 'link' 
+          };
         }
         const { ok: docOk, data: d } = await apiPost(P.dokumenAdd, payload);
         if (d.ok) {
@@ -323,7 +377,11 @@
       if (!confirm(`Hapus dokumen "${nama}"?
 File di Google Drive juga akan dihapus.`)) return;
       try {
-        const res = await apiPost(P.dokumenDel, { user_id: MY_ID, id });
+        const res = await apiPost(P.dokumenDel, { 
+          user_id: MY_ID, 
+          nip: localStorage.getItem('MY_NIP') || '',
+          id 
+        });
         const d = res?.data ?? {};
         if (d.ok) { dokumenLoaded = false; loadDokumen(); }
         else alert('❌ ' + (d.message || 'Gagal menghapus'));
@@ -333,22 +391,57 @@ File di Google Drive juga akan dihapus.`)) return;
     function setT(id, v) { const e = $(id); if (e) e.textContent = v; }
 
 
-    /* ════ DOKUMEN — BUKA BASE64 FILE ════ */
-
     /**
-     * Buka dokumen base64 (PDF / gambar) di tab baru via Blob URL.
-     * Tidak perlu server — file dibuka langsung dari data yang ada di cache.
-     * @param {string} key - Key ke window._dokCache
+     * Buka dokumen (PDF / gambar) dengan pola Lazy Loading.
+     * Cek cache dulu, jika tidak ada baru ambil dari server (P.dokumenGet).
      */
-    function _openDokBase64(key) {
-      const item = window._dokCache && window._dokCache[key];
-      if (!item || !item.b64) {
-        alert('Data dokumen tidak tersedia. Coba refresh halaman.');
+    async function _openDokumen(id, cacheKey, nama, mime, link) {
+      if (!window._dokCache) window._dokCache = {};
+      let item = window._dokCache[cacheKey];
+
+      // Jika tidak ada di cache dan ada ID, coba ambil dari server
+      if (!item && id) {
+        try {
+          const btn = event.currentTarget;
+          const originalHTML = btn.innerHTML;
+          btn.style.opacity = '0.6';
+          btn.style.pointerEvents = 'none';
+          // Tampilkan loading kecil di icon
+          const iconEl = btn.querySelector('.dokumen-icon');
+          const oldIcon = iconEl ? iconEl.innerHTML : '';
+          if (iconEl) iconEl.innerHTML = '<span class="spin-sm"></span>';
+
+          const res = await apiGet(P.dokumenGet, { id, nip: localStorage.getItem('MY_NIP') || '' });
+          if (res.ok) {
+            const d = res.rows.length ? res.rows[0] : (res.data?.data?.[0] || res.data || {});
+            const b64 = d.file_base64 || d.base64 || d.content || '';
+            const realMime = d.mime_type || d.mime || mime || 'application/octet-stream';
+            
+            if (b64) {
+              item = { b64, mime: realMime, nama };
+              window._dokCache[cacheKey] = item;
+            }
+          }
+          
+          if (iconEl) iconEl.innerHTML = oldIcon;
+          btn.style.opacity = '1';
+          btn.style.pointerEvents = 'auto';
+        } catch (e) { console.error("[LazyLoad] Error:", e); }
+      }
+
+      // Jika masih tidak ada item (gagal fetch), fallback ke link Drive jika ada
+      if (!item) {
+        const cleanLink = (link || '').trim();
+        if (cleanLink && !['', '-', '#', 'null'].includes(cleanLink)) {
+          window.open(cleanLink, '_blank', 'noopener');
+        } else {
+          alert('❌ File tidak ditemukan atau link tidak tersedia.');
+        }
         return;
       }
 
+      // Gunakan logika Blob URL untuk membuka di tab baru
       try {
-        // Decode base64 → Uint8Array → Blob → Blob URL
         const binary = atob(item.b64);
         const bytes  = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -356,25 +449,23 @@ File di Google Drive juga akan dihapus.`)) return;
         const blob    = new Blob([bytes], { type: item.mime || 'application/octet-stream' });
         const blobUrl = URL.createObjectURL(blob);
 
-        // Buka di tab baru
         const a = document.createElement('a');
         a.href   = blobUrl;
         a.target = '_blank';
         a.rel    = 'noopener';
-        // Untuk PDF: browser otomatis menampilkan; untuk gambar: ditampilkan inline
-        // Untuk file lain: trigger download dengan nama asli
+        
         const isPdf = (item.mime || '').includes('pdf');
         const isImg = (item.mime || '').startsWith('image/');
         if (!isPdf && !isImg) a.download = item.nama || 'dokumen';
-
+        
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-
-        // Revoke setelah 60 detik agar tidak bocor memori
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
-      } catch (e) {
-        console.error('[Dokumen] Gagal membuka base64:', e);
-        alert('Gagal membuka dokumen. Format base64 tidak valid.');
+        
+        // Revoke URL setelah beberapa saat untuk hemat memori
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      } catch (err) {
+        alert('❌ Gagal memproses data file. Format tidak didukung.');
       }
     }
+    window._openDokumen = _openDokumen; // Expose ke onclick HTML

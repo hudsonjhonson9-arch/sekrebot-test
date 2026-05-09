@@ -27,8 +27,9 @@
         setTimeout(async () => {
           await loadFaceFromServer();
           loadBidangList();
-          // Optimasi: Pre-load AI model di latar belakang agar siap saat tombol diklik
-          loadAIModels().catch(e => console.warn('[AI] Background pre-load failed:', e));
+          // Optimasi Opsi B: Pre-warm Human.js di background setelah 3 detik.
+          // Kamera akan terasa instan saat tombol Absen ditekan.
+          setTimeout(() => _prewarmHumanInBackground(), 3000);
           
           // Check face registration requirement AFTER loading from server
           _cekWajibFace();

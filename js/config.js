@@ -124,6 +124,7 @@
       liburDel: isTest ? '/webhook-test/libur-delete' : '/webhook/libur-delete',
       dokumenAdd: isTest ? '/webhook-test/dokumen-add' : '/webhook/dokumen-add',
       dokumenDel: isTest ? '/webhook-test/dokumen-delete' : '/webhook/dokumen-delete',
+      dokumenGet: isTest ? '/webhook-test/dokumen-get' : '/webhook/dokumen-get',
       faceRegister: isTest ? '/webhook-test/face-register' : '/webhook/face-register',
       faceGet: isTest ? '/webhook-test/face-get' : '/webhook/face-get',
       faceToggle: isTest ? '/webhook-test/face-toggle' : '/webhook/face-toggle',
@@ -176,10 +177,23 @@
      */
     const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
     async function apiFetch(path, opts = {}) {
-      // Auto-append instansi_id scoping using centralized helper
+      // Auto-append instansi_id & nip scoping
       const inst = getScopedInstansiId();
       if (inst && !path.includes('instansi_id=')) {
         path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
+      }
+      
+      let myNip = localStorage.getItem('MY_NIP');
+      if (!myNip) {
+        try {
+          const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+          myNip = u.nip || u.NIP || '';
+          if (myNip) localStorage.setItem('MY_NIP', myNip); // Auto-migrate
+        } catch (e) {}
+      }
+
+      if (myNip && !path.includes('nip=')) {
+        path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
       }
 
       for (const base of [SERVER_1, SERVER_2]) {

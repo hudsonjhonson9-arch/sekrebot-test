@@ -93,7 +93,9 @@ async function loadRekap() {
       }
       const hariKerjaParam = _countHK(dari, sampai);
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
-      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}`, { method: 'GET' });
+      const myNip = localStorage.getItem('MY_NIP') || '';
+      const adminParam = IS_ADMIN ? '&is_admin=true' : '';
+      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&nip=${myNip}${adminParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
         const d = Array.isArray(json) ? json[0] : json;
@@ -105,7 +107,9 @@ async function loadRekap() {
     if (!rekapOK) {
       let allRowsRaw = [], periodRowsRaw = [];
       try {
-        const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}`);
+        const myNip = localStorage.getItem('MY_NIP') || '';
+        const adminParam = IS_ADMIN ? '&is_admin=true' : '';
+        const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}&nip=${myNip}${adminParam}`);
         if (resAll.ok) allRowsRaw = (resAll.rows?.length ?? 0) ? resAll.rows : parseApiResponse(resAll.data);
       } catch (_) { }
       periodRowsRaw = allRowsRaw.filter(r => {
@@ -1132,6 +1136,7 @@ async function downloadRekap() {
   const payload = {
     dari,
     sampai,
+    nip: localStorage.getItem('MY_NIP') || '',
     is_harian: isHarian,
     tanggal_label: isHarian
       ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })

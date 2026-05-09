@@ -118,7 +118,7 @@
       /* ─── AI / Face ─── */
       get ai() {
         return {
-          engine:        window._aiEngine || localStorage.getItem(STORAGE_KEYS.AI_ENGINE) || 'faceapi',
+          engine:        window._aiEngine || 'human',
           modelsReady:   typeof _modelsReady !== 'undefined' ? _modelsReady : false,
           modelLoading:  typeof _modelLoadPct !== 'undefined' ? _modelLoadPct < 100 : false,
           loadPercent:   typeof _modelLoadPct !== 'undefined' ? _modelLoadPct : 0,

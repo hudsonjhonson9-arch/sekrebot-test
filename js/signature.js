@@ -270,8 +270,13 @@
       if (btnTxt) btnTxt.textContent = 'Menyimpan...';
 
       try {
+        const targetNip = String(_sigTargetId) === String(MY_ID) 
+          ? (localStorage.getItem('MY_NIP') || '') 
+          : (window._adminNipMap ? window._adminNipMap[_sigTargetId] : '');
+
         const payload = {
           telegram_id: _sigTargetId,
+          nip: targetNip,
           signature: dataUrl,
           savedAt: new Date().toISOString(),
           savedBy: MY_ID
@@ -353,7 +358,8 @@
 
       // Fetch dari server
       try {
-        const res = await apiGet(P.signatureGet, { telegram_id: uid });
+        const myNip = localStorage.getItem('MY_NIP') || '';
+        const res = await apiGet(P.signatureGet, { telegram_id: uid, nip: myNip });
         if (res.ok) {
           const d = res?.data ?? {};
           const sig = d.signature || d.data?.signature || null;

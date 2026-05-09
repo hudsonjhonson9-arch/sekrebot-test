@@ -54,7 +54,7 @@
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
               <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
-              <button onclick="deletePegawai('${uid}', '${nama.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">🗑</button>
+              <button onclick="deletePegawai('${uid}', '${nama.replace(/'/g, "\\'")}', '${nip}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">🗑</button>
             </div>
           </div>`;
         }).join('');
@@ -171,6 +171,7 @@
               console.log('[Sync] Detecting Admin role, syncing to admin-add...');
               await apiPost(P.adminAdd, {
                   telegram_id: Number(id),
+                  nip: nip,
                   nama: nama,
                   role: cleanRole,
                   ditambahkan_oleh: Number(MY_ID)
@@ -197,10 +198,10 @@
      * @param {string} nama - Nama pegawai (untuk konfirmasi)
      * @returns {Promise<void>}
      */
-        async function deletePegawai(uid, nama) {
-      if (!confirm(`Hapus pegawai "${nama}" (${uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
+        async function deletePegawai(uid, nama, nip) {
+      if (!confirm(`Hapus pegawai "${nama}" (NIP: ${nip || uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
       try {
-        const res = await apiPost(P.userDel, { id: uid });
+        const res = await apiPost(P.userDel, { id: uid, nip: nip || '' });
         const d = res?.data ?? {};
         if (d.ok !== false) {
           loadPegawaiMgmt();

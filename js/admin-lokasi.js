@@ -36,7 +36,13 @@
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       try {
-        await apiPost(P.lokasiAdd, { nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, radius, hari: hariStr, ip_range: ipRange, ditambahkan_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) });
+        await apiPost(P.lokasiAdd, { 
+          nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, 
+          radius, hari: hariStr, ip_range: ipRange, 
+          ditambahkan_oleh: MY_ID,
+          nip: localStorage.getItem('MY_NIP') || '',
+          timestamp: Math.floor(Date.now() / 1000) 
+        });
         const ipInfo = ipRange ? `\n🌐 IP Range: ${ipRange}` : '';
         showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'success', '📌', 'Lokasi Tersimpan!', `${nama}\nHari aktif: ${hariStr}\nLat: ${selectedPin.lat.toFixed(6)}, Lng: ${selectedPin.lng.toFixed(6)}${ipInfo}`);
         setBtnL('btnTambahLokasi', false, 'Simpan Lokasi ke Database');
@@ -165,7 +171,14 @@
     }
     async function hapusLokasi(id, nama) {
       if (!confirm(`Hapus lokasi "${nama}"?`)) return;
-      try { await apiPost(P.lokasiDel, { id }); loadLokasiAdmin(); }
+      try { 
+        await apiPost(P.lokasiDel, { 
+          id, 
+          ditambahkan_oleh: MY_ID,
+          nip: localStorage.getItem('MY_NIP') || ''
+        }); 
+        loadLokasiAdmin(); 
+      }
       catch { alert('Gagal menghapus. Coba lagi.'); }
     }
 
@@ -193,7 +206,11 @@
       const lok = jadwalLokData[idx];
       const hariStr = lok ? (lok.hari || []).join(',') : '';
       try {
-        await apiPost(P.lokasiUpdate, { id, nama_lokasi: nama, radius, hari: hariStr, ip_range });
+        await apiPost(P.lokasiUpdate, { 
+          id, nama_lokasi: nama, radius, hari: hariStr, ip_range,
+          diubah_oleh: MY_ID,
+          nip: localStorage.getItem('MY_NIP') || ''
+        });
         if (lok) lok.radius = radius;
         Object.keys(LOK_DEF).forEach(k => delete LOK_DEF[k]);
         jadwalLokData.forEach(l => { (l.hari || []).forEach(h => { if (!LOK_DEF[h]) LOK_DEF[h] = []; if (!LOK_DEF[h].includes(l.nama)) LOK_DEF[h].push(l.nama); }); });
@@ -297,7 +314,11 @@
       for (const lok of jadwalLokData) {
         const hariStr = (lok.hari || []).join(',');
         try {
-          await apiPost(P.lokasiUpdate, { id: lok.id, nama_lokasi: lok.nama, hari: hariStr });
+          await apiPost(P.lokasiUpdate, { 
+            id: lok.id, nama_lokasi: lok.nama, hari: hariStr,
+            diubah_oleh: MY_ID,
+            nip: localStorage.getItem('MY_NIP') || ''
+          });
           berhasil++;
         } catch (_) { gagal++; }
       }

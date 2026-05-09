@@ -49,16 +49,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function toggleHumanDownloadUI(val) {
-      const ctl = $('humanJsCacheControl');
-      if (!ctl) return;
-      if (val === 'human') {
-        ctl.style.display = 'block';
-        await checkHumanJsCache();
-      } else {
-        ctl.style.display = 'none';
-      }
-    }
+
 
     async function checkHumanJsCache() {
       const cached = await idb.get('master_data', 'human_script');
@@ -124,12 +115,7 @@
       }
     }
 
-    function simpanAiEngine() {
-      const eng = $('selectAiEngine').value;
-      localStorage.setItem('absen_ai_engine', eng);
-      alert('Konfigurasi Mesin AI berhasil disimpan. Halaman akan dimuat ulang.');
-      location.reload();
-    }
+
     // Sembunyikan panel admin dulu sampai ADMIN_IDS dimuat
     if ($('panel-admin')) dom.hide('panel-admin');
 
@@ -170,11 +156,8 @@
           setTimeout(() => switchFaceSigTab('data'), 300);
           loadFaceStatusAdmin();
 
-          // Initialize AI Engine Selector
-          if ($('selectAiEngine')) {
-            $('selectAiEngine').value = window._aiEngine || 'faceapi';
-            toggleHumanDownloadUI(window._aiEngine || 'faceapi');
-          }
+          // Initialize Human.js Cache Check
+          checkHumanJsCache();
         }
         setTimeout(() => {
           if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();

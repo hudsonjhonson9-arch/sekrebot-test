@@ -211,7 +211,15 @@
         doc.save(fileName);
 
         const pdfBase64 = doc.output('datauristring').split(',')[1];
-        await apiPost(P.kirimRekap, { chat_id: REKAP_CHAT_ID, pesan: pdfMsg });
+        const pdfMsg = `📄 *REKAP ABSENSI PDF*\n📅 Periode: ${tanggalLabel}\n👤 Peminta: ${userProfile?.nama || MY_ID}\n🪪 NIP: ${localStorage.getItem('MY_NIP') || '-'}\n\nLaporan telah siap.`;
+        
+        await apiPost(P.kirimRekap, { 
+          chat_id: REKAP_CHAT_ID, 
+          pesan: pdfMsg,
+          nip: localStorage.getItem('MY_NIP') || '',
+          file_base64: pdfBase64,
+          file_name: fileName
+        });
         showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
 
       } catch (e) {

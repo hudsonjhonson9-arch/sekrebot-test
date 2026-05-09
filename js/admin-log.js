@@ -107,23 +107,28 @@
     let _pegawaiListCache = null;
     async function loadLogPegawaiList() {
       const select = $('inLogPegawai');
-      if (!select || select.options.length > 1) return;
+      if (!select) return;
+      // Jangan load ulang jika sudah ada isinya (kecuali cuma placeholder)
+      if (select.options.length > 1 && _pegawaiListCache) return;
 
       try {
-        const res = await apiGet(P.userList + '?format=full');
+        const res = await apiGet(P.userList, { format: 'full' });
         if (!res.ok) return;
-        const data = res ?? {};
-        const users = (Array.isArray(data) ? data : (data.data || [])).filter(u => u.id || u.ID);
+        
+        // Gunakan res.rows yang sudah diparsing otomatis oleh helper apiGet
+        const users = (res.rows || []).filter(u => u.id || u.ID);
+        _pegawaiListCache = users;
 
-        _pegawaiListCache = users; // Store in cache for saveLog reference
+        // Bersihkan dropdown kecuali opsi pertama (placeholder)
+        while (select.options.length > 1) select.remove(1);
 
-        // Urutkan berdasarkan ID (numerik)
-        users.sort((a, b) => Number(a.id || a.ID || 0) - Number(b.id || b.ID || 0));
+        // Urutkan berdasarkan Nama agar mudah dicari
+        users.sort((a, b) => (a.nama || a.Nama || '').localeCompare(b.nama || b.Nama || ''));
 
         users.forEach(u => {
           const opt = document.createElement('option');
           opt.value = u.id || u.ID;
-          opt.textContent = `${u.nama || u.Nama} (${u.id || u.ID})`;
+          opt.textContent = `${u.nama || u.Nama} (${u.nip || u.NIP || u.id || u.ID})`;
           select.appendChild(opt);
         });
       } catch (e) { console.error('Load log pegawai failed', e); }

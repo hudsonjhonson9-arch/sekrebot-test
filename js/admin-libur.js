@@ -169,7 +169,14 @@
       let ok = 0, fail = 0;
       for (const tgl of dates) {
         try {
-          const res = await apiPost(P.liburAdd, { tanggal: tgl, nama: nama || 'Hari Libur', ditambahkan_oleh: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000) });
+          const res = await apiPost(P.liburAdd, { 
+            tanggal: tgl, 
+            nama: nama || 'Hari Libur', 
+            ditambahkan_oleh: MY_ID, 
+            nip: localStorage.getItem('MY_NIP') || '',
+            admin_ids: ADMIN_IDS, 
+            timestamp: Math.floor(Date.now() / 1000) 
+          });
           const d = res?.data ?? {};
           if (d.ok !== false) { ok++; hariLiburSet.add(tgl); } else fail++;
         } catch { fail++; }
@@ -256,7 +263,13 @@
     async function hapusLibur(tgl, rowNum) {
       if (!confirm(`Hapus hari libur ${tgl}?`)) return;
       try {
-        const res = await apiPost(P.liburDel, { tanggal: tgl, row_number: rowNum, timestamp: Math.floor(Date.now() / 1000) });
+        const res = await apiPost(P.liburDel, { 
+          tanggal: tgl, 
+          row_number: rowNum, 
+          dihapus_oleh: MY_ID,
+          nip: localStorage.getItem('MY_NIP') || '',
+          timestamp: Math.floor(Date.now() / 1000) 
+        });
         hariLiburSet.delete(tgl);
         loadLiburAdmin();
       } catch { alert('Gagal menghapus. Coba lagi.'); }

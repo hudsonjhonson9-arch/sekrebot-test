@@ -31,11 +31,13 @@
           const ur = await apiGet(P.userList + '?format=full');
           if (ur.ok) {
             const users = ur.rows || [];
+            window._adminNipMap = {}; // Cache NIP for deletion
             users.forEach(u => {
               if (!u) return;
               const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
               if (uid) {
                 namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
+                window._adminNipMap[uid] = u.NIP || u.nip || '';
               }
             });
           }
@@ -73,9 +75,11 @@
      */
         async function tambahAdmin() {
       const idInput = $('inputAdminTgId');
+      const nipInput = $('inputAdminNip');
       const namaInput = $('inputAdminNama');
       const roleInput = $('inputAdminRole');
       const tgId = parseInt(idInput?.value || 0);
+      const nip = (nipInput?.value || '').trim();
       const nama = (namaInput?.value || '').trim();
       const role = roleInput?.value || 'admin';
 
@@ -89,7 +93,7 @@
       }
       try {
         const { ok: addOk, data: d } = await apiPost(P.adminAdd, {
-            telegram_id: tgId, nama, role,
+            telegram_id: tgId, nip, nama, role,
             ditambahkan_oleh: MY_ID,
             timestamp: Math.floor(Date.now() / 1000)
           });
@@ -100,6 +104,7 @@
         ADMIN_IDS.push(tgId);
         REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
         if (idInput) idInput.value = '';
+        if (nipInput) nipInput.value = '';
         if (namaInput) namaInput.value = '';
         _showAdminMgmtResult('success', '✅', 'Admin Ditambahkan', `${nama || tgId} berhasil ditambahkan sebagai ${role}.`);
         loadAdminMgmt();
@@ -119,7 +124,12 @@
       }
       if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
       try {
-        const { ok, data } = await apiPost(P.adminDel, { telegram_id: tgId, ditambahkan_oleh: MY_ID });
+        const targetNip = window._adminNipMap ? window._adminNipMap[tgId] : '';
+        const { ok, data } = await apiPost(P.adminDel, { 
+          telegram_id: tgId, 
+          nip: targetNip,
+          ditambahkan_oleh: MY_ID 
+        });
         if (!ok || data?.ok === false) {
           _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menghapus admin.');
           return;
@@ -250,7 +260,13 @@
       const btn = $('btnSimpanJam');
       if (btn) { btn.disabled = true; dom.setText('btnJamText', '💾 Menyimpan...'); }
       try {
-        await apiPost(P.jamAbsen, { masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) });
+        await apiPost(P.jamAbsen, { 
+          masuk: inM.value, 
+          pulang: inP.value, 
+          diubah_oleh: MY_ID, 
+          nip: localStorage.getItem('MY_NIP') || '',
+          timestamp: Math.floor(Date.now() / 1000) 
+        });
         // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;

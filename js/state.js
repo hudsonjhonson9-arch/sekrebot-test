@@ -34,58 +34,56 @@
     }
 
     /* ════ TELEGRAM ════ */
-    const tg = window.Telegram?.WebApp;
-    let tgUser = {};
-    let MY_ID = null;
+    window.tg = window.Telegram?.WebApp;
+    window.tgUser = {};
+    window.MY_ID = null;
 
     // 1. Prioritas Utama: Ambil dari Cache Logal (Instant pada Refresh)
     try {
       const cachedId = localStorage.getItem(STORAGE_KEYS.USER_ID);
       const cachedUser = localStorage.getItem(STORAGE_KEYS.USER_OBJ);
       if (cachedId) {
-        MY_ID = Number(cachedId);
-        if (cachedUser) tgUser = JSON.parse(cachedUser);
+        window.MY_ID = Number(cachedId);
+        if (cachedUser) window.tgUser = JSON.parse(cachedUser);
       }
     } catch (e) { }
 
     // Sinkronkan dengan data asli Telegram
-    if (tg) {
-      tg.ready();
-      tg.expand();
-      tg.setHeaderColor('#0a1628');
-      tg.setBackgroundColor('#0a1628');
-      const cur = tg.initDataUnsafe?.user;
+    if (window.tg) {
+      window.tg.ready();
+      window.tg.expand();
+      window.tg.setHeaderColor('#0a1628');
+      window.tg.setBackgroundColor('#0a1628');
+      const cur = window.tg.initDataUnsafe?.user;
       if (cur?.id) {
-        MY_ID = Number(cur.id);
-        tgUser = cur;
+        window.MY_ID = Number(cur.id);
+        window.tgUser = cur;
+        console.log('[State] Identity detected from Telegram:', window.MY_ID);
         try {
-          localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
-          localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(tgUser));
+          localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
+          localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(window.tgUser));
         } catch (e) { }
+      } else {
+        console.warn('[State] No user data in tg.initDataUnsafe');
       }
     }
-    
-    // EXPOSE TO WINDOW (Critical for cross-script access)
-    window.tg = tg;
-    window.tgUser = tgUser;
-    window.MY_ID = MY_ID;
 
     window.IS_ADMIN = false;
     let adminLoaded = false;
 
     // Helper: Tunggu Telegram ID siap (tapi sekarang instan jika ada cache)
     async function waitForMyId() {
-      if (MY_ID) return Number(MY_ID);
+      if (window.MY_ID) return Number(window.MY_ID);
       for (let i = 0; i < 15; i++) {
         const cur = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (cur?.id) {
-          MY_ID = Number(cur.id);
-          tgUser = cur;
+          window.MY_ID = Number(cur.id);
+          window.tgUser = cur;
           try {
-            localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
-            localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(tgUser));
+            localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
+            localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(window.tgUser));
           } catch (e) { }
-          return MY_ID;
+          return window.MY_ID;
         }
         await new Promise(r => setTimeout(r, 200));
       }
@@ -112,8 +110,8 @@
       /* ─── User ─── */
       get user() {
         return {
-          id:          MY_ID,
-          profile:     tgUser,
+          id:          window.MY_ID,
+          profile:     window.tgUser,
           isAdmin:     window.IS_ADMIN,
           isSuperAdmin: typeof _isSuperAdmin === 'function' ? _isSuperAdmin() : false,
           adminNips:   typeof ADMIN_NIPS !== 'undefined' ? ADMIN_NIPS : [],

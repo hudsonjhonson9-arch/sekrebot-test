@@ -20,7 +20,7 @@ async function handleAbsen() {
   _lastAbsenClick = now;
 
   // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
-  const myNip = localStorage.getItem('MY_NIP') || userProfile?.nip || '';
+  const myNip = localStorage.getItem('MY_NIP') || window.userProfile?.nip || '';
   //const forceFaceNips = ['200206302025061002']; 
   let isFaceRequired = FACE_RECOGNITION_ENABLED;
   //if (forceFaceNips.includes(myNip)) isFaceRequired = true;
@@ -124,8 +124,10 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 
   setBtnL('btnAbsen', true, 'Mengambil GPS...');
   const _gpsT0 = Date.now(); // catat waktu mulai sebelum acquire
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
+  
+  await new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
       console.log('[Absen] GPS acquired:', position.coords.latitude, position.coords.longitude);
       const { latitude, longitude, accuracy } = position.coords;
       const _coords = position.coords;
@@ -200,13 +202,13 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         handleAbsenError(new AbsenError(
           'Akurasi 0m tidak valid. Nonaktifkan Mock Location di pengaturan developer.',
           ERROR_CODES.FAKE_GPS), 'resultCard');
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); unlock(); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); _isAbsenSubmitting = false; resolve(); return;
       }
       if (accuracy === 1) { _score += 20; _flags.push('ACCURACY_EXACTLY_1M'); }
       if (accuracy > GPS_MAX_ACCURACY_M) {
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Sinyal GPS Lemah',
           `Akurasi ${Math.round(accuracy)}m terlalu lemah. Pindah ke area terbuka.`);
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); unlock(); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); _isAbsenSubmitting = false; resolve(); return;
       }
 
       // ── Layer 5: Koordinat presisi mencurigakan ───────────
@@ -495,18 +497,23 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
           setBtnL('btnAbsen', false, '🔄 Coba Lagi');
         }
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+        _isAbsenSubmitting = false;
+        resolve();
       } finally {
         _isAbsenSubmitting = false;
+        resolve();
       }
     },
     (err) => {
       const msg = { 1: 'Izin GPS ditolak.', 2: 'GPS tidak tersedia.', 3: 'Timeout GPS. Coba di area terbuka.' };
       handleAbsenError(geoErrorToAbsenError(err), 'resultCard');
       setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+      _isAbsenSubmitting = false;
+      resolve();
     },
     { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
   );
+  });
 }
 
 /* ════ HANDLE PULANG LUAR (LAPANGAN) ════ */
@@ -522,11 +529,13 @@ async function handlePulangLuar() {
   if (!ket) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Keterangan Wajib Diisi',
       'Tuliskan lokasi/kegiatan lapangan Anda sebelum absen pulang.');
+    _isAbsenSubmitting = false;
     return;
   }
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung',
       'Absensi hanya dapat dilakukan dari smartphone.');
+    _isAbsenSubmitting = false;
     return;
   }
   const initData = tg?.initData || '';
@@ -534,10 +543,12 @@ async function handlePulangLuar() {
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram',
       'Aplikasi harus dibuka melalui Telegram.');
+    _isAbsenSubmitting = false;
     return;
   }
   if (!navigator.geolocation) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'GPS Tidak Tersedia', 'Buka di Telegram versi terbaru.');
+    _isAbsenSubmitting = false;
     return;
   }
 
@@ -551,12 +562,14 @@ async function handlePulangLuar() {
     handleAbsenError(new AbsenError(
       'Anda harus absen masuk terlebih dahulu sebelum absen pulang dari lapangan.',
       ERROR_CODES.BELUM_MASUK), 'resultCard');
+    _isAbsenSubmitting = false;
     return;
   }
   $('btnPulangLuar').disabled = true;
   const tSpan = $('btnPulangLuarText');
   if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengambil GPS...';
 
+  await new Promise((resolve) => {
   navigator.geolocation.getCurrentPosition(
     async ({ coords: { latitude, longitude, accuracy } }) => {
       if (accuracy > GPS_MAX_ACCURACY_M) {
@@ -564,6 +577,8 @@ async function handlePulangLuar() {
           `Akurasi ${Math.round(accuracy)}m terlalu lemah. Pindah ke area terbuka.`);
         $('btnPulangLuar').disabled = false;
         if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
+        _isAbsenSubmitting = false;
+        resolve();
         return;
       }
       const n = nowWITA();
@@ -638,6 +653,7 @@ async function handlePulangLuar() {
         if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
       } finally {
         _isAbsenSubmitting = false;
+        resolve();
       }
     },
     (err) => {
@@ -645,8 +661,11 @@ async function handlePulangLuar() {
       handleAbsenError(geoErrorToAbsenError(err), 'resultCard');
       $('btnPulangLuar').disabled = false;
       if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
+      _isAbsenSubmitting = false;
+      resolve();
     },
     { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
   );
+  });
 }
 

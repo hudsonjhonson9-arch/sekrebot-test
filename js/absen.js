@@ -1,3 +1,4 @@
+try {
 /* ════ HANDLE ABSEN & PULANG LUAR ════ */
 /* ════ HANDLE ABSEN ════ */
 // Anti double-submit: track timestamp terakhir klik absen
@@ -10,6 +11,7 @@ let _isAbsenSubmitting = false; // Idempotency Lock
  * @returns {Promise<void>}
  */
 async function handleAbsen() {
+  window.handleAbsen = handleAbsen; // Force Global
   console.log('[Absen] handleAbsen triggered. Disabled:', $('btnAbsen').disabled, 'Submitting:', _isAbsenSubmitting);
   if ($('btnAbsen').disabled || _isAbsenSubmitting) return;
 
@@ -272,7 +274,6 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       if (_hasHeading && (isNaN(_heading) || _heading < 0 || _heading > 360)) {
         _score += 15; _flags.push('HEADING_INVALID_' + _heading);
       }
-
 
       // ── Layer 12: DeviceMotion cross-check (anti-emulator) ─
       // HP asli selalu ada micro-vibration dari accelerometer
@@ -597,7 +598,7 @@ async function handlePulangLuar() {
       const jam = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
       showGPS(latitude, longitude, accuracy, 'Lapangan');
       if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengirim...';
-      try {
+
         const payload = {
           request_id: `pulang_${window.userProfile?.nip}_${Date.now()}`, // Idempotency Key
           user: {
@@ -680,4 +681,8 @@ async function handlePulangLuar() {
   );
   });
 }
-
+window.handleAbsen = handleAbsen;
+window.handlePulangLuar = handlePulangLuar;
+} catch (e) {
+  console.error('[Absen] Critical Initialization Error:', e);
+}

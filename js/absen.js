@@ -54,10 +54,11 @@ async function handleAbsen() {
   await cekJaringan();
 
   // ── Buka kamera untuk verifikasi wajah & seragam ──
-  console.log('[Absen] Opening camera... isFaceRequired:', isFaceRequired, 'onLine:', navigator.onLine);
+  // BUG FIX: isFaceRequired → FACE_RECOGNITION_ENABLED (didefinisikan di face.js)
+  console.log('[Absen] Opening camera... FACE_RECOGNITION_ENABLED:', FACE_RECOGNITION_ENABLED, 'onLine:', navigator.onLine);
   setBtnL('btnAbsen', true, 'Membuka kamera...');
 
-  if (!isFaceRequired || !navigator.onLine) {
+  if (!FACE_RECOGNITION_ENABLED || !navigator.onLine) {
     // Face recognition dinonaktifkan admin ATAU perangkat sedang offline
     await _doAbsenWithGPS(initData, isTgX, null);
     setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
@@ -475,6 +476,15 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         console.log('[Absen] Submitting payload to webhook:', payload);
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
         console.log('[Absen] Webhook response:', { absenOk, absenStatus, absenData });
+
+        // BUG FIX: Cek absenOk DULU — kalau network/CORS error, data = null dan
+        // isValid akan selalu true (undefined !== false) → false success.
+        if (!absenOk && absenStatus === 0) {
+          handleAbsenError(new AbsenError('Server tidak merespons. Periksa koneksi dan coba lagi.', ERROR_CODES.UNKNOWN), 'resultCard');
+          setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+          return;
+        }
+
         const d = absenData || {};
         
         // Handle message from idempotent response or standard validation
@@ -661,6 +671,14 @@ async function handlePulangLuar() {
 
       try {
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
+        // BUG FIX: Cek network/CORS error lebih dulu (status 0 = tidak ada response)
+        if (!absenOk && absenStatus === 0) {
+          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Server Tidak Merespons',
+            'Pastikan n8n & koneksi internet aktif, lalu coba lagi.');
+          $('btnPulangLuar').disabled = false;
+          if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
+          return;
+        }
         const d = absenData || {};
         const isValid = d?.validasi?.is_valid !== false;
         if (isValid) {

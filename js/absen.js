@@ -128,7 +128,8 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
   await new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-      console.log('[Absen] GPS acquired:', position.coords.latitude, position.coords.longitude);
+        try {
+          console.log('[Absen] GPS acquired:', position.coords.latitude, position.coords.longitude);
       const { latitude, longitude, accuracy } = position.coords;
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
@@ -368,7 +369,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           apiFetch(P.absen, {
             method: 'POST', body: JSON.stringify({
               ...{
-                user: { id: MY_ID, username: tgUser.username || '' },
+                user: { id: window.MY_ID, username: window.tgUser?.username || '' },
                 latitude, longitude, horizontal_accuracy: accuracy,
                 tanggal_iso: fmtD(nowWITA()), jam: '—'
               },
@@ -376,7 +377,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
             })
           });
         } catch (_) { }
-        return;
+        _isAbsenSubmitting = false; resolve(); return;
       }
 
       // Jika suspicious (30–49): lanjutkan tapi tandai di payload
@@ -493,10 +494,10 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           logLoaded = false;
           setTimeout(loadTodayHistory, 1500);
           if (tg) setTimeout(() => tg.close(), 3500); // FIX: Close TG auto like success
-        } else {
-          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
-          setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-        }
+      } catch (err) {
+        console.error('[Absen] Error in GPS callback:', err);
+        handleAbsenError(new AbsenError('Terjadi kesalahan saat memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi');
         _isAbsenSubmitting = false;
         resolve();
       } finally {
@@ -538,8 +539,8 @@ async function handlePulangLuar() {
     _isAbsenSubmitting = false;
     return;
   }
-  const initData = tg?.initData || '';
-  const isTgX = !initData && MY_ID && userProfile;
+  const initData = window.tg?.initData || '';
+  const isTgX = !initData && window.MY_ID && window.userProfile;
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram',
       'Aplikasi harus dibuka melalui Telegram.');
@@ -587,21 +588,22 @@ async function handlePulangLuar() {
       const jam = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
       showGPS(latitude, longitude, accuracy, 'Lapangan');
       if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengirim...';
-      const payload = {
-        request_id: `pulang_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
-        user: {
-          id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '',
-          username: tgUser.username || '', nama_lengkap: userProfile?.nama || '',
-          jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''
-        },
-        latitude, longitude, horizontal_accuracy: accuracy,
-        tanggal, tanggal_iso: tanggalISO, jam,
-        jenis_absen: 'PULANG LUAR',
-        keterangan: ket,
-        skip_radius_check: true,
-        timestamp: Math.floor(Date.now() / 1000),
-        init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent
-      };
+      try {
+        const payload = {
+          request_id: `pulang_${window.userProfile?.nip}_${Date.now()}`, // Idempotency Key
+          user: {
+            id: window.MY_ID, first_name: window.tgUser?.first_name || '', last_name: window.tgUser?.last_name || '',
+            username: window.tgUser?.username || '', nama_lengkap: window.userProfile?.nama || '',
+            jabatan: window.userProfile?.jabatan || '', nip: window.userProfile?.nip || ''
+          },
+          latitude, longitude, horizontal_accuracy: accuracy,
+          tanggal, tanggal_iso: tanggalISO, jam,
+          jenis_absen: 'PULANG LUAR',
+          keterangan: ket,
+          skip_radius_check: true,
+          timestamp: Math.floor(Date.now() / 1000),
+          init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent
+        };
       // ── OFFLINE QUEUE INTERCEPTOR ──
       if (!navigator.onLine) {
         payload._is_offline_sync = true;
@@ -646,7 +648,8 @@ async function handlePulangLuar() {
           $('btnPulangLuar').disabled = false;
           if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
         }
-      } catch {
+      } catch (err) {
+        console.error('[Absen] Error in PulangLuar callback:', err);
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Server Tidak Merespons',
           'Pastikan n8n & ngrok berjalan.');
         $('btnPulangLuar').disabled = false;

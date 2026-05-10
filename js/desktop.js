@@ -396,12 +396,34 @@
       }
 
       const opt = sel.options[sel.selectedIndex];
+      
+      // Validation for proof requirement (matching server-side logic)
+      const start = new Date(tgl1.value);
+      const end = new Date(tgl2.value || tgl1.value);
+      const durasi = Math.round((end - start) / (864e5)) + 1;
+      const adaBukti = !!_adminKetFileBase64;
+      
+      if (jns.value === 'TUGAS' && !adaBukti) {
+        showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'warning', '📎', 'Bukti Wajib', 'Surat Tugas / Dinas Luar wajib menyertakan lampiran bukti.');
+        if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-warning'; }
+        return;
+      }
+      if (jns.value === 'SAKIT' && durasi > 1 && !adaBukti) {
+        showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'warning', '📎', 'Bukti Wajib', `Izin Sakit > 1 hari (${durasi} hari) wajib menyertakan lampiran bukti.`);
+        if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-warning'; }
+        return;
+      }
+
       const payload = {
-        user_id: sel.value,
-        nama: opt.dataset.nama,
         nip: opt.dataset.nip,
+        request_id: `admin_ket_${opt.dataset.nip}_${Date.now()}`,
+        user: {
+          id: sel.value,
+          nama: opt.dataset.nama,
+          nip: opt.dataset.nip
+        },
         jenis: jns.value,
-        pesan: msg.value,
+        keterangan: msg.value,
         tgl_mulai: tgl1.value,
         tgl_selesai: tgl2.value || tgl1.value,
         bukti_base64: _adminKetFileBase64,
@@ -409,6 +431,7 @@
         bukti_nama: _adminKetFileName,
         admin_id: MY_ID,
         admin_nama: userProfile?.nama || userProfile?.username || 'Admin',
+        source: 'admin_panel',
         timestamp: Math.floor(Date.now() / 1000)
       };
 
@@ -418,7 +441,7 @@
       try {
         const { ok, data } = await apiPost(P.keteranganAdd, payload);
         if (ok && data?.ok !== false) {
-          showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'success', '✅', 'Berhasil Disimpan', `Keterangan ${jns.value} untuk ${payload.nama} telah masuk ke sistem.`);
+          showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'success', '✅', 'Berhasil Disimpan', `Keterangan ${jns.value} untuk ${payload.user.nama} telah masuk ke sistem.`);
           if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-success'; }
           
           // Reset Form dengan Delay agar user sempat lihat status sukses

@@ -146,6 +146,7 @@ const P = {
   signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
   signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
   signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
+  keteranganAdd: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
   tugasAdd: isTest ? '/webhook-test/tugas-add' : '/webhook/tugas-add',
   tugasList: isTest ? '/webhook-test/tugas-list' : '/webhook/tugas-list',
   lemburGet: isTest ? '/webhook-test/lembur-get' : '/webhook/lembur-get',

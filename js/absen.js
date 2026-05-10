@@ -494,16 +494,25 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           logLoaded = false;
           setTimeout(loadTodayHistory, 1500);
           if (tg) setTimeout(() => tg.close(), 3500); // FIX: Close TG auto like success
+        } else {
+          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
+          setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+        }
       } catch (err) {
-        console.error('[Absen] Error in GPS callback:', err);
-        handleAbsenError(new AbsenError('Terjadi kesalahan saat memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
+        console.error('[Absen] Error in inner submission:', err);
+        handleAbsenError(new AbsenError('Gagal mengirim data ke server.', ERROR_CODES.UNKNOWN), 'resultCard');
         setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-        _isAbsenSubmitting = false;
-        resolve();
-      } finally {
-        _isAbsenSubmitting = false;
-        resolve();
       }
+    } catch (err) {
+      console.error('[Absen] Error in GPS callback:', err);
+      handleAbsenError(new AbsenError('Terjadi kesalahan saat memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
+      setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+      _isAbsenSubmitting = false;
+      resolve();
+    } finally {
+      _isAbsenSubmitting = false;
+      resolve();
+    }
     },
     (err) => {
       const msg = { 1: 'Izin GPS ditolak.', 2: 'GPS tidak tersedia.', 3: 'Timeout GPS. Coba di area terbuka.' };

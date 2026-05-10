@@ -657,8 +657,9 @@ async function handlePulangLuar() {
 
         $('btnPulangLuar').disabled = true;
         $('btnAbsen').disabled = true;
-        $('pulangLuarForm').classList.remove('show');
-        $('btnPulangLuar').classList.remove('show');
+        const plf = $('pulangLuarForm'), bpl = $('btnPulangLuar');
+        if (plf) plf.classList.remove('show');
+        if (bpl) bpl.classList.remove('show');
         logLoaded = false;
         return;
       }
@@ -680,8 +681,9 @@ async function handlePulangLuar() {
             `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
           $('btnPulangLuar').disabled = true;
           $('btnAbsen').disabled = true;
-          $('pulangLuarForm').classList.remove('show');
-          $('btnPulangLuar').classList.remove('show');
+          const plf = $('pulangLuarForm'), bpl = $('btnPulangLuar');
+          if (plf) plf.classList.remove('show');
+          if (bpl) bpl.classList.remove('show');
           logLoaded = false;
           autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
           setTimeout(loadTodayHistory, 2000);

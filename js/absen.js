@@ -32,9 +32,11 @@ async function handleAbsen() {
     unlock(); return;
   }
   setBtnL('btnAbsen', true, 'Memeriksa...');
-  const initData = tg?.initData || '';
+  const initData = window.tg?.initData || '';
   // ── Fallback Telegram X: izinkan jika MY_ID valid dari user_list ──
-  const isTgX = !initData && MY_ID && userProfile;
+  const isTgX = !initData && window.MY_ID && window.userProfile;
+  console.log('[Absen] Identity check:', { hasInitData: !!initData, MY_ID: window.MY_ID, hasProfile: !!window.userProfile, isTgX });
+
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram', 'Aplikasi harus dibuka melalui Telegram, bukan browser biasa.');
     setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
@@ -394,22 +396,31 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       } : { foto_dilewati: true };
 
       // ── Stabil Idempotency Key ──
-      // Format: absen_{nip}_{tanggalISO}_{jam/tipe}
-      const myNip = userProfile?.nip || localStorage.getItem('MY_NIP') || '';
+      const myNip = window.userProfile?.nip || localStorage.getItem('MY_NIP') || '';
       const typeKey = n.getHours() < 12 ? 'masuk' : 'pulang';
-      const rid = `absen_${myNip}_${tanggalISO}_${typeKey}`;
+      // Use MY_ID as fallback for NIP to prevent collisions between different users
+      const idKey = myNip || window.MY_ID || 'anon';
+      const rid = `absen_${idKey}_${tanggalISO}_${typeKey}`;
 
       const payload = {
-        request_id: rid, // Stable Idempotency Key
+        request_id: rid, 
         nip: myNip,
         user: {
-          id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
-          nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: myNip
+          id: window.MY_ID, 
+          first_name: window.tgUser?.first_name || '', 
+          last_name: window.tgUser?.last_name || '', 
+          username: window.tgUser?.username || '',
+          nama_lengkap: window.userProfile?.nama || '', 
+          jabatan: window.userProfile?.jabatan || '', 
+          nip: myNip
         },
         latitude, longitude, horizontal_accuracy: accuracy,
         gps_fingerprint,
         tanggal, tanggal_iso: tanggalISO, jam,
-        timestamp: Math.floor(Date.now() / 1000), init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent,
+        timestamp: Math.floor(Date.now() / 1000), 
+        init_data: initData, 
+        source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', 
+        device: navigator.userAgent,
         network_info: {
           ip_public: networkInfo.ip_public,
           is_kantor: networkInfo.is_kantor,

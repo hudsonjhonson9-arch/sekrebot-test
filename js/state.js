@@ -48,7 +48,7 @@
       }
     } catch (e) { }
 
-    // 2. Sinkronkan dengan data asli Telegram
+    // Sinkronkan dengan data asli Telegram
     if (tg) {
       tg.ready();
       tg.expand();
@@ -64,6 +64,11 @@
         } catch (e) { }
       }
     }
+    
+    // EXPOSE TO WINDOW (Critical for cross-script access)
+    window.tg = tg;
+    window.tgUser = tgUser;
+    window.MY_ID = MY_ID;
 
     window.IS_ADMIN = false;
     let adminLoaded = false;

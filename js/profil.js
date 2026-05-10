@@ -1,6 +1,7 @@
 /* ════ PROFIL & DOKUMEN ════ */
     /* ════ USER PROFILE ════ */
     let userProfile = null;
+    window.userProfile = userProfile;
     let _profileLoading = false;
 
     async function loadUserProfile(isManual = false) {
@@ -34,12 +35,13 @@
               nama: d.nama || d.Nama || '',
               jabatan: d.jabatan || d.Jabatan || '',
               nip: d.nip || d.NIP || '',
-              username: d.username || d.Username || tgUser.username || '',
+              username: d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '') || '',
               status: d.status || d.Status || 'AKTIF',
               role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
+            window.userProfile = userProfile;
             applyProfile();
             _profileLoading = false;
             return; // Berhasil
@@ -119,17 +121,23 @@
     }
     function setUserFallback() {
       const n = fullName(), i = (n[0] || '?').toUpperCase();
+      userProfile = {
+        nama: n, jabatan: '', nip: localStorage.getItem('MY_NIP') || '', 
+        username: typeof tgUser !== 'undefined' ? tgUser.username : '', status: 'AKTIF', role: 'user'
+      };
+      window.userProfile = userProfile;
+      
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
       setT('userName', n); setT('ketNama', n);
       setT('userJabatan', '—'); setT('ketJabatan', '—');
-      setT('userMeta', `@${tgUser.username || '—'} · ID: ${MY_ID || '—'}`);
-      setT('ketMeta', `@${tgUser.username || '—'} · ID: ${MY_ID || '—'}`);
+      setT('userMeta', `@${(typeof tgUser !== 'undefined' ? tgUser.username : '') || '—'} · ID: ${typeof MY_ID !== 'undefined' ? MY_ID : '—'}`);
+      setT('ketMeta', `@${(typeof tgUser !== 'undefined' ? tgUser.username : '') || '—'} · ID: ${typeof MY_ID !== 'undefined' ? MY_ID : '—'}`);
       const b = $('userBadge'); if (b) { b.textContent = '⚙️ —'; b.className = 'sbadge'; }
       const al = $('profilAvatarLg'); if (al) al.textContent = i;
       setT('profilNama', n);
       setT('profilJabatan', '—');
       setT('profilNip', 'NIP —');
-      const tb = $('profilTgBadge'); if (tb) tb.textContent = `🔗 @${tgUser.username || '—'}`;
+      const tb = $('profilTgBadge'); if (tb) tb.textContent = `🔗 @${(typeof tgUser !== 'undefined' ? tgUser.username : '') || '—'}`;
     }
 
     /* ════ PENGINGAT KENAIKAN PANGKAT & BERKALA ════ */

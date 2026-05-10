@@ -9,22 +9,33 @@ async function loadAdminMgmt() {
   dom.shimmer(el.id, 1);
   try {
     // 1. Fetch full user list
-    const ur = await apiGet(P.userList + '?format=full');
+    // Efficiently fetch only admin/management users from the new dedicated endpoint
+    const ur = await apiGet(P.adminList);
     if (!ur.ok) throw new Error('Gagal memuat data pengguna');
     
-    // Safety check: ensure we are working with an array
-    const rawList = Array.isArray(ur.data) ? ur.data : (Array.isArray(ur.rows) ? ur.rows : []);
+    // SAFETY FIX: Prioritize ur.rows (parsed by apiGet) over raw ur.data
+    // This prevents empty lists when n8n returns nested objects like [{data: [...]}]
+    const rawList = (ur.rows && ur.rows.length > 0) ? ur.rows : (Array.isArray(ur.data) ? ur.data : []);
     
     // BE MORE INCLUSIVE: Accept any user that has a NIP, ID, or Telegram ID
     const users = rawList.filter(u => u && (u.nip || u.NIP || u.id || u.ID || u.telegram_id));
     
     const managementRoles = ['admin', 'superadmin', 'kepala', 'sekretaris', 'kabid', 'irban', 'inspektur'];
     
-    // Filter users who have management roles
+    // Filter users who have management roles OR are in the dynamic ADMIN_NIPS list
     const admins = users.filter(u => {
-      const r = String(u.role || u.Role || 'user').toLowerCase().trim();
-      const isAdminFlag = u.is_admin === true || u.is_admin === 'true' || u.Is_Admin === true;
-      return managementRoles.some(mr => r.includes(mr)) || isAdminFlag;
+      const nip = String(u.nip || u.NIP || '').trim();
+      const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+      const roleStr = String(u.role || u.Role || 'user').toLowerCase().trim();
+      
+      // Robust admin flag check (handles boolean, string "true", and number 1)
+      const admVal = u.is_admin ?? u.Is_Admin ?? u.IS_ADMIN;
+      const isAdminFlag = admVal === true || String(admVal).toLowerCase() === 'true' || Number(admVal) === 1;
+      
+      // Check against global admin list (populated by loadJamAbsen from admin_list table)
+      const isInAdminList = (nip && ADMIN_NIPS.includes(nip)) || (tid && ADMIN_NIPS.includes(tid));
+      
+      return managementRoles.some(mr => roleStr.includes(mr)) || isAdminFlag || isInAdminList;
     });
 
     // Update global ADMIN_NIPS
@@ -47,10 +58,12 @@ async function loadAdminMgmt() {
 
     // Sort hierarchy
     admins.sort((a, b) => {
-      const rA = String(a.role || a.Role || 'admin').toLowerCase().trim();
-      const rB = String(b.role || b.Role || 'admin').toLowerCase().trim();
-      
-      const getW = (r) => {
+      const getW = (u) => {
+        const nip = String(u.nip || u.NIP || '').trim();
+        const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+        const key = nip || tid;
+        const r = (_adminRoleMap[key] || u.role || u.Role || 'user').toLowerCase().trim();
+        
         if (r.includes('super')) return 10;
         if (r.includes('admin')) return 9;
         if (r.includes('kepala') || r.includes('inspektur')) return 8;
@@ -59,7 +72,7 @@ async function loadAdminMgmt() {
         return 0;
       };
       
-      return getW(rB) - getW(rA);
+      return getW(b) - getW(a);
     });
 
     el.innerHTML = `
@@ -73,11 +86,16 @@ async function loadAdminMgmt() {
           // NIP is the primary identity now
           const isMe = (myNip && nip && nip === myNip) || (id && id === String(MY_ID));
           
-          let role = String(u.role || u.Role || 'admin').toLowerCase().trim();
+          const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+          const key = nip || tid;
+          
+          // Prioritize role from dynamic admin map (admin_list table)
+          let role = (_adminRoleMap[key] || u.role || u.Role || 'admin').toLowerCase().trim();
+          
           // Map roles to standard labels
           if (role.includes('kepala') || role.includes('inspektur')) role = 'pimpinan_1';
-          if (role.includes('sekretaris')) role = 'pimpinan_2';
-          if (role.includes('kabid') || role.includes('irban')) role = 'pimpinan_3';
+          else if (role.includes('sekretaris')) role = 'pimpinan_2';
+          else if (role.includes('kabid') || role.includes('irban')) role = 'pimpinan_3';
           
           let roleLabel = 'ADMIN';
           let icon = '🛡️';

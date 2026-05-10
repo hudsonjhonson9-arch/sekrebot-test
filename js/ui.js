@@ -168,15 +168,15 @@
      * Aktifkan tab panel berdasarkan nama tab.
      * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin' | 'tugas' | 'lembur'
      */
-    function switchTab(tab) {
+    function switchTab(tab, isUserClick = false) {
       // Close more menu when switching tabs
       toggleMoreMenu(false);
       
-      if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
       const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
+      if (!tab) tab = currentTab;
       
-      // ── SPECIAL: If already on Absen tab, trigger attendance action ──
-      if (tab === 'absen' && currentTab === 'absen') {
+      // ── SPECIAL: If already on Absen tab AND it is a user click, trigger attendance action ──
+      if (isUserClick && tab === 'absen' && currentTab === 'absen') {
         if (typeof handleAbsen === 'function') {
            handleAbsen();
            return;

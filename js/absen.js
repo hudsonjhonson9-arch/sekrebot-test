@@ -22,12 +22,16 @@ async function handleAbsen() {
   _lastAbsenClick = now;
 
   // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
-  const myNip = localStorage.getItem('MY_NIP') || window.userProfile?.nip || '';
-  //const forceFaceNips = ['200206302025061002']; 
-  let isFaceRequired = FACE_RECOGNITION_ENABLED;
-  //if (forceFaceNips.includes(myNip)) isFaceRequired = true;
-
   _isAbsenSubmitting = true; // Set lock AFTER checks
+  const myNip = localStorage.getItem('MY_NIP') || window.userProfile?.nip || '';
+  const myId = window.MY_ID;
+
+  if (!myNip || !myId) {
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Belum Siap',
+      'Data profil Anda sedang dimuat. Tunggu sebentar dan coba lagi.');
+    _isAbsenSubmitting = false; return;
+  }
+
   const unlock = () => { _isAbsenSubmitting = false; };
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung', 'Absensi hanya dapat dilakukan dari smartphone. Gunakan Telegram di HP Anda.');
@@ -401,8 +405,17 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 
       // ── Stabil Idempotency Key ──
       const myNip = window.userProfile?.nip || localStorage.getItem('MY_NIP') || '';
-      const typeKey = n.getHours() < 12 ? 'masuk' : 'pulang';
-      // Use MY_ID as fallback for NIP to prevent collisions between different users
+      
+      // Deteksi Tipe Absen (Masuk vs Pulang) yang lebih robust
+      const tot = n.getHours() * 60 + n.getMinutes();
+      const _jH = getJamForTanggal(tanggalISO); // Dari config/constants
+      const jMasukMenit = _jH ? toMenitStr(_jH.masuk) : JAM_MASUK_MENIT;
+      const jPulangMenit = _jH ? toMenitStr(_jH.pulang) : JAM_PULANG_MENIT;
+      
+      let typeKey = 'masuk';
+      if (tot > (jMasukMenit + 180) && tot < jPulangMenit) typeKey = 'siang'; // jarang terjadi
+      else if (tot >= jPulangMenit - 60) typeKey = 'pulang';
+
       const idKey = myNip || window.MY_ID || 'anon';
       const rid = `absen_${idKey}_${tanggalISO}_${typeKey}`;
 
@@ -535,6 +548,14 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
  */
 async function handlePulangLuar() {
   if ($('btnPulangLuar').disabled || _isAbsenSubmitting) return;
+  
+  const myNip = window.userProfile?.nip || localStorage.getItem('MY_NIP') || '';
+  if (!myNip || !window.MY_ID) {
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Belum Siap',
+      'Data profil sedang dimuat. Mohon tunggu.');
+    return;
+  }
+
   _isAbsenSubmitting = true;
   const ket = ($('ketPulangLuar').value || '').trim();
   if (!ket) {
@@ -599,8 +620,9 @@ async function handlePulangLuar() {
       showGPS(latitude, longitude, accuracy, 'Lapangan');
       if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengirim...';
 
+
         const payload = {
-          request_id: `pulang_${window.userProfile?.nip}_${Date.now()}`, // Idempotency Key
+          request_id: `pulang_luar_${window.userProfile?.nip}_${tanggalISO}`, // Stable Idempotency Key
           user: {
             id: window.MY_ID, first_name: window.tgUser?.first_name || '', last_name: window.tgUser?.last_name || '',
             username: window.tgUser?.username || '', nama_lengkap: window.userProfile?.nama || '',

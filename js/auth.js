@@ -51,9 +51,9 @@
           }
 
           // Login Success
-          MY_ID = user.telegram_id || user.id;
+          window.MY_ID = user.telegram_id || user.id;
           const userNip = String(user.nip || '').trim();
-          localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
+          localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
           localStorage.setItem('MY_NIP', userNip); // Store NIP as primary key
           localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
           location.reload(); // Refresh to init with new ID
@@ -65,7 +65,7 @@
             jabatan: $('regJabatan').value.trim(),
             bidang: $('regBidang').value,
             pangkat: $('regPangkat').value,
-            telegram_id: MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
+            telegram_id: window.MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
             instansi_id: $('regInstansi').value || getScopedInstansiId()
           };
 
@@ -74,8 +74,8 @@
           const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);
           if (!regOk || d?.ok === false) throw new Error(d?.message || 'Pendaftaran gagal');
 
-          MY_ID = payload.telegram_id;
-          localStorage.setItem(STORAGE_KEYS.USER_ID, String(MY_ID));
+          window.MY_ID = payload.telegram_id;
+          localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
           localStorage.setItem('MY_NIP', String(payload.nip));
           location.reload();
         }
@@ -99,7 +99,7 @@
     }
 
     function _checkIdentityOnLoad() {
-      if (!MY_ID) {
+      if (!window.MY_ID) {
         $('authOverlay').style.display = 'flex';
         const splash = $('appSplash');
         if (splash) splash.remove(); // No need splash if no auth

@@ -33,7 +33,7 @@ function onDateRangeChange() {
 async function fetchUserListOrder() {
   if (userListOrder.length > 0) return userListOrder;
   try {
-    const res = await apiGet(P.userList + (IS_ADMIN ? '?format=full' : ''));
+    const res = await apiGet(P.userList + '?format=full');
     if (!res.ok) return [];
     const rows = res.rows || parseApiResponse(res.data) || [];
     userListOrder = rows.map((r, idx) => ({
@@ -64,15 +64,14 @@ async function loadRekap() {
   $('rekapRefIcon').outerHTML = '<span class="spin-sm" id="rekapRefIcon"></span>';
   dom.shimmer('pegawaiList', 4);
   resetRekapStats();
-  // Fetch hari libur, jam pegawai & jam periode secara paralel
-  if (!liburLoaded) fetchLiburForRekap();
-  fetchJamPegawai();
-  await Promise.all([fetchJamPeriode(), window._jamAbsenReady]); // pastikan JAM & periode sudah siap
+  // Fetch jam periode secara paralel (minimal setup)
+  await Promise.all([fetchJamPeriode(), window._jamAbsenReady]); 
+  
   const isHarianLoad = dari === sampai;
   try {
-    const orderPromise = fetchUserListOrder();
     let pegawai = [], ringkasan = {};
     let rekapOK = false;
+    let order = []; // Will be populated only if needed
 
     // ── Selalu coba pakai n8n rekap (harian maupun range) ──
     // n8n Hitung Rekap sudah mengurutkan sesuai user_list dan isi semua pegawai
@@ -95,7 +94,7 @@ async function loadRekap() {
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
       const myNip = localStorage.getItem('MY_NIP') || '';
       const adminParam = IS_ADMIN ? '&is_admin=true' : '';
-      const nipQuery = IS_ADMIN ? '&format=full' : `&nip=${myNip}`;
+      const nipQuery = '&format=full'; // Show all employees to everyone
       const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
@@ -104,27 +103,41 @@ async function loadRekap() {
           ringkasan = d.ringkasan || {}; 
           pegawai = d.pegawai; 
           rekapOK = true; 
+          
+          // Populate jamPegawaiMap from rekap metadata to avoid separate call
+          pegawai.forEach(p => {
+            const id = String(p.id || p.ID || p.telegram_id || '').trim();
+            const jm = (p.jam_masuk || '').trim();
+            const jp = (p.jam_pulang || '').trim();
+            if (id && (jm || jp)) {
+              const toM = s => { const parts = (s || '').split(':').map(Number); return (isNaN(parts[0]) || isNaN(parts[1])) ? null : parts[0] * 60 + parts[1]; };
+              jamPegawaiMap[id] = { masuk: jm, pulang: jp, masukMenit: toM(jm), pulangMenit: toM(jp) };
+            }
+          });
         }
       }
     } catch (_) { }
 
     // ── Fallback frontend jika n8n gagal ──
     if (!rekapOK) {
+      console.log('[Rekap] Falling back to frontend calculation...');
+      if (!liburLoaded) await fetchLiburForRekap();
+      await fetchJamPegawai();
+      order = await fetchUserListOrder();
+
       let allRowsRaw = [], periodRowsRaw = [];
       try {
-        const myNip = localStorage.getItem('MY_NIP') || '';
         const adminParam = IS_ADMIN ? '&is_admin=true' : '';
-        // Jika admin, minta format full agar filter NIP di n8n diabaikan
-        const nipQuery = IS_ADMIN ? '&format=full' : `&nip=${myNip}`;
+        const nipQuery = '&format=full'; 
         const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}${nipQuery}${adminParam}`);
         if (resAll.ok) allRowsRaw = (resAll.rows?.length ?? 0) ? resAll.rows : parseApiResponse(resAll.data);
       } catch (_) { }
+
       periodRowsRaw = allRowsRaw.filter(r => {
         const t = getField(r, 'Tanggal', 'tanggal');
         return t && t >= dari && t <= sampai;
       });
-      const _order = await orderPromise;
-      const computed = computeRekap(periodRowsRaw, allRowsRaw, _order, dari, sampai);
+      const computed = computeRekap(periodRowsRaw, allRowsRaw, order, dari, sampai);
       pegawai = computed.pegawai;
       ringkasan = computed.ringkasan;
     }
@@ -144,51 +157,26 @@ async function loadRekap() {
     if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
     $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
-    const order = await orderPromise;
-    // Helper to get field case-insensitively
-    const gf = (obj, ...keys) => {
-      for (const k of keys) {
-        if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') return obj[k];
-        const uk = k.toUpperCase(), lk = k.toLowerCase();
-        if (obj[uk] !== undefined && obj[uk] !== null && obj[uk] !== '') return obj[uk];
-        if (obj[lk] !== undefined && obj[lk] !== null && obj[lk] !== '') return obj[lk];
-      }
-      return '';
-    };
-
-    // Enrich jabatan dari user_list jika belum ada
-    if (order.length > 0) {
-      pegawai = pegawai.map(p => {
-        const pId = gf(p, 'id', 'ID', 'telegram_id');
-        const pNama = (gf(p, 'nama', 'Nama') || '').toLowerCase().trim();
-        const pNip = gf(p, 'nip', 'NIP');
-
-        const match = order.find(u => {
-          const uId = gf(u, 'id', 'ID', 'telegram_id');
-          const uNama = (gf(u, 'nama', 'Nama') || '').toLowerCase().trim();
-          const uNip = gf(u, 'nip', 'NIP');
-          if (pId && uId && String(pId) === String(uId)) return true;
-          if (pNip && uNip && pNip === uNip) return true;
-          if (pNama && uNama) {
-            if (pNama === uNama) return true;
-            const strip = (s) => s.replace(/,?\s+(s\.?[a-z]*|m\.?[a-z]*|drs|dra|ir|h\.|hj\.)(\s|$)/gi, '').trim();
-            if (strip(pNama) === strip(uNama)) return true;
-          }
-          return false;
-        });
-
-        if (match) {
-          return {
-            ...p,
-            nama: (match.nama && match.nama !== '—') ? match.nama : p.nama,
-            nip: (match.nip && match.nip !== '—') ? match.nip : p.nip,
-            jabatan: (match.jabatan && match.jabatan !== '—') ? match.jabatan : p.jabatan,
-            pangkat: (match.pangkat && match.pangkat !== '—') ? match.pangkat : p.pangkat,
-            urutan: match.urutan ?? p.urutan
-          };
-        }
-        return p;
-      });
+    // ── Enrichment (Hanya jika metadata kurang/fallback) ──
+    // n8n v18.2+ sudah menyertakan jabatan/pangkat/order, jadi ini biasanya diskip
+    const hasMissingMeta = pegawai.some(p => !p.jabatan || p.jabatan === '—');
+    if (hasMissingMeta && rekapOK) {
+       if (order.length === 0) order = await fetchUserListOrder();
+       if (order.length > 0) {
+          pegawai = pegawai.map(p => {
+            const pId = gf(p, 'id', 'ID', 'telegram_id');
+            const match = order.find(u => String(u.id || u.ID) === String(pId));
+            if (match) {
+              return {
+                ...p,
+                jabatan: (match.jabatan && match.jabatan !== '—') ? match.jabatan : p.jabatan,
+                pangkat: (match.pangkat && match.pangkat !== '—') ? match.pangkat : p.pangkat,
+                urutan: match.urutan ?? p.urutan
+              };
+            }
+            return p;
+          });
+       }
     }
 
     // Sort strictly by hierarchy

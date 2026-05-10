@@ -82,11 +82,11 @@ idb.init();
 const SERVER_1 = 'https://mindcloud.my.id';           // server utama (permanen)
 const SERVER_2 = 'https://n8n-sp8dtwslkxal.jkt3.sumopod.my.id'; // fallback/dev
 const isTest = false;
-// ADMIN_IDS dimuat dinamis dari sheet admin_list via n8n
+// ADMIN_NIPS dimuat dinamis dari database via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
-let ADMIN_IDS = [];          // diisi oleh loadJamAbsen()
-window._adminRoleMap = {};   // Mapping telegram_id -> role (superadmin/admin)
-let REKAP_CHAT_ID = null;    // diisi setelah ADMIN_IDS loaded
+let ADMIN_NIPS = [];         // diisi oleh loadAdminMgmt()
+window._adminRoleMap = {};   // Mapping NIP -> role (superadmin/admin/kepala/dkk)
+let REKAP_CHAT_ID = null;    // peninggalan bot lama, bisa diabaikan
 
 /* ════ KONFIGURASI JARINGAN WIFI KANTOR ════
    WAJIB DIISI: Daftar IP publik jaringan WiFi kantor.
@@ -138,12 +138,15 @@ const P = {
   adminDel: isTest ? '/webhook-test/admin-delete' : '/webhook/admin-delete',
   userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
   userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
+  penugasanList: isTest ? '/webhook-test/penugasan-list' : '/webhook/penugasan-list',
+  penugasanSave: isTest ? '/webhook-test/penugasan-save' : '/webhook/penugasan-save',
   userDel: isTest ? '/webhook-test/user-delete' : '/webhook/user-delete',
   logAdd: isTest ? '/webhook-test/log-add' : '/webhook/log-add',
   logEdit: isTest ? '/webhook-test/log-edit' : '/webhook/log-edit',
   signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
   signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
   signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
+  keteranganAdd: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
   tugasAdd: isTest ? '/webhook-test/tugas-add' : '/webhook/tugas-add',
   tugasList: isTest ? '/webhook-test/tugas-list' : '/webhook/tugas-list',
   lemburGet: isTest ? '/webhook-test/lembur-get' : '/webhook/lembur-get',
@@ -209,15 +212,28 @@ async function apiFetch(path, opts = {}) {
       console.log(`[Fetch] Attempting: ${base}${path}`);
       const fetchOpts = { ...opts };
       fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
+      
       if (opts.method === 'GET' || !opts.body) {
         delete fetchOpts.headers['Content-Type'];
       }
-      const r = await fetch(base + path, fetchOpts);
-      if (r.ok || (r.status >= 400 && r.status < 500)) {
-        console.log(`[Fetch] Success: ${base}${path}`);
-        return r;
+
+      // Add 10s timeout for each server
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 10000);
+      
+      try {
+        const r = await fetch(base + path, { ...fetchOpts, signal: ctrl.signal });
+        clearTimeout(tid);
+        
+        if (r.ok || (r.status >= 400 && r.status < 500)) {
+          console.log(`[Fetch] Success: ${base}${path}`);
+          return r;
+        }
+        throw new Error(`HTTP ${r.status}`);
+      } catch (e) {
+        clearTimeout(tid);
+        throw e;
       }
-      throw new Error(`HTTP ${r.status}`);
     } catch (e) {
       console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
     }

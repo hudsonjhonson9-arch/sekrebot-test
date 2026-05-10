@@ -479,7 +479,7 @@
       try {
         const res = await apiPost(P.ketApprove, {
             id_ket: idKet, nip, action, jenis, tanggal,
-            admin_id: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000)
+            admin_id: MY_ID, admin_nips: ADMIN_NIPS, timestamp: Math.floor(Date.now() / 1000)
           });
         const d = res?.data ?? {};
         if (res.ok && d.ok !== false) {

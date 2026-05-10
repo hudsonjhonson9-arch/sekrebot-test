@@ -6,6 +6,7 @@
   let _selectedTugasPegawai = []; 
   let _tugasMap = null;
   let _tugasMarker = null;
+  let _activeTugasData = null; // Store data of the task being worked on
 
 
   /**
@@ -26,31 +27,407 @@
   /**
    * Check Role Access
    */
+  /**
+   * Check Role Access and Initialize UI
+   */
   function checkTugasLemburAccess() {
     const p = userProfile || {};
-    const jabatan = (p.jabatan || '').toUpperCase();
-    const isKabid = jabatan.includes('KEPALA BIDANG') || jabatan.includes('SEKRETARIS') || jabatan.includes('KEPALA BADAN');
-    const isAdmin = !!IS_ADMIN;
+    const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
+    const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
     
-    console.log('[TugasLemburCheck] User:', p.nama, '| NIP:', p.nip);
-    console.log('[TugasLemburCheck] IS_ADMIN:', isAdmin, '| isKabid:', isKabid);
+    // 1. Sidebar/Bottom Nav & Admin Visibility
+    if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
+    
+    const navTugasDesk = $('nav-tugas-desk');
+    const navLemburDesk = $('nav-lembur-desk');
+    const moreTugas = $('more-tugas');
+    const moreLembur = $('more-lembur');
 
-    const navTugas = $('nav-tugas');
-    const navLembur = $('nav-lembur');
+    if (navTugasDesk) navTugasDesk.style.display = 'flex';
+    if (moreTugas) moreTugas.style.display = 'flex';
     
-    if (navTugas) {
-      navTugas.style.display = (isKabid || isAdmin) ? 'flex' : 'none';
-      console.log('[TugasLemburCheck] nav-tugas display set to:', navTugas.style.display);
+    if (navLemburDesk) navLemburDesk.style.display = isManager ? 'flex' : 'none';
+    if (moreLembur) moreLembur.style.display = isManager ? 'flex' : 'none';
+
+    // 2. Form vs List visibility
+    const creationForm = $('tugasCreationForm');
+    const actingAsGroup = $('actingAsGroup');
+    if (creationForm) {
+      creationForm.style.display = isManager ? 'block' : 'none';
     }
-    if (navLembur) {
-      navLembur.style.display = isAdmin ? 'flex' : 'none';
-      console.log('[TugasLemburCheck] nav-lembur display set to:', navLembur.style.display);
+    if (actingAsGroup) {
+      const isAdmin = ['admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
+      actingAsGroup.style.display = isAdmin ? 'block' : 'none';
     }
+
+    // 3. Load personal assignments
+    loadMyAssignments();
+    // 4. Load monitoring if manager
+    if (isManager) loadMonitoringTasks();
   }
   window.checkTugasLemburAccess = checkTugasLemburAccess;
 
+  /**
+   * Load Assignments for the current user (NIP based)
+   */
+  async function loadMyAssignments() {
+    const listEl = $('tugasListSection');
+    if (!listEl) return;
+    
+    const p = typeof userProfile !== 'undefined' && userProfile ? userProfile : {};
+    let nip = p.nip || localStorage.getItem('MY_NIP');
+    
+    if (!nip) {
+      try {
+        const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+        nip = u.nip || u.NIP;
+      } catch(e) {}
+    }
+
+    if (!nip) {
+      listEl.innerHTML = '<div class="empty-state">Data profil belum tersedia</div>';
+      return;
+    }
+
+    listEl.innerHTML = `
+      <div class="shimmer-wrapper">
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px"></div>
+      </div>
+    `;
+
+    try {
+      // Endpoint: fetching from dedicated penugasan table
+      // apiGet already returns {ok, rows, data, status}
+      const res = await apiGet(`${P.penugasanList}?nip=${nip}&limit=20`);
+      console.log('[TugasLembur] API Response:', res);
+      
+      if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+      
+      // Handle n8n wrap { data: [...] } or direct array via apiGet's logic
+      const data = res.rows || parseApiResponse(res.data) || [];
+      console.log('[TugasLembur] Parsed Data:', data);
+
+      if (data.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state" style="padding:40px 20px">
+            <div style="font-size:40px; margin-bottom:15px">📋</div>
+            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Tugas Luar</div>
+            <div style="color:var(--muted); font-size:11px; margin-top:5px">Tugas yang diberikan atasan akan muncul di sini</div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = `
+        <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
+          <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Tugas Saya
+        </div>
+        ${data.map(r => renderTugasCard(r)).join('')}
+      `;
+    } catch (e) {
+      console.error('[TugasLembur] Load Error:', e);
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div style="font-size:30px; margin-bottom:10px">⚠️</div>
+          <div style="font-weight:700">Gagal memuat tugas</div>
+          <div style="font-size:10px; color:var(--muted); margin:5px 0 10px">${e.message}</div>
+          <button onclick="loadMyAssignments()" class="btn-sm" style="background:rgba(255,255,255,0.1); border-radius:10px; padding:8px 15px; border:1px solid rgba(255,255,255,0.2); color:var(--white); cursor:pointer">🔄 Coba Lagi</button>
+        </div>
+      `;
+    }
+
+    // 2. LOAD MONITORING & FORM VISIBILITY (If Manager)
+    const profileData = userProfile || {};
+    const userRole = String(profileData.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
+    const isManagerRole = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(userRole) || !!window.IS_ADMIN;
+    
+    // Form Visibility
+    const formEl = $('tugasCreationForm');
+    if (formEl) {
+      formEl.style.display = isManagerRole ? 'block' : 'none';
+      if (isManagerRole) {
+        loadTugasPegawai();
+        loadMonitoringTasks();
+      }
+    }
+
+    // Monitoring Section
+    if (isManager) {
+      loadMonitoringTasks(nip);
+    } else {
+      const monEl = $('tugasMonitoringSection');
+      if (monEl) monEl.style.display = 'none';
+    }
+  }
+
+  /**
+   * Load tasks given by this manager
+   */
+  async function loadMonitoringTasks(myNip) {
+    const monEl = $('tugasMonitoringSection');
+    const monList = $('tugasMonitoringList');
+    if (!monEl || !monList) return;
+
+    monEl.style.display = 'block';
+    monList.innerHTML = `
+      <div class="shimmer-wrapper">
+        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px; margin-bottom:8px"></div>
+        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px"></div>
+      </div>
+    `;
+
+    try {
+      // Fetch where created_by_nip = myNip
+      const res = await apiGet(`${P.penugasanList}?created_by_nip=${myNip}&limit=30`);
+      const data = res.rows || parseApiResponse(res.data) || [];
+
+      if (data.length === 0) {
+        monList.innerHTML = '<div style="font-size:11px; color:var(--muted); padding:20px; text-align:center">Belum ada tugas yang Anda berikan.</div>';
+        return;
+      }
+
+      monList.innerHTML = data.map(r => renderMonitoringCard(r)).join('');
+    } catch (e) {
+      monList.innerHTML = `<div style="font-size:10px; color:var(--danger)">Gagal memuat monitoring: ${e.message}</div>`;
+    }
+  }
+
+  function renderMonitoringCard(r) {
+    const status = (r.status || 'AKTIF').toUpperCase();
+    const tgl = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'short'}) : '—';
+    const peg = r.nama || r.nip || 'Pegawai';
+    
+    return `
+      <div class="card glass-card" style="margin-bottom:10px; padding:12px; border-left:3px solid ${status === 'AKTIF' ? 'var(--gold)' : '#10b981'}">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <div style="flex:1">
+            <div style="display:flex; align-items:center; gap:8px">
+              <div style="font-size:11px; font-weight:800; color:var(--white)">${peg}</div>
+              <div style="font-size:9px; color:var(--muted)">• ${tgl}</div>
+            </div>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4">${r.keterangan || '—'}</div>
+          </div>
+          <div style="text-align:right; margin-left:15px">
+             <div class="status-badge s-${status === 'AKTIF' ? 'warning' : 'success'}" style="font-size:8px; padding:2px 6px">${status}</div>
+             ${r.bukti ? `<div style="font-size:8px; color:var(--gold); margin-top:4px; cursor:pointer" onclick="viewTugasBukti('${r.bukti}')"><i class="fas fa-image"></i> Bukti</div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  window.viewTugasBukti = function(url) {
+    Swal.fire({
+      imageUrl: url,
+      imageAlt: 'Bukti Tugas',
+      background: '#0a192f',
+      confirmButtonText: 'Tutup'
+    });
+  };
+  function renderTugasCard(r) {
+    const rawTgl = r.tanggal || '—';
+    let tglDisplay = rawTgl;
+    try {
+      if (rawTgl.includes('T') || rawTgl.includes('-')) {
+        const d = new Date(rawTgl);
+        if (!isNaN(d.getTime())) {
+          tglDisplay = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+      }
+    } catch(e) {}
+
+    const ket = r.keterangan || '—';
+    const lat = r.lat;
+    const lon = r.lon;
+    const rad = r.radius || 100;
+    const status = (r.status || 'AKTIF').toUpperCase();
+    const bukti = r.bukti || '';
+    const tglSelesai = r.updated_at || r.pengerjaan_timestamp ? new Date(r.updated_at || r.pengerjaan_timestamp).toLocaleString('id-ID', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+    
+    let mapBtn = '';
+    if (lat && lon) {
+      mapBtn = `
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="btn-sm" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2); padding:6px 12px; border-radius:10px; text-decoration:none; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:6px; transition:all 0.3s ease">
+          <i class="fas fa-map-marked-alt"></i> Lokasi
+        </a>
+      `;
+    }
+
+    let actionBtn = '';
+    if (status === 'AKTIF') {
+      actionBtn = `
+        <button onclick='handleKerjakanTugas(${JSON.stringify(r)})' class="btn-sm" style="background:linear-gradient(135deg, var(--gold) 0%, #d4af37 100%); color:#000; border:none; padding:8px 16px; border-radius:10px; font-size:11px; font-weight:800; cursor:pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.3); transition:all 0.3s ease">
+          🚀 Kerjakan Tugas
+        </button>
+      `;
+    } else {
+      actionBtn = `
+        <div style="text-align:right">
+          <div class="status-badge s-success" style="font-size:9px; background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.3)">SELESAI</div>
+          <div style="font-size:8px; color:var(--muted); margin-top:4px; font-weight:600">${tglSelesai}</div>
+        </div>
+      `;
+    }
+
+    let buktiTag = '';
+    if (bukti) {
+      buktiTag = `
+        <div style="margin-top:15px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); position:relative">
+          <img src="${bukti}" style="width:100%; height:140px; object-fit:cover; display:block" alt="Bukti Tugas">
+          <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.8)); padding:10px; font-size:9px; color:#fff; font-weight:600">
+             <i class="fas fa-check-circle" style="color:#10b981; margin-right:5px"></i> Bukti Terlampir
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="card glass-card" style="margin-bottom:15px; padding:18px; border-left:4px solid ${status === 'AKTIF' ? 'var(--gold)' : '#10b981'}; transition:transform 0.3s ease">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
+          <div style="flex:1; padding-right:10px">
+            <div style="font-size:10px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; opacity:0.8">${tglDisplay}</div>
+            <div style="font-size:15px; font-weight:800; color:var(--white); margin-top:6px; line-height:1.4">${ket}</div>
+          </div>
+          ${status === 'AKTIF' ? '<div class="status-badge s-warning" style="font-size:9px; letter-spacing:1px; font-weight:900">AKTIF</div>' : ''}
+        </div>
+        
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; margin-top:10px">
+          <div style="display:flex; justify-content:space-between; align-items:center">
+             <div style="font-size:11px; color:var(--muted); display:flex; align-items:center; gap:8px">
+                <i class="fas fa-bullseye" style="color:var(--danger)"></i>
+                Radius: ${rad}m
+             </div>
+             <div style="display:flex; gap:8px">
+                ${mapBtn}
+                ${actionBtn}
+             </div>
+          </div>
+          ${buktiTag}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Distance Helper (Haversine)
+   */
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // Earth radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in meters
+  }
+
+  /**
+   * Action: Kerjakan Tugas
+   */
+  window.handleKerjakanTugas = function(r) {
+    if ((r.status || '').toUpperCase() === 'SELESAI') {
+      Swal.fire('Info', 'Tugas ini sudah diselesaikan.', 'info');
+      return;
+    }
+    _activeTugasData = r;
+    
+    Swal.fire({
+      title: 'Kerjakan Tugas',
+      html: `
+        <div style="margin-bottom:10px">
+          <i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px"></i> 
+          Pastikan Anda berada di lokasi penugasan.
+        </div>
+        <div style="font-size:12px; opacity:0.7">Sistem akan mengecek koordinat dan meminta bukti foto pengerjaan.</div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: '📍 Cek Lokasi & Foto',
+      cancelButtonText: 'Batal'
+    }).then((res) => {
+      if (res.isConfirmed) {
+        // 1. Get Geolocation
+        if (!navigator.geolocation) {
+          alert('Geolocation tidak didukung di browser ini.');
+          return;
+        }
+
+        Swal.fire({ title: 'Mengecek Lokasi...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const myLat = pos.coords.latitude;
+          const myLon = pos.coords.longitude;
+          const dist = getDistance(myLat, myLon, r.lat, r.lon);
+
+          if (dist > (r.radius || 100)) {
+            Swal.fire('❌ Gagal', `Anda berada ${Math.round(dist)}m dari titik tugas. Jarak maksimal adalah ${r.radius}m.`, 'error');
+          } else {
+            // 2. Trigger File Input
+            Swal.close();
+            _activeTugasData.actual_lat = myLat;
+            _activeTugasData.actual_lon = myLon;
+            $('tugasBuktiInput').click();
+          }
+        }, (err) => {
+          Swal.fire('❌ Gagal', 'Gagal mendapatkan lokasi: ' + err.message, 'error');
+        }, { enableHighAccuracy: true });
+      }
+    });
+  };
+
+  /**
+   * Process Proof Upload
+   */
+  window.processTugasBukti = async function(input) {
+    if (!input.files || !input.files[0] || !_activeTugasData) return;
+
+    const file = input.files[0];
+    Swal.fire({ title: 'Mengunggah Bukti...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+      // 1. Upload Photo
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('nip', _activeTugasData.nip);
+      formData.append('id', _activeTugasData.id);
+      
+      const uploadRes = await apiUpload(P.upload, formData);
+      if (!uploadRes.ok) throw new Error('Gagal mengunggah foto');
+
+      const imageUrl = uploadRes.data?.url || uploadRes.data?.link;
+      
+      // 2. Update Task Status
+      const updateRes = await apiPost(P.penugasanSave, {
+        id: _activeTugasData.id,
+        status: 'SELESAI',
+        bukti: imageUrl,
+        actual_lat: _activeTugasData.actual_lat,
+        actual_lon: _activeTugasData.actual_lon,
+        pengerjaan_timestamp: Date.now()
+      });
+
+      if (updateRes.ok) {
+        Swal.fire('✅ Berhasil', 'Tugas telah diselesaikan!', 'success');
+        loadMyAssignments();
+      } else {
+        throw new Error('Gagal memperbarui status tugas');
+      }
+
+    } catch (e) {
+      Swal.fire('❌ Gagal', e.message, 'error');
+    } finally {
+      input.value = '';
+    }
+  };
+
   /* ════════════════════════════════════════════════════
-     PENUGASAN LOGIC
+     ADMIN/MANAGER LOGIC
      ════════════════════════════════════════════════════ */
 
   /**
@@ -58,24 +435,49 @@
    */
   async function loadTugasPegawai() {
     const el = $('tugasOptionsList');
+    const pemberiEl = $('tugasPemberi');
     if (!el) return;
     el.innerHTML = '<div style="padding:10px; text-align:center; font-size:11px; color:var(--muted)">⏳ Memuat...</div>';
     
     try {
-      const res = await apiGet(P.userList + '?format=full');
-      const rows = res.ok ? ((res.rows?.length ?? 0) ? res.rows : parseApiResponse(res.data)) : [];
+      // Use format=full to get ALL employees (including Kabid/Manager)
+      const res = await apiGet(P.userList, { format: 'full' });
+      const rows = res.rows || parseApiResponse(res.data) || [];
       
-      _allPegawaiTugas = rows.map(u => ({
-        id: u.id || u.ID || u.telegram_id || '',
-        nama: u.nama || u.Nama || u.username || '',
-        nip: u.nip || u.NIP || '',
-        jabatan: u.jabatan || u.Jabatan || '',
-        pangkat: u.pangkat || u.Pangkat || ''
-      })).sort((a, b) => a.nama.localeCompare(b.nama));
+      _allPegawaiTugas = rows.map(u => {
+        const j = String(u.jabatan || u.Jabatan || '').toLowerCase();
+        let r = String(u.role || u.Role || 'USER').toLowerCase().trim();
+        
+        // Auto-detect role from jabatan if current role is 'user'
+        if (r === 'user') {
+          // STRICT matches to avoid flooding the list
+          if (j === 'kepala badan' || j === 'kepala dinas') r = 'kepala';
+          else if (j === 'sekretaris badan' || j === 'sekretaris') r = 'sekretaris';
+          else if (j.startsWith('kepala bidang') || j === 'kabid') r = 'kabid';
+          else if (j === 'irban') r = 'irban';
+        }
+
+        return {
+          id: u.id || u.ID || u.telegram_id || '',
+          nama: u.nama || u.Nama || u.username || '',
+          nip: u.nip || u.NIP || '',
+          jabatan: u.jabatan || u.Jabatan || '',
+          role: r
+        };
+      }).sort((a, b) => a.nama.localeCompare(b.nama));
 
       renderTugasPegawaiList(_allPegawaiTugas);
+
+      // Populate Pemberi Tugas dropdown if it exists (for Admins)
+      if (pemberiEl) {
+        const managers = _allPegawaiTugas.filter(u => 
+          ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(u.role)
+        );
+        pemberiEl.innerHTML = '<option value="">-- Gunakan Profil Saya --</option>' + 
+          managers.map(m => `<option value="${m.nip}|${m.nama}">${m.nama} (${m.role.toUpperCase()})</option>`).join('');
+      }
     } catch (e) {
-      el.innerHTML = '<div style="padding:10px; text-align:center; color:var(--danger)">❌ Gagal</div>';
+      el.innerHTML = '<div style="padding:10px; text-align:center; color:var(--danger)">❌ Gagal memuat pegawai</div>';
     }
   }
 
@@ -220,6 +622,16 @@
     // Save for each selected employee
     setBtnL('btnSaveTugas', true, '⏳ Memproses...');
     try {
+      const pemberiVal = $('tugasPemberi')?.value || '';
+      let creatorNama = userProfile?.nama || 'Admin';
+      let creatorNip = userProfile?.nip || localStorage.getItem('MY_NIP');
+
+      if (pemberiVal) {
+        const [pNip, pNama] = pemberiVal.split('|');
+        creatorNip = pNip;
+        creatorNama = pNama;
+      }
+
       const results = await Promise.all(_selectedTugasPegawai.map(async (u) => {
         const payload = {
           user_id: u.id,
@@ -228,10 +640,12 @@
           lat, lon,
           keterangan: ket,
           tanggal: tgl,
-          created_by: userProfile?.nama || 'Admin',
+          radius: parseInt($('tugasRadius').value) || 100,
+          created_by: creatorNama,
+          created_by_nip: creatorNip,
           timestamp: Date.now()
         };
-        return await apiPost(P.tugasAdd, payload);
+        return await apiPost(P.penugasanSave, payload);
       }));
 
       const allOk = results.every(r => r.ok && r.data?.ok !== false);
@@ -656,4 +1070,128 @@
     if (lCont && !lCont.contains(e.target)) window.toggleLemburDropdown(true);
   });
 
+  /**
+   * Load Monitoring Tasks (Tasks created by this manager)
+   */
+  async function loadMonitoringTasks() {
+    const el = $('tugasMonitoringSection');
+    if (!el) return;
+    
+    const p = userProfile || {};
+    const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
+    const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
+    if (!isManager) {
+      el.innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="shimmer-wrapper">
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
+      </div>
+    `;
+
+    try {
+      const myNip = userProfile?.nip || localStorage.getItem('MY_NIP');
+      const isAdmin = ['admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
+      
+      // Fetch tasks: Admins see everything, Managers see what they created
+      let url = `${P.penugasanList}?limit=100`;
+      if (!isAdmin) {
+        url += `&created_by_nip=${myNip}`;
+      }
+      
+      const res = await apiGet(url);
+      
+      if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+      
+      const data = res.rows || parseApiResponse(res.data) || [];
+      renderMonitoringTasks(data);
+    } catch (e) {
+      console.error('[TugasLembur] Monitoring Load Error:', e);
+      el.innerHTML = `<div class="empty-state" style="padding:20px; font-size:11px">⚠️ Gagal memuat monitoring: ${e.message}</div>`;
+    }
+  }
+
+  function renderMonitoringTasks(data) {
+    const el = $('tugasMonitoringSection');
+    if (!el) return;
+
+    if (data.length === 0) {
+      el.innerHTML = `
+        <div class="card glass-card" style="padding:20px; text-align:center; opacity:0.7">
+          <div style="font-size:24px; margin-bottom:8px">📡</div>
+          <div style="font-size:11px; font-weight:700">Belum ada tugas yang Anda instruksikan</div>
+          <div style="font-size:9px; color:var(--muted)">Progres tugas yang Anda berikan ke staf akan muncul di sini.</div>
+        </div>
+      `;
+      return;
+    }
+
+    const header = `
+      <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; margin-top:25px; text-transform:uppercase; letter-spacing:1px">
+        <i class="fas fa-satellite-dish" style="margin-right:8px"></i> Monitoring Progres Tugas
+      </div>
+    `;
+
+    const cards = data.map(t => {
+      const isSelesai = String(t.status).toUpperCase() === 'SELESAI';
+      const color = isSelesai ? 'var(--success)' : 'var(--warning)';
+      const icon = isSelesai ? 'check-circle' : 'clock';
+      
+      return `
+        <div class="card glass-card" style="margin-bottom:12px; border-left: 4px solid ${color}">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start">
+            <div style="flex:1">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px">
+                <div style="font-size:13px; font-weight:800; color:var(--white)">${t.nama || '—'}</div>
+                <span class="status-badge" style="background:${isSelesai ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)'}; color:${color}; font-size:9px; border:1px solid ${color}44">
+                  <i class="fas fa-${icon}" style="margin-right:4px"></i> ${t.status || 'PENDING'}
+                </span>
+              </div>
+              <div style="font-size:10px; color:var(--muted)">NIP: ${t.nip || '—'}</div>
+              <div style="font-size:9px; color:var(--gold); margin-top:2px; font-weight:700">
+                <i class="fas fa-user-tie"></i> Pemberi: ${t.created_by || 'Admin'}
+              </div>
+              <div style="font-size:11px; color:var(--text); margin-top:8px; line-height:1.4">
+                <strong>Ket:</strong> ${t.keterangan || '—'}
+              </div>
+              <div style="font-size:9px; color:var(--muted); margin-top:8px; display:flex; align-items:center; gap:10px">
+                 <span>📅 ${t.tanggal || '—'}</span>
+                 <span>📍 Radius ${t.radius || 100}m</span>
+              </div>
+            </div>
+            
+            ${t.bukti ? `
+              <button onclick="viewTugasBukti('${t.bukti}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--white); padding:6px 12px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer">
+                📷 BUKTI
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    el.innerHTML = header + cards;
+  }
+
+  window.viewTugasBukti = function(url) {
+    if (!url) return;
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Bukti Pengerjaan',
+        imageUrl: url,
+        imageAlt: 'Foto Bukti',
+        confirmButtonText: 'Tutup',
+        background: '#0a192f',
+        color: '#fff',
+        confirmButtonColor: '#3b82f6'
+      });
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
+  window.checkTugasLemburAccess = checkTugasLemburAccess;
+  window.loadMonitoringTasks = loadMonitoringTasks;
 })();

@@ -1,16 +1,5 @@
 /* ════ UI — TABS, CLOCK, JAM UTILS ════ */
-    /* ════ ADMIN TAB SETUP ════ */
-    // Dipanggil oleh _applyAdminUI() setelah ADMIN_IDS dimuat dari server
-    function setupAdminTab() {
-      const existing = document.querySelector('.nav-item[data-tab="admin"]');
-      if (existing) return;
-      const btn = document.createElement('button');
-      btn.className = 'nav-item admin-tab';
-      btn.setAttribute('data-tab', 'admin');
-      btn.innerHTML = '<i class="fas fa-cog"></i><span>Admin</span>';
-      btn.onclick = () => switchTab('admin');
-      $('tabsBar').appendChild(btn);
-    }
+
 
     /**
      * Aktifkan section dalam panel admin.
@@ -125,8 +114,36 @@
     }
 
 
-    // Sembunyikan panel admin dulu sampai ADMIN_IDS dimuat
-    if ($('panel-admin')) dom.hide('panel-admin');
+    // ── Update Admin Visibility ──
+    function applyAdminVisibility() {
+      const myNip = String(localStorage.getItem('MY_NIP') || '').trim();
+      const myRole = String(localStorage.getItem('MY_ROLE') || 'USER').toUpperCase();
+      const isAdmin = (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.includes(myNip)) || 
+                        myRole === 'SUPERADMIN' || 
+                        myRole === 'ADMIN' || 
+                        !!window.IS_ADMIN;
+      
+      // Update global flag if needed
+      window.IS_ADMIN = isAdmin;
+
+      // Target all elements with admin-only class
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (el) {
+          // If it's a nav-item or more-item, use flex, otherwise block
+          const isFlex = el.classList.contains('nav-item') || el.classList.contains('more-item');
+          el.style.display = isAdmin ? (isFlex ? 'flex' : 'block') : 'none';
+        }
+      });
+      
+      // Separator in more menu
+      const sep = $('adminMoreSeparator');
+      if (sep) sep.style.display = isAdmin ? 'block' : 'none';
+
+      // Panel Admin visibility
+      const panel = $('panel-admin');
+      if (panel) panel.style.display = isAdmin ? '' : 'none';
+    }
+    window.applyAdminVisibility = applyAdminVisibility;
 
     /* ════ TABS ════ */
     function getAllTabs() { 
@@ -137,11 +154,35 @@
       return tabs;
     }
     /**
-     * Aktifkan tab panel berdasarkan nama tab.
-     * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin'
+     * Toggle visibility of the "Lainnya" (More) menu.
+     * @param {boolean} [force] - Force state
      */
-        function switchTab(tab) {
-      if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
+    function toggleMoreMenu(force) {
+      const overlay = $('moreMenuOverlay');
+      if (!overlay) return;
+      const isShow = force !== undefined ? force : overlay.style.display !== 'block';
+      overlay.style.display = isShow ? 'block' : 'none';
+    }
+
+    /**
+     * Aktifkan tab panel berdasarkan nama tab.
+     * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin' | 'tugas' | 'lembur'
+     */
+    function switchTab(tab, isUserClick = false) {
+      // Close more menu when switching tabs
+      toggleMoreMenu(false);
+      
+      const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
+      if (!tab) tab = currentTab;
+      
+      // ── SPECIAL: If already on Absen tab AND it is a user click, trigger attendance action ──
+      if (isUserClick && tab === 'absen' && currentTab === 'absen') {
+        if (typeof handleAbsen === 'function') {
+           handleAbsen();
+           return;
+        }
+      }
+
       const T = getAllTabs();
       if (!T.includes(tab)) tab = 'absen';
 

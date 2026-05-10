@@ -24,7 +24,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   // Safety net: Paksa unlock setelah 15 detik jika terjadi hang
   const safetyTimer = setTimeout(() => {
     console.warn('[Meja] Safety timeout! Force-releasing all locks.');
-    _isSubmitting = false;
+    window._isSubmitting = false; 
     window._mejaProcessing = false;
     _forceResetAiState(true);
     if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';
@@ -82,7 +82,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   if ($('moDetail')) $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
 
   // ── START SUBMISSION PROCESS ──
-  _isSubmitting = true; 
+  window._isSubmitting = true; 
   _setMejaStatus('processing', '⏳', `Mencatat: ${user.nama}...`, 'Tunggu konfirmasi server');
 
   try {
@@ -148,7 +148,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
     _setMejaStatus('active', '🔌', 'System Error', e.message);
   } finally {
     clearTimeout(safetyTimer); 
-    _isSubmitting = false; 
+    window._isSubmitting = false; 
     _updateMejaCnt();
     setTimeout(() => {
       if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';

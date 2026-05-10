@@ -8,138 +8,219 @@ async function loadAdminMgmt() {
   if (!el) return;
   dom.shimmer(el.id, 1);
   try {
-    // Gunakan cache dari loadJamAbsen() — tidak perlu fetch ulang ke server
-    const jam = _jamAbsenCache || await _getJamAbsen();
-    const ids = (jam || {}).admin_ids || [];
+    // 1. Fetch full user list
+    // Efficiently fetch only admin/management users from the new dedicated endpoint
+    const ur = await apiGet(P.adminList);
+    if (!ur.ok) throw new Error('Gagal memuat data pengguna');
+    
+    // SAFETY FIX: Prioritize ur.rows (parsed by apiGet) over raw ur.data
+    // This prevents empty lists when n8n returns nested objects like [{data: [...]}]
+    const rawList = (ur.rows && ur.rows.length > 0) ? ur.rows : (Array.isArray(ur.data) ? ur.data : []);
+    
+    // BE MORE INCLUSIVE: Accept any user that has a NIP, ID, or Telegram ID
+    const users = rawList.filter(u => u && (u.nip || u.NIP || u.id || u.ID || u.telegram_id));
+    
+    const managementRoles = ['admin', 'superadmin', 'kepala', 'sekretaris', 'kabid', 'irban', 'inspektur'];
+    
+    // Filter users who have management roles OR are in the dynamic ADMIN_NIPS list
+    const admins = users.filter(u => {
+      const nip = String(u.nip || u.NIP || '').trim();
+      const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+      const roleStr = String(u.role || u.Role || 'user').toLowerCase().trim();
+      
+      // Robust admin flag check (handles boolean, string "true", and number 1)
+      const admVal = u.is_admin ?? u.Is_Admin ?? u.IS_ADMIN;
+      const isAdminFlag = admVal === true || String(admVal).toLowerCase() === 'true' || Number(admVal) === 1;
+      
+      // Check against global admin list (populated by loadJamAbsen from admin_list table)
+      const isInAdminList = (nip && ADMIN_NIPS.includes(nip)) || (tid && ADMIN_NIPS.includes(tid));
+      
+      return managementRoles.some(mr => roleStr.includes(mr)) || isAdminFlag || isInAdminList;
+    });
 
-    // Update global ADMIN_IDS jika perlu
-    if (ids.length) {
-      ADMIN_IDS.length = 0;
-      ids.forEach(id => ADMIN_IDS.push(id));
+    // Update global ADMIN_NIPS
+    ADMIN_NIPS.length = 0;
+    window._adminRoleMap = {};
+    admins.forEach(u => {
+      const nip = String(u.nip || u.NIP || '').trim();
+      const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+      const key = nip || tid;
+      if (key) {
+        if (nip) ADMIN_NIPS.push(nip);
+        window._adminRoleMap[key] = String(u.role || u.Role || 'admin').toLowerCase().trim();
+      }
+    });
 
-      const myNip = userProfile?.nip || localStorage.getItem('MY_NIP') || '';
-      const strIds = ADMIN_IDS.map(id => String(id));
-      IS_ADMIN = strIds.includes(String(MY_ID)) || (myNip && strIds.includes(String(myNip)));
-      REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
-    }
-
-    if (!ids.length) {
-      el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada admin terdaftar</div></div>`;
+    if (!admins.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">👥</div><div class="empty-text">Belum ada admin/pimpinan terdaftar</div></div>`;
       return;
     }
 
-    // Untuk tampilkan nama, fetch dari user-list
-    let namaMap = {};
-    try {
-      const ur = await apiGet(P.userList + '?format=full');
-      if (ur.ok) {
-        const users = ur.rows || [];
-        window._adminNipMap = {}; // Cache NIP for deletion
-        users.forEach(u => {
-          if (!u) return;
-          const uid = parseInt(u.ID || u.id || u.telegram_id || 0);
-          if (uid) {
-            namaMap[uid] = u.Nama || u.nama || u.username || String(uid);
-            window._adminNipMap[uid] = u.NIP || u.nip || '';
+    // Sort hierarchy
+    admins.sort((a, b) => {
+      const getW = (u) => {
+        const nip = String(u.nip || u.NIP || '').trim();
+        const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+        const key = nip || tid;
+        const r = (_adminRoleMap[key] || u.role || u.Role || 'user').toLowerCase().trim();
+        
+        if (r.includes('super')) return 10;
+        if (r.includes('admin')) return 9;
+        if (r.includes('kepala') || r.includes('inspektur')) return 8;
+        if (r.includes('sekretaris')) return 7;
+        if (r.includes('kabid') || r.includes('irban')) return 6;
+        return 0;
+      };
+      
+      return getW(b) - getW(a);
+    });
+
+    el.innerHTML = `
+      <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:12px; overflow:hidden">
+        ${admins.map((u, index) => {
+          const id = String(u.id || u.ID || 0);
+          const nama = u.nama || u.Nama || u.username || String(id);
+          const nip = String(u.nip || u.NIP || '').trim();
+          const myNip = String(userProfile?.nip || localStorage.getItem('MY_NIP') || '').trim();
+          
+          // NIP is the primary identity now
+          const isMe = (myNip && nip && nip === myNip) || (id && id === String(MY_ID));
+          
+          const tid = String(u.id || u.ID || u.telegram_id || '').trim();
+          const key = nip || tid;
+          
+          // Prioritize role from dynamic admin map (admin_list table)
+          let role = (_adminRoleMap[key] || u.role || u.Role || 'admin').toLowerCase().trim();
+          
+          // Map roles to standard labels
+          if (role.includes('kepala') || role.includes('inspektur')) role = 'pimpinan_1';
+          else if (role.includes('sekretaris')) role = 'pimpinan_2';
+          else if (role.includes('kabid') || role.includes('irban')) role = 'pimpinan_3';
+          
+          let roleLabel = 'ADMIN';
+          let icon = '🛡️';
+          let color = '#3b82f6';
+
+          if (role.includes('super')) { roleLabel = 'SUPER ADMIN'; icon = '👑'; color = 'var(--gold)'; }
+          else if (role === 'pimpinan_1') { 
+            roleLabel = u.jabatan || u.Jabatan || 'KEPALA'; 
+            icon = '🏛️'; color = '#ef4444'; 
           }
-        });
-      }
-    } catch (_) { }
+          else if (role === 'pimpinan_2') { roleLabel = 'SEKRETARIS'; icon = '📝'; color = '#10b981'; }
+          else if (role === 'pimpinan_3') { 
+            roleLabel = (u.role || u.Role || 'KABID').toUpperCase(); 
+            icon = '👔'; color = '#f59e0b'; 
+          }
+          else if (role === 'irban') { roleLabel = 'IRBAN'; icon = '🔍'; color = '#8b5cf6'; }
 
-    el.innerHTML = ids.map(id => {
-      const nama = namaMap[id] || `ID: ${id}`;
-      const nip = (window._adminNipMap && window._adminNipMap[id]) ? window._adminNipMap[id] : '—';
-      const myNip = userProfile?.nip || localStorage.getItem('MY_NIP') || '';
-      const isMe = String(id) === String(MY_ID) || (myNip && String(id) === String(myNip));
-      const rawRole = window._adminRoleMap[id] || (isMe ? userProfile?.role : null) || 'admin';
-      const rText = String(rawRole).toLowerCase().trim();
-      const isSAId = (Array.isArray(ADMIN_IDS) && ADMIN_IDS.length > 0 && String(id) === String(ADMIN_IDS[0]));
-      const isSuperAdmin = rText.includes('super') || isSAId;
-
-      return `<div style="display:flex;align-items:center;gap:12px;padding:12px 15px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;margin-bottom:8px; border-left: 3px solid ${isSuperAdmin ? 'var(--gold)' : '#3b82f6'}">
-            <div style="font-size:22px">${isSuperAdmin ? '👑' : '🛡️'}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:800;color:var(--text)">${nama}${isMe ? ' <span style="color:var(--gold);font-size:9px">(SAYA)</span>' : ''}</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace">ID: ${id} &nbsp;·&nbsp; NIP: ${nip}</div>
-              <div style="font-size:9px; font-weight:700; color:${isSuperAdmin ? 'var(--gold)' : '#3b82f6'}; text-transform:uppercase; margin-top:2px">${isSuperAdmin ? 'LEVEL: SUPER ADMIN' : 'LEVEL: ADMINISTRATOR'}</div>
+          return `
+            <div style="display:flex; align-items:center; gap:10px; padding:10px 12px; ${index !== admins.length - 1 ? 'border-bottom:1px solid rgba(255,255,255,0.05)' : ''}; background:${isMe ? 'rgba(201,168,76,0.05)' : 'transparent'}">
+              <div style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:16px; border:1px solid rgba(255,255,255,0.05)">${icon}</div>
+              <div style="flex:1; min-width:0">
+                <div style="font-size:12px; font-weight:800; color:${isMe ? 'var(--gold)' : 'var(--white)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+                  ${nama} ${isMe ? '<span style="font-size:8px; background:var(--gold); color:#000; padding:1px 4px; border-radius:4px; margin-left:4px">SAYA</span>' : ''}
+                </div>
+                <div style="font-size:9px; color:var(--muted); display:flex; gap:8px">
+                  <span>NIP: ${nip}</span>
+                  <span style="color:${color}; font-weight:700">${roleLabel}</span>
+                </div>
+              </div>
+              ${!isMe ? `
+                <button onclick="hapusAdmin('${id}','${nama.replace(/'/g, "&#39;")}', '${nip}')" 
+                        style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171; font-size:10px; padding:5px 8px; border-radius:8px; cursor:pointer; font-weight:700">
+                  Cabut
+                </button>
+              ` : ''}
             </div>
-            ${!isMe && ids.length > 1 ? `<button onclick="hapusAdmin(${id},'${nama.replace(/'/g, "&#39;")}')" style="padding:6px 12px; border-radius:10px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.05); color:#f87171; font-size:10px; font-weight:800; cursor:pointer; transition:all 0.2s">🗑 HAPUS</button>` : ''}
-          </div>`;
-    }).join('');
+          `;
+        }).join('')}
+      </div>
+    `;
   } catch (e) {
-    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat daftar admin</div></div>`;
+    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat daftar manajemen: ${e.message}</div></div>`;
   }
 }
 
-/**
- * Tambah admin baru berdasarkan Telegram ID dan role.
- * @returns {Promise<void>}
- */
+function toggleAdminForm() {
+  const f = $('adminAddForm');
+  if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
 async function tambahAdmin() {
   const idInput = $('inputAdminTgId');
   const nipInput = $('inputAdminNip');
   const namaInput = $('inputAdminNama');
   const roleInput = $('inputAdminRole');
-  const tgId = parseInt(idInput?.value || 0);
+  const tgId = (idInput?.value || '').trim();
   const nip = (nipInput?.value || '').trim();
   const nama = (namaInput?.value || '').trim();
   const role = roleInput?.value || 'admin';
 
-  if (!tgId || tgId < 1) {
-    _showAdminMgmtResult('warning', '⚠️', 'ID Tidak Valid', 'Masukkan Telegram ID yang benar.');
+  if (!tgId && !nip) {
+    _showAdminMgmtResult('warning', '⚠️', 'Data Kurang', 'Masukkan Telegram ID atau NIP pegawai.');
     return;
   }
-  if (ADMIN_IDS.includes(tgId)) {
-    _showAdminMgmtResult('warning', '⚠️', 'Sudah Ada', `ID ${tgId} sudah terdaftar sebagai admin.`);
-    return;
-  }
+
   try {
-    const { ok: addOk, data: d } = await apiPost(P.adminAdd, {
-      telegram_id: tgId, nip, nama, role,
-      ditambahkan_oleh: MY_ID,
-      timestamp: Math.floor(Date.now() / 1000)
+    // Update role di user_list via user-edit
+    const { ok, data } = await apiPost(P.userEdit, {
+      id: tgId,
+      nip: nip,
+      role: role.toUpperCase(),
+      instansi_id: 'bapperida'
     });
-    if (!addOk || (d && d.ok === false)) {
-      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', (d && d.message) || 'Gagal menambahkan admin.');
+
+    if (!ok || data?.ok === false) {
+      _showAdminMgmtResult('warning', '⚠️', 'Gagal', (data && data.message) || 'Gagal mengubah hak akses.');
       return;
     }
-    ADMIN_IDS.push(tgId);
-    REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
+
     if (idInput) idInput.value = '';
     if (nipInput) nipInput.value = '';
     if (namaInput) namaInput.value = '';
-    _showAdminMgmtResult('success', '✅', 'Admin Ditambahkan', `${nama || tgId} berhasil ditambahkan sebagai ${role}.`);
+    
+    // Auto-update local role if it's the current user
+    if (String(tgId) === String(MY_ID) || (nip && String(nip) === String(userProfile?.nip))) {
+       if (userProfile) userProfile.role = role.toUpperCase();
+       localStorage.setItem('MY_ROLE', role.toUpperCase());
+       if (typeof checkTugasLemburAccess === 'function') checkTugasLemburAccess();
+    }
+
+    _showAdminMgmtResult('success', '✅', 'Berhasil', `Hak akses ${role.toUpperCase()} telah diberikan.`);
     loadAdminMgmt();
   } catch (e) {
-    _showAdminMgmtResult('fail', '🔌', 'Gagal', 'Server tidak merespons. Coba lagi.');
+    _showAdminMgmtResult('fail', '🔌', 'Gagal', 'Server tidak merespons.');
   }
 }
 
-async function hapusAdmin(tgId, nama) {
-  if (tgId === MY_ID) {
-    _showAdminMgmtResult('warning', '⚠️', 'Tidak Bisa', 'Anda tidak bisa menghapus akun Anda sendiri.');
+async function hapusAdmin(tgId, nama, nip) {
+  if (tgId == MY_ID) {
+    _showAdminMgmtResult('warning', '⚠️', 'Tidak Bisa', 'Anda tidak bisa mencabut hak akses Anda sendiri.');
     return;
   }
-  if (ADMIN_IDS.length <= 1) {
-    _showAdminMgmtResult('warning', '⚠️', 'Minimal 1 Admin', 'Harus ada minimal 1 admin yang terdaftar.');
-    return;
-  }
-  if (!confirm(`Hapus ${nama} (${tgId}) dari daftar admin?`)) return;
+  if (!confirm(`Cabut hak akses manajemen dari ${nama}?`)) return;
   try {
-    const targetNip = window._adminNipMap ? window._adminNipMap[tgId] : '';
-    const { ok, data } = await apiPost(P.adminDel, {
-      telegram_id: tgId,
-      nip: targetNip,
-      ditambahkan_oleh: MY_ID
+    // Kembalikan role ke USER
+    const { ok, data } = await apiPost(P.userEdit, {
+      id: tgId,
+      nip: nip,
+      role: 'USER',
+      instansi_id: 'bapperida'
     });
+
     if (!ok || data?.ok === false) {
-      _showAdminMgmtResult('warning', '⚠️', 'Ditolak', data.message || 'Gagal menghapus admin.');
+      _showAdminMgmtResult('warning', '⚠️', 'Gagal', data?.message || 'Gagal mencabut hak akses.');
       return;
     }
-    const idx = ADMIN_IDS.indexOf(tgId);
-    if (idx > -1) ADMIN_IDS.splice(idx, 1);
-    REKAP_CHAT_ID = ADMIN_IDS[0] || MY_ID;
-    _showAdminMgmtResult('success', '✅', 'Dihapus', `${nama} dihapus dari daftar admin.`);
+
+    // Auto-update local role if it's the current user
+    if (String(tgId) === String(MY_ID) || (nip && String(nip) === String(userProfile?.nip))) {
+       if (userProfile) userProfile.role = 'USER';
+       localStorage.setItem('MY_ROLE', 'USER');
+       if (typeof checkTugasLemburAccess === 'function') checkTugasLemburAccess();
+    }
+
+    _showAdminMgmtResult('success', '✅', 'Berhasil', `Hak akses ${nama} telah dicabut.`);
     loadAdminMgmt();
   } catch (e) {
     _showAdminMgmtResult('fail', '🔌', 'Gagal', 'Server tidak merespons.');
@@ -193,16 +274,22 @@ async function loadJamAbsen() {
     if (jam.pulang) { const m = toMenitStr(jam.pulang); if (m !== null) JAM_PULANG_MENIT = m; }
 
     // ── Muat daftar admin dari server (dinamis, tanpa hardcode) ──
-    if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
-      ADMIN_IDS.length = 0;
-      jam.admin_ids.forEach(id => ADMIN_IDS.push(id));
+    if (Array.isArray(jam.admin_nips) && jam.admin_nips.length) {
+      ADMIN_NIPS.length = 0;
+      jam.admin_nips.forEach(nip => ADMIN_NIPS.push(String(nip)));
+    } else if (Array.isArray(jam.admin_ids) && jam.admin_ids.length) {
+      // Fallback legacy ID (hanya jika admin_nips kosong)
+      ADMIN_NIPS.length = 0;
+      jam.admin_ids.forEach(id => ADMIN_NIPS.push(String(id)));
     }
 
-    const myNip = userProfile?.nip || localStorage.getItem('MY_NIP') || '';
-    const strIds = ADMIN_IDS.map(id => String(id));
-    IS_ADMIN = strIds.includes(String(uid)) || (myNip && strIds.includes(String(myNip)));
+    // Update global IS_ADMIN
+    const myNip = String(userProfile?.nip || localStorage.getItem('MY_NIP') || '').trim();
+    const myRole = (userProfile?.role || '').toUpperCase();
+    window.IS_ADMIN = ADMIN_NIPS.includes(myNip) || 
+                      myRole === 'SUPERADMIN' || 
+                      myRole === 'ADMIN';
 
-    REKAP_CHAT_ID = ADMIN_IDS[0] || uid || null;
     _applyAdminUI();
     if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
 
@@ -223,6 +310,10 @@ async function loadJamAbsen() {
 }
 
 function _applyAdminUI() {
+  if (typeof applyAdminVisibility === 'function') {
+    applyAdminVisibility();
+    return;
+  }
   const panelAdmin = $('panel-admin');
   if (!panelAdmin) return;
 
@@ -230,19 +321,21 @@ function _applyAdminUI() {
   const btnLog = $('btnTambahLog');
   if (btnLog) btnLog.style.display = IS_ADMIN ? 'inline-block' : 'none';
 
+  // Update More Menu items
+  const btnAdmin = $('more-admin');
+  const sep = $('adminMoreSeparator');
+  
   if (!IS_ADMIN) {
     panelAdmin.style.display = 'none';
-    // Sembunyikan tombol tab admin jika ada
-    const btn = document.querySelector('.tab[data-tab="admin"]');
-    if (btn) btn.style.display = 'none';
+    if (btnAdmin) btnAdmin.style.display = 'none';
+    if (sep) sep.style.display = 'none';
+    
     // Jika sedang di tab admin (yang sekarang terlarang), kembali ke absen
     if (localStorage.getItem('absen_last_tab') === 'admin') switchTab('absen');
   } else {
     panelAdmin.style.display = '';
-    // Buat tombol tab admin jika belum ada, lalu tampilkan
-    setupAdminTab();
-    const btn = document.querySelector('.tab[data-tab="admin"]');
-    if (btn) btn.style.display = '';
+    if (btnAdmin) btnAdmin.style.display = 'flex';
+    if (sep) sep.style.display = 'block';
   }
 
   // Force refresh visibility for Tasks & Overtime
@@ -250,6 +343,7 @@ function _applyAdminUI() {
     checkTugasLemburAccess();
   }
 }
+
 
 /**
  * Simpan konfigurasi jam masuk/pulang global ke server.

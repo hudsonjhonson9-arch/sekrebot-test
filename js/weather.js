@@ -140,13 +140,14 @@
     }
 
     function _isSuperAdmin() {
-      if (!IS_ADMIN || !MY_ID) return false;
-      const role = (window._adminRoleMap && window._adminRoleMap[MY_ID]) || userProfile?.role || null;
+      const myNip = localStorage.getItem('MY_NIP');
+      if (!IS_ADMIN || !myNip) return false;
+      const role = (window._adminRoleMap && window._adminRoleMap[myNip]) || userProfile?.role || null;
       if (role) {
         return role.toLowerCase().includes('super');
       }
       // Fallback legacy (admin pertama) jika map belum terisi
-      return ADMIN_IDS.length > 0 && String(ADMIN_IDS[0]) === String(MY_ID);
+      return ADMIN_NIPS.length > 0 && String(ADMIN_NIPS[0]) === String(myNip);
     }
 
     function _applyAdminUIExtended() {

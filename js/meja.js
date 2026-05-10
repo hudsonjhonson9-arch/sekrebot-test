@@ -86,26 +86,35 @@
       if ($('livenessMini')) $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
       if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Menyiapkan Meja Absen...';
 
-      // 2. FETCH GPS DAN DATA WAJAH DI BACKGROUND
-      Promise.all([
-        _getMejaGps(),
-        apiGet(P.faceGetAll)
-      ]).then(([gps, res]) => {
-        _mejaGpsLocation = gps;
-        const locEl = $('mejaLocVal');
-        const accEl = $('mejaLocAccuracy');
-        if (_mejaGpsLocation && locEl) {
-          locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
-          if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
-        } else if (locEl) {
-          locEl.textContent = 'Lokasi GPS Meja Tidak Tersedia';
-        }
+    // 2. FETCH GPS DAN DATA WAJAH (Try Cache First)
+    const loadData = async () => {
+      const gps = await _getMejaGps();
+      _mejaGpsLocation = gps;
+      const locEl = $('mejaLocVal'), accEl = $('mejaLocAccuracy');
+      if (_mejaGpsLocation && locEl) {
+        locEl.textContent = `${_mejaGpsLocation.lat.toFixed(6)}, ${_mejaGpsLocation.lng.toFixed(6)}`;
+        if (accEl) accEl.textContent = `±${Math.round(_mejaGpsLocation.acc)}m`;
+      }
 
+      // Try load from local IDB first for instant startup
+      try {
+        const cached = await idb.get('master_data', 'all_face_descriptors');
+        if (cached && cached.data && Array.isArray(cached.data) && cached.data.length > 0) {
+          console.log(`[Meja] Memuat ${cached.data.length} wajah dari cache lokal...`);
+          _allFaceDescriptors = cached.data;
+          _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai - Cache)`, 'Menjalankan Kamera...');
+        }
+      } catch (e) { console.warn('[Meja] Gagal baca cache:', e); }
+
+      // Fetch fresh data from server
+      try {
+        const res = await apiGet(P.faceGetAll);
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const list = parseApiResponse(res.data);
+        if (!list || !list.length) return;
 
         window._mejaUserMap = {};
-        _allFaceDescriptors = list.filter(f => {
+        const freshDescriptors = list.filter(f => {
           const rawDesc = f.face_histogram || f.descriptor;
           if (!rawDesc) return false;
           let desc;
@@ -117,7 +126,7 @@
           let desc;
           try { desc = typeof rawDesc === 'string' ? JSON.parse(rawDesc) : rawDesc; } catch (e) { desc = []; }
           const tid = String(f.telegram_id || f.id || '');
-          const nip = String(f.nip || f.NIP || tid); // Prioritaskan NIP sebagai ID matching
+          const nip = String(f.nip || f.NIP || tid);
           const dLen = desc.length;
 
           window._mejaUserMap[nip] = {
@@ -128,24 +137,26 @@
             engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi'),
             dim: dLen
           };
-
           return { id: nip, descriptor: desc, engine: f.face_model || (dLen >= 512 ? 'human' : 'faceapi') };
         });
 
-        if (!_allFaceDescriptors.length) {
-          _setMejaStatus('idle', '⚠️', 'Tidak Ada Data Wajah', 'Daftarkan wajah pegawai terlebih dahulu');
-          stopMejaAbsen();
-          return;
+        if (freshDescriptors.length > 0) {
+          _allFaceDescriptors = freshDescriptors;
+          // Save to cache for next time
+          await idb.set('master_data', { key: 'all_face_descriptors', data: freshDescriptors, timestamp: Date.now() });
+          console.log(`[Meja] Database wajah diperbarui: ${freshDescriptors.length} item.`);
+          _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
         }
+      } catch (e) {
+        console.error('[Meja] Gagal update fresh data:', e);
+        if (!_allFaceDescriptors.length) {
+          _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
+          stopMejaAbsen();
+        }
+      }
+    };
 
-        _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
-        if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Meja Absen Berjalan...';
-
-      }).catch(e => {
-        console.error('[Meja] Gagal inisialisasi background:', e);
-        _setMejaStatus('idle', '❌', 'Gagal memuat data wajah', e.message || 'Coba lagi');
-        stopMejaAbsen();
-      });
+    loadData();
     }
 
     /**

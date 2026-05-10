@@ -1,12 +1,17 @@
 /* ════ PROFIL & DOKUMEN ════ */
     /* ════ USER PROFILE ════ */
     let userProfile = null;
+    window.userProfile = userProfile;
     let _profileLoading = false;
 
     async function loadUserProfile(isManual = false) {
       if (_profileLoading) return;
       _profileLoading = true;
+      
       const uid = await waitForMyId();
+      // Tampilkan fallback segera setelah ID tersedia agar user tidak melihat "Memuat..." terlalu lama
+      if (uid) setUserFallback(); 
+
       if (!uid) { _profileLoading = false; setUserFallback(); return; }
 
       // Tampilkan loading jika manual refresh
@@ -34,12 +39,13 @@
               nama: d.nama || d.Nama || '',
               jabatan: d.jabatan || d.Jabatan || '',
               nip: d.nip || d.NIP || '',
-              username: d.username || d.Username || tgUser.username || '',
+              username: d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '') || '',
               status: d.status || d.Status || 'AKTIF',
               role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
+            window.userProfile = userProfile;
             applyProfile();
             _profileLoading = false;
             return; // Berhasil
@@ -66,13 +72,14 @@
         console.warn('[Profile] Manual refresh failed, preserving existing data.');
       }
     }
-    function fullName() { return tgUser.first_name ? `${tgUser.first_name}${tgUser.last_name ? ' ' + tgUser.last_name : ''}` : 'Pengguna'; }
+    function fullName() { return window.tgUser?.first_name ? `${window.tgUser.first_name}${window.tgUser.last_name ? ' ' + window.tgUser.last_name : ''}` : 'Pengguna'; }
     function applyProfile() {
       const p = userProfile, n = p.nama || fullName(), i = (n[0] || '?').toUpperCase();
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
       setT('userName', n); setT('ketNama', n);
       setT('userJabatan', p.jabatan || '—'); setT('ketJabatan', p.jabatan || '—');
-      setT('userMeta', `NIP: ${p.nip || '—'}`); setT('ketMeta', `NIP: ${p.nip || '—'}`);
+      setT('userMeta', `NIP: ${p.nip || '—'} · ID: ${window.MY_ID || '—'}`); 
+      setT('ketMeta', `NIP: ${p.nip || '—'} · ID: ${window.MY_ID || '—'}`);
       // ── Badge status (baca dari data, bukan hardcode) ──
       const st = (p.status || 'AKTIF').toUpperCase();
       const stEmoji = st === 'AKTIF' ? '✅' : st === 'SAKIT' ? '🤒' : st === 'IZIN' ? '🙏' : st === 'TUGAS' ? '💼' : st === 'NONAKTIF' ? '🚫' : '⚙️';
@@ -84,7 +91,7 @@
       setT('profilJabatan', p.jabatan || '—');
       setT('profilNip', `NIP: ${p.nip || '—'}`);
       const tb = $('profilTgBadge');
-      if (tb) tb.textContent = `🔗 @${tgUser.username || 'Telegram'}`;
+      if (tb) tb.textContent = `🔗 @${window.tgUser?.username || 'Telegram'}`;
       // ── Badge profil besar (dinamis) ──
       const pb = $('profilStatusBadge');
       if (pb) { pb.textContent = `${stEmoji} ${st}`; pb.className = `profil-badge ${stCls === 's-aktif' ? 'aktif-badge' : stCls === 's-nonaktif' ? 'nonaktif-badge' : 'ket-status-badge'}`; }
@@ -92,8 +99,17 @@
       // Update global role map for current user
       if (MY_ID && p.role) {
         window._adminRoleMap[MY_ID] = p.role;
+        
+        // Recalculate IS_ADMIN based on role and NIP
+        const myNip = String(p.nip || '').trim();
+        const myRole = (p.role || '').toUpperCase();
+        window.IS_ADMIN = (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.includes(myNip)) || 
+                          myRole === 'SUPERADMIN' || 
+                          myRole === 'ADMIN';
+
         // Jika status admin berubah, re-apply UI
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
+        if (typeof _applyAdminUI === 'function') _applyAdminUI();
       }
 
       // ── Sinkronisasi NIP (Self-healing if corrupted) ──
@@ -110,17 +126,23 @@
     }
     function setUserFallback() {
       const n = fullName(), i = (n[0] || '?').toUpperCase();
+      userProfile = {
+        nama: n, jabatan: '', nip: localStorage.getItem('MY_NIP') || '', 
+        username: window.tgUser?.username || '', status: 'AKTIF', role: 'user'
+      };
+      window.userProfile = userProfile;
+      
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
       setT('userName', n); setT('ketNama', n);
       setT('userJabatan', '—'); setT('ketJabatan', '—');
-      setT('userMeta', `@${tgUser.username || '—'} · ID: ${MY_ID || '—'}`);
-      setT('ketMeta', `@${tgUser.username || '—'} · ID: ${MY_ID || '—'}`);
+      setT('userMeta', `@${window.tgUser?.username || '—'} · ID: ${window.MY_ID || '—'}`);
+      setT('ketMeta', `@${window.tgUser?.username || '—'} · ID: ${window.MY_ID || '—'}`);
       const b = $('userBadge'); if (b) { b.textContent = '⚙️ —'; b.className = 'sbadge'; }
       const al = $('profilAvatarLg'); if (al) al.textContent = i;
       setT('profilNama', n);
       setT('profilJabatan', '—');
       setT('profilNip', 'NIP —');
-      const tb = $('profilTgBadge'); if (tb) tb.textContent = `🔗 @${tgUser.username || '—'}`;
+      const tb = $('profilTgBadge'); if (tb) tb.textContent = `🔗 @${window.tgUser?.username || '—'}`;
     }
 
     /* ════ PENGINGAT KENAIKAN PANGKAT & BERKALA ════ */

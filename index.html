@@ -12,6 +12,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <!--
     Google Maps Static API digunakan untuk peta inline di Riwayat Log.
     Ganti "AIzaSyD-placeholder" di js/log.js dengan API Key Anda.
@@ -36,6 +37,15 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
   <style>
     /* ════ DOKUMEN CARDS (MODERN UI) ════ */
+    .log-list {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+      border-radius: 14px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
     #dokumenList .dok-card {
       display: flex;
       align-items: stretch;
@@ -263,40 +273,69 @@
       </div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
+    <!-- Bottom Navigation Bar (Sidebar on Desktop) -->
     <nav class="bottom-nav" id="tabsBar">
-      <button class="nav-item" onclick="switchTab('ket')" data-tab="ket">
+      <button class="nav-item" onclick="switchTab('ket', true)" data-tab="ket">
         <i class="fas fa-file-alt"></i>
         <span>Izin</span>
       </button>
-      <button class="nav-item" onclick="switchTab('rekap')" data-tab="rekap">
+      <button class="nav-item" onclick="switchTab('rekap', true)" data-tab="rekap">
         <i class="fas fa-chart-bar"></i>
         <span>Rekap</span>
       </button>
-      
-      <!-- Menu Penugasan (Hidden by default, shown for Kabid) -->
-      <button class="nav-item" id="nav-tugas" onclick="switchTab('tugas')" data-tab="tugas" style="display:none">
-        <i class="fas fa-tasks"></i>
-        <span>Tugas</span>
-      </button>
 
-      <!-- MAIN CENTER BUTTON -->
-      <button class="nav-item nav-main active" onclick="switchTab('absen')" data-tab="absen">
+      <!-- MAIN CENTER BUTTON (Mobile) / Regular Button (Desktop) -->
+      <button class="nav-item nav-main" onclick="switchTab('absen', true)" data-tab="absen">
         <i class="fas fa-map-marker-alt"></i>
         <span>Absen</span>
       </button>
 
-      <!-- Menu Lembur (Hidden by default, shown for Admin/Kabid) -->
-      <button class="nav-item" id="nav-lembur" onclick="switchTab('lembur')" data-tab="lembur" style="display:none">
-        <i class="fas fa-user-clock"></i>
-        <span>Lembur</span>
-      </button>
-
-      <button class="nav-item" onclick="switchTab('profil')" data-tab="profil">
+      <button class="nav-item" onclick="switchTab('profil', true)" data-tab="profil">
         <i class="fas fa-user"></i>
         <span>Profil</span>
       </button>
+
+      <!-- Desktop Only Items (Show in sidebar) -->
+      <button class="nav-item desktop-only" id="nav-tugas-desk" onclick="switchTab('tugas', true)" data-tab="tugas">
+        <i class="fas fa-tasks"></i>
+        <span>Tugas Luar</span>
+      </button>
+      <button class="nav-item desktop-only" id="nav-lembur-desk" onclick="switchTab('lembur', true)" data-tab="lembur">
+        <i class="fas fa-user-clock"></i>
+        <span>Rekap Lembur</span>
+      </button>
+      <button class="nav-item desktop-only admin-only" id="nav-admin-desk" onclick="switchTab('admin', true)" data-tab="admin">
+        <i class="fas fa-user-shield"></i>
+        <span>Panel Admin</span>
+      </button>
+
+      <!-- Mobile Only "More" Button -->
+      <button class="nav-item mobile-only" onclick="toggleMoreMenu()">
+        <i class="fas fa-ellipsis-h"></i>
+        <span>Lainnya</span>
+      </button>
     </nav>
+
+
+    <!-- More Menu Overlay -->
+    <div id="moreMenuOverlay" class="more-menu-overlay" onclick="toggleMoreMenu(false)">
+      <div class="more-menu-content" onclick="event.stopPropagation()">
+        <button class="more-item" id="more-tugas" onclick="switchTab('tugas', true)">
+          <i class="fas fa-tasks"></i>
+          <span>Tugas Luar</span>
+        </button>
+        <button class="more-item" id="more-lembur" onclick="switchTab('lembur', true)">
+          <i class="fas fa-user-clock"></i>
+          <span>Rekap Lembur</span>
+        </button>
+        <div id="adminMoreSeparator" style="height:1px; background:var(--border); margin:5px 0; display:none"></div>
+        <button class="more-item admin-only" id="more-admin" onclick="switchTab('admin', true)">
+          <i class="fas fa-user-shield"></i>
+          <span>Panel Admin</span>
+        </button>
+      </div>
+    </div>
+
 
     <!-- ══ TAB ABSEN ══ -->
     <div class="panel active" id="panel-absen">
@@ -384,18 +423,8 @@
             </div>
           </div>
 
-          <!-- Result Card (Initially Hidden) -->
-          <div class="result-card" id="resultCard" style="margin:0; display:none; position:relative">
-            <button onclick="hideResult()" style="position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:5px"><i class="fas fa-times"></i></button>
-            <div class="r-icon" id="rIcon">✅</div>
-            <div style="flex:1">
-              <div class="r-title" id="rTitle">—</div>
-              <div class="r-msg" id="rMsg">—</div>
-            </div>
-          </div>
-
           <!-- Today's Log Card (Prominent Position) -->
-          <div class="today-card" id="todayCard" style="margin:0; margin-bottom:15px">
+          <div class="today-card" id="todayCard" style="margin:0">
             <div class="card-title">
               <span>📋 Log Absen Hari Ini</span>
               <button class="btn-sm-admin" onclick="loadTodayHistory()">🔄</button>
@@ -406,12 +435,22 @@
             </div>
           </div>
 
+          <!-- Result Card (Now below log) -->
+          <div class="result-card" id="resultCard" style="margin-top:15px; display:none; position:relative">
+            <button onclick="hideResult()" style="position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:5px"><i class="fas fa-times"></i></button>
+            <div class="r-icon" id="rIcon">✅</div>
+            <div style="flex:1">
+              <div class="r-title" id="rTitle">—</div>
+              <div class="r-msg" id="rMsg">—</div>
+            </div>
+          </div>
+
           <!-- Konfirmasi Header -->
           <div class="divider" style="margin:10px 0"><span>KONFIRMASI KEHADIRAN</span></div>
           
-          <div class="absen-actions-container">
-            <!-- Action Left: WiFi & Note -->
-            <div class="wifi-bar checking" id="wifiBar" style="margin:0; min-height:60px">
+          <div class="absen-actions-container" style="flex-direction:column; gap:15px">
+            <!-- Action TOP: WiFi & IP Info -->
+            <div class="wifi-bar checking" id="wifiBar" style="width:100%; margin:0; min-height:60px">
               <span class="wifi-icon" id="wifiIcon">🔄</span>
               <div class="wifi-info">
                 <div class="wifi-status" id="wifiStatus">Memeriksa jaringan...</div>
@@ -419,17 +458,18 @@
               </div>
             </div>
             
-            <!-- Action Right: Buttons -->
-            <div class="absen-buttons-col">
-              <button class="btn-primary" id="btnAbsen" onclick="handleAbsen()" style="margin:0; height:60px">
-                <div class="btn-inner"><span>📍</span><span id="btnText">Kirim Lokasi &amp; Absen</span></div>
-              </button>
-              <button class="btn-secondary-outline" id="btnGoToKet" onclick="switchTab('ket')" 
-                      style="width:100%; height:45px; border-radius:14px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:var(--white); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer">
-                 <i class="fas fa-envelope-open-text" style="color:var(--gold)"></i> Ajukan Izin / Keterangan
-              </button>
-            </div>
+            <!-- Action MIDDLE: Absen Button -->
+            <button class="btn-primary" id="btnAbsen" onclick="handleAbsen()" style="width:100%; margin:0; height:60px">
+              <div class="btn-inner"><span>📍</span><span id="btnText">Kirim Lokasi &amp; Absen</span></div>
+            </button>
+
+            <!-- Action BOTTOM: Permission Button -->
+            <button class="btn-secondary-outline" id="btnGoToKet" onclick="switchTab('ket', true)" 
+                    style="width:100%; height:45px; border-radius:14px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:var(--white); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer">
+               <i class="fas fa-envelope-open-text" style="color:var(--gold)"></i> Ajukan Izin / Keterangan
+            </button>
           </div>
+
 
           <!-- Pulang Luar Form -->
           <div class="pulang-luar-form" id="pulangLuarForm" style="margin-top:15px">
@@ -996,7 +1036,7 @@
         </div>
       </div>
       <!-- Export Buttons -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:12px">
         <button class="btn-admin" id="btnDownloadRekap" onclick="downloadRekap()"
           style="margin:0;height:44px;font-size:12px">
           <div class="btn-inner"><span>📊</span> Excel Rekap</div>
@@ -1024,20 +1064,30 @@
 
     <!-- ══ TAB PENUGASAN ══ -->
     <div class="panel" id="panel-tugas">
+      <!-- Hidden file input for Proof -->
+      <input type="file" id="tugasBuktiInput" accept="image/*" capture="camera" style="display:none" onchange="processTugasBukti(this)">
+      
       <div class="rekap-header">
-        <div class="rekap-title">📍 Penugasan Pegawai</div>
+        <div class="rekap-title">📍 Penugasan & Tugas Luar</div>
       </div>
-      <div class="card glass-card">
+
+      <!-- FORM PEMBUATAN (Admin/Kabid Only) -->
+      <div class="card glass-card" id="tugasCreationForm" style="display:none; margin-bottom:20px">
+        <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
+          <i class="fas fa-plus-circle" style="margin-right:8px"></i> Buat Penugasan Baru
+        </div>
         <div class="form-group">
           <label class="form-label">👥 Pilih Pegawai</label>
           <div class="custom-search-dropdown" id="tugasPegawaiContainer">
             <div class="dropdown-trigger" onclick="toggleTugasDropdown()">
               <i class="fas fa-search search-icon"></i>
-              <input type="text" id="tugasSearchInput" placeholder="Cari pegawai..." autocomplete="off" oninput="filterTugasPegawai(this.value)">
+              <input type="text" id="tugasSearchInput" placeholder="Ketik nama atau NIP..." autocomplete="off" oninput="filterTugasPegawai(this.value)">
               <i class="fas fa-chevron-down arrow-icon"></i>
             </div>
             <div class="dropdown-list-wrap" id="tugasOptionsList"></div>
             <select id="tugasPegawai" style="display:none"></select>
+            <!-- Hidden container for selected chips -->
+            <div id="tugasSelectedChips" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px"></div>
           </div>
         </div>
         <div class="form-group">
@@ -1048,24 +1098,50 @@
             <input type="text" id="tugasLon" class="form-input" placeholder="Longitude" readonly style="font-family:'JetBrains Mono',monospace">
           </div>
         </div>
+        <div class="form-group" id="actingAsGroup" style="display:none">
+          <label class="form-label">👔 Bertindak Sebagai (Pemberi Tugas)</label>
+          <select id="tugasPemberi" class="form-input" style="background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:12px">
+             <option value="">-- Gunakan Profil Saya --</option>
+          </select>
+        </div>
         <div class="form-group">
           <label class="form-label">📝 Keterangan Tugas</label>
           <textarea id="tugasKet" class="form-textarea" placeholder="Tuliskan detail tugas di sini..." style="min-height:80px"></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">📅 Tanggal Tugas</label>
-          <input type="date" id="tugasTanggal" class="form-input">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <div>
+              <label class="form-label">📅 Tanggal Tugas</label>
+              <input type="date" id="tugasTanggal" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">📏 Radius (Meter)</label>
+              <input type="number" id="tugasRadius" class="form-input" value="100" placeholder="Contoh: 100">
+            </div>
+          </div>
         </div>
         <button class="btn-primary" onclick="handleSaveTugas()" id="btnSaveTugas">
           <div class="btn-inner"><span>💾</span> Simpan Penugasan</div>
         </button>
+        <div class="result-card" id="tugasResult" style="display:none; margin-top:12px">
+          <div class="r-icon" id="tugasRIcon">✅</div>
+          <div class="r-title" id="tugasRTitle">—</div>
+          <div class="r-msg" id="tugasRMsg">—</div>
+        </div>
       </div>
-      <div class="result-card" id="tugasResult" style="display:none; margin-top:12px">
-        <div class="r-icon" id="tugasRIcon">✅</div>
-        <div class="r-title" id="tugasRTitle">—</div>
-        <div class="r-msg" id="tugasRMsg">—</div>
+      
+      <!-- MONITORING PROGRES (Atasan Only) -->
+      <div id="tugasMonitoringSection"></div>
+
+      <!-- DAFTAR TUGAS SAYA (Everyone) -->
+      <div id="tugasListSection">
+        <div class="shimmer-wrapper">
+          <div class="shimmer sh-line" style="width:100%; height:100px; border-radius:20px; margin-bottom:15px"></div>
+          <div class="shimmer sh-line" style="width:100%; height:100px; border-radius:20px"></div>
+        </div>
       </div>
     </div>
+
 
     <!-- ══ TAB LEMBUR ══ -->
     <div class="panel" id="panel-lembur">
@@ -1075,7 +1151,7 @@
       <div class="card glass-card">
         <div class="form-group">
           <label class="form-label">📅 Rentang Tanggal</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:10px">
             <input type="date" id="lemburDari" class="form-input">
             <input type="date" id="lemburSampai" class="form-input">
           </div>
@@ -1654,27 +1730,40 @@
 
         <!-- 👑 MANAJEMEN ADMIN ══ -->
         <div class="card" id="adminMgmtCard" style="margin-top:12px">
-          <div
-            style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="font-size:11px;font-weight:800;color:var(--white)">👑 MANAJEMEN ADMIN</div>
-            <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
-          </div>
-          <div id="adminMgmtList" style="margin-bottom:12px"></div>
-          <div
-            style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:15px">
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px">
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">NIP Pegawai</label><input id="inputAdminNip" type="text" class="form-input" placeholder="198..." /></div>
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border)">
+            <div style="font-size:11px; font-weight:800; color:var(--white); display:flex; align-items:center; gap:8px">
+               <span>👑</span> MANAJEMEN ADMIN & AKSES
             </div>
-            <div class="form-group"><label class="form-label" style="font-size:9px">Level Akses</label><select
-                id="inputAdminRole" class="form-input">
+            <div style="display:flex; gap:8px">
+               <button class="btn-sm-admin" onclick="toggleAdminForm()" style="background:var(--gold); color:#000; border:none">➕ Tambah</button>
+               <button class="btn-sm-admin" onclick="loadAdminMgmt()">🔄</button>
+            </div>
+          </div>
+          
+          <div id="adminMgmtList" style="margin-bottom:0"></div>
+
+          <!-- FORM TAMBAH (Hidden by default) -->
+          <div id="adminAddForm" style="display:none; margin-top:15px; background:rgba(201,168,76,.05); border:1px solid rgba(201,168,76,.15); border-radius:12px; padding:15px; animation: slideDown 0.3s ease">
+            <div style="font-size:10px; font-weight:800; color:var(--gold); margin-bottom:12px">TAMBAH HAK AKSES BARU</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">NIP Pegawai (Utama)</label><input id="inputAdminNip" type="text" class="form-input" placeholder="198..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID (Opsional)</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
+            </div>
+            <div class="form-group"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
+            <div class="form-group" style="margin-bottom:15px">
+              <label class="form-label" style="font-size:9px">Level Akses</label>
+              <select id="inputAdminRole" class="form-input">
                 <option value="admin">Admin</option>
                 <option value="superadmin">Super Admin</option>
-              </select></div>
-            <input id="regJabatan" class="form-input-auth" type="text" placeholder="Jabatan">
-
-            <button class="btn-admin" onclick="tambahAdmin()" style="margin:0">Tambah Hak Akses</button>
+                <option value="kepala">Kepala Badan</option>
+                <option value="sekretaris">Sekretaris</option>
+                <option value="kabid">Kepala Bidang</option>
+              </select>
+            </div>
+            <div style="display:flex; gap:8px">
+              <button class="btn-admin" onclick="tambahAdmin()" style="flex:1; margin:0">Simpan Hak Akses</button>
+              <button class="btn-admin" onclick="toggleAdminForm()" style="flex:1; margin:0; background:transparent; border:1px solid var(--border)">Batal</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1870,13 +1959,13 @@
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
         <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
-        <select id="regInstansi" class="form-input-auth" onchange="fetchInstansiList(this.value)">
+        <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
           <option value="">— Memuat Instansi... —</option>
         </select>
         <select id="regBidang" class="form-input-auth">
           <option value="">— Pilih Bidang —</option>
         </select>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px">
           <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
             <option value="">— Jenis —</option>
             <option value="PNS">PNS</option>
@@ -2027,7 +2116,7 @@
       </div>
       <input type="hidden" id="editLogId">
       <div class="form-group"><label class="form-label">Pegawai</label><select id="inLogPegawai" class="form-input"><option value="">— Pilih Pegawai —</option></select></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:12px">
         <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="inLogTanggal" class="form-input"></div>
         <div class="form-group"><label class="form-label">Jam</label><input type="time" id="inLogJam" class="form-input"></div>
       </div>

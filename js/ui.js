@@ -2,12 +2,12 @@
     /* ════ ADMIN TAB SETUP ════ */
     // Dipanggil oleh _applyAdminUI() setelah ADMIN_IDS dimuat dari server
     function setupAdminTab() {
-      const existing = document.querySelector('.tab[data-tab="admin"]');
+      const existing = document.querySelector('.nav-item[data-tab="admin"]');
       if (existing) return;
       const btn = document.createElement('button');
-      btn.className = 'tab admin-tab';
+      btn.className = 'nav-item admin-tab';
       btn.setAttribute('data-tab', 'admin');
-      btn.innerHTML = '⚙️ Admin';
+      btn.innerHTML = '<i class="fas fa-cog"></i><span>Admin</span>';
       btn.onclick = () => switchTab('admin');
       $('tabsBar').appendChild(btn);
     }
@@ -38,7 +38,10 @@
       });
 
       // Special handling for specific sections
-      if (sectionId === 'ops') loadKonfirmasiAdmin();
+      if (sectionId === 'ops') {
+        loadKonfirmasiAdmin();
+        if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
+      }
       if (sectionId === 'user') loadAdminFaceReg();
 
       // Fix Leaflet Map rendering if switching to Config
@@ -126,7 +129,13 @@
     if ($('panel-admin')) dom.hide('panel-admin');
 
     /* ════ TABS ════ */
-    function getAllTabs() { return IS_ADMIN ? ['absen', 'ket', 'rekap', 'profil', 'admin'] : ['absen', 'ket', 'rekap', 'profil']; }
+    function getAllTabs() { 
+      const tabs = ['absen', 'ket', 'rekap', 'profil'];
+      if (IS_ADMIN) tabs.push('admin');
+      // Always allow checking, visibility is handled via checkTugasLemburAccess
+      tabs.push('tugas', 'lembur');
+      return tabs;
+    }
     /**
      * Aktifkan tab panel berdasarkan nama tab.
      * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin'
@@ -138,8 +147,8 @@
 
       localStorage.setItem('absen_last_tab', tab);
       window.scrollTo(0, 0);
-      document.querySelectorAll('.tab').forEach((t, i) => {
-        if (t) t.classList.toggle('active', T[i] === tab);
+      document.querySelectorAll('.nav-item').forEach((t) => {
+        if (t) t.classList.toggle('active', t.getAttribute('data-tab') === tab);
       });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const el = $('panel-' + tab); if (el) el.classList.add('active');
@@ -179,6 +188,20 @@
       if (tab === 'profil') {
         if (typeof loadMySignature === 'function') loadMySignature();
       }
+
+      if (tab === 'tugas') {
+        if (typeof initTugasMap === 'function') {
+          initTugasMap();
+          // Ensure map renders correctly if it was hidden
+          setTimeout(() => { if (typeof _tugasMap !== 'undefined' && _tugasMap) _tugasMap.invalidateSize(); }, 300);
+        }
+      }
+      if (tab === 'lembur') {
+        // init lembur logic if needed
+      }
+
+      // Re-apply role based visibility on every switch to ensure consistency
+      if (typeof checkTugasLemburAccess === 'function') checkTugasLemburAccess();
     }
 
     /* ════ JAM ABSEN GLOBAL (bisa diubah admin) ════ */

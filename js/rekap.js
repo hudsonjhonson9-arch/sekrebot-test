@@ -33,7 +33,7 @@ function onDateRangeChange() {
 async function fetchUserListOrder() {
   if (userListOrder.length > 0) return userListOrder;
   try {
-    const res = await apiGet(P.userList);
+    const res = await apiGet(P.userList + (IS_ADMIN ? '?format=full' : ''));
     if (!res.ok) return [];
     const rows = res.rows || parseApiResponse(res.data) || [];
     userListOrder = rows.map((r, idx) => ({
@@ -95,11 +95,16 @@ async function loadRekap() {
       const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
       const myNip = localStorage.getItem('MY_NIP') || '';
       const adminParam = IS_ADMIN ? '&is_admin=true' : '';
-      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&nip=${myNip}${adminParam}`, { method: 'GET' });
+      const nipQuery = IS_ADMIN ? '&format=full' : `&nip=${myNip}`;
+      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
         const d = Array.isArray(json) ? json[0] : json;
-        if (d?.pegawai?.length) { ringkasan = d.ringkasan || {}; pegawai = d.pegawai; rekapOK = true; }
+        if (d?.pegawai?.length) { 
+          ringkasan = d.ringkasan || {}; 
+          pegawai = d.pegawai; 
+          rekapOK = true; 
+        }
       }
     } catch (_) { }
 
@@ -109,7 +114,9 @@ async function loadRekap() {
       try {
         const myNip = localStorage.getItem('MY_NIP') || '';
         const adminParam = IS_ADMIN ? '&is_admin=true' : '';
-        const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}&nip=${myNip}${adminParam}`);
+        // Jika admin, minta format full agar filter NIP di n8n diabaikan
+        const nipQuery = IS_ADMIN ? '&format=full' : `&nip=${myNip}`;
+        const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}${nipQuery}${adminParam}`);
         if (resAll.ok) allRowsRaw = (resAll.rows?.length ?? 0) ? resAll.rows : parseApiResponse(resAll.data);
       } catch (_) { }
       periodRowsRaw = allRowsRaw.filter(r => {
@@ -727,8 +734,7 @@ function renderRekap(pg) {
           ${(function () {
           const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
           const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
-          const mAlpa_Total = (p.all_alpa || 0) * 450;
-          const mAll = mT + mC + mAlpa_Total;
+          const mAll = mT + mC;
           if (mAll === 0) return '';
           const h = Math.floor(mAll / 60), m = mAll % 60;
           const fmt = h > 0 ? `${h}j ${m}m` : `${m}m`;
@@ -818,8 +824,7 @@ function renderRekap(pg) {
         ${(function () {
           const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
           const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
-          const mAlpa_Total = (p.all_alpa || 0) * 450;
-          const mAllTotal_Local = mT + mC + mAlpa_Total;
+          const mAllTotal_Local = mT + mC;
 
           const aLambat = toHHMM(mT);
           const aCepat = toHHMM(mC);
@@ -849,8 +854,7 @@ function renderRekap(pg) {
     // ── Akumulasi Waktu (All-Time) ──
     const mT = p.menit_terlambat ?? p.all_menit_terlambat ?? 0;
     const mC = p.menit_lebih_awal ?? p.all_menit_lebih_awal ?? 0;
-    const mAlpa = (p.all_alpa || 0) * 450;
-    const mAllTotal = mT + mC + mAlpa;
+    const mAllTotal = mT + mC;
 
     const akkTotalWaktuFmt = (function () {
       const h = Math.floor(mAllTotal / 60), m = mAllTotal % 60;
@@ -922,10 +926,10 @@ function renderRekap(pg) {
             </div>
           </div>
 
-          <!-- HIGHLIGHT: Akumulasi Waktu -->
-          <div class="rekap-akk-highlight">
-            <div class="akk-h-time">${akkTotalWaktuFmt}</div>
-            <div class="akk-h-lbl">Akumulasi Jam (All-Time)</div>
+          <!-- HIGHLIGHT: Akumulasi Waktu (Periode) -->
+          <div class="rekap-akk-highlight" style="background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); border:1px solid rgba(245,158,11,0.3)">
+            <div class="akk-h-time" style="color:var(--warning)">${toHHMM(mT + mC)}</div>
+            <div class="akk-h-lbl">Total Akumulasi Pelanggaran (Seluruh Waktu)</div>
           </div>
 
           <!-- GRID: Statistik Periode -->
@@ -964,7 +968,7 @@ function showRekapToast(type, msg) {
 
 /**
  * Ekspor rekap absensi ke file Excel (.xlsx).
- * Menggunakan library SheetJS (xlsx).
+ * Menggunakan library SheetJS (xlsx) untuk download langsung.
  * @returns {Promise<void>}
  */
 async function downloadRekap() {
@@ -976,194 +980,119 @@ async function downloadRekap() {
   }
 
   const btn = $('btnDownloadRekap');
+  const originalHtml = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="spin-sm"></span> Mengirim...';
-
-  // Helper konversi jam string → menit
-  const toMenitDl = w => { const [h, m] = (w || '').replace(/\s.*/, '').split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; };
-
-  // Hitung hari kerja: senin-jumat, kurangi libur nasional, opsional batas hari ini
-  function countHariKerja(dari, sampai, batasHari) {
-    let count = 0;
-    const d = new Date(dari + 'T00:00:00');
-    const s = new Date(sampai + 'T00:00:00');
-    const bts = batasHari ? new Date(batasHari + 'T00:00:00') : s;
-    const end = bts < s ? bts : s;
-    while (d <= end) {
-      const day = d.getDay(), tglStr = d.toISOString().split('T')[0];
-      if (day !== 0 && day !== 6 && !hariLiburSet.has(tglStr)) count++;
-      d.setDate(d.getDate() + 1);
-    }
-    return count;
-  }
-
-  // Hari ini (WITA)
-  const hariIniStr = fmtD(nowWITA());
-  // HK penuh periode (tanpa batas)
-  const HARI_KERJA_PERIODE = countHariKerja(dari, sampai, null);
-  // HK berjalan: s.d. hari ini (untuk periode yang sedang berjalan)
-  const HARI_KERJA_BERJALAN = countHariKerja(dari, sampai, hariIniStr);
-  // Efektif: gunakan berjalan jika > 0, fallback ke penuh (untuk periode lampau)
-  const HK_EFEKTIF = HARI_KERJA_BERJALAN > 0 ? HARI_KERJA_BERJALAN : HARI_KERJA_PERIODE;
-
-  // Jam standar global
-  const JAM_MASUK_STANDAR = menitToStr(JAM_MASUK_MENIT);
-  const JAM_PULANG_STANDAR = menitToStr(JAM_PULANG_MENIT);
-  const mStandarMasuk = JAM_MASUK_MENIT;
-  const mStandarPulang = JAM_PULANG_MENIT;
-  const JAM_KERJA_WAJIB_MENIT = mStandarPulang - mStandarMasuk;
-  const JAM_KERJA_WAJIB_TOTAL = (JAM_KERJA_WAJIB_MENIT / 60) * HK_EFEKTIF;
-
-  // Info hari untuk Excel
-  const NAMA_HARI_LIST = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const isHarian = dari === sampai;
-  const hariDariJS = new Date(dari + 'T00:00:00').getDay();
-  const namaHariDari = NAMA_HARI_LIST[hariDariJS];
-  const isWeekendDari = hariDariJS === 0 || hariDariJS === 6;
-  const isLiburDari = hariLiburSet.has(dari);
-  const labelHariBerjalan = isHarian
-    ? (isWeekendDari ? `${namaHariDari} (Akhir Pekan)` : isLiburDari ? `${namaHariDari} (Hari Libur)` : namaHariDari)
-    : `${HK_EFEKTIF} HK berjalan dari ${HARI_KERJA_PERIODE} HK total (libur dikecualikan)`;
-
-  const pegawaiPayload = lastRekapPegawai.map((p, i) => {
-    const masuk = p.masuk || 0;
-    const pulang = p.pulang || 0;
-    const lambatCount = p.lambat_count ?? 0;
-    const cepatCount = p.pulang_cepat_count ?? 0;
-    const izin = p.izin || 0;
-    const sakit = p.sakit || 0;
-    const tugas = p.tugas || 0;
-    const tubel = p.tubel || 0;
-    const cuti = p.cuti || 0;
-
-    // Jam per pegawai (prioritas: periode khusus → custom per-pegawai → global)
-    const pgwId = String(p.id || '');
-    const jpgw = jamPegawaiMap[pgwId];
-    const _jamDl = getJamForTanggal(dari); // periode aktif di tanggal "dari"
-    const jamMasukBatasStr = _jamDl.nama ? _jamDl.masuk : (jpgw?.masuk || JAM_MASUK_STANDAR);
-    const jamPulangBatasStr = _jamDl.nama ? _jamDl.pulang : (jpgw?.pulang || JAM_PULANG_STANDAR);
-    const mPgwMasuk = toMenitDl(jamMasukBatasStr) ?? mStandarMasuk;
-    const mPgwPulang = toMenitDl(jamPulangBatasStr) ?? mStandarPulang;
-    // Jam kerja wajib harian untuk pegawai ini (HK_EFEKTIF: hari belum lewat tidak dihitung)
-    const jamKerjaHarianMenit = mPgwPulang - mPgwMasuk;
-    const jamKerjaWajibTotal = parseFloat(((jamKerjaHarianMenit / 60) * HK_EFEKTIF).toFixed(1));
-
-    const jamMasuk = p.jamMasuk || '-';
-    const jamPulang = p.jamPulang || '-';
-    const mMasuk = toMenitDl(jamMasuk);
-    const mPulang = toMenitDl(jamPulang);
-    const mLambat = (mMasuk !== null && mMasuk > mPgwMasuk) ? mMasuk - mPgwMasuk : 0;
-    const mCepat = (mPulang !== null && mPulang < mPgwPulang) ? mPgwPulang - mPulang : 0;
-    const ket = tubel > 0 ? 'Tubel' : cuti > 0 ? 'Cuti' : izin > 0 ? 'Izin' : sakit > 0 ? 'Sakit' : tugas > 0 ? 'Tugas/DL' : (masuk + lambatCount) === 0 ? 'TB' : 'Hadir';
-
-    // Jam hadir aktual (hitung dari log masuk+pulang dalam periode)
-    const jh = parseFloat(p.jamHadir || 0);
-    // jth selalu dihitung ulang dari jamKerjaWajibTotal (periode-aware × HK_EFEKTIF),
-    // BUKAN dari p.jamTdkHadir server yang memakai konstanta 150 jam hardcoded.
-    const jth = parseFloat(Math.max(0, jamKerjaWajibTotal - jh).toFixed(1));
-
-    // Status keterlambatan / pulang cepat (harian)
-    const terlambatMenit = mLambat;
-    const cepatMenit = mCepat;
-    const terlambatStr = terlambatMenit > 0 ? `Terlambat ${terlambatMenit} menit` : '';
-    const cepatStr = cepatMenit > 0 ? `Pulang cepat ${cepatMenit} menit` : '';
-    const statusKehadiran = tubel > 0 ? 'Tubel'
-      : cuti > 0 ? 'Cuti'
-        : izin > 0 ? 'Izin'
-          : sakit > 0 ? 'Sakit'
-            : tugas > 0 ? 'Tugas/DL'
-              : (masuk + lambatCount) === 0 ? 'TB'
-                : 'Hadir';
-    const catatanArr = [terlambatStr, cepatStr].filter(Boolean);
-    const catatanStr = catatanArr.length ? catatanArr.join(', ') : '';
-
-    // Info hari untuk kolom Excel
-    const isHariTidakKerja = isWeekendDari || isLiburDari;
-    const infoHariExcel = isWeekendDari
-      ? `${namaHariDari} – Akhir Pekan`
-      : isLiburDari
-        ? `${namaHariDari} – Hari Libur Nasional`
-        : namaHariDari;
-
-    const dataExcelRow = isHarian ? {
-      'No': i + 1,
-      'Nama': p.nama || '—',
-      'NIP': p.nip || '—',
-      'Jabatan': p.jabatan || '—',
-      'Hari': infoHariExcel,
-      'Jam Masuk': jamMasuk !== '-' ? jamMasuk : '—',
-      'Jam Pulang': jamPulang !== '-' ? jamPulang : '—',
-      'Status': isHariTidakKerja ? 'Libur' : statusKehadiran,
-      'Catatan': isHariTidakKerja
-        ? (isWeekendDari ? 'Hari libur – akhir pekan' : 'Hari libur nasional')
-        : (catatanStr || '—')
-    } : {
-      'No': i + 1,
-      'Nama': p.nama || '—',
-      'NIP': p.nip || '—',
-      'Jabatan': p.jabatan || '—',
-      'HK Total': HARI_KERJA_PERIODE,
-      'HK Berjalan': HK_EFEKTIF,
-      'Jam Masuk Batas': jamMasukBatasStr,
-      'Jam Pulang Batas': jamPulangBatasStr,
-      'Jam Kerja Wajib': jamKerjaWajibTotal + ' jam',
-      'Jam Hadir': jh.toFixed(1),
-      'Jam Tidak Hadir': jth.toFixed(1),
-      'Sakit': sakit,
-      'Izin': izin,
-      'Dinas Luar (DL)': tugas,
-      'TB': (p.alpa || 0),
-      'Keterangan': [
-        masuk > 0 ? `M:${masuk}` : '',
-        pulang > 0 ? `P:${pulang}` : '',
-        luarMasuk > 0 ? `L:${luarMasuk}` : '',
-        luarPulang > 0 ? `C:${luarPulang}` : '',
-        izin > 0 ? `I:${izin}` : '',
-        sakit > 0 ? `S:${sakit}` : '',
-        tugas > 0 ? `DL:${tugas}` : ''
-      ].filter(Boolean).join(' ') || 'Tidak Hadir',
-      'Info Periode': labelHariBerjalan
-    };
-
-    // Override jamTdkHadir & jamKerjaWajib dengan nilai periode-aware yang sudah benar,
-    // agar Format Pesan n8n (Telegram) juga memakai nilai ini, bukan konstanta server.
-    return {
-      ...p, masuk, pulang, lambat: luarMasuk, pulangCepat: luarPulang,
-      jamTdkHadir: jth, jamKerjaWajib: jamKerjaWajibTotal, dataExcelRow
-    };
-  });
-
-  const payload = {
-    dari,
-    sampai,
-    nip: localStorage.getItem('MY_NIP') || '',
-    is_harian: isHarian,
-    tanggal_label: isHarian
-      ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-      : `${dari} s.d. ${sampai}`,
-    hari_kerja_total: HARI_KERJA_PERIODE,
-    hari_kerja_berjalan: HK_EFEKTIF,
-    is_hari_libur: isHarian ? (isLiburDari || isWeekendDari) : false,
-    nama_hari: isHarian ? namaHariDari : null,
-    info_periode: labelHariBerjalan,
-    chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
-    pegawai: pegawaiPayload
-  };
+  btn.innerHTML = '<span class="spin-sm"></span> Memproses...';
 
   try {
-    const { ok: kirimOk, data: kirimData } = await apiPost(P.kirimRekap, payload);
-    let d = {}; try { d = kirimData; } catch (_) { }
-    if (res.ok) {
-      showRekapToast('success', '✅ Rekap berhasil dikirim ke Telegram! Cek bot Anda.');
-    } else {
-      throw new Error('Server ' + 200);
+    // 1. Persiapan Data & Perhitungan HK
+    const hariIniStr = fmtD(nowWITA());
+    
+    function countHK(dStart, dEnd, bts) {
+      let c = 0;
+      let d = new Date(dStart + 'T00:00:00');
+      let s = new Date(dEnd + 'T00:00:00');
+      let limit = bts ? new Date(bts + 'T00:00:00') : s;
+      let finalEnd = limit < s ? limit : s;
+      while (d <= finalEnd) {
+        const day = d.getDay(), t = d.toISOString().split('T')[0];
+        if (day !== 0 && day !== 6 && !hariLiburSet.has(t)) c++;
+        d.setDate(d.getDate() + 1);
+      }
+      return c;
     }
+
+    const HK_TOTAL = countHK(dari, sampai, null);
+    const HK_BERJALAN = countHK(dari, sampai, hariIniStr);
+    const HK_EFEKTIF = HK_BERJALAN > 0 ? HK_BERJALAN : HK_TOTAL;
+
+    const isHarian = dari === sampai;
+    const tglLabel = isHarian 
+      ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : `${dari} s.d. ${sampai}`;
+
+    // 2. Mapping Data ke format Excel
+    const rowsExcel = lastRekapPegawai.map((p, i) => {
+      const masuk = p.masuk || 0;
+      const lambat = p.lambat_count ?? 0;
+      const cepat = p.pulang_cepat_count ?? 0;
+      const hHadir = (p.masuk || 0) + (p.lambat_count || 0);
+
+      // Detail per kolom
+      const data = {
+        'No': i + 1,
+        'Nama Pegawai': p.nama || '—',
+        'NIP': p.nip || '—',
+        'Bidang': p.bidang || '—',
+        'Jabatan': p.jabatan || '—'
+      };
+
+      if (isHarian) {
+        data['Jam Masuk'] = p.jamMasuk || '—';
+        data['Jam Pulang'] = p.jamPulang || '—';
+        data['Status'] = (p.izin > 0) ? 'Izin' : (p.sakit > 0) ? 'Sakit' : (p.tugas > 0) ? 'Tugas' : (hHadir > 0) ? 'Hadir' : 'TB';
+        data['Keterangan'] = p.keterangan_log || '—';
+        
+        // Tambahkan info akumulasi harian
+        const mTerlambat = p.menit_terlambat || 0;
+        const mCepat = p.menit_lebih_awal || 0;
+        if (mTerlambat > 0) data['Terlambat (Menit)'] = mTerlambat;
+        if (mCepat > 0) data['Pulang Cepat (Menit)'] = mCepat;
+      } else {
+        const mT_p = p.menit_terlambat || 0;
+        const mC_p = p.menit_lebih_awal || 0;
+        const mAlpa_p = (p.alpa || 0) * 450;
+        const totalM_p = mT_p + mC_p + mAlpa_p;
+        
+        data['HK Efektif'] = HK_EFEKTIF;
+        data['Hadir (Tepat)'] = p.masuk || 0;
+        data['Terlambat (Frekuensi)'] = lambat;
+        data['Terlambat (Menit)'] = mT_p;
+        data['Pulang Cepat (Frekuensi)'] = cepat;
+        data['Pulang Cepat (Menit)'] = mC_p;
+        data['Izin/Sakit/Tugas'] = (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0);
+        data['Alpa/TB'] = p.alpa || 0;
+        data['Total Akumulasi (Jam:Menit)'] = toHHMM(totalM_p);
+        data['Total Jam Hadir'] = parseFloat(p.jamHadir || 0).toFixed(1);
+      }
+      return data;
+    });
+
+    // 3. Generate File via SheetJS (XLSX)
+    if (typeof XLSX === 'undefined') throw new Error('Library XLSX belum dimuat.');
+    
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rowsExcel);
+    
+    // Set column widths
+    const wscols = [
+      {wch: 4}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
+    ];
+    ws['!cols'] = wscols;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap Absensi");
+    const filename = `Rekap_Absensi_${isHarian ? dari : dari + '_sd_' + sampai}.xlsx`;
+    XLSX.writeFile(wb, filename);
+
+    showRekapToast('success', `✅ Excel berhasil diunduh: ${filename}`);
+
+    // 4. (Optional) Backup: Tetap kirim ke Telegram jika diperlukan
+    try {
+      const payload = {
+        dari, sampai, nip: localStorage.getItem('MY_NIP') || '',
+        is_harian: isHarian, tanggal_label: tglLabel,
+        chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
+        pegawai: lastRekapPegawai
+      };
+      apiPost(P.kirimRekap, payload); // Fire and forget
+    } catch(e) { console.warn('Backup Telegram failed', e); }
+
   } catch (e) {
-    console.warn('kirimRekap error:', e);
-    showRekapToast('fail', '🔌 Gagal mengirim. Pastikan n8n & bot Telegram aktif.');
+    console.error('Download Excel Error:', e);
+    showRekapToast('fail', '❌ Gagal membuat Excel: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '📤 Kirim';
+    btn.innerHTML = originalHtml;
   }
 }
 

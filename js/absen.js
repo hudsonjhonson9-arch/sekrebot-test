@@ -2,6 +2,7 @@
     /* ════ HANDLE ABSEN ════ */
     // Anti double-submit: track timestamp terakhir klik absen
     let _lastAbsenClick = 0;
+    let _isAbsenSubmitting = false; // Idempotency Lock
 
     /**
      * Entry point utama untuk absen masuk/pulang dari tab Absen.
@@ -9,7 +10,7 @@
      * @returns {Promise<void>}
      */
         async function handleAbsen() {
-      if ($('btnAbsen').disabled) return;
+      if ($('btnAbsen').disabled || _isAbsenSubmitting) return;
       // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
       const now = Date.now();
       if (now - _lastAbsenClick < 3000) return;
@@ -380,6 +381,7 @@
 
           const payload = {
             nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
+            request_id: `absen_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
             user: {
               id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
               nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''
@@ -479,7 +481,8 @@
      * @returns {Promise<void>}
      */
         async function handlePulangLuar() {
-      if ($('btnPulangLuar').disabled) return;
+      if ($('btnPulangLuar').disabled || _isAbsenSubmitting) return;
+      _isAbsenSubmitting = true;
       const ket = ($('ketPulangLuar').value || '').trim();
       if (!ket) {
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Keterangan Wajib Diisi',
@@ -535,6 +538,7 @@
           showGPS(latitude, longitude, accuracy, 'Lapangan');
           if (tSpan) tSpan.innerHTML = '<span class="spinner"></span> Mengirim...';
           const payload = {
+            request_id: `pulang_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
             user: {
               id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '',
               username: tgUser.username || '', nama_lengkap: userProfile?.nama || '',
@@ -597,6 +601,8 @@
               'Pastikan n8n & ngrok berjalan.');
             $('btnPulangLuar').disabled = false;
             if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
+          } finally {
+            _isAbsenSubmitting = false;
           }
         },
         (err) => {

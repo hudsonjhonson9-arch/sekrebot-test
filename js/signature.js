@@ -263,6 +263,11 @@
         dataUrl = _sigPhotoData;
       }
 
+      // KOMPRESI: Kurangi beban bandwidth
+      try {
+        dataUrl = await compressImage(dataUrl, 600, 0.6);
+      } catch (e) { console.warn('Gagal kompresi, gunakan original'); }
+
       // Set loading state
       const btn = $('btnSaveSig');
       const btnTxt = $('btnSaveSigTxt');

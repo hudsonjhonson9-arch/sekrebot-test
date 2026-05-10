@@ -1,6 +1,7 @@
 /* ════ KETERANGAN / IZIN ════ */
     /* ════ KETERANGAN ════ */
     let selectedJenis = 'IZIN', fileBase64 = null, fileMime = null, fileOrigName = null;
+    let _isKetSubmitting = false; // Idempotency Lock
     function toggleIzinJam() {
       const ch = $('checkIzinJam');
       ch.checked = !ch.checked;
@@ -54,7 +55,7 @@
     $('tglSelesai').addEventListener('change', updateDur);
 
     /* ── Compress image to max 5MB ── */
-    async function compressImage(base64, mime, maxMB = 4.5) {
+    async function compressKetImage(base64, mime, maxMB = 4.5) {
       return new Promise(resolve => {
         const maxBytes = maxMB * 1024 * 1024;
         const raw = atob(base64);
@@ -91,7 +92,7 @@
         const mime = f.type;
         // Kompres jika gambar dan >5MB
         if (mime.startsWith('image/') && atob(b64).length > 5 * 1024 * 1024) {
-          b64 = await compressImage(b64, mime, 4.5);
+          b64 = await compressKetImage(b64, mime, 4.5);
           fileMime = 'image/jpeg';
         }
         fileBase64 = b64;
@@ -132,7 +133,7 @@
           let b64 = cap.dataUrl.split(',')[1];
           // Pastikan payload tidak terlalu besar untuk n8n
           if (atob(b64).length > 2 * 1024 * 1024) {
-            b64 = await compressImage(b64, 'image/jpeg', 1.8);
+            b64 = await compressKetImage(b64, 'image/jpeg', 1.8);
           }
 
           fileBase64 = b64;
@@ -162,6 +163,7 @@
      * @returns {Promise<void>}
      */
         async function handleKet() {
+      if ($('btnKet').disabled || _isKetSubmitting) return;
       const tm = $('tglMulai').value, ts = $('tglSelesai').value, k = $('ketText').value.trim();
       if (!tm || !ts) { showResult('ketResult', 'ketRIcon', 'ketRTitle', 'ketRMsg', 'warning', '⚠️', 'Lengkapi Form', 'Tanggal wajib diisi.'); return; }
       if (!k) { showResult('ketResult', 'ketRIcon', 'ketRTitle', 'ketRMsg', 'warning', '⚠️', 'Keterangan Kosong', 'Tuliskan alasan terlebih dahulu.'); return; }
@@ -178,8 +180,10 @@
         }
       }
       setBtnL('btnKet', true, 'Mengirim...');
+      _isKetSubmitting = true;
       const payload = {
         nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
+        request_id: `ket_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
         user: {
           id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
           nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''
@@ -239,6 +243,8 @@
       } catch {
         handleAbsenError(new AbsenError('Semua server tidak merespons.', ERROR_CODES.NETWORK_ERROR));
         setBtnL('btnKet', false, '📤 Kirim Keterangan');
+      } finally {
+        _isKetSubmitting = false;
       }
     }
 

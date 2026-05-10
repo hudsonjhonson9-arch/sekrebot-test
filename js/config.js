@@ -130,11 +130,6 @@ const P = {
   faceToggle: isTest ? '/webhook-test/face-toggle' : '/webhook/face-toggle',
   faceGetAll: isTest ? '/webhook-test/face-get-all' : '/webhook/face-get-all',
   mejaAbsen: isTest ? '/webhook-test/meja-absen' : '/webhook/meja-absen',
-  seragamGet: isTest ? '/webhook-test/seragam-get' : '/webhook/seragam-get',
-  seragamSave: isTest ? '/webhook-test/seragam-save' : '/webhook/seragam-save',
-  seragamTypeList: isTest ? '/webhook-test/seragam-type-list' : '/webhook/seragam-type-list',
-  seragamTypeAdd: isTest ? '/webhook-test/seragam-type-add' : '/webhook/seragam-type-add',
-  seragamTypeDel: isTest ? '/webhook-test/seragam-type-delete' : '/webhook/seragam-type-delete',
   jamPeriodeList: isTest ? '/webhook-test/jam-periode-list' : '/webhook/jam-periode-list',
   jamPeriodeAdd: isTest ? '/webhook-test/jam-periode-add' : '/webhook/jam-periode-add',
   jamPeriodeDel: isTest ? '/webhook-test/jam-periode-delete' : '/webhook/jam-periode-delete',
@@ -149,6 +144,9 @@ const P = {
   signatureSave: isTest ? '/webhook-test/signature-save' : '/webhook/signature-save',
   signatureGet: isTest ? '/webhook-test/signature-get' : '/webhook/signature-get',
   signatureList: isTest ? '/webhook-test/signature-list' : '/webhook/signature-list',
+  tugasAdd: isTest ? '/webhook-test/tugas-add' : '/webhook/tugas-add',
+  tugasList: isTest ? '/webhook-test/tugas-list' : '/webhook/tugas-list',
+  lemburGet: isTest ? '/webhook-test/lembur-get' : '/webhook/lembur-get',
 };
 
 function getScopedInstansiId() {
@@ -175,10 +173,20 @@ function getScopedInstansiId() {
  * @returns {Promise<Response>} Response object
  * @throws {Error} Jika semua server gagal
  */
-const HDR = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', 'Accept': 'application/json' };
+const API_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';
+
+const HDR = { 
+  'Content-Type': 'application/json', 
+  'ngrok-skip-browser-warning': 'true', 
+  'Accept': 'application/json',
+  'X-App-Token': API_TOKEN 
+};
 async function apiFetch(path, opts = {}) {
   // Auto-append instansi_id & nip scoping
+  const myRole = (userProfile?.role || '').toLowerCase();
   const inst = getScopedInstansiId();
+  
+  // SUPERADMIN bypasses the instance filter to see everything
   if (inst && !path.includes('instansi_id=')) {
     path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
   }
@@ -227,13 +235,16 @@ async function apiFetch(path, opts = {}) {
 */
 function parseApiResponse(json) {
   if (!json) return [];
-  // [ { data: [...] } ] — format paling umum dari n8n
+  // 1. [ { data: [...] } ] — format paling umum dari n8n
   if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0]?.data)) return json[0].data;
-  // { data: [...] }
+  // 2. { data: [...] }
   if (!Array.isArray(json) && Array.isArray(json?.data)) return json.data;
-  // [ [...] ] — nested array
+  // 3. [ [...] ] — nested array
   if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0])) return json[0];
-  // [ {...}, {...} ] — array of objects langsung
+  // 4. [ {...}, {...} ] — array of objects langsung
   if (Array.isArray(json)) return json;
+  // 5. { id: ... } — single object record (NEW)
+  if (typeof json === 'object' && (json.id || json.ID || json.telegram_id)) return [json];
+  
   return [];
 }

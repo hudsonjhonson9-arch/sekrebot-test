@@ -137,12 +137,6 @@
         btn.disabled = true;
         btn.dataset.manualDisabled = '1';
         setBtnL('btnAbsen', false, '✅ Sudah Absen');
-        // Tampilkan info tanpa error
-        const rc = $('resultCard');
-        if (rc && !rc.classList.contains('show')) {
-          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', 'ℹ️', 'Sudah Absen',
-            pesanTolak);
-        }
       } else {
         // Belum absen di periode ini — aktifkan tombol
         btn.disabled = false;
@@ -199,27 +193,28 @@
     }
     /**
      * Tampilkan result card di UI dengan icon, judul, dan pesan.
-     * @param {string} cid - ID container card
-     * @param {string} iid - ID elemen icon
-     * @param {string} tid - ID elemen title
-     * @param {string} mid - ID elemen message
-     * @param {'ok'|'fail'|'warning'|'info'} type - Jenis result (warna)
-     * @param {string} icon - Emoji/icon
-     * @param {string} title - Judul result
-     * @param {string} msg - Pesan detail
      */
-        function showResult(cid, iid, tid, mid, type, icon, title, msg) {
+    function showResult(cid, iid, tid, mid, type, icon, title, msg) {
       const el = $(cid);
       if (!el) {
         console.warn(`[showResult] Element not found: ${cid}. Title: ${title}, Msg: ${msg}`);
         return;
       }
       el.className = `result-card r-${type} show`;
+      el.style.display = 'flex'; // Force show
       const iEl = $(iid), tEl = $(tid), mEl = $(mid);
       if (iEl) iEl.textContent = icon;
       if (tEl) tEl.textContent = title;
       if (mEl) mEl.textContent = msg;
     }
+    window.showResult = showResult;
+    window.hideResult = () => {
+      const rc = $('resultCard');
+      if (rc) {
+        rc.classList.remove('show');
+        rc.style.display = 'none';
+      }
+    };
     function showGPS(lat, lon, acc, lokasi) {
       const n = nowWITA();
       $('gpsLat').textContent = lat.toFixed(6); $('gpsLon').textContent = lon.toFixed(6);
@@ -323,4 +318,38 @@
      */
     function getNipScore(nip) {
       return String(nip || '999999999999999999').replace(/\D/g, '');
+    }
+    /**
+     * Kompresi gambar Base64 atau File ke format JPEG dengan kualitas tertentu.
+     * Berguna untuk mengurangi beban bandwidth saat mengirim foto/ttd ke n8n.
+     * @param {string|File} source - Source image (Base64 atau File)
+     * @param {number} [maxWidth=800] - Lebar maksimal
+     * @param {number} [quality=0.7] - Kualitas JPEG (0.1 - 1.0)
+     * @returns {Promise<string>} - Base64 hasil kompresi
+     */
+    async function compressImage(source, maxWidth = 800, quality = 0.7) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = (maxWidth / width) * height;
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        if (typeof source === 'string') img.src = source;
+        else {
+          const reader = new FileReader();
+          reader.onload = (e) => img.src = e.target.result;
+          reader.readAsDataURL(source);
+        }
+      });
     }

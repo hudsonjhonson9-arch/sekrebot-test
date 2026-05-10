@@ -51,11 +51,7 @@
     function _writeFaceRefLocal(uid, faceData) {
       if (!uid) return;
       try {
-        // Jangan simpan dataUrl (foto base64) di localStorage untuk hemat ruang
         const storageData = { ...faceData };
-        delete storageData.dataUrl;
-        delete storageData.foto_base64;
-
         const raw = localStorage.getItem(FACE_STORE_KEY);
         const data = raw ? JSON.parse(raw) : {};
         data[uid] = storageData;
@@ -118,6 +114,9 @@
 
     async function syncFaceToServer(uid, dataUrl, descriptorArray, nama, savedAt) {
       if (!uid || uid === 'null' || uid === '') return false;
+
+      // Kompresi sudah dilakukan di doCapture, tidak perlu diulang di sini
+
       const dLen = (descriptorArray && Array.isArray(descriptorArray)) ? descriptorArray.length : 0;
       const actualModel = dLen >= 512 ? 'human' : 'faceapi';
 
@@ -445,8 +444,14 @@
       const hasDescriptor = descLen >= 128;
       const isHuman = descLen >= 512;
       if (ref) {
-        if (thumb) { if (ref.dataUrl) { thumb.src = ref.dataUrl; thumb.style.display = 'block'; } else { thumb.style.display = 'none'; } }
-        if (empty) empty.style.display = 'none';
+        if (thumb && ref.dataUrl) { 
+          thumb.src = ref.dataUrl; 
+          thumb.style.display = 'block'; 
+          if (empty) empty.style.display = 'none';
+        } else { 
+          if (thumb) thumb.style.display = 'none'; 
+          if (empty) empty.style.display = 'flex';
+        }
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         status.textContent = hasDescriptor ? (isHuman ? '🛡️ Face AI: Human' : '✅ Data Wajah AI Tersimpan') : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
@@ -1178,7 +1183,7 @@
             _isLive = detection._isHumanLive;
 
             if (_isLive) {
-              setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
+                setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
               if (window._isMejaMode) {
                 $('lsIcon').textContent = '🛡️';
                 $('lsText').textContent = 'Wajah Terverifikasi Asli';
@@ -1261,7 +1266,7 @@
                 _autoCaptured = true;
                 setTimeout(() => {
                   if (_livenessState.faceOk && !$('camOverlay').classList.contains('hidden')) {
-                    doCapture();
+                    doCapture(null, detection.descriptor);
                   } else {
                     _autoCaptured = false;
                   }
@@ -1332,22 +1337,28 @@
       try {
         const vid = $('camVideo');
         const cnv = $('camCanvas');
-        if (!vid) throw new Error('VIDEO_MISSING');
+        if (!vid || vid.videoWidth === 0) throw new Error('Kamera belum siap, silakan coba lagi.');
 
         console.log('[AI] Phase 1: Drawing Frame...');
         const ctx = cnv.getContext('2d');
         cnv.width = vid.videoWidth;
         cnv.height = vid.videoHeight;
 
-        // Mirroring agar hasil searah dengan preview (untuk personal)
+        // Mirroring agar hasil searah dengan preview
+        ctx.save();
         ctx.translate(cnv.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(vid, 0, 0);
+        ctx.restore();
 
-        // Optimasi: Resize image agar payload tidak terlalu besar (sering gagal di Cloudflare/n8n jika > 1MB)
-        const fullDataUrl = cnv.toDataURL('image/jpeg', 0.85);
-        const dataUrl = await _resizeImage(fullDataUrl, 640);
+        // Gunakan compressImage helper yang lebih stabil
+        const dataUrl = await compressImage(cnv.toDataURL('image/jpeg', 0.9), 640, 0.7);
         
+        // Safety check: Jika gambar terlalu kecil, kemungkinan besar hitam/corrupt
+        if (dataUrl.length < 5000) {
+           throw new Error('Gagal mengambil gambar yang jelas. Pastikan cahaya cukup.');
+        }
+
         _captureData = { dataUrl };
 
         if (!window._isMejaMode) stopCamStream();
@@ -1355,16 +1366,12 @@
         let descriptor = preDescriptor;
         if (!descriptor) {
           console.log('[AI] Phase 2: Extracting Face Features (AI)...');
-          // Optimasi: Gunakan cnv (frame yang sama) bukan vid agar konsisten
           descriptor = await getFaceDescriptor(cnv);
-        } else {
-          console.log('[AI] Phase 2: Using Pre-Identified Descriptor.');
         }
 
         if (!descriptor) {
-          console.warn('[AI] End Phase: No face descriptor extracted.');
           _forceResetAiState(true);
-          setCamStatus('bad', '⚠️', 'Gagal Ekstraksi', 'Posisikan wajah kembali');
+          setCamStatus('bad', '⚠️', 'Gagal Ekstraksi', 'Wajah tidak terdeteksi jelas');
           if (!window._isMejaMode) startDetectLoop();
           return;
         }
@@ -1432,6 +1439,7 @@
 
     /* ── Helper UI ── */
     function setCamStatus(type, icon, title, sub) {
+      if (!_isLoopEnabled && type === 'ok' && icon !== '📸' && icon !== '✅' && icon !== '❌') return;
       const el = $('camStatus'); if (!el) return;
       el.className = `cam-status ${type}`;
       $('camStatusIcon').textContent = icon;

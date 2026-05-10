@@ -185,6 +185,68 @@
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { from {transform:rotate(0deg)} to {transform:rotate(360deg)} }
+
+    /* 🖥️ DESKTOP OPTIMIZED LAYOUT 🖥️ */
+    @media (min-width: 1024px) {
+      .absen-layout-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 24px;
+        align-items: start;
+        padding: 10px;
+      }
+      .absen-main-content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .absen-side-content {
+        position: sticky;
+        top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      /* Hubungkan clock & weather secara horizontal di desktop */
+      .clock-card {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 25px !important;
+      }
+      .clock-left { flex: 1; border-right: 1px solid rgba(255,255,255,0.1); margin-right: 20px; }
+      .clock-weather { width: 150px; }
+    }
+
+    .btn-secondary-outline {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-secondary-outline:hover {
+      background: rgba(255,255,255,0.1) !important;
+      border-color: var(--gold) !important;
+      transform: translateY(-2px);
+    }
+    .gps-row-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+    .gps-row-box .gps-key {
+      font-size: 8px;
+      font-weight: 800;
+      color: var(--muted);
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+    .gps-row-box .gps-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--white);
+      font-family: 'Courier New', Courier, monospace;
+    }
   </style>
 </head>
 
@@ -201,124 +263,194 @@
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs" id="tabsBar">
-      <button class="tab active" onclick="switchTab('absen')">📍 Absen</button>
-      <button class="tab" onclick="switchTab('ket')">📝 Keterangan</button>
-      <button class="tab" onclick="switchTab('rekap')">📊 Rekap</button>
-      <button class="tab" onclick="switchTab('profil')">👤 Profil</button>
-    </div>
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav" id="tabsBar">
+      <button class="nav-item" onclick="switchTab('ket')" data-tab="ket">
+        <i class="fas fa-file-alt"></i>
+        <span>Izin</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('rekap')" data-tab="rekap">
+        <i class="fas fa-chart-bar"></i>
+        <span>Rekap</span>
+      </button>
+      
+      <!-- Menu Penugasan (Hidden by default, shown for Kabid) -->
+      <button class="nav-item" id="nav-tugas" onclick="switchTab('tugas')" data-tab="tugas" style="display:none">
+        <i class="fas fa-tasks"></i>
+        <span>Tugas</span>
+      </button>
+
+      <!-- MAIN CENTER BUTTON -->
+      <button class="nav-item nav-main active" onclick="switchTab('absen')" data-tab="absen">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>Absen</span>
+      </button>
+
+      <!-- Menu Lembur (Hidden by default, shown for Admin/Kabid) -->
+      <button class="nav-item" id="nav-lembur" onclick="switchTab('lembur')" data-tab="lembur" style="display:none">
+        <i class="fas fa-user-clock"></i>
+        <span>Lembur</span>
+      </button>
+
+      <button class="nav-item" onclick="switchTab('profil')" data-tab="profil">
+        <i class="fas fa-user"></i>
+        <span>Profil</span>
+      </button>
+    </nav>
 
     <!-- ══ TAB ABSEN ══ -->
     <div class="panel active" id="panel-absen">
-      <div class="absen-desktop-grid">
-        <div class="clock-card" id="weatherCard" style="opacity:1">
-          <!-- Kiri: jam & status -->
-          <div class="clock-left">
-            <div class="clock-label">Waktu Indonesia Tengah (WITA)</div>
-            <div class="clock-time" id="clockTime">--<span>:</span>--<span>:</span>--</div>
-            <div class="clock-date" id="clockDate">Memuat...</div>
-            <div class="clock-badge">
-              <div class="dot"></div><span id="jenisAbsen">Menghitung...</span>
+      <div class="absen-layout-wrapper">
+        
+        <!-- KOLOM UTAMA (KIRI/TENGAH) -->
+        <div class="absen-main-content">
+          <!-- Clock & Weather -->
+          <div class="clock-card" id="weatherCard" style="opacity:1">
+            <div class="clock-left">
+              <div class="clock-label">Waktu Indonesia Tengah (WITA)</div>
+              <div class="clock-time" id="clockTime">--<span>:</span>--<span>:</span>--</div>
+              <div class="clock-date" id="clockDate">Memuat...</div>
+              <div class="clock-badge">
+                <div class="dot"></div><span id="jenisAbsen">Menghitung...</span>
+              </div>
+              <div class="clock-loc-badge unknown" id="clockLocBadge">📍 Mendeteksi lokasi...</div>
+              <div id="batasAbsenWrap"
+                style="margin-top:6px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.35);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box">
+                <span style="font-size:14px">⏰</span><span id="batasAbsen"
+                  style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:-.3px;flex:1">—</span>
+              </div>
             </div>
-            <div class="clock-loc-badge unknown" id="clockLocBadge">📍 Mendeteksi lokasi...</div>
-            <div id="batasAbsenWrap"
-              style="margin-top:6px;background:var(--gold-dim);border:1px solid rgba(201,168,76,.35);border-radius:10px;padding:6px 10px;display:flex;align-items:center;gap:6px;width:100%;box-sizing:border-box">
-              <span style="font-size:14px">⏰</span><span id="batasAbsen"
-                style="font-size:13px;font-weight:800;color:var(--gold);letter-spacing:-.3px;flex:1">—</span>
+            <div class="clock-weather" id="clockWeatherWidget">
+              <div class="clock-weather-icon" id="weatherIcon">🌤️</div>
+              <div class="clock-weather-temp" id="weatherTemp">—°C</div>
+              <div class="clock-weather-cond" id="weatherCond">—</div>
+              <div class="clock-weather-tags">
+                <span class="clock-weather-tag" id="weatherHumid">💧 —%</span>
+                <span class="clock-weather-tag" id="weatherWind">💨 — km/h</span>
+                <span class="clock-weather-tag" id="weatherFeel">🌡️ Terasa —°C</span>
+              </div>
             </div>
           </div>
-          <!-- Kanan: cuaca mini -->
-          <div class="clock-weather" id="clockWeatherWidget">
-            <div class="clock-weather-icon" id="weatherIcon">🌤️</div>
-            <div class="clock-weather-temp" id="weatherTemp">—°C</div>
-            <div class="clock-weather-cond" id="weatherCond">—</div>
-            <div class="clock-weather-tags">
-              <span class="clock-weather-tag" id="weatherHumid">💧 —%</span>
-              <span class="clock-weather-tag" id="weatherWind">💨 — km/h</span>
-              <span class="clock-weather-tag" id="weatherFeel">🌡️ Terasa —°C</span>
+
+          <!-- User Info & GPS -->
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:15px">
+            <div class="user-card" style="margin:0">
+              <div class="avatar" id="userAvatar">?</div>
+              <div style="flex:1;min-width:0">
+                <div class="user-name" id="userName">Memuat...</div>
+                <div class="user-jabatan" id="userJabatan">—</div>
+                <div class="user-meta" id="userMeta">—</div>
+              </div>
+              <div class="sbadge s-loading" id="userBadge">MEMUAT</div>
+            </div>
+
+            <div class="card" style="margin:0; margin-bottom:12px">
+              <div class="card-title">📍 Lokasi Terdeteksi</div>
+              <div id="lokasiList">
+                <div class="lokasi-item">
+                  <div class="lokasi-dot"></div>
+                  <div class="shimmer" style="width:110px;height:12px"></div>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- GPS Card (Desktop Optimized) -->
+          <div class="gps-card" id="gpsCard" style="margin:0">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+               <div class="card-title" style="margin:0">🛰️ Data GPS Satelit</div>
+               <div id="gpsNet" style="font-size:10px; color:var(--info); font-weight:700">📶 Checking...</div>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:10px">
+              <div class="gps-row-box">
+                <div class="gps-key">LATITUDE</div>
+                <div class="gps-val" id="gpsLat">—</div>
+              </div>
+              <div class="gps-row-box">
+                <div class="gps-key">LONGITUDE</div>
+                <div class="gps-val" id="gpsLon">—</div>
+              </div>
+              <div class="gps-row-box">
+                <div class="gps-key">AKURASI</div>
+                <div class="gps-val" id="gpsAcc">—</div>
+              </div>
+            </div>
+            <div class="gps-row-box" style="margin-bottom:10px">
+                <div class="gps-key">ALAMAT TERDETEKSI</div>
+                <div class="gps-val" id="gpsLokasi" style="color:var(--gold); white-space:normal; line-height:1.4">—</div>
+            </div>
+            <div class="acc-bar">
+              <div class="acc-fill" id="accFill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Result Card (Initially Hidden) -->
+          <div class="result-card" id="resultCard" style="margin:0; display:none; position:relative">
+            <button onclick="hideResult()" style="position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:5px"><i class="fas fa-times"></i></button>
+            <div class="r-icon" id="rIcon">✅</div>
+            <div style="flex:1">
+              <div class="r-title" id="rTitle">—</div>
+              <div class="r-msg" id="rMsg">—</div>
+            </div>
+          </div>
+
+          <!-- Today's Log Card (Prominent Position) -->
+          <div class="today-card" id="todayCard" style="margin:0; margin-bottom:15px">
+            <div class="card-title">
+              <span>📋 Log Absen Hari Ini</span>
+              <button class="btn-sm-admin" onclick="loadTodayHistory()">🔄</button>
+            </div>
+            <div id="todayList" style="margin-top:10px">
+              <div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
+              <div class="shimmer" style="height:32px;border-radius:8px"></div>
+            </div>
+          </div>
+
+          <!-- Konfirmasi Header -->
+          <div class="divider" style="margin:10px 0"><span>KONFIRMASI KEHADIRAN</span></div>
+          
+          <div class="absen-actions-container">
+            <!-- Action Left: WiFi & Note -->
+            <div class="wifi-bar checking" id="wifiBar" style="margin:0; min-height:60px">
+              <span class="wifi-icon" id="wifiIcon">🔄</span>
+              <div class="wifi-info">
+                <div class="wifi-status" id="wifiStatus">Memeriksa jaringan...</div>
+                <div class="wifi-detail" id="wifiDetail">Mengambil informasi koneksi</div>
+              </div>
+            </div>
+            
+            <!-- Action Right: Buttons -->
+            <div class="absen-buttons-col">
+              <button class="btn-primary" id="btnAbsen" onclick="handleAbsen()" style="margin:0; height:60px">
+                <div class="btn-inner"><span>📍</span><span id="btnText">Kirim Lokasi &amp; Absen</span></div>
+              </button>
+              <button class="btn-secondary-outline" id="btnGoToKet" onclick="switchTab('ket')" 
+                      style="width:100%; height:45px; border-radius:14px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:var(--white); font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer">
+                 <i class="fas fa-envelope-open-text" style="color:var(--gold)"></i> Ajukan Izin / Keterangan
+              </button>
+            </div>
+          </div>
+
+          <!-- Pulang Luar Form -->
+          <div class="pulang-luar-form" id="pulangLuarForm" style="margin-top:15px">
+            <div class="pulang-luar-note">⚠️ Khusus pegawai di lapangan yang tidak sempat kembali ke kantor</div>
+            <div class="form-group" style="margin-bottom:10px">
+              <label class="form-label">📝 Keterangan Lokasi Lapangan</label>
+              <textarea class="form-textarea" id="ketPulangLuar" placeholder="Sebutkan kegiatan/tujuan lapangan Anda..." style="min-height:70px"></textarea>
+            </div>
+            <button class="btn-pulang-luar" id="btnPulangLuar" onclick="handlePulangLuar()" style="width:100%; margin:0">
+              <div class="btn-inner"><span>🏃</span><span id="btnPulangLuarText">Pulang dari Lapangan</span></div>
+            </button>
+          </div>
+
+        </div> <!-- /.absen-main-content -->
+
+        <!-- Side Content (Desktop Only Info) -->
+        <div class="absen-side-content" style="padding-top:20px">
+           <!-- Branding card removed as per user request -->
         </div>
 
-        <div class="user-card">
-          <div class="avatar" id="userAvatar">?</div>
-          <div style="flex:1;min-width:0">
-            <div class="user-name" id="userName">Memuat...</div>
-            <div class="user-jabatan" id="userJabatan">—</div>
-            <div class="user-meta" id="userMeta">—</div>
-          </div>
-          <div class="sbadge s-loading" id="userBadge">MEMUAT</div>
-        </div>
-        <div class="card">
-          <div class="card-title">📍 Lokasi Absen Hari Ini</div>
-          <div id="lokasiList">
-            <div class="lokasi-item">
-              <div class="lokasi-dot"></div>
-              <div class="shimmer" style="width:110px;height:12px"></div>
-            </div>
-          </div>
-        </div>
-        <div class="today-card" id="todayCard">
-          <div class="card-title">
-            <span>📋 Absen Anda Hari Ini</span>
-            <button class="btn-sm-admin" onclick="loadTodayHistory()">🔄</button>
-          </div>
-          <div id="todayList">
-            <div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
-            <div class="shimmer" style="height:32px;border-radius:8px"></div>
-          </div>
-        </div>
-      </div><!-- /.absen-desktop-grid -->
-      <div class="gps-card" id="gpsCard">
-        <div class="card-title">🛰️ Data GPS</div>
-        <div class="gps-row"><span class="gps-key">LATITUDE</span> <span class="gps-val" id="gpsLat">—</span></div>
-        <div class="gps-row"><span class="gps-key">LONGITUDE</span><span class="gps-val" id="gpsLon">—</span></div>
-        <div class="gps-row"><span class="gps-key">AKURASI</span> <span class="gps-val" id="gpsAcc">—</span></div>
-        <div class="gps-row"><span class="gps-key">LOKASI</span> <span class="gps-val" id="gpsLokasi"
-            style="color:var(--gold)">—</span></div>
-        <div class="gps-row"><span class="gps-key">TANGGAL</span> <span class="gps-val" id="gpsTanggal">—</span></div>
-        <div class="gps-row"><span class="gps-key">JAM</span> <span class="gps-val" id="gpsJam">—</span></div>
-        <div class="gps-row"><span class="gps-key">JARINGAN</span> <span class="gps-val" id="gpsNet"
-            style="color:var(--info)">—</span></div>
-        <div class="acc-bar">
-          <div class="acc-fill" id="accFill" style="width:0%"></div>
-        </div>
-      </div>
-      <div class="result-card" id="resultCard">
-        <div class="r-icon" id="rIcon">✅</div>
-        <div class="r-title" id="rTitle">—</div>
-        <div class="r-msg" id="rMsg">—</div>
-      </div>
-      <div class="divider"><span>KONFIRMASI KEHADIRAN</span></div>
-      <!-- WiFi / Network Indicator -->
-      <div class="wifi-bar checking" id="wifiBar">
-        <span class="wifi-icon" id="wifiIcon">🔄</span>
-        <div class="wifi-info">
-          <div class="wifi-status" id="wifiStatus">Memeriksa jaringan...</div>
-          <div class="wifi-detail" id="wifiDetail">Mengambil informasi koneksi</div>
-        </div>
-      </div>
-      <button class="btn-primary" id="btnAbsen" onclick="handleAbsen()">
-        <div class="btn-inner"><span>📍</span><span id="btnText">Kirim Lokasi &amp; Absen</span></div>
-      </button>
-
-      <!-- ══ PULANG LUAR (muncul hanya saat jam pulang ≥ 14:30) ══ -->
-      <div class="pulang-luar-form" id="pulangLuarForm">
-        <div class="pulang-luar-note">⚠️ Fitur ini hanya untuk pegawai yang sedang di lapangan dan tidak sempat kembali
-          ke kantor</div>
-        <div class="form-group" style="margin-bottom:0">
-          <label class="form-label">📝 Keterangan Lokasi Lapangan</label>
-          <textarea class="form-textarea" id="ketPulangLuar"
-            placeholder="Contoh: Sedang di Desa Umbu Ratu Nggay untuk pendampingan kegiatan..."
-            style="min-height:70px"></textarea>
-        </div>
-      </div>
-      <button class="btn-pulang-luar" id="btnPulangLuar" onclick="handlePulangLuar()">
-        <div class="btn-inner"><span>🏃</span><span id="btnPulangLuarText">Pulang dari Lapangan</span></div>
-      </button>
-
-      <div class="footer">Sistem Absensi Digital BAPPERIDA SB</div>
+      </div> <!-- /.absen-layout-wrapper -->
     </div>
 
     <!-- ══════════════════════════════════════════════════
@@ -396,7 +528,7 @@
           </div>
         </div>
       </div>
-      <div class="result-card" id="ketResult">
+      <div class="result-card" id="ketResult" style="display:none">
         <div class="r-icon" id="ketRIcon">✅</div>
         <div class="r-title" id="ketRTitle">—</div>
         <div class="r-msg" id="ketRMsg">—</div>
@@ -890,6 +1022,87 @@
       <div class="footer" style="margin-top:12px">Data rekap dihitung langsung dari log absen</div>
     </div>
 
+    <!-- ══ TAB PENUGASAN ══ -->
+    <div class="panel" id="panel-tugas">
+      <div class="rekap-header">
+        <div class="rekap-title">📍 Penugasan Pegawai</div>
+      </div>
+      <div class="card glass-card">
+        <div class="form-group">
+          <label class="form-label">👥 Pilih Pegawai</label>
+          <div class="custom-search-dropdown" id="tugasPegawaiContainer">
+            <div class="dropdown-trigger" onclick="toggleTugasDropdown()">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="tugasSearchInput" placeholder="Cari pegawai..." autocomplete="off" oninput="filterTugasPegawai(this.value)">
+              <i class="fas fa-chevron-down arrow-icon"></i>
+            </div>
+            <div class="dropdown-list-wrap" id="tugasOptionsList"></div>
+            <select id="tugasPegawai" style="display:none"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📍 Titik Koordinat Tugas</label>
+          <div id="tugasMap" style="height:220px; border-radius:14px; border:1px solid var(--border); margin-bottom:10px; z-index:1"></div>
+          <div style="display:flex; gap:8px">
+            <input type="text" id="tugasLat" class="form-input" placeholder="Latitude" readonly style="font-family:'JetBrains Mono',monospace">
+            <input type="text" id="tugasLon" class="form-input" placeholder="Longitude" readonly style="font-family:'JetBrains Mono',monospace">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 Keterangan Tugas</label>
+          <textarea id="tugasKet" class="form-textarea" placeholder="Tuliskan detail tugas di sini..." style="min-height:80px"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📅 Tanggal Tugas</label>
+          <input type="date" id="tugasTanggal" class="form-input">
+        </div>
+        <button class="btn-primary" onclick="handleSaveTugas()" id="btnSaveTugas">
+          <div class="btn-inner"><span>💾</span> Simpan Penugasan</div>
+        </button>
+      </div>
+      <div class="result-card" id="tugasResult" style="display:none; margin-top:12px">
+        <div class="r-icon" id="tugasRIcon">✅</div>
+        <div class="r-title" id="tugasRTitle">—</div>
+        <div class="r-msg" id="tugasRMsg">—</div>
+      </div>
+    </div>
+
+    <!-- ══ TAB LEMBUR ══ -->
+    <div class="panel" id="panel-lembur">
+      <div class="rekap-header">
+        <div class="rekap-title">🌙 Rekap Lembur</div>
+      </div>
+      <div class="card glass-card">
+        <div class="form-group">
+          <label class="form-label">📅 Rentang Tanggal</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <input type="date" id="lemburDari" class="form-input">
+            <input type="date" id="lemburSampai" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">👥 Pilih Pegawai</label>
+          <div class="custom-search-dropdown" id="lemburPegawaiContainer">
+            <div class="dropdown-trigger" onclick="toggleLemburDropdown()">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="lemburSearchInput" placeholder="Cari pegawai..." autocomplete="off" oninput="filterLemburPegawai(this.value)">
+              <i class="fas fa-chevron-down arrow-icon"></i>
+            </div>
+            <div class="dropdown-list-wrap" id="lemburOptionsList"></div>
+            <select id="lemburPegawai" style="display:none"></select>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="handleFetchLembur()" id="btnFetchLembur">
+          <div class="btn-inner"><span>📊</span> Tarik Data Lembur</div>
+        </button>
+      </div>
+      
+      <div id="lemburResultList" style="margin-top:15px">
+        <!-- Hasil akan diinject di sini -->
+      </div>
+      <div class="footer">Lembur menarik data absen harian dan mengecek konflik dengan penugasan.</div>
+    </div>
+
     <!-- ══ TAB ADMIN (conditional) ══ -->
     <div class="panel" id="panel-admin">
       <div class="admin-header-card" style="margin-bottom:12px">
@@ -926,6 +1139,323 @@
             <div class="r-msg" id="konfirmasiRMsg">—</div>
           </div>
         </div>
+
+        <!-- 🌟 PRO MAX INPUT KETERANGAN PEGAWAI (ADMIN) 🌟 -->
+        <div class="card glass-card admin-module-card" id="adminKetCard" style="margin-top:15px; padding:20px; border-radius:24px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); box-shadow: 0 20px 40px rgba(0,0,0,0.4)">
+          
+          <!-- Header Module -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px">
+             <div style="display:flex; align-items:center; gap:12px">
+                <div style="width:40px; height:40px; background:linear-gradient(135deg, #6366f1, #a855f7); border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--white); box-shadow: 0 8px 16px rgba(168, 85, 247, 0.3)">
+                   <i class="fas fa-file-signature" style="font-size:18px"></i>
+                </div>
+                <div>
+                   <div style="font-size:14px; font-weight:900; color:var(--white); letter-spacing:0.5px; text-transform:uppercase">Input Keterangan Pegawai</div>
+                   <div style="font-size:10px; color:var(--muted); opacity:0.8">Manajemen kehadiran manual oleh Administrator</div>
+                </div>
+             </div>
+             <div class="status-badge" style="background:rgba(168, 85, 247, 0.1); color:#a855f7; border:1px solid rgba(168, 85, 247, 0.2); font-size:9px; padding:4px 10px; border-radius:20px; font-weight:800">
+                <i class="fas fa-shield-alt" style="margin-right:4px"></i> ADMIN OPS
+             </div>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:16px">
+            
+            <!-- Pegawai Selection (Searchable Dropdown) -->
+            <div class="admin-field-wrap">
+              <label style="display:block; font-size:11px; font-weight:800; color:var(--gold); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px">
+                 <i class="fas fa-user-tie" style="margin-right:6px"></i> Pilih Pegawai
+              </label>
+              <div class="custom-search-dropdown" id="adminKetPegawaiContainer">
+                <div class="dropdown-trigger" onclick="toggleAdminKetDropdown()">
+                  <i class="fas fa-search search-icon"></i>
+                  <input type="text" id="adminKetSearchInput" placeholder="Ketik nama atau NIP pegawai..." autocomplete="off" oninput="filterAdminKetPegawai(this.value)">
+                  <i class="fas fa-chevron-down arrow-icon"></i>
+                </div>
+                <div class="dropdown-list-wrap" id="adminKetOptionsList">
+                   <!-- List items akan diinject via JS -->
+                </div>
+                <!-- Hidden input untuk menyimpan value yang dipilih -->
+                <select id="adminKetPegawai" style="display:none"></select>
+              </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+              <!-- Jenis -->
+              <div class="admin-field-wrap">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:6px; text-transform:uppercase">Jenis Keterangan</label>
+                <select id="adminKetJenis" class="admin-select-custom" style="width:100%; height:45px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:var(--white); padding:0 12px; font-size:13px; outline:none; cursor:pointer">
+                  <option value="IZIN">🙏 IZIN</option>
+                  <option value="SAKIT">🤒 SAKIT</option>
+                  <option value="TUGAS">💼 TUGAS</option>
+                  <option value="TUBEL">🎓 TUBEL</option>
+                  <option value="CUTI">🏖️ CUTI</option>
+                </select>
+              </div>
+              <!-- Lampiran Bukti -->
+              <div class="admin-field-wrap">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:6px; text-transform:uppercase">Lampiran Bukti</label>
+                <button class="admin-upload-btn" onclick="$('adminKetFileInput').click()" style="width:100%; height:45px; background:rgba(99, 102, 241, 0.1); border:1px dashed rgba(99, 102, 241, 0.4); border-radius:12px; color:#818cf8; display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.3s">
+                   <i class="fas fa-cloud-upload-alt"></i> <span id="adminKetFileName">Pilih File...</span>
+                </button>
+                <input type="file" id="adminKetFileInput" style="display:none" onchange="handleAdminKetFile(this)">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px">
+              <!-- Tanggal Mulai -->
+              <div class="admin-field-wrap">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:6px; text-transform:uppercase">Tanggal Mulai</label>
+                <div style="position:relative">
+                   <input type="date" id="adminKetTglMulai" class="admin-input-premium" style="width:100%; height:45px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:var(--white); padding:0 12px; font-size:13px; outline:none">
+                </div>
+              </div>
+              <!-- Tanggal Selesai -->
+              <div class="admin-field-wrap">
+                <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:6px; text-transform:uppercase">Tanggal Selesai</label>
+                <input type="date" id="adminKetTglSelesai" class="admin-input-premium" style="width:100%; height:45px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:var(--white); padding:0 12px; font-size:13px; outline:none">
+              </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div id="adminKetPreviewWrap" style="display:none; padding:15px; background:rgba(0,0,0,0.2); border-radius:16px; border:1px solid rgba(255,255,255,0.05); animation: slideDown 0.3s ease">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px">
+                 <div style="font-size:10px; color:var(--gold); font-weight:900; letter-spacing:1px">🔍 PREVIEW LAMPIRAN</div>
+                 <button onclick="clearAdminKetFile()" style="background:rgba(239,68,68,0.1); border:none; color:#ef4444; font-size:10px; padding:4px 10px; border-radius:8px; cursor:pointer; font-weight:700">Hapus</button>
+              </div>
+              <div style="border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.1)">
+                <img id="adminKetPreviewImg" src="" style="width:100%; display:none">
+                <div id="adminKetPreviewDoc" style="display:none; text-align:center; padding:25px; background:rgba(255,255,255,0.02)">
+                   <i class="fas fa-file-pdf" style="font-size:40px; margin-bottom:10px; color:#f87171"></i>
+                   <div id="adminKetDocName" style="font-size:11px; color:var(--white); font-weight:600">Document.pdf</div>
+                   <div style="font-size:9px; color:var(--muted); margin-top:4px">File siap diunggah</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detail Pesan -->
+            <div class="admin-field-wrap">
+              <label style="display:block; font-size:10px; font-weight:800; color:var(--muted); margin-bottom:6px; text-transform:uppercase">Detail Keterangan / Alasan</label>
+              <textarea id="adminKetPesan" class="admin-input-premium" placeholder="Tuliskan detail keterangan atau nomor surat tugas di sini..." style="width:100%; height:80px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; color:var(--white); padding:12px; font-size:13px; outline:none; resize:none"></textarea>
+            </div>
+
+            <!-- Action Button -->
+            <button id="btnAdminSimpanKet" class="btn-primary-gradient" onclick="adminSimpanKeterangan()" 
+                    style="width:100%; height:52px; border-radius:16px; margin-top:10px; font-weight:900; font-size:14px; letter-spacing:0.5px; border:none; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer">
+              <i class="fas fa-save" style="font-size:16px"></i> <span>SIMPAN KETERANGAN</span>
+            </button>
+          </div>
+
+          <!-- Notification Toast (Internal) -->
+          <div id="adminKetResult" class="premium-toast" style="display:none; margin-top:20px; padding:15px; border-radius:18px; animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28)">
+            <div style="display:flex; align-items:center; gap:15px">
+              <div id="adminKetRIcon" style="width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px"></div>
+              <div style="flex:1">
+                <div id="adminKetRTitle" style="font-size:13px; font-weight:900; color:var(--white)"></div>
+                <div id="adminKetRMsg" style="font-size:11px; color:var(--white); opacity:0.8"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>
+          /* 💎 PRO MAX INPUT STYLES 💎 */
+          .admin-select-custom, .admin-input-premium {
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: var(--white) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+          }
+          
+          /* Custom Arrow for Select */
+          .admin-field-wrap { position: relative; }
+          .admin-select-custom {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d4af37'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 15px center !important;
+            background-size: 14px !important;
+            padding-right: 40px !important;
+          }
+
+          /* Styling Options (Limited support, but helps) */
+          .admin-select-custom option {
+            background-color: #1e1e2e;
+            color: white;
+            padding: 10px;
+          }
+
+          .admin-select-custom:focus, .admin-input-premium:focus {
+            border-color: var(--gold) !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15), inset 0 2px 4px rgba(0,0,0,0.1);
+            outline: none;
+            transform: translateY(-1px);
+          }
+
+          .admin-select-custom:hover, .admin-input-premium:hover {
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+          }
+
+          .admin-upload-btn:hover {
+            background: rgba(99, 102, 241, 0.2) !important;
+            border-color: rgba(99, 102, 241, 0.6) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
+          }
+
+          .btn-primary-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+          }
+
+          .btn-primary-gradient:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 15px 30px rgba(168, 85, 247, 0.4);
+            filter: brightness(1.1);
+          }
+
+          .btn-primary-gradient:active {
+            transform: translateY(-1px) scale(0.99);
+          }
+          
+          .premium-toast {
+            backdrop-filter: blur(10px);
+            border-left-width: 5px !important;
+          }
+
+          .premium-toast.r-success {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-left-color: #22c55e !important;
+          }
+
+          .premium-toast.r-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-left-color: #f59e0b !important;
+          }
+
+          .premium-toast.r-fail {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-left-color: #ef4444 !important;
+          }
+          
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+
+          /* 🔍 SEARCHABLE DROPDOWN STYLES 🔍 */
+          .custom-search-dropdown {
+            position: relative;
+            width: 100%;
+          }
+          .dropdown-trigger {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          }
+          .dropdown-trigger:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+          }
+          .dropdown-trigger .search-icon {
+            color: var(--gold);
+            margin-right: 12px;
+            font-size: 14px;
+          }
+          .dropdown-trigger input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+            cursor: pointer;
+          }
+          .dropdown-trigger .arrow-icon {
+            color: var(--muted);
+            font-size: 12px;
+            transition: transform 0.3s ease;
+          }
+          .custom-search-dropdown.open .arrow-icon {
+            transform: rotate(180deg);
+            color: var(--gold);
+          }
+          .custom-search-dropdown.open .dropdown-trigger {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
+          }
+
+          .dropdown-list-wrap {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: slideDown 0.2s ease-out;
+          }
+          .custom-search-dropdown.open .dropdown-list-wrap {
+            display: block;
+          }
+
+          .dropdown-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+          }
+          .dropdown-item:last-child { border-bottom: none; }
+          .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            padding-left: 20px;
+          }
+          .dropdown-item .item-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--white);
+            display: block;
+          }
+          .dropdown-item .item-nip {
+            font-size: 10px;
+            color: var(--muted);
+          }
+          .dropdown-item.selected {
+            background: rgba(168, 85, 247, 0.15);
+            border-left: 3px solid var(--gold);
+          }
+
+          /* Scrollbar for list */
+          .dropdown-list-wrap::-webkit-scrollbar { width: 6px; }
+          .dropdown-list-wrap::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        </style>
 
         <!-- ══ MEJA ABSEN (Admin Only) ══ -->
         <div class="meja-absen-card" id="mejaAbsenCard" style="margin-top:12px">
@@ -1011,136 +1541,114 @@
 
       <!-- SECTION: KEPEGAWAIAN -->
       <div id="admin-section-user" class="admin-section" style="display:none">
-        <!-- ══ MANAJEMEN PEGAWAI & BIOMETRIK (Combined Tabbed Card) ══ -->
+        <!-- ══ MANAJEMEN PEGAWAI ══ -->
         <div class="card" id="adminFaceRegCard">
-          <div
-            style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div
-              style="display:flex;gap:4px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:22px;padding:3px">
-              <button id="tabDataBtn" onclick="switchFaceSigTab('data')"
-                style="padding:6px 12px;border-radius:18px;border:none;background:var(--gold);color:var(--bg);font-size:9px;font-weight:800;cursor:pointer">👥
-                Data</button>
-              <button id="tabFaceBtn" onclick="switchFaceSigTab('face')"
-                style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">📷
-                Wajah</button>
-              <button id="tabSigBtn" onclick="switchFaceSigTab('sig')"
-                style="padding:6px 12px;border-radius:18px;border:none;background:transparent;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer">✍️
-                TTD</button>
+          <div class="card-header-admin" style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--border)">
+            <div style="font-size:11px; font-weight:800; color:var(--white); display:flex; align-items:center; gap:8px">
+               <span>👥</span> MANAJEMEN PEGAWAI TERPADU
             </div>
-            <div style="display:flex;gap:6px">
+            <div style="display:flex; gap:8px">
               <button class="btn-sm-admin" id="btnAdminAddData" onclick="showAddPegawai()">➕ Tambah</button>
-              <button class="btn-sm-admin" onclick="refreshFaceSigTab()" title="Refresh">🔄</button>
+              <button class="btn-sm-admin" onclick="loadPegawaiMgmt()" title="Refresh">🔄</button>
             </div>
           </div>
 
           <div id="faceSigTabData">
-            <div id="pegawaiForm"
-              style="display:none;background:rgba(201,168,76,.07);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px;margin-bottom:12px">
-              <div id="pegawaiFormTitle" style="font-size:10px;font-weight:800;color:var(--gold);margin-bottom:10px">➕
-                TAMBAH PEGAWAI</div>
+            <!-- ✍️ FORM MANAJEMEN TERPADU (INLINE) -->
+            <div id="pegawaiForm" style="display:none; background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.2); border-radius:16px; padding:25px; margin-bottom:30px; border-left: 4px solid var(--gold);">
+              <div id="pegawaiFormTitle" style="font-size:14px; font-weight:800; color:var(--gold); margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px">
+                <span>👤</span> DATABASE KEPEGAWAIAN BAPPERIDA
+              </div>
               <input type="hidden" id="editPegawaiId">
-              <div class="form-group"><label class="form-label">Telegram ID</label><input id="inPegawaiId" type="number"
-                  class="form-input" /></div>
-              <div class="form-group"><label class="form-label">Nama Lengkap</label><input id="inPegawaiNama"
-                  type="text" class="form-input" /></div>
-              <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label><select id="inPegawaiBidang"
-                  class="form-input">
-                  <option value="">— Pilih Bidang —</option>
-                  <option value="Sekretariat">Sekretariat</option>
-                  <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-                  <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-                  <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan
-                    Manusia</option>
-                  <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-                  <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
-                </select></div>
-              <div style="display:grid;grid-template-columns:0.6fr 1.2fr 1.2fr;gap:8px;margin-bottom:10px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">No</label><input
-                    id="inPegawaiNo" type="number" class="form-input" placeholder="No..." /></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">NIP</label><input
-                    id="inPegawaiNip" type="text" class="form-input" placeholder="NIP..." /></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Jabatan</label><input
-                    id="inPegawaiJabatan" type="text" class="form-input" placeholder="Staff..." /></div>
+              
+              <!-- GRID DATA UTAMA -->
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+                <!-- Seksi 1: Identitas -->
+                <div>
+                  <div class="form-group"><label class="form-label">Telegram ID (Unique)</label><input id="inPegawaiId" type="number" class="form-input" /></div>
+                  <div class="form-group"><label class="form-label">Nama Lengkap & Gelar</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
+                  <div class="form-group"><label class="form-label">NIP</label><input id="inPegawaiNip" type="text" class="form-input" maxlength="18" /></div>
+                  <div class="form-group"><label class="form-label">Nomor WhatsApp (No HP)</label><input id="inPegawaiNoHp" type="text" class="form-input" placeholder="08..." /></div>
+                </div>
+
+                <!-- Seksi 2: Organisasi -->
+                <div>
+                  <div class="form-group"><label class="form-label">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" /></div>
+                  <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label>
+                    <select id="inPegawaiBidang" class="form-input">
+                      <option value="Sekretariat">Sekretariat</option>
+                      <option value="Bidang Perencanaan">Bidang Perencanaan</option>
+                      <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
+                      <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
+                      <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
+                      <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+                    </select>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div class="form-group"><label class="form-label">Tipe</label>
+                      <select id="inPegawaiTipe" class="form-input" onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
+                        <option value="PNS">PNS</option><option value="PPPK">PPPK</option><option value="NONASN">NON-ASN</option>
+                      </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Level Akses</label>
+                      <select id="inPegawaiRole" class="form-input">
+                        <option value="USER">USER (Pegawai)</option>
+                        <option value="ADMIN">ADMIN (Bidang)</option>
+                        <option value="SUPERADMIN">SUPER ADMIN</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+                    <div class="form-group"><label class="form-label">Status</label>
+                      <select id="inPegawaiStatus" class="form-input">
+                        <option value="AKTIF">AKTIF</option>
+                        <option value="IZIN">IZIN</option>
+                        <option value="SAKIT">SAKIT</option>
+                        <option value="TUGAS">TUGAS</option>
+                        <option value="TUBEL">TUBEL</option>
+                        <option value="CUTI">CUTI</option>
+                        <option value="NONAKTIF">NONAKTIF</option>
+                      </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Pangkat/Golongan</label><select id="inPegawaiPangkat" class="form-input"></select></div>
+                  </div>
+                </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">Tipe Pegawai</label><select
-                    id="inPegawaiTipe" class="form-input"
-                    onchange="_updatePangkatDropdown('inPegawaiPangkat', this.value)">
-                    <option value="PNS">Pegawai Negeri Sipil (PNS)</option>
-                    <option value="PPPK">PPPK</option>
-                    <option value="NONASN">Non ASN / Lainnya</option>
-                  </select></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Pangkat/Golongan</label><select
-                    id="inPegawaiPangkat" class="form-input">
-                    <option value="">— Pilih —</option>
-                  </select></div>
+
+              <!-- SEKSI BIOMETRIK & TTD (GABUNGAN) -->
+              <div style="margin-top:20px; padding:15px; background:rgba(0,0,0,0.2); border-radius:12px; display:grid; grid-template-columns:1fr 1fr; gap:20px">
+                 <div style="text-align:center">
+                    <div style="font-size:10px; color:var(--gold); font-weight:700; margin-bottom:10px">📸 BIOMETRIK WAJAH</div>
+                    <div id="previewWajahAdmin" style="width:70px; height:70px; border-radius:50%; background:rgba(201,168,76,0.1); margin:0 auto 10px; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden">
+                       <span style="font-size:24px">👤</span>
+                    </div>
+                    <button class="btn-admin" onclick="openFaceCaptureAdmin()" style="font-size:10px; height:30px; width:auto; padding:0 15px; margin:0 auto">Update Wajah</button>
+                 </div>
+                 <div style="text-align:center">
+                    <div style="font-size:10px; color:var(--gold); font-weight:700; margin-bottom:10px">✍️ TANDA TANGAN</div>
+                    <div id="previewTTDAdmin" style="width:120px; height:70px; border-radius:8px; background:rgba(255,255,255,0.03); margin:0 auto 10px; border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; overflow:hidden">
+                       <span style="font-size:24px">🖋️</span>
+                    </div>
+                    <button class="btn-admin" onclick="openSignatureAdmin()" style="font-size:10px; height:30px; width:auto; padding:0 15px; margin:0 auto">Update TTD</button>
+                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-                <div class="form-group"><label class="form-label" style="font-size:9px">Role Akses</label><select
-                    id="inPegawaiRole" class="form-input">
-                    <option value="USER">USER</option>
-                    <option value="ADMIN">ADMIN</option>
-                    <option value="SUPERADMIN">SUPER ADMIN</option>
-                  </select></div>
-                <div class="form-group"><label class="form-label" style="font-size:9px">Status Akun</label><select
-                    id="inPegawaiStatus" class="form-input">
-                    <option value="AKTIF">AKTIF</option>
-                    <option value="NONAKTIF">NONAKTIF</option>
-                  </select></div>
-              </div>
-              <div class="result-card" id="pegawaiFormResult" style="margin-bottom:12px">
+
+              <div class="result-card" id="pegawaiFormResult" style="margin-top:20px; display:none">
                 <div class="r-icon" id="pegawaiFormRIcon"></div>
                 <div class="r-title" id="pegawaiFormRTitle"></div>
                 <div class="r-msg" id="pegawaiFormRMsg"></div>
               </div>
-              <div style="display:flex;gap:8px">
-                <button class="btn-admin" onclick="savePegawai()" style="flex:2;margin:0;height:42px">
-                  <span id="btnSavePegawaiTxt">💾 Simpan Data</span>
+
+              <div style="display:flex; gap:12px; margin-top:25px">
+                <button class="btn-admin" onclick="savePegawai()" style="flex:2; margin:0; height:48px; font-weight:800; background:var(--gold); color:#000">
+                  <span id="btnSavePegawaiTxt">💾 SIMPAN PERUBAHAN</span>
                 </button>
-                <button class="btn-admin" onclick="hidePegawaiForm()"
-                  style="flex:1;margin:0;height:42px;background:transparent;border:1px solid var(--border)">Batal</button>
+                <button class="btn-admin" onclick="hidePegawaiForm()" style="flex:1; margin:0; height:48px; background:transparent; border:1px solid var(--border)">BATAL</button>
               </div>
             </div>
+
+            <!-- 📋 DAFTAR PEGAWAI -->
             <div id="pegawaiMgmtList"></div>
-          </div>
-
-          <div id="faceSigTabFace" style="display:none">
-            <div class="admin-face-header"
-              style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px">
-              <div style="flex:1">
-                <div class="admin-face-title" style="display:flex; align-items:center; gap:6px">📸 PENDAFTARAN WAJAH
-                  PEGAWAI</div>
-                <div style="font-size:9px; color:var(--muted); margin-top:3px">Pilih pegawai untuk mendaftarkan
-                  biometric baru</div>
-              </div>
-              <button class="btn-sm-admin" onclick="loadAdminFaceReg()"
-                style="width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:10px; background:rgba(201,168,76,0.1); border:1px solid rgba(201,168,76,0.2); color:var(--gold); font-size:14px; cursor:pointer"
-                title="Refresh Data">🔄</button>
-            </div>
-
-            <div class="form-group" style="margin-bottom:12px">
-              <label class="form-label" style="font-size:9px">Target Pegawai</label>
-              <div style="display:flex; gap:8px">
-                <select class="form-input" id="selectPegawaiFaceReg" style="flex:1">
-                  <option value="">— Pilih Pegawai —</option>
-                </select>
-                <button class="btn-admin" onclick="adminCaptureFace()"
-                  style="margin:0; padding:0 15px; width:auto; font-size:10px; background:var(--gold)">📷
-                  Daftar</button>
-              </div>
-            </div>
-
-            <div class="divider" style="margin:16px 0 10px 0; font-size:9px; font-weight:800; color:var(--muted)">
-              <span>📋 STATUS WAJAH SEMUA PEGAWAI</span>
-            </div>
-            <div id="adminFaceRegList" style="margin-top:12px">
-              <div class="shimmer" style="height:100px; border-radius:12px"></div>
-            </div>
-            <div id="adminFaceGallery" style="display:none"></div>
-          </div>
-
-          <div id="faceSigTabSig" style="display:none">
-            <div id="adminSigList"></div>
           </div>
         </div>
 
@@ -1154,12 +1662,10 @@
           <div id="adminMgmtList" style="margin-bottom:12px"></div>
           <div
             style="background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:15px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram
-                  ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama
-                  Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." />
-              </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px">
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">NIP Pegawai</label><input id="inputAdminNip" type="text" class="form-input" placeholder="198..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
             </div>
             <div class="form-group"><label class="form-label" style="font-size:9px">Level Akses</label><select
                 id="inputAdminRole" class="form-input">
@@ -1186,10 +1692,31 @@
             <div class="map-coord-item">Lat: <span id="pinLat">—</span></div>
             <div class="map-coord-item">Lon: <span id="pinLon">—</span></div>
           </div>
-          <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..."
-            style="margin-bottom:8px" />
-          <input type="number" class="form-input" id="radiusLokasi" value="100" style="margin-bottom:10px" />
-          <button class="btn-admin" onclick="handleTambahLokasi()">📌 Daftarkan Titik</button>
+          <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..." style="margin-bottom:10px" />
+          
+          <div style="margin-bottom:12px">
+            <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📅 Hari Aktif</div>
+            <div id="hariCheckGrid" style="display:flex; flex-wrap:wrap; gap:6px;">
+              <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="senin" checked style="display:none">Sen</label>
+              <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="selasa" checked style="display:none">Sel</label>
+              <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="rabu" checked style="display:none">Rab</label>
+              <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="kamis" checked style="display:none">Kam</label>
+              <label class="hari-check-label checked" onclick="toggleHariCheck(this)"><input type="checkbox" value="jumat" checked style="display:none">Jum</label>
+              <label class="hari-check-label" onclick="toggleHariCheck(this)"><input type="checkbox" value="sabtu" style="display:none">Sab</label>
+              <label class="hari-check-label" onclick="toggleHariCheck(this)"><input type="checkbox" value="minggu" style="display:none">Min</label>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="form-group" style="margin:0">
+              <label class="form-label" style="font-size:9px">📏 Jarak (Radius)</label>
+              <input type="number" class="form-input" id="radiusLokasi" value="100" />
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label" style="font-size:9px">🌐 IP Range (Opsional)</label>
+              <input type="text" class="form-input" id="ipRangeLokasi" placeholder="36.84.0.0/16" />
+            </div>
+          </div>
+          <button class="btn-admin" id="btnTambahLokasi" onclick="handleTambahLokasi()">📌 Daftarkan Titik</button>
           <div id="lokasiMgmtList" style="margin-top:12px"></div>
         </div>
 
@@ -1504,7 +2031,20 @@
         <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="inLogTanggal" class="form-input"></div>
         <div class="form-group"><label class="form-label">Jam</label><input type="time" id="inLogJam" class="form-input"></div>
       </div>
-      <div class="form-group"><label class="form-label">Jenis Absen</label><select id="inLogJenis" class="form-input"><option value="MASUK">MASUK</option><option value="PULANG">PULANG</option></select></div>
+      <div class="form-group">
+        <label class="form-label">Jenis Absen</label>
+        <select id="inLogJenis" class="form-input">
+          <option value="MASUK">MASUK</option>
+          <option value="PULANG">PULANG</option>
+          <option value="IZIN">IZIN</option>
+          <option value="SAKIT">SAKIT</option>
+          <option value="TUGAS">TUGAS</option>
+          <option value="TUBEL">TUBEL</option>
+          <option value="CUTI">CUTI</option>
+          <option value="DI LUAR JAM MASUK">DI LUAR JAM MASUK</option>
+          <option value="DI LUAR JAM PULANG">DI LUAR JAM PULANG</option>
+        </select>
+      </div>
       <div class="form-group"><label class="form-label">Keterangan</label><input type="text" id="inLogKet" class="form-input"></div>
       <div class="result-card" id="logFormResult" style="display:none; margin-bottom:12px">
         <div class="r-icon" id="logFormRIcon">✅</div>
@@ -1527,7 +2067,7 @@
 
   <!-- ════ APP SCRIPTS (urutan load penting) ════ -->
   <!-- 1. Config & constants — harus pertama -->
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=20260509p"></script>
   <script src="js/constants.js"></script>
 
   <!-- 2. State global & Telegram init -->
@@ -1539,8 +2079,8 @@
   <script src="js/api.js"></script>
 
   <!-- 4. Core utilities -->
-  <script src="js/ui.js"></script>
-  <script src="js/helpers.js?v=20260506"></script>
+  <script src="js/ui.js?v=20260509p"></script>
+  <script src="js/helpers.js?v=20260509p"></script>
   <script src="js/network.js"></script>
 
   <!-- 4. Feature modules -->
@@ -1549,24 +2089,25 @@
   <script src="js/absen.js"></script>
   <script src="js/keterangan.js"></script>
   <script src="js/log.js"></script>
-  <script src="js/rekap.js?v=20260506j"></script>
+  <script src="js/rekap.js?v=20260509p"></script>
 
   <!-- 5. Admin modules (split by section) -->
   <!-- 5. Admin modules (split by section) -->
   <script src="js/admin-libur.js"></script>
   <script src="js/admin-lokasi.js"></script>
-  <script src="js/admin-seragam.js"></script>
   <script src="js/admin-pegawai.js"></script>
   <script src="js/admin-log.js"></script>
   <script src="js/admin-mgmt.js"></script>
+  <script src="js/weather.js"></script>
   <script src="js/admin-face.js"></script>
 
   <!-- 6. Supplementary features -->
-  <script src="js/weather.js"></script>
+
   <script src="js/desktop.js"></script>
   <script src="js/signature.js"></script>
   <script src="js/meja.js"></script>
   <script src="js/rekap-pdf.js"></script>
+  <script src="js/tugas_lembur.js?v=20260509p"></script>
 
   <!-- 7. Runtime & entry point -->
   <script src="js/offline.js"></script>

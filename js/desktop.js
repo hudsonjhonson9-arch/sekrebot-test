@@ -145,7 +145,7 @@
       }
     }
 
-    function adminCaptureFaceFor(uid, nama) {
+    function adminCaptureFaceFor(uid, nama, callback) {
       _adminFaceTargetId = uid;
       _adminFaceTargetNama = nama;
 
@@ -160,8 +160,9 @@
           const ok = await saveFaceRefFor(uid, cap.dataUrl, cap.descriptor, nama);
           if (ok) {
             loadAdminFaceReg();
-            // Juga update status wajah admin card yang lama
             if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
+            if (typeof callback === 'function') callback(cap.dataUrl);
+            setTimeout(() => closeCamOverlay(false), 1500); // Tutup setelah 1.5 detik agar user bisa lihat tanda centang/sukses
           }
         },
         onCancel: () => {
@@ -212,6 +213,231 @@
           'warning', '🔌', 'Koneksi Gagal', 'Gagal menghubungi server pendaftaran wajah.');
         dom.show('adminFaceRegResult', 'flex');
         return false;
+      }
+    }
+
+    let _allAdminPegawai = []; // Cache untuk pencarian
+
+    /**
+     * Memuat daftar pegawai ke dalam dropdown Keterangan Admin (Ops).
+     */
+    async function adminLoadKetPegawai() {
+      const el = $('adminKetOptionsList');
+      const searchInput = $('adminKetSearchInput');
+      if (!el) return;
+      
+      el.innerHTML = '<div style="padding:15px; text-align:center; font-size:11px; color:var(--muted)">⏳ Memuat daftar pegawai...</div>';
+      
+      try {
+        const res = await apiGet(P.userList + '?format=full');
+        const rows = res.ok ? ((res.rows?.length ?? 0) ? res.rows : parseApiResponse(res.data)) : [];
+        
+        if (!rows.length) {
+          el.innerHTML = '<div style="padding:15px; text-align:center; font-size:11px; color:var(--muted)">⚠️ Tidak ada data pegawai</div>';
+          return;
+        }
+
+        _allAdminPegawai = rows.map(u => ({
+          id: u.id || u.ID || u.telegram_id || '',
+          nama: u.nama || u.Nama || u.username || '',
+          nip: u.nip || u.NIP || ''
+        })).sort((a, b) => a.nama.localeCompare(b.nama));
+
+        renderAdminKetPegawaiList(_allAdminPegawai);
+
+        // Set default tanggal hari ini
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
+        if ($('adminKetTglMulai')) $('adminKetTglMulai').value = today;
+        if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = today;
+
+      } catch (e) {
+        el.innerHTML = '<div style="padding:15px; text-align:center; font-size:11px; color:var(--danger)">❌ Gagal memuat data</div>';
+      }
+    }
+
+    function renderAdminKetPegawaiList(list) {
+      const el = $('adminKetOptionsList');
+      if (!el) return;
+      
+      if (list.length === 0) {
+        el.innerHTML = '<div style="padding:15px; text-align:center; font-size:11px; color:var(--muted)">🔍 Tidak ada hasil yang cocok</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(u => `
+        <div class="dropdown-item" onclick="selectAdminKetPegawai('${u.id}', '${u.nama.replace(/'/g, "\\'")}', '${u.nip}')">
+          <span class="item-name">${u.nama}</span>
+          <span class="item-nip">🪪 ${u.nip || '—'}</span>
+        </div>
+      `).join('');
+    }
+
+    function toggleAdminKetDropdown(forceClose = false) {
+      const container = $('adminKetPegawaiContainer');
+      if (!container) return;
+      
+      if (forceClose) {
+        container.classList.remove('open');
+      } else {
+        container.classList.toggle('open');
+        if (container.classList.contains('open')) {
+          $('adminKetSearchInput').focus();
+        }
+      }
+    }
+
+    function filterAdminKetPegawai(query) {
+      const q = query.toLowerCase().trim();
+      const filtered = _allAdminPegawai.filter(u => 
+        u.nama.toLowerCase().includes(q) || u.nip.toLowerCase().includes(q)
+      );
+      renderAdminKetPegawaiList(filtered);
+      
+      // Pastikan dropdown terbuka saat mengetik
+      const container = $('adminKetPegawaiContainer');
+      if (container && !container.classList.contains('open')) container.classList.add('open');
+    }
+
+    function selectAdminKetPegawai(id, nama, nip) {
+      const searchInput = $('adminKetSearchInput');
+      const hiddenSelect = $('adminKetPegawai');
+      
+      if (searchInput) searchInput.value = nama;
+      
+      // Update hidden select for existing logic compatibility
+      if (hiddenSelect) {
+        hiddenSelect.innerHTML = `<option value="${id}" data-nama="${nama}" data-nip="${nip}" selected>${nama}</option>`;
+      }
+      
+      toggleAdminKetDropdown(true);
+      
+      // Visual feedback
+      const trigger = document.querySelector('#adminKetPegawaiContainer .dropdown-trigger');
+      if (trigger) {
+        trigger.style.borderColor = 'var(--success)';
+        setTimeout(() => trigger.style.borderColor = '', 2000);
+      }
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+      const container = $('adminKetPegawaiContainer');
+      if (container && !container.contains(e.target)) {
+        toggleAdminKetDropdown(true);
+      }
+    });
+
+    let _adminKetFileBase64 = null, _adminKetFileMime = null, _adminKetFileName = null;
+
+    /**
+     * Handle upload file bukti untuk keterangan admin.
+     */
+    async function handleAdminKetFile(el) {
+      const f = el.files[0];
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { alert('File terlalu besar (maks 5MB)'); el.value = ''; return; }
+      
+      const label = $('adminKetFileName');
+      if (label) label.textContent = '⏳ Memproses...';
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        let b64 = e.target.result.split(',')[1];
+        const mime = f.type;
+        
+        // Kompres jika gambar
+        if (mime.startsWith('image/')) {
+           try {
+             const compressed = await compressImage(e.target.result, 1024, 0.7);
+             b64 = compressed.split(',')[1];
+           } catch(err) { console.warn('Gagal kompresi admin bukti', err); }
+        }
+
+        _adminKetFileBase64 = b64;
+        _adminKetFileMime = mime;
+        _adminKetFileName = f.name;
+
+        // UI Feedback
+        if (label) label.textContent = f.name;
+        dom.show('adminKetPreviewWrap');
+        if (mime.startsWith('image/')) {
+          dom.show('adminKetPreviewImg');
+          dom.hide('adminKetPreviewDoc');
+          $('adminKetPreviewImg').src = 'data:' + mime + ';base64,' + b64;
+        } else {
+          dom.hide('adminKetPreviewImg');
+          dom.show('adminKetPreviewDoc');
+          setT('adminKetDocName', f.name);
+        }
+      };
+      reader.readAsDataURL(f);
+    }
+
+    function clearAdminKetFile() {
+      _adminKetFileBase64 = null; _adminKetFileMime = null; _adminKetFileName = null;
+      if ($('adminKetFileInput')) $('adminKetFileInput').value = '';
+      setT('adminKetFileName', 'Pilih File...');
+      dom.hide('adminKetPreviewWrap');
+    }
+
+    /**
+     * Simpan keterangan pegawai (Izin, Sakit, Tugas) oleh Admin.
+     */
+    async function adminSimpanKeterangan() {
+      const sel = $('adminKetPegawai'), jns = $('adminKetJenis'), msg = $('adminKetPesan');
+      const tgl1 = $('adminKetTglMulai'), tgl2 = $('adminKetTglSelesai');
+      const btn = $('btnAdminSimpanKet');
+      const resEl = $('adminKetResult');
+
+      if (!sel || !sel.value || !jns || !msg || !tgl1.value) {
+        showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'warning', '⚠️', 'Data Belum Lengkap', 'Pilih pegawai, jenis, tgl mulai, dan alasan.');
+        if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-warning'; }
+        return;
+      }
+
+      const opt = sel.options[sel.selectedIndex];
+      const payload = {
+        user_id: sel.value,
+        nama: opt.dataset.nama,
+        nip: opt.dataset.nip,
+        jenis: jns.value,
+        pesan: msg.value,
+        tgl_mulai: tgl1.value,
+        tgl_selesai: tgl2.value || tgl1.value,
+        bukti_base64: _adminKetFileBase64,
+        bukti_mime: _adminKetFileMime,
+        bukti_nama: _adminKetFileName,
+        admin_id: MY_ID,
+        admin_nama: userProfile?.nama || userProfile?.username || 'Admin',
+        timestamp: Math.floor(Date.now() / 1000)
+      };
+
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> MENYIMPAN DATA...'; }
+      if (resEl) resEl.style.display = 'none';
+
+      try {
+        const { ok, data } = await apiPost(P.keteranganAdd, payload);
+        if (ok && data?.ok !== false) {
+          showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'success', '✅', 'Berhasil Disimpan', `Keterangan ${jns.value} untuk ${payload.nama} telah masuk ke sistem.`);
+          if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-success'; }
+          
+          // Reset Form dengan Delay agar user sempat lihat status sukses
+          setTimeout(() => {
+             msg.value = ''; 
+             clearAdminKetFile();
+             if (resEl) resEl.style.display = 'none';
+          }, 3500);
+
+          if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+        } else {
+          showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'fail', '❌', 'Gagal Simpan', data?.message || 'Permintaan ditolak oleh server.');
+          if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-fail'; }
+        }
+      } catch (e) {
+        showResult('adminKetResult', 'adminKetRIcon', 'adminKetRTitle', 'adminKetRMsg', 'fail', '🔌', 'Koneksi Bermasalah', 'Gagal menghubungi server. Periksa jaringan Anda.');
+        if (resEl) { resEl.style.display = 'block'; resEl.className = 'premium-toast r-fail'; }
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save" style="margin-right:8px"></i> SIMPAN KETERANGAN'; }
       }
     }
 

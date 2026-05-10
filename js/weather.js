@@ -7,10 +7,22 @@
         const url = 'https://api.open-meteo.com/v1/forecast?latitude=-9.6333&longitude=119.3833' +
           '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m' +
           '&timezone=Asia%2FMakassar&wind_speed_unit=kmh';
-        const res = await fetch(url);
+        let res;
+        try {
+          res = await fetch(url);
+        } catch (e) {
+          // Fallback to CORS proxy if direct fetch fails (common on file:// protocol)
+          const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+          const proxyRes = await fetch(proxyUrl);
+          if (!proxyRes.ok) throw 0;
+          const proxyData = await proxyRes.json();
+          res = { ok: true, json: () => Promise.resolve(JSON.parse(proxyData.contents)) };
+        }
+
         if (!res.ok) throw 0;
-        const d = await res.json();
+        const d = await (typeof res.json === 'function' ? res.json() : res);
         const c = d.current;
+
         const code = c.weather_code;
         const icon = _wxIcon(code), cond = _wxCond(code);
         const temp = Math.round(c.temperature_2m);
@@ -155,4 +167,10 @@
 
         initDesktopMode();
       }
+
+      // Refresh visibilitas menu Tugas & Lembur
+      if (typeof checkTugasLemburAccess === 'function') {
+        checkTugasLemburAccess();
+      }
     }
+    window.loadWeather = loadWeather;

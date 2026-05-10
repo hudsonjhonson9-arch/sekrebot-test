@@ -69,6 +69,7 @@
         const res = await fetch(SERVER_1 + endpoint, {
           method: 'POST',
           body: formData,
+          headers: { 'X-App-Token': API_TOKEN }
           // Jangan set Content-Type — biarkan browser set boundary otomatis
         });
         let data = null;

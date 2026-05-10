@@ -43,6 +43,9 @@
           switchAdminSection(lastSection);
         }
 
+        // Initialize Tugas & Lembur Module
+        if (typeof initTugasLembur === 'function') initTugasLembur();
+
         // Manage Logout Button Visibility
         const logoutSec = $('logoutSection');
         if (logoutSec) {

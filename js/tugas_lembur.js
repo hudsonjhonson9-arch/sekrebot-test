@@ -35,24 +35,19 @@
     const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
     const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
     
-    // 1. Sidebar/Bottom Nav Visibility
+    // 1. Sidebar/Bottom Nav & Admin Visibility
+    if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
+    
     const navTugasDesk = $('nav-tugas-desk');
     const navLemburDesk = $('nav-lembur-desk');
-    const navAdminDesk = $('nav-admin-desk');
-    
     const moreTugas = $('more-tugas');
     const moreLembur = $('more-lembur');
-    const moreAdmin = $('more-admin');
 
     if (navTugasDesk) navTugasDesk.style.display = 'flex';
     if (moreTugas) moreTugas.style.display = 'flex';
     
     if (navLemburDesk) navLemburDesk.style.display = isManager ? 'flex' : 'none';
     if (moreLembur) moreLembur.style.display = isManager ? 'flex' : 'none';
-    
-    const isAdminOnly = ['admin', 'superadmin'].includes(role);
-    if (navAdminDesk) navAdminDesk.style.display = isAdminOnly ? 'flex' : 'none';
-    if (moreAdmin) moreAdmin.style.display = isAdminOnly ? 'flex' : 'none';
 
     // 2. Form vs List visibility
     const creationForm = $('tugasCreationForm');

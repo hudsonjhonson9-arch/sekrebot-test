@@ -22,6 +22,7 @@
         ]);
 
         updateClock();
+        if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
 
         // Tertiary/Lazy: Background tasks that don't block the main UI
         setTimeout(async () => {

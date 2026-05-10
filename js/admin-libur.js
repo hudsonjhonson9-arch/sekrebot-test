@@ -22,7 +22,12 @@
         console.log('[Instansi] Parsed Data:', data);
         
         const el = $('regInstansi');
-        if (!el) return;
+        if (!el) {
+          console.warn('[Instansi] regInstansi element not found in DOM');
+          return;
+        }
+        
+        console.log('[Instansi] Populating select with data:', data);
         
         if (!data || data.length === 0) {
           console.warn('[Instansi] No data found in response');

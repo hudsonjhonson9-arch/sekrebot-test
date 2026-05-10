@@ -92,8 +92,17 @@
       // Update global role map for current user
       if (MY_ID && p.role) {
         window._adminRoleMap[MY_ID] = p.role;
+        
+        // Recalculate IS_ADMIN based on role and NIP
+        const myNip = String(p.nip || '').trim();
+        const myRole = (p.role || '').toUpperCase();
+        window.IS_ADMIN = (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.includes(myNip)) || 
+                          myRole === 'SUPERADMIN' || 
+                          myRole === 'ADMIN';
+
         // Jika status admin berubah, re-apply UI
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
+        if (typeof _applyAdminUI === 'function') _applyAdminUI();
       }
 
       // ── Sinkronisasi NIP (Self-healing if corrupted) ──

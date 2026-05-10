@@ -114,13 +114,36 @@
     }
 
 
-    // Sembunyikan panel admin dulu sampai ADMIN_NIPS dimuat
-    const adminNav = document.querySelector('.nav-item.admin-tab');
-    if (adminNav) {
-      const myNip = localStorage.getItem('MY_NIP');
-      const isSuper = (userProfile && userProfile.role === 'SUPERADMIN');
-      adminNav.style.display = (ADMIN_NIPS.includes(myNip) || isSuper) ? 'flex' : 'none';
+    // ── Update Admin Visibility ──
+    function applyAdminVisibility() {
+      const myNip = String(localStorage.getItem('MY_NIP') || '').trim();
+      const myRole = String(localStorage.getItem('MY_ROLE') || 'USER').toUpperCase();
+      const isAdmin = (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.includes(myNip)) || 
+                        myRole === 'SUPERADMIN' || 
+                        myRole === 'ADMIN' || 
+                        !!window.IS_ADMIN;
+      
+      // Update global flag if needed
+      window.IS_ADMIN = isAdmin;
+
+      // Target all elements with admin-only class
+      document.querySelectorAll('.admin-only').forEach(el => {
+        if (el) {
+          // If it's a nav-item or more-item, use flex, otherwise block
+          const isFlex = el.classList.contains('nav-item') || el.classList.contains('more-item');
+          el.style.display = isAdmin ? (isFlex ? 'flex' : 'block') : 'none';
+        }
+      });
+      
+      // Separator in more menu
+      const sep = $('adminMoreSeparator');
+      if (sep) sep.style.display = isAdmin ? 'block' : 'none';
+
+      // Panel Admin visibility
+      const panel = $('panel-admin');
+      if (panel) panel.style.display = isAdmin ? '' : 'none';
     }
+    window.applyAdminVisibility = applyAdminVisibility;
 
     /* ════ TABS ════ */
     function getAllTabs() { 
@@ -148,7 +171,18 @@
     function switchTab(tab) {
       // Close more menu when switching tabs
       toggleMoreMenu(false);
+      
       if (!tab) tab = localStorage.getItem('absen_last_tab') || 'absen';
+      const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
+      
+      // ── SPECIAL: If already on Absen tab, trigger attendance action ──
+      if (tab === 'absen' && currentTab === 'absen') {
+        if (typeof handleAbsen === 'function') {
+           handleAbsen();
+           return;
+        }
+      }
+
       const T = getAllTabs();
       if (!T.includes(tab)) tab = 'absen';
 

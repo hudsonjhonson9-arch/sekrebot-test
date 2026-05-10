@@ -423,18 +423,8 @@
             </div>
           </div>
 
-          <!-- Result Card (Initially Hidden) -->
-          <div class="result-card" id="resultCard" style="margin:0; display:none; position:relative">
-            <button onclick="hideResult()" style="position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:5px"><i class="fas fa-times"></i></button>
-            <div class="r-icon" id="rIcon">✅</div>
-            <div style="flex:1">
-              <div class="r-title" id="rTitle">—</div>
-              <div class="r-msg" id="rMsg">—</div>
-            </div>
-          </div>
-
           <!-- Today's Log Card (Prominent Position) -->
-          <div class="today-card" id="todayCard" style="margin:0; margin-bottom:15px">
+          <div class="today-card" id="todayCard" style="margin:0">
             <div class="card-title">
               <span>📋 Log Absen Hari Ini</span>
               <button class="btn-sm-admin" onclick="loadTodayHistory()">🔄</button>
@@ -442,6 +432,16 @@
             <div id="todayList" style="margin-top:10px">
               <div class="shimmer" style="height:32px;border-radius:8px;margin-bottom:5px"></div>
               <div class="shimmer" style="height:32px;border-radius:8px"></div>
+            </div>
+          </div>
+
+          <!-- Result Card (Now below log) -->
+          <div class="result-card" id="resultCard" style="margin-top:15px; display:none; position:relative">
+            <button onclick="hideResult()" style="position:absolute; top:8px; right:10px; background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:5px"><i class="fas fa-times"></i></button>
+            <div class="r-icon" id="rIcon">✅</div>
+            <div style="flex:1">
+              <div class="r-title" id="rTitle">—</div>
+              <div class="r-msg" id="rMsg">—</div>
             </div>
           </div>
 
@@ -1036,7 +1036,7 @@
         </div>
       </div>
       <!-- Export Buttons -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:10px;margin-bottom:12px">
         <button class="btn-admin" id="btnDownloadRekap" onclick="downloadRekap()"
           style="margin:0;height:44px;font-size:12px">
           <div class="btn-inner"><span>📊</span> Excel Rekap</div>
@@ -1151,7 +1151,7 @@
       <div class="card glass-card">
         <div class="form-group">
           <label class="form-label">📅 Rentang Tanggal</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:10px">
             <input type="date" id="lemburDari" class="form-input">
             <input type="date" id="lemburSampai" class="form-input">
           </div>
@@ -1967,13 +1967,13 @@
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
         <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
-        <select id="regInstansi" class="form-input-auth" onchange="fetchInstansiList(this.value)">
+        <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
           <option value="">— Memuat Instansi... —</option>
         </select>
         <select id="regBidang" class="form-input-auth">
           <option value="">— Pilih Bidang —</option>
         </select>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px">
           <select id="regTipe" class="form-input-auth" onchange="_updatePangkatDropdown('regPangkat', this.value)">
             <option value="">— Jenis —</option>
             <option value="PNS">PNS</option>
@@ -2124,7 +2124,7 @@
       </div>
       <input type="hidden" id="editLogId">
       <div class="form-group"><label class="form-label">Pegawai</label><select id="inLogPegawai" class="form-input"><option value="">— Pilih Pegawai —</option></select></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:12px">
         <div class="form-group"><label class="form-label">Tanggal</label><input type="date" id="inLogTanggal" class="form-input"></div>
         <div class="form-group"><label class="form-label">Jam</label><input type="time" id="inLogJam" class="form-input"></div>
       </div>

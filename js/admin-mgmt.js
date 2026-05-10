@@ -285,7 +285,10 @@ async function loadJamAbsen() {
 
     // Update global IS_ADMIN
     const myNip = String(userProfile?.nip || localStorage.getItem('MY_NIP') || '').trim();
-    window.IS_ADMIN = ADMIN_NIPS.includes(myNip) || (userProfile && userProfile.role === 'SUPERADMIN');
+    const myRole = (userProfile?.role || '').toUpperCase();
+    window.IS_ADMIN = ADMIN_NIPS.includes(myNip) || 
+                      myRole === 'SUPERADMIN' || 
+                      myRole === 'ADMIN';
 
     _applyAdminUI();
     if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
@@ -307,6 +310,10 @@ async function loadJamAbsen() {
 }
 
 function _applyAdminUI() {
+  if (typeof applyAdminVisibility === 'function') {
+    applyAdminVisibility();
+    return;
+  }
   const panelAdmin = $('panel-admin');
   if (!panelAdmin) return;
 

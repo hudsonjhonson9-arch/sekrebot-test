@@ -43,7 +43,7 @@
       const cachedId = localStorage.getItem(STORAGE_KEYS.USER_ID);
       const cachedUser = localStorage.getItem(STORAGE_KEYS.USER_OBJ);
       if (cachedId) {
-        window.MY_ID = Number(cachedId);
+        window.MY_ID = String(cachedId);
         if (cachedUser) window.tgUser = JSON.parse(cachedUser);
       }
     } catch (e) { }
@@ -56,7 +56,7 @@
       window.tg.setBackgroundColor('#0a1628');
       const cur = window.tg.initDataUnsafe?.user;
       if (cur?.id) {
-        window.MY_ID = Number(cur.id);
+        window.MY_ID = String(cur.id);
         window.tgUser = cur;
         console.log('[State] Identity detected from Telegram:', window.MY_ID);
         try {
@@ -73,11 +73,11 @@
 
     // Helper: Tunggu Telegram ID siap (tapi sekarang instan jika ada cache)
     async function waitForMyId() {
-      if (window.MY_ID) return Number(window.MY_ID);
+      if (window.MY_ID) return String(window.MY_ID);
       for (let i = 0; i < 15; i++) {
         const cur = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (cur?.id) {
-          window.MY_ID = Number(cur.id);
+          window.MY_ID = String(cur.id);
           window.tgUser = cur;
           try {
             localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));

@@ -212,15 +212,28 @@ async function apiFetch(path, opts = {}) {
       console.log(`[Fetch] Attempting: ${base}${path}`);
       const fetchOpts = { ...opts };
       fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
+      
       if (opts.method === 'GET' || !opts.body) {
         delete fetchOpts.headers['Content-Type'];
       }
-      const r = await fetch(base + path, fetchOpts);
-      if (r.ok || (r.status >= 400 && r.status < 500)) {
-        console.log(`[Fetch] Success: ${base}${path}`);
-        return r;
+
+      // Add 10s timeout for each server
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 10000);
+      
+      try {
+        const r = await fetch(base + path, { ...fetchOpts, signal: ctrl.signal });
+        clearTimeout(tid);
+        
+        if (r.ok || (r.status >= 400 && r.status < 500)) {
+          console.log(`[Fetch] Success: ${base}${path}`);
+          return r;
+        }
+        throw new Error(`HTTP ${r.status}`);
+      } catch (e) {
+        clearTimeout(tid);
+        throw e;
       }
-      throw new Error(`HTTP ${r.status}`);
     } catch (e) {
       console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
     }

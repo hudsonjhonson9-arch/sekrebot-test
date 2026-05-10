@@ -13,19 +13,20 @@ async function handleAbsen() {
   console.log('[Absen] handleAbsen triggered. Disabled:', $('btnAbsen').disabled, 'Submitting:', _isAbsenSubmitting);
   if ($('btnAbsen').disabled || _isAbsenSubmitting) return;
 
-  // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
-  //const myNip = localStorage.getItem('MY_NIP') || userProfile?.nip || '';
-  //const forceFaceNips = ['200206302025061002']; 
-  let isFaceRequired = FACE_RECOGNITION_ENABLED;
-  //if (forceFaceNips.includes(myNip)) isFaceRequired = true;
-
-  _isAbsenSubmitting = true; // Set lock early
-
   // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
   const now = Date.now();
   console.log('[Absen] Time since last click:', now - _lastAbsenClick);
   if (now - _lastAbsenClick < 3000) return;
   _lastAbsenClick = now;
+
+  // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
+  const myNip = localStorage.getItem('MY_NIP') || userProfile?.nip || '';
+  //const forceFaceNips = ['200206302025061002']; 
+  let isFaceRequired = FACE_RECOGNITION_ENABLED;
+  //if (forceFaceNips.includes(myNip)) isFaceRequired = true;
+
+  _isAbsenSubmitting = true; // Set lock AFTER checks
+  const unlock = () => { _isAbsenSubmitting = false; };
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung', 'Absensi hanya dapat dilakukan dari smartphone. Gunakan Telegram di HP Anda.');
     unlock(); return;
@@ -123,6 +124,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
   const _gpsT0 = Date.now(); // catat waktu mulai sebelum acquire
   navigator.geolocation.getCurrentPosition(
     async (position) => {
+      console.log('[Absen] GPS acquired:', position.coords.latitude, position.coords.longitude);
       const { latitude, longitude, accuracy } = position.coords;
       const _coords = position.coords;
       const _gpsElapsed = Date.now() - _gpsT0;
@@ -196,13 +198,13 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         handleAbsenError(new AbsenError(
           'Akurasi 0m tidak valid. Nonaktifkan Mock Location di pengaturan developer.',
           ERROR_CODES.FAKE_GPS), 'resultCard');
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); unlock(); return;
       }
       if (accuracy === 1) { _score += 20; _flags.push('ACCURACY_EXACTLY_1M'); }
       if (accuracy > GPS_MAX_ACCURACY_M) {
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Sinyal GPS Lemah',
           `Akurasi ${Math.round(accuracy)}m terlalu lemah. Pindah ke area terbuka.`);
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); unlock(); return;
       }
 
       // ── Layer 5: Koordinat presisi mencurigakan ───────────
@@ -391,12 +393,18 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         foto_dilewati: !camResult.faceOk && !camResult.livenessOk
       } : { foto_dilewati: true };
 
+      // ── Stabil Idempotency Key ──
+      // Format: absen_{nip}_{tanggalISO}_{jam/tipe}
+      const myNip = userProfile?.nip || localStorage.getItem('MY_NIP') || '';
+      const typeKey = n.getHours() < 12 ? 'masuk' : 'pulang';
+      const rid = `absen_${myNip}_${tanggalISO}_${typeKey}`;
+
       const payload = {
-        nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
-        request_id: `absen_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
+        request_id: rid, // Stable Idempotency Key
+        nip: myNip,
         user: {
           id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
-          nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''
+          nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: myNip
         },
         latitude, longitude, horizontal_accuracy: accuracy,
         gps_fingerprint,
@@ -440,9 +448,11 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
         console.log('[Absen] Webhook response:', { absenOk, absenStatus, absenData });
         const d = absenData || {};
-        const ket = d?.validasi?.keterangan || d?.message || 'Data absen diterima';
+        
+        // Handle message from idempotent response or standard validation
+        const ket = d?.message || d?.validasi?.keterangan || 'Data absen diterima';
         const lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
-        const isValid = d?.validasi?.is_valid !== false;
+        const isValid = d?.validasi?.is_valid !== false || d?.ok === true;
         if (lokNm) { $('gpsLokasi').textContent = lokNm; const clb = $('clockLocBadge'); if (clb) { clb.textContent = '📍 ' + lokNm; clb.className = 'clock-loc-badge'; } }
 
         // Info foto di pesan sukses

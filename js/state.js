@@ -2,6 +2,7 @@
     /* ════ MODEL LOADING STATE ════ */
     let _modelsReady = false, _modelLoadPct = 0, _modelLoadStep = -1;
     let _isStreamStable = false; // Flag untuk mencegah deteksi instan saat kamera baru terbuka
+    window._isSubmitting = false; // Shared global submission lock
     function _updateModelProgress(idx, pctPerStep) {
       _modelLoadStep = idx;
       const base = idx * 33.3;

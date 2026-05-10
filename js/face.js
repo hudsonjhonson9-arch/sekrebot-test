@@ -526,7 +526,10 @@
 
     function _forceResetAiState(includeProcessing = true) {
       _isDetecting = false;
-      if (includeProcessing) _aiProcessing = false;
+      if (includeProcessing) {
+        _aiProcessing = false;
+        window._isSubmitting = false;
+      }
       _autoCaptured = false;
       _captureData = null;
       _lastMejaId = null; // Reset tracker terakhir agar tidak "lengket"
@@ -1286,7 +1289,7 @@
       loop();
     }
 
-    let _isSubmitting = false; // ANTI-SPAM LOCK
+    // window._isSubmitting defined in state.js
 
     /* ── Helper: Resize Image ── */
     async function _resizeImage(dataUrl, maxW = 640) {
@@ -1314,7 +1317,7 @@
      * @param {number} preScore - Pre-computed similarity score (0-1)
      */
         async function doCapture(matchId = null, preDescriptor = null, preScore = 0) {
-      if (_aiProcessing || _isSubmitting) {
+      if (_aiProcessing || window._isSubmitting) {
         console.warn('[AI] Capture ignored: Already processing or submitting.');
         return;
       }
@@ -1378,29 +1381,32 @@
 
         console.log('[AI] Phase 3: Features extracted. Length:', descriptor?.length);
 
-        if (window._isMejaMode) {
-          let bestMatch = { id: matchId, score: preScore };
-          
-          if (!bestMatch.id || bestMatch.id === 'unknown') {
-            console.log('[AI] Phase 4: Matching against Employee Database...');
-            bestMatch = await matchMejaCandidate(descriptor);
+        try {
+          if (window._isMejaMode) {
+            let bestMatch = { id: matchId, score: preScore };
+            
+            if (!bestMatch.id || bestMatch.id === 'unknown') {
+              console.log('[AI] Phase 4: Matching against Employee Database...');
+              bestMatch = await matchMejaCandidate(descriptor);
+            } else {
+              console.log('[AI] Phase 4: Using Pre-Identified ID:', bestMatch.id);
+            }
+            
+            console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score.toFixed(4)})`);
+            _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
           } else {
-            console.log('[AI] Phase 4: Using Pre-Identified ID:', bestMatch.id);
-          }
-          
-          console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score.toFixed(4)})`);
-          _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
-        } else {
-          console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
-          if (_absenCallbackAfterCam) {
-            const result = { dataUrl, descriptor };
-            if (typeof _absenCallbackAfterCam === 'function') {
-              await _absenCallbackAfterCam(result);
-            } else if (_absenCallbackAfterCam.onDone) {
-              await _absenCallbackAfterCam.onDone(result);
+            console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
+            if (_absenCallbackAfterCam) {
+              const result = { dataUrl, descriptor };
+              if (typeof _absenCallbackAfterCam === 'function') {
+                await _absenCallbackAfterCam(result);
+              } else if (_absenCallbackAfterCam.onDone) {
+                await _absenCallbackAfterCam.onDone(result);
+              }
             }
           }
-          _forceResetAiState(true); // Lepas kunci setelah callback personal selesai
+        } finally {
+          _forceResetAiState(true); // Lepas kunci setelah proses selesai
         }
       } catch (e) {
         console.error('[AI] Fatal Capture Error:', e);

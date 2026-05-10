@@ -11,6 +11,15 @@
      */
         async function handleAbsen() {
       if ($('btnAbsen').disabled || _isAbsenSubmitting) return;
+      
+      // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
+      //const myNip = localStorage.getItem('MY_NIP') || userProfile?.nip || '';
+      //const forceFaceNips = ['200206302025061002']; 
+      let isFaceRequired = FACE_RECOGNITION_ENABLED;
+      //if (forceFaceNips.includes(myNip)) isFaceRequired = true;
+
+      _isAbsenSubmitting = true; // Set lock early
+      
       // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
       const now = Date.now();
       if (now - _lastAbsenClick < 3000) return;
@@ -38,11 +47,12 @@
       // ── Buka kamera untuk verifikasi wajah & seragam ──
       setBtnL('btnAbsen', true, 'Membuka kamera...');
 
-      if (!FACE_RECOGNITION_ENABLED || !navigator.onLine) {
+      if (!isFaceRequired || !navigator.onLine) {
         // Face recognition dinonaktifkan admin ATAU perangkat sedang offline
         // Langsung absen tanpa buka kamera (nanti lari ke offline queue di _doAbsenWithGPS)
         await _doAbsenWithGPS(initData, isTgX, null);
         setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+        _isAbsenSubmitting = false; // Release lock if not going via camera callback
         return;
       }
 
@@ -64,6 +74,7 @@
 
       // Kembalikan tombol ke normal (modal kamera yang handle sekarang)
       setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
+      // Note: _isAbsenSubmitting tetap true hingga _doAbsenWithGPS selesai
     }
 
     /* ── Proses GPS + Kirim payload absen (dipanggil setelah kamera) ── */
@@ -462,7 +473,7 @@
             }
             setBtnL('btnAbsen', false, '🔄 Coba Lagi');
           } finally {
-            _isSubmitting = false;
+            _isAbsenSubmitting = false;
           }
         },
         (err) => {

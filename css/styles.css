@@ -280,11 +280,17 @@
     /* Panels Adjustment */
     .panel {
       display: none;
-      padding: 10px 12px 160px; /* Reduced side padding */
+      padding: 15px 12px 140px; /* Base mobile padding */
       flex: 1;
       overflow-y: auto;
       background: var(--bg);
       position: relative;
+    }
+    
+    @media (min-width: 768px) {
+      .panel {
+        padding: 40px 60px;
+      }
     }
 
 
@@ -405,15 +411,18 @@
     .clock-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 20px;
       padding: 0;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       backdrop-filter: blur(12px);
       position: relative;
       overflow: hidden;
       display: flex;
       align-items: stretch;
-      gap: 0
+      gap: 0;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
     .clock-card::before {
@@ -1583,10 +1592,12 @@
     .today-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 10px;
-      backdrop-filter: blur(12px)
+      border-radius: 20px;
+      padding: 15px;
+      margin-bottom: 15px;
+      backdrop-filter: blur(12px);
+      width: 100%;
+      box-sizing: border-box
     }
 
     .today-empty {
@@ -1683,11 +1694,13 @@
 
     /* Result */
     .result-card {
-      border-radius: 13px;
-      padding: 12px;
-      margin-bottom: 10px;
+      border-radius: 20px;
+      padding: 15px;
+      margin-bottom: 15px;
       display: none;
-      animation: slideUp .3s ease
+      animation: slideUp .3s ease;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .result-card.show {
@@ -5883,11 +5896,11 @@
   /* --- UNIVERSAL MOBILE SPACER --- */
   @media screen and (max-width: 767px) {
     .app {
-      max-width: 480px !important;
+      max-width: 540px !important; /* Slightly wider for better alignment */
       padding-bottom: 80px !important;
     }
     .panel {
-      padding-bottom: 90px !important;
+      padding: 15px 12px 100px;
     }
 
 /* --- PREMIUM SWEETALERT2 --- */

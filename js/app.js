@@ -38,6 +38,7 @@
 
         const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
         switchTab(lastTab);
+        if (typeof hideResult === 'function') hideResult(); // Ensure result is hidden on startup
 
         if (IS_ADMIN) {
           const lastSection = localStorage.getItem('absen_last_admin_section') || 'ops';

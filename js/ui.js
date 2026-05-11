@@ -361,8 +361,10 @@
      */
         function updateClock() {
       const n = nowWITA(), h = n.getDay(), tot = n.getHours() * 60 + n.getMinutes();
-      $('clockTime').innerHTML = `${p2(n.getHours())}<span>:</span>${p2(n.getMinutes())}<span>:</span>${p2(n.getSeconds())}`;
-      $('clockDate').textContent = n.toLocaleDateString('id-ID', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const elTime = $('clockTime'), elDate = $('clockDate'), elJenis = $('jenisAbsen'), elBatas = $('batasAbsen'), elLok = $('lokasiList');
+
+      if (elTime) elTime.innerHTML = `${p2(n.getHours())}<span>:</span>${p2(n.getMinutes())}<span>:</span>${p2(n.getSeconds())}`;
+      if (elDate) elDate.textContent = n.toLocaleDateString('id-ID', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
       const _hEl = $('hariIni'); if (_hEl) _hEl.textContent = H_DISP[h];
 
       // ── Gunakan jam periode aktif hari ini (bukan selalu jam global) ──
@@ -377,16 +379,21 @@
       else if (tot >= _jamPulangHari) { jenis = '🔵 Waktu Absen Pulang'; batas = `Pulang ≥ ${jpStr}` }
       else if (tot < 720) { jenis = '🔴 Di luar jam masuk'; batas = 'Terlambat' }
       else { jenis = '🟡 Belum Waktunya Pulang'; batas = `Pulang ≥ ${jpStr}` }
-      $('jenisAbsen').textContent = jenis;
-      $('batasAbsen').textContent = batas;
+      
+      if (elJenis) elJenis.textContent = jenis;
+      if (elBatas) elBatas.textContent = batas;
+      
       const isJamPulang = tot >= _jamPulangHari;
       const btnPL = $('btnPulangLuar'), formPL = $('pulangLuarForm');
       if (btnPL) btnPL.classList.toggle('show', isJamPulang && !btnPL.disabled);
       if (formPL) formPL.classList.toggle('show', isJamPulang && !$('btnPulangLuar')?.disabled);
-      const lh = LOK_DEF[H_ID[h]] || [];
-      $('lokasiList').innerHTML = lh.length
-        ? lh.map(l => `<div class="lokasi-item"><div class="lokasi-dot"></div><div class="lokasi-name">${l}</div></div>`).join('')
-        : `<div class="lokasi-item"><div class="lokasi-dot" style="background:var(--danger)"></div><div class="lokasi-name" style="color:var(--muted)">Tidak ada lokasi aktif hari ini</div></div>`;
+      
+      if (elLok) {
+        const lh = LOK_DEF[H_ID[h]] || [];
+        elLok.innerHTML = lh.length
+          ? lh.map(l => `<div class="lokasi-item"><div class="lokasi-dot"></div><div class="lokasi-name">${l}</div></div>`).join('')
+          : `<div class="lokasi-item"><div class="lokasi-dot" style="background:var(--danger)"></div><div class="lokasi-name" style="color:var(--muted)">Tidak ada lokasi aktif hari ini</div></div>`;
+      }
     }
     updateClock(); setInterval(updateClock, 1000);
 

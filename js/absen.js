@@ -54,10 +54,11 @@ async function handleAbsen() {
   await cekJaringan();
 
   // ── Buka kamera untuk verifikasi wajah & seragam ──
-  console.log('[Absen] Opening camera... isFaceRequired:', isFaceRequired, 'onLine:', navigator.onLine);
+  // BUG FIX: isFaceRequired → FACE_RECOGNITION_ENABLED (didefinisikan di face.js)
+  console.log('[Absen] Opening camera... FACE_RECOGNITION_ENABLED:', FACE_RECOGNITION_ENABLED, 'onLine:', navigator.onLine);
   setBtnL('btnAbsen', true, 'Membuka kamera...');
 
-  if (!isFaceRequired || !navigator.onLine) {
+  if (!FACE_RECOGNITION_ENABLED || !navigator.onLine) {
     // Face recognition dinonaktifkan admin ATAU perangkat sedang offline
     await _doAbsenWithGPS(initData, isTgX, null);
     setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
@@ -408,20 +409,24 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       
       // Deteksi Tipe Absen (Masuk vs Pulang) yang lebih robust
       const tot = n.getHours() * 60 + n.getMinutes();
-      const _jH = getJamForTanggal(tanggalISO); // Dari config/constants
+      const _jH = typeof getJamForTanggal === 'function' ? getJamForTanggal(tanggalISO) : null;
       const jMasukMenit = _jH ? toMenitStr(_jH.masuk) : JAM_MASUK_MENIT;
       const jPulangMenit = _jH ? toMenitStr(_jH.pulang) : JAM_PULANG_MENIT;
       
       let typeKey = 'masuk';
-      if (tot > (jMasukMenit + 180) && tot < jPulangMenit) typeKey = 'siang'; // jarang terjadi
+      if (tot > (jMasukMenit + 180) && tot < jPulangMenit) typeKey = 'siang';
       else if (tot >= jPulangMenit - 60) typeKey = 'pulang';
 
       const idKey = myNip || window.MY_ID || 'anon';
       const rid = `absen_${idKey}_${tanggalISO}_${typeKey}`;
 
+      // Ambil networkInfo dengan safety check
+      const net = (typeof networkInfo !== 'undefined' && networkInfo) ? networkInfo : { checked: false };
+
       const payload = {
         request_id: rid, 
         nip: myNip,
+        telegram_id: window.MY_ID, // Flattened for n8n
         user: {
           id: window.MY_ID, 
           first_name: window.tgUser?.first_name || '', 
@@ -439,14 +444,15 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', 
         device: navigator.userAgent,
         network_info: {
-          ip_public: networkInfo.ip_public,
-          is_kantor: networkInfo.is_kantor,
-          network_type: networkInfo.network_type,
-          wifi_check_enabled: WIFI_CHECK_ENABLED
+          ip_public: net.ip_public || null,
+          is_kantor: net.is_kantor || null,
+          network_type: net.network_type || 'unknown',
+          wifi_check_enabled: typeof WIFI_CHECK_ENABLED !== 'undefined' ? WIFI_CHECK_ENABLED : true
         },
         foto_verifikasi: fotoInfo,
         _gps_elapsed_ms: _gpsElapsed, _detection_score: _score, _detection_flags: _flags, ..._suspiciousPayload
       };
+
       // ── OFFLINE QUEUE INTERCEPTOR ──
       if (!navigator.onLine) {
         payload._is_offline_sync = true;
@@ -459,36 +465,43 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         };
         await idb.set('offline_queue', offlineData);
 
-        const fotoOfflineKet = camResult?.faceOk ? '\\n📸 Wajah: ✅ Tersimpan offline' : '\\n📸 Foto: ⚠️ Dilewati';
+        const fotoOfflineKet = camResult?.faceOk ? '\n📸 Wajah: ✅ Tersimpan offline' : '\n📸 Foto: ⚠️ Dilewati';
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '📴', 'Tersimpan Sementara Karena Offline',
-          `Data absen Anda tersimpan di antrean perangkat.\\n📅 ${tanggal}\\n🕐 ${jam}\\n📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}${fotoOfflineKet}\\n\\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
+          `Data absen Anda tersimpan di antrean perangkat.\n📅 ${tanggal}\n🕐 ${jam}\n📍 ${latitude.toFixed(5)}, ${longitude.toFixed(5)}${fotoOfflineKet}\n\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
 
         setBtnL('btnAbsen', false, '✅ Tersimpan Offline');
-        $('btnAbsen').disabled = true;
+        if ($('btnAbsen')) $('btnAbsen').disabled = true;
         logLoaded = false;
-        autoUpdateStatusAktif();
-        // Not calling tg.close() immediately to let user see the orange warning
+        if (typeof autoUpdateStatusAktif === 'function') autoUpdateStatusAktif();
         return;
       }
 
-      try {
-        console.log('[Absen] Submitting payload to webhook:', payload);
+      console.log('[Absen] Submitting payload to webhook:', payload);
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
         console.log('[Absen] Webhook response:', { absenOk, absenStatus, absenData });
+
+        if (!absenOk && absenStatus === 0) {
+          handleAbsenError(new AbsenError('Server tidak merespons. Periksa koneksi dan coba lagi.', ERROR_CODES.UNKNOWN), 'resultCard');
+          setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+          _isAbsenSubmitting = false; resolve(); return;
+        }
+
         const d = absenData || {};
-        
-        // Handle message from idempotent response or standard validation
         const ket = d?.message || d?.validasi?.keterangan || 'Data absen diterima';
         const lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
         const isValid = d?.validasi?.is_valid !== false || d?.ok === true;
-        if (lokNm) { $('gpsLokasi').textContent = lokNm; const clb = $('clockLocBadge'); if (clb) { clb.textContent = '📍 ' + lokNm; clb.className = 'clock-loc-badge'; } }
+        const kode_tolak = d?.validasi?.kode_tolak || '';
+        
+        if (lokNm) { 
+          const gLok = $('gpsLokasi');
+          if (gLok) gLok.textContent = lokNm; 
+          const clb = $('clockLocBadge'); 
+          if (clb) { clb.textContent = '📍 ' + lokNm; clb.className = 'clock-loc-badge'; } 
+        }
 
-        // Info foto di pesan sukses
         const fotoKet = camResult?.faceOk
           ? `\n📸 Wajah: ✅ Terdeteksi${camResult.livenessOk ? ' · Liveness ✅' : ' · Liveness ⚠️'}`
           : '\n📸 Foto: ⚠️ Wajah tidak terdeteksi (tersimpan untuk admin)';
-
-        const kode_tolak = d?.validasi?.kode_tolak || '';
 
         if (isValid) {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'success', '✅', 'Absen Berhasil!',
@@ -496,40 +509,31 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           setBtnL('btnAbsen', false, '✅ Absen Tercatat');
           $('btnAbsen').disabled = true;
           logLoaded = false;
-          autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
+          if (typeof autoUpdateStatusAktif === 'function') autoUpdateStatusAktif();
           setTimeout(loadTodayHistory, 2000);
-          if (tg) setTimeout(() => tg.close(), 3500);
+          if (window.tg) setTimeout(() => window.tg.close(), 3500);
         } else if (kode_tolak === 'SUDAH_ABSEN') {
-          // Pendobelan — tampilkan info bukan error merah
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', 'ℹ️', 'Sudah Absen',
             `${ket}\n\nRiwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.`);
           setBtnL('btnAbsen', false, '✅ Sudah Tercatat');
           $('btnAbsen').disabled = true;
           logLoaded = false;
           setTimeout(loadTodayHistory, 1500);
-          if (tg) setTimeout(() => tg.close(), 3500); // FIX: Close TG auto like success
+          if (window.tg) setTimeout(() => window.tg.close(), 3500);
         } else {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
           setBtnL('btnAbsen', false, '🔄 Coba Lagi');
         }
       } catch (err) {
-        console.error('[Absen] Error in inner submission:', err);
-        handleAbsenError(new AbsenError('Gagal mengirim data ke server.', ERROR_CODES.UNKNOWN), 'resultCard');
+        console.error('[Absen] GPS Success Callback Critical Error:', err);
+        handleAbsenError(new AbsenError('Gagal memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
         setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+      } finally {
+        _isAbsenSubmitting = false;
+        resolve();
       }
-    } catch (err) {
-      console.error('[Absen] Error in GPS callback:', err);
-      handleAbsenError(new AbsenError('Terjadi kesalahan saat memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
-      setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-      _isAbsenSubmitting = false;
-      resolve();
-    } finally {
-      _isAbsenSubmitting = false;
-      resolve();
-    }
     },
     (err) => {
-      const msg = { 1: 'Izin GPS ditolak.', 2: 'GPS tidak tersedia.', 3: 'Timeout GPS. Coba di area terbuka.' };
       handleAbsenError(geoErrorToAbsenError(err), 'resultCard');
       setBtnL('btnAbsen', false, '🔄 Coba Lagi');
       _isAbsenSubmitting = false;
@@ -649,18 +653,27 @@ async function handlePulangLuar() {
         await idb.set('offline_queue', offlineData);
 
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '📴', 'Tersimpan Sementara Karena Offline',
-          `Data Pulang Lapangan Anda tersimpan di perangkat.\\n${ket}\\n📅 ${tanggal}\\n🕐 ${jam}\\n\\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
+          `Data Pulang Lapangan Anda tersimpan di perangkat.\n${ket}\n📅 ${tanggal}\n🕐 ${jam}\n\nSistem akan mengirim otomatis saat koneksi internet kembali.`);
 
         $('btnPulangLuar').disabled = true;
         $('btnAbsen').disabled = true;
-        $('pulangLuarForm').classList.remove('show');
-        $('btnPulangLuar').classList.remove('show');
+        const plf = $('pulangLuarForm'), bpl = $('btnPulangLuar');
+        if (plf) plf.classList.remove('show');
+        if (bpl) bpl.classList.remove('show');
         logLoaded = false;
         return;
       }
 
       try {
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
+        // BUG FIX: Cek network/CORS error lebih dulu (status 0 = tidak ada response)
+        if (!absenOk && absenStatus === 0) {
+          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Server Tidak Merespons',
+            'Pastikan n8n & koneksi internet aktif, lalu coba lagi.');
+          $('btnPulangLuar').disabled = false;
+          if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
+          return;
+        }
         const d = absenData || {};
         const isValid = d?.validasi?.is_valid !== false;
         if (isValid) {
@@ -668,8 +681,9 @@ async function handlePulangLuar() {
             `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
           $('btnPulangLuar').disabled = true;
           $('btnAbsen').disabled = true;
-          $('pulangLuarForm').classList.remove('show');
-          $('btnPulangLuar').classList.remove('show');
+          const plf = $('pulangLuarForm'), bpl = $('btnPulangLuar');
+          if (plf) plf.classList.remove('show');
+          if (bpl) bpl.classList.remove('show');
           logLoaded = false;
           autoUpdateStatusAktif(); // update status ke AKTIF jika perlu
           setTimeout(loadTodayHistory, 2000);

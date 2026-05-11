@@ -217,9 +217,14 @@
     };
     function showGPS(lat, lon, acc, lokasi) {
       const n = nowWITA();
-      $('gpsLat').textContent = lat.toFixed(6); $('gpsLon').textContent = lon.toFixed(6);
-      $('gpsAcc').textContent = `${Math.round(acc)} meter`;
-      $('gpsLokasi').textContent = lokasi || 'Mendeteksi...';
+      const elLat = $('gpsLat'), elLon = $('gpsLon'), elAcc = $('gpsAcc'), elLok = $('gpsLokasi');
+      const elTgl = $('gpsTanggal'), elJam = $('gpsJam');
+
+      if (elLat) elLat.textContent = lat.toFixed(6);
+      if (elLon) elLon.textContent = lon.toFixed(6);
+      if (elAcc) elAcc.textContent = `${Math.round(acc)} meter`;
+      if (elLok) elLok.textContent = lokasi || 'Mendeteksi...';
+
       const clb = $('clockLocBadge');
       if (clb) {
         if (lokasi) {
@@ -230,12 +235,22 @@
           clb.className = 'clock-loc-badge unknown';
         }
       }
-      $('gpsTanggal').textContent = n.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-      $('gpsJam').textContent = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
-      const pct = Math.max(5, Math.min(100, 100 - (acc / 5)));
-      const col = acc <= 20 ? '#22c55e' : acc <= 100 ? '#f59e0b' : '#ef4444';
-      $('accFill').style.width = pct + '%'; $('accFill').style.background = col;
-      $('gpsCard').classList.add('show');
+      
+      if (elTgl) elTgl.textContent = n.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      if (elJam) elJam.textContent = `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`;
+      
+      const elBar = $('gpsBar');
+      if (elBar) {
+        const pct = Math.max(5, Math.min(100, 100 - (acc / 5)));
+        const col = acc <= 20 ? '#22c55e' : acc <= 100 ? '#f59e0b' : '#ef4444';
+        const elFill = $('accFill');
+        if (elFill) {
+          elFill.style.width = pct + '%';
+          elFill.style.background = col;
+        }
+        const elCard = $('gpsCard');
+        if (elCard) elCard.classList.add('show');
+      }
     }
 
     /**

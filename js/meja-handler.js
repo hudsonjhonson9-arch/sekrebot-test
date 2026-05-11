@@ -150,18 +150,17 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
     clearTimeout(safetyTimer); 
     window._isSubmitting = false; 
     _updateMejaCnt();
-    setTimeout(() => {
-      if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';
-      _forceResetAiState(true);
-      window._mejaProcessing = false;
-      setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
+    await new Promise(r => setTimeout(r, 3500));
+    if ($('mejaOverlayResult')) $('mejaOverlayResult').style.display = 'none';
+    _forceResetAiState(true);
+    window._mejaProcessing = false;
+    setCamStatus('ok', '🔍', 'Siap Scan...', 'Posisikan wajah pegawai selanjutnya');
 
-      const vid = $('camVideo');
-      if (vid && vid.paused) {
-        vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
-      }
-      startDetectLoop();
-    }, 3500);
+    const vid = $('camVideo');
+    if (vid && vid.paused) {
+      vid.play().catch(e => console.warn('Gagal play video otomatis:', e));
+    }
+    startDetectLoop();
   }
 }
 

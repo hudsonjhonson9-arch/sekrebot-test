@@ -35,13 +35,14 @@
             : (Array.isArray(res.data) ? (res.data[0] || {}) : (res.data?.data?.[0] || res.data || {}));
 
           if (d && (d.nama || d.Nama)) {
+            const cleanS = (s) => (s && String(s).trim().toLowerCase() !== 'undefined') ? String(s).trim() : '';
             userProfile = {
-              nama: d.nama || d.Nama || '',
-              jabatan: d.jabatan || d.Jabatan || '',
-              nip: d.nip || d.NIP || '',
-              username: d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '') || '',
-              status: d.status || d.Status || 'AKTIF',
-              role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
+              nama: cleanS(d.nama || d.Nama),
+              jabatan: cleanS(d.jabatan || d.Jabatan),
+              nip: cleanS(d.nip || d.NIP),
+              username: cleanS(d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '')),
+              status: cleanS(d.status || d.Status || 'AKTIF'),
+              role: cleanS(d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
@@ -131,7 +132,7 @@
       }
 
       // ── Sinkronisasi NIP (Self-healing if corrupted) ──
-      if (p.nip) {
+      if (p.nip && p.nip.toLowerCase() !== 'undefined' && p.nip !== '') {
         const correctNip = String(p.nip).trim();
         if (localStorage.getItem('MY_NIP') !== correctNip) {
           console.log('[Profile] Syncing correct NIP to storage:', correctNip);

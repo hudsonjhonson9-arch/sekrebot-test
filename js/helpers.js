@@ -50,7 +50,7 @@
         rowsMut = rowsMut.filter(r => {
           const rowUid = Number(getField(r, 'ID', 'id'));
           const tgl = getField(r, 'Tanggal', 'tanggal');
-          const byMe = uid ? (rowUid === uid) : true;
+          const byMe = uid ? (Number(rowUid) === Number(uid)) : true;
           return byMe && tgl === todayStr;
         });
         rowsMut.sort((a, b) => {

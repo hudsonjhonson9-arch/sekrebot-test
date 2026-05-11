@@ -51,12 +51,30 @@
             return; // Berhasil
           } else {
             // Data kosong atau { ok: false }
-            if (attempt === maxAttempts) throw new Error('User not found');
-            await new Promise(r => setTimeout(r, 600)); // Tunggu sebentar sebelum coba lagi
+            if (attempt === maxAttempts) throw new Error('Pegawai belum terdaftar');
+            await new Promise(r => setTimeout(r, 600)); 
           }
         } catch (err) {
           console.warn(`[Profile] Gagal memuat (Attempt ${attempt}/${maxAttempts}):`, err.message);
-          if (attempt === maxAttempts) break;
+          if (attempt === maxAttempts) {
+            // OTOMATIS: Jika ID Telegram ada tapi tidak ditemukan di DB, arahkan ke registrasi
+            if (uid && err.message === 'Pegawai belum terdaftar') {
+              console.log('[Profile] User not found in DB, showing registration form...');
+              if (typeof switchAuthTab === 'function') {
+                switchAuthTab('register');
+                const overlay = document.getElementById('authOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                
+                // Pre-fill NIP jika ada di cache tapi ID Telegram belum tertaut
+                const cachedNip = localStorage.getItem('MY_NIP');
+                if (cachedNip) {
+                  const regNip = document.getElementById('regNip');
+                  if (regNip) regNip.value = cachedNip;
+                }
+              }
+            }
+            break;
+          }
           await new Promise(r => setTimeout(r, 600));
         }
       }

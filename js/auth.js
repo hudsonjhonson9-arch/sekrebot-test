@@ -98,27 +98,13 @@
       location.href = location.pathname; 
     }
 
-    /**
-     * Memastikan identitas pengguna tersedia.
-     * Jika MY_ID ada (dari Telegram), kita biarkan app.js memanggil loadUserProfile().
-     * Jika tidak ada, tampilkan overlay login.
-     */
     function _checkIdentityOnLoad() {
-      const cachedId = localStorage.getItem(STORAGE_KEYS.USER_ID);
-      const cachedObj = localStorage.getItem(STORAGE_KEYS.USER_OBJ);
-      
-      // Jika sudah ada di cache, kita anggap "logged in" sementara sampai loadUserProfile selesai
-      if (cachedId && cachedObj) return true;
-
       if (!window.MY_ID) {
         $('authOverlay').style.display = 'flex';
         const splash = $('appSplash');
-        if (splash) splash.remove();
+        if (splash) splash.remove(); // No need splash if no auth
         return false;
       }
-      
-      // Jika ada window.MY_ID (dari Telegram) tapi belum ada cache, 
-      // app.js akan memanggil loadUserProfile() yang akan mencari ke server.
       return true;
     }
 

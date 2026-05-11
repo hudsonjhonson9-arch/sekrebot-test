@@ -62,17 +62,9 @@
       }
 
       _profileLoading = false;
-      // Jika setelah maxAttempts user tidak ditemukan sama sekali di server
+      // Hanya panggil fallback jika data benar-benar kosong (misal: pertama kali buka)
+      // Jika sebelumnya sudah berhasil load, pertahankan data lama agar tidak "hilang" (UX stabil)
       if (!userProfile) {
-        console.warn('[Profile] User not found in database. Showing registration form.');
-        const overlay = document.getElementById('authOverlay');
-        if (overlay) {
-          overlay.style.display = 'flex';
-          switchAuthTab('register'); // Arahkan langsung ke tab registrasi
-          // Pre-fill NIP jika ada di cache
-          const regNip = document.getElementById('regNip');
-          if (regNip && !regNip.value) regNip.value = localStorage.getItem('MY_NIP') || '';
-        }
         setUserFallback();
       } else if (isManual) {
         // Jika manual refresh gagal, beri tahu user tapi jangan hapus data yang ada

@@ -432,11 +432,15 @@
         // is_admin=true agar n8n grouping per pengajuan & tidak filter by user_id
         const res = await apiGet(`${P.ketList}?is_admin=true&status=PENDING`);
         if (!res.ok) throw 0;
-        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
-        const rows = (d.data || d.rows || []).filter(r => {
+        const d = res.rows && res.rows.length ? res.rows : (res.data || []);
+        // Jika d adalah array, gunakan d. Jika d adalah objek yang membungkus data/rows, gunakan itu.
+        let rawRows = Array.isArray(d) ? d : (d.data || d.rows || []);
+        
+        const rows = rawRows.filter(r => {
           const st = (r.status || r.Status || '').toUpperCase();
           return st === 'PENDING';
         });
+
         if (!rows || rows.length === 0) {
           el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">✅ Tidak ada pengajuan yang menunggu konfirmasi.</div>';
           return;
@@ -446,18 +450,18 @@
           // id_ket = ID_Ket baris pertama pengajuan ini (sudah digrouping oleh n8n)
           const idKet = r.id_ket || r.ID_Ket || '';
           if (!idKet) return ''; // skip jika tidak ada id_ket
-          const jenis = (r.jenis || '').toUpperCase();
+          const jenis = (r.jenis || r['Jenis Absen'] || r.jenis_absen || '').trim().toUpperCase();
           const em = EMOJI[jenis] || '📝';
-          const nama = r.nama || '—';
-          const nip = r.nip || '—';
+          const nama = r.nama || r.Nama || '—';
+          const nip = r.nip || r.NIP || '—';
           // Tampilkan range tanggal jika multi-hari
-          const tglMulai = r.tgl_mulai || r.tanggal || '—';
-          const tglSelesai = r.tgl_selesai || r.tanggal || tglMulai;
+          const tglMulai = r.tgl_mulai || r.tanggal || r.Tanggal || '—';
+          const tglSelesai = r.tgl_selesai || r.tanggal || r.Tanggal || tglMulai;
           const durasi = r.durasi || 1;
           const tglLabel = tglMulai === tglSelesai ? tglMulai : `${tglMulai} s.d. ${tglSelesai} (${durasi} hari)`;
-          const ket = (r.keterangan || '').trim();
-          const idKetEsc = idKet.replace(/'/g, "\'");
-          const nipEsc = nip.replace(/'/g, "\'");
+          const ket = (r.keterangan || r.Ket || r.ket || '').trim();
+          const idKetEsc = String(idKet).replace(/'/g, "\\'");
+          const nipEsc = String(nip).replace(/'/g, "\\'");
           return `<div class="konfirm-item" id="konfirm-${idKet}">
         <div class="konfirm-nama">${em} ${nama} <span style="font-size:9px;color:var(--muted);font-weight:400">(IZIN)</span></div>
         <div class="konfirm-detail">🪪 ${nip} · 📅 ${tglLabel}<br>📝 ${ket || '—'}</div>

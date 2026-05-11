@@ -5878,6 +5878,10 @@
       width: 100% !important;
       max-width: 100% !important;
     }
+    #logModal .card {
+      max-width: 480px !important;
+      margin: auto !important;
+    }
   }
 
   /* --- FIX ABSEN LAYOUT WRAPPER GRID --- */

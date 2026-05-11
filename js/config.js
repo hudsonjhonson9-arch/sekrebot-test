@@ -136,7 +136,7 @@ const P = {
   adminList: isTest ? '/webhook-test/admin-list' : '/webhook/admin-list',
   adminAdd: isTest ? '/webhook-test/admin-add' : '/webhook/admin-add',
   adminDel: isTest ? '/webhook-test/admin-delete' : '/webhook/admin-delete',
-  userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
+  userAdd: '/webhook-test/user-add',
   userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
   penugasanList: isTest ? '/webhook-test/penugasan-list' : '/webhook/penugasan-list',
   penugasanSave: isTest ? '/webhook-test/penugasan-save' : '/webhook/penugasan-save',

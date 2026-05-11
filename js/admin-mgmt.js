@@ -163,6 +163,7 @@ async function tambahAdmin() {
 
   try {
     // Update role di user_list via user-edit
+    // (Aman karena n8n sekarang menggunakan COALESCE untuk menjaga data lain)
     const { ok, data } = await apiPost(P.userEdit, {
       id: tgId,
       nip: nip,
@@ -200,7 +201,7 @@ async function hapusAdmin(tgId, nama, nip) {
   }
   if (!confirm(`Cabut hak akses manajemen dari ${nama}?`)) return;
   try {
-    // Kembalikan role ke USER
+    // Kembalikan role ke USER via user-edit
     const { ok, data } = await apiPost(P.userEdit, {
       id: tgId,
       nip: nip,

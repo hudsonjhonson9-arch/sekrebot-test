@@ -87,14 +87,31 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
 
   try {
     const n = nowWITA();
+    const tanggalISO = fmtD(n);
+    
+    // 1. BUAT LOGIKA PENENTUAN TIPE ABSEN (Masuk/Pulang)
+    const tot = n.getHours() * 60 + n.getMinutes();
+    const _jH = typeof getJamForTanggal === 'function' ? getJamForTanggal(tanggalISO) : null;
+    const jMasukMenit = _jH ? toMenitStr(_jH.masuk) : JAM_MASUK_MENIT;
+    const jPulangMenit = _jH ? toMenitStr(_jH.pulang) : JAM_PULANG_MENIT;
+    
+    let typeKey = 'masuk';
+    if (tot > (jMasukMenit + 180) && tot < jPulangMenit) typeKey = 'siang';
+    else if (tot >= jPulangMenit - 60) typeKey = 'pulang';
+
+    // 2. GENERATE REQUEST ID SEPERTI DI ABSEN.JS
+    const idKey = user.nip || user.telegram_id || 'anon';
+    const rid = `absen_${idKey}_${tanggalISO}_${typeKey}`;
+
     const payload = {
+      request_id: rid, // <--- TAMBAHKAN REQUEST ID DI SINI
       telegram_id: user.telegram_id || '', // Tetap kirim telegram_id jika ada
       nama: user.nama,
       nip: user.nip,
       pangkat: user.pangkat || '',
       admin_id: typeof MY_ID !== 'undefined' ? MY_ID : null,
       jam: `${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())} WITA`,
-      tanggal_iso: fmtD(n),
+      tanggal_iso: tanggalISO,
       latitude: _mejaGpsLocation?.lat ?? 0,
       longitude: _mejaGpsLocation?.lng ?? 0,
       accuracy: _mejaGpsLocation?.acc ?? 0,

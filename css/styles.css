@@ -299,8 +299,10 @@
     }
 
     /* Responsive visibility */
-    .desktop-only { display: none !important; }
-    .mobile-only { display: flex !important; }
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      .mobile-only { display: flex !important; }
+    }
 
     @media (min-width: 768px) {
       .desktop-only { display: flex; }

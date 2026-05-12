@@ -1223,7 +1223,7 @@
                       return; // Baru satu frame, jangan tampilkan dulu
                     }
 
-                    const profile = window._mejaUserMap ? window._mejaUserMap[match.id] : null;
+                    const profile = (window._mejaUserMap || {})[match.id] || null;
                     const nama = profile ? profile.nama : match.id;
                     const score = Math.round(match.score * 100);
 

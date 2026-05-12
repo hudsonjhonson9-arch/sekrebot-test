@@ -2,6 +2,7 @@
     /* ════ MEJA ABSEN (1:N matching) ════ */
     window._isMejaMode = false;
     window._mejaProcessing = false;
+    window._mejaUserMap = {};
     let _blinkDetected = false;
     let _lastEyeRatio = 0;
     let _allFaceDescriptors = [];

@@ -1,7 +1,7 @@
 // Service Worker — Absensi BAPPERIDA
 // Caching strategy: Network First, offline fallback ke cache
 
-const CACHE_NAME = 'absensi-bapperida-v3';
+const CACHE_NAME = 'absensi-bapperida-v2';
 const OFFLINE_ASSETS = [
   './',
   './index.html',

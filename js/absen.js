@@ -23,12 +23,13 @@ async function handleAbsen() {
 
   // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
   _isAbsenSubmitting = true; // Set lock AFTER checks
-  const myNip = localStorage.getItem('MY_NIP') || window.userProfile?.nip || '';
+  const myNip = (localStorage.getItem('MY_NIP') || window.userProfile?.nip || '').trim();
   const myId = window.MY_ID;
 
-  if (!myNip || !myId) {
-    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Belum Siap',
-      'Data profil Anda sedang dimuat. Tunggu sebentar dan coba lagi.');
+  // STRICT VALIDATION: Prevent 'undefined' or empty identity submission
+  if (!myNip || !myId || myNip.toLowerCase() === 'undefined' || String(myId).toLowerCase() === 'undefined' || myNip === 'null') {
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Tidak Valid',
+      'Data profil Anda tidak valid atau belum lengkap. Silakan muat ulang halaman atau hubungi admin.');
     _isAbsenSubmitting = false; return;
   }
 
@@ -53,16 +54,18 @@ async function handleAbsen() {
   setBtnL('btnAbsen', true, 'Memeriksa jaringan...');
   await cekJaringan();
 
-  // ── Buka kamera untuk verifikasi wajah & seragam ──
-  // BUG FIX: isFaceRequired → FACE_RECOGNITION_ENABLED (didefinisikan di face.js)
-  console.log('[Absen] Opening camera... FACE_RECOGNITION_ENABLED:', FACE_RECOGNITION_ENABLED, 'onLine:', navigator.onLine);
+  // ── Verifikasi Wajah & Seragam ──
+  const isMandatory = typeof MANDATORY_FACE_NIPS !== 'undefined' && MANDATORY_FACE_NIPS.includes(myNip);
+  const useFace = (FACE_RECOGNITION_ENABLED || isMandatory) && navigator.onLine;
+
+  console.log('[Absen] Face requirement:', { FACE_RECOGNITION_ENABLED, isMandatory, useFace, onLine: navigator.onLine });
   setBtnL('btnAbsen', true, 'Membuka kamera...');
 
-  if (!FACE_RECOGNITION_ENABLED || !navigator.onLine) {
+  if (!useFace) {
     // Face recognition dinonaktifkan admin ATAU perangkat sedang offline
+    // KECUALI jika NIP tersebut wajib face (tapi jika offline tetap tidak bisa karena model Human.js butuh load asset)
     await _doAbsenWithGPS(initData, isTgX, null);
     setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-    // Lock akan dilepas di finally block _doAbsenWithGPS
     return;
   }
 
@@ -553,14 +556,16 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 async function handlePulangLuar() {
   if ($('btnPulangLuar').disabled || _isAbsenSubmitting) return;
   
-  const myNip = window.userProfile?.nip || localStorage.getItem('MY_NIP') || '';
-  if (!myNip || !window.MY_ID) {
-    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Belum Siap',
-      'Data profil sedang dimuat. Mohon tunggu.');
+  _isAbsenSubmitting = true;
+  const myNip = (window.userProfile?.nip || localStorage.getItem('MY_NIP') || '').trim();
+  const myId = window.MY_ID;
+
+  if (!myNip || !myId || myNip.toLowerCase() === 'undefined' || String(myId).toLowerCase() === 'undefined') {
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Tidak Valid',
+      'Identitas Anda tidak valid (undefined). Silakan logout dan login kembali.');
+    _isAbsenSubmitting = false;
     return;
   }
-
-  _isAbsenSubmitting = true;
   const ket = ($('ketPulangLuar').value || '').trim();
   if (!ket) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Keterangan Wajib Diisi',

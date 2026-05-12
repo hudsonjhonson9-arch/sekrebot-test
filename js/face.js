@@ -1393,7 +1393,7 @@
             }
             
             console.log(`[AI] Match Result: ${bestMatch.id} (score: ${bestMatch.score.toFixed(4)})`);
-            _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
+            await _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
           } else {
             console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
             if (_absenCallbackAfterCam) {

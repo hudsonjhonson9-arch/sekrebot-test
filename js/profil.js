@@ -35,13 +35,14 @@
             : (Array.isArray(res.data) ? (res.data[0] || {}) : (res.data?.data?.[0] || res.data || {}));
 
           if (d && (d.nama || d.Nama)) {
+            const cleanS = (s) => (s && String(s).trim().toLowerCase() !== 'undefined') ? String(s).trim() : '';
             userProfile = {
-              nama: d.nama || d.Nama || '',
-              jabatan: d.jabatan || d.Jabatan || '',
-              nip: d.nip || d.NIP || '',
-              username: d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '') || '',
-              status: d.status || d.Status || 'AKTIF',
-              role: (d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
+              nama: cleanS(d.nama || d.Nama),
+              jabatan: cleanS(d.jabatan || d.Jabatan),
+              nip: cleanS(d.nip || d.NIP),
+              username: cleanS(d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '')),
+              status: cleanS(d.status || d.Status || 'AKTIF'),
+              role: cleanS(d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
@@ -51,12 +52,30 @@
             return; // Berhasil
           } else {
             // Data kosong atau { ok: false }
-            if (attempt === maxAttempts) throw new Error('User not found');
-            await new Promise(r => setTimeout(r, 600)); // Tunggu sebentar sebelum coba lagi
+            if (attempt === maxAttempts) throw new Error('Pegawai belum terdaftar');
+            await new Promise(r => setTimeout(r, 600)); 
           }
         } catch (err) {
           console.warn(`[Profile] Gagal memuat (Attempt ${attempt}/${maxAttempts}):`, err.message);
-          if (attempt === maxAttempts) break;
+          if (attempt === maxAttempts) {
+            // OTOMATIS: Jika ID Telegram ada tapi tidak ditemukan di DB, arahkan ke registrasi
+            if (uid && err.message === 'Pegawai belum terdaftar') {
+              console.log('[Profile] User not found in DB, showing registration form...');
+              if (typeof switchAuthTab === 'function') {
+                switchAuthTab('register');
+                const overlay = document.getElementById('authOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                
+                // Pre-fill NIP jika ada di cache tapi ID Telegram belum tertaut
+                const cachedNip = localStorage.getItem('MY_NIP');
+                if (cachedNip) {
+                  const regNip = document.getElementById('regNip');
+                  if (regNip) regNip.value = cachedNip;
+                }
+              }
+            }
+            break;
+          }
           await new Promise(r => setTimeout(r, 600));
         }
       }
@@ -113,7 +132,7 @@
       }
 
       // ── Sinkronisasi NIP (Self-healing if corrupted) ──
-      if (p.nip) {
+      if (p.nip && p.nip.toLowerCase() !== 'undefined' && p.nip !== '') {
         const correctNip = String(p.nip).trim();
         if (localStorage.getItem('MY_NIP') !== correctNip) {
           console.log('[Profile] Syncing correct NIP to storage:', correctNip);

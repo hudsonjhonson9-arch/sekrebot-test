@@ -55,6 +55,8 @@
           const userNip = String(user.nip || '').trim();
           localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
           localStorage.setItem('MY_NIP', userNip); // Store NIP as primary key
+          localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
+          localStorage.setItem('MY_NAME', String(user.nama || 'User'));
           localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
           location.reload(); // Refresh to init with new ID
         } else {

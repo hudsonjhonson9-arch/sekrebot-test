@@ -299,11 +299,13 @@
     }
 
     /* Responsive visibility */
-    .desktop-only { display: none !important; }
-    .mobile-only { display: flex !important; }
+    @media (max-width: 767px) {
+      .desktop-only { display: none !important; }
+      .mobile-only { display: flex !important; }
+    }
 
     @media (min-width: 768px) {
-      .desktop-only { display: flex !important; }
+      .desktop-only { display: flex; }
       .mobile-only { display: none !important; }
     }
 
@@ -5877,6 +5879,10 @@
     .glass-card, .card {
       width: 100% !important;
       max-width: 100% !important;
+    }
+    #logModal .card {
+      max-width: 480px !important;
+      margin: auto !important;
     }
   }
 

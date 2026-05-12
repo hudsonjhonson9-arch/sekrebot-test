@@ -50,7 +50,7 @@
         rowsMut = rowsMut.filter(r => {
           const rowUid = Number(getField(r, 'ID', 'id'));
           const tgl = getField(r, 'Tanggal', 'tanggal');
-          const byMe = uid ? (rowUid === uid) : true;
+          const byMe = uid ? (Number(rowUid) === Number(uid)) : true;
           return byMe && tgl === todayStr;
         });
         rowsMut.sort((a, b) => {
@@ -368,3 +368,27 @@
         }
       });
     }
+    /**
+     * Tampilkan toast notification menggunakan SweetAlert2.
+     * @param {string} msg - Pesan yang ditampilkan
+     * @param {'success'|'error'|'warning'|'info'} [type='info'] - Tipe toast
+     */
+    function showToast(msg, type = 'info') {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer);
+          toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+      });
+      Toast.fire({
+        icon: type,
+        title: msg
+      });
+    }
+    window.showToast = showToast;
+    window.toast = showToast; // Alias

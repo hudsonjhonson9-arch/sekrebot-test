@@ -69,7 +69,20 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   }
 
   // JIKA WAJAH DIKENAL (telegramId sekarang berisi NIP dari meja.js)
-  const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: telegramId };
+  const userMap = window._mejaUserMap || {};
+  let user = userMap[telegramId];
+
+  // Fallback: Jika data nama belum selesai di-download dari server, cari dari cache Pegawai
+  if (!user) {
+    const cachedUsers = window.userListOrder || window._pegawaiCache || [];
+    const found = cachedUsers.find(u => String(u.nip) === String(telegramId) || String(u.id) === String(telegramId));
+    if (found) {
+      user = { nama: found.nama || found.Nama, nip: found.nip || found.NIP, telegram_id: found.id || found.ID };
+    } else {
+      user = { nama: 'Pegawai', nip: telegramId, telegram_id: telegramId };
+    }
+  }
+
   const score = Math.max(0, Math.round((distance || 0) * 100));
 
   if ($('moIcon')) $('moIcon').textContent = '⏳';

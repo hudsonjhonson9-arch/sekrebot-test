@@ -2,7 +2,6 @@
     /* ════ MEJA ABSEN (1:N matching) ════ */
     window._isMejaMode = false;
     window._mejaProcessing = false;
-    window._mejaUserMap = {};
     let _blinkDetected = false;
     let _lastEyeRatio = 0;
     let _allFaceDescriptors = [];
@@ -77,11 +76,9 @@
       window._isMejaMode = true; // Set Global State
       window._aiEngine = 'human'; // Force Human-AI for matching accuracy
       _isMejaAbsen = true;
-      
-      // FIX: Inisialisasi awal agar tidak undefined saat AI bekerja terlalu cepat
-      window._mejaUserMap = window._mejaUserMap || {}; 
 
       _setMejaStatus('processing', '⏳', 'Memuat Database & GPS...', 'Membuka kamera');
+
       // 1. LANGSUNG BUKA KAMERA (Non-Blocking)
       // Kamera butuh waktu 1-3 detik untuk menyala di HP, jadi kita lakukan paralel dengan fetch data
       openCamOverlay('meja');
@@ -180,4 +177,3 @@
       if (btnStart) { btnStart.style.display = 'flex'; btnStart.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
       if (btnStop) btnStop.style.display = 'none';
     }
-

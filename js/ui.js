@@ -6,7 +6,18 @@
      * @param {string} sectionId - ID section: 'ops' | 'libur' | 'lokasi' | 'jam' | dll
      */
         function switchAdminSection(sectionId) {
-      if (!sectionId) sectionId = localStorage.getItem('absen_last_admin_section') || 'ops';
+      const myRole = String(localStorage.getItem('MY_ROLE') || 'USER').toUpperCase();
+      const isAdminGudang = myRole === 'ADMIN GUDANG';
+      
+      if (!sectionId) {
+        sectionId = localStorage.getItem('absen_last_admin_section') || (isAdminGudang ? 'simapo-admin' : 'ops');
+      }
+
+      // Enforcement for ADMIN GUDANG
+      if (isAdminGudang && sectionId !== 'simapo-admin') {
+         sectionId = 'simapo-admin';
+      }
+      
       localStorage.setItem('absen_last_admin_section', sectionId);
 
       // Hide all sections
@@ -32,6 +43,12 @@
         if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
       }
       if (sectionId === 'user') loadAdminFaceReg();
+      if (sectionId === 'simapo-admin') {
+        // Staggered loading to prevent connection bottleneck
+        if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
+        setTimeout(() => { if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket(); }, 300);
+        setTimeout(() => { if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster(); }, 600);
+      }
 
       // Fix Leaflet Map rendering if switching to Config
       if (sectionId === 'config' && typeof adminMap !== 'undefined' && adminMap) {
@@ -121,10 +138,12 @@
       const isAdmin = (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.includes(myNip)) || 
                         myRole === 'SUPERADMIN' || 
                         myRole === 'ADMIN' || 
+                        myRole === 'ADMIN GUDANG' ||
                         !!window.IS_ADMIN;
       
       // Update global flag if needed
       window.IS_ADMIN = isAdmin;
+      window.MY_ROLE = myRole; // Store for logic
 
       // Target all elements with admin-only class
       document.querySelectorAll('.admin-only').forEach(el => {
@@ -134,14 +153,27 @@
           el.style.display = isAdmin ? (isFlex ? 'flex' : 'block') : 'none';
         }
       });
+
+      // Special for ADMIN GUDANG: hide other admin nav buttons
+      if (myRole === 'ADMIN GUDANG') {
+        document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+          if (btn && btn.id !== 'btn-nav-simapo-admin') {
+            btn.style.display = 'none';
+          }
+        });
+      } else {
+        document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+           if (btn) btn.style.display = '';
+        });
+      }
       
       // Separator in more menu
       const sep = $('adminMoreSeparator');
       if (sep) sep.style.display = isAdmin ? 'block' : 'none';
 
-      // Panel Admin visibility
-      const panel = $('panel-admin');
-      if (panel) panel.style.display = isAdmin ? '' : 'none';
+      // Panel Admin visibility is handled by switchTab, 
+      // we only need to ensure the admin button/sidebar is visible
+      // (Removed redundant manual panel visibility forcing)
     }
     window.applyAdminVisibility = applyAdminVisibility;
 
@@ -150,7 +182,7 @@
       const tabs = ['absen', 'ket', 'rekap', 'profil'];
       if (IS_ADMIN) tabs.push('admin');
       // Always allow checking, visibility is handled via checkTugasLemburAccess
-      tabs.push('tugas', 'lembur');
+      tabs.push('tugas', 'lembur', 'simapo');
       return tabs;
     }
     /**
@@ -207,17 +239,25 @@
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
           adminLoaded = true;
-          loadKonfirmasiAdmin(); loadLiburAdmin();
-          loadJamPeriodeAdmin(); loadAdminMgmt();
-          setTimeout(() => switchFaceSigTab('data'), 300);
-          loadFaceStatusAdmin();
+          const myRole = (window.MY_ROLE || localStorage.getItem('MY_ROLE') || 'USER').toUpperCase();
+          const isGudangOnly = myRole === 'ADMIN GUDANG';
+
+          if (!isGudangOnly) {
+            loadKonfirmasiAdmin(); loadLiburAdmin();
+            loadJamPeriodeAdmin(); loadAdminMgmt();
+            setTimeout(() => switchFaceSigTab('data'), 300);
+            loadFaceStatusAdmin();
+          }
 
           // Initialize Human.js Cache Check
           checkHumanJsCache();
         }
         setTimeout(() => {
-          if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();
-          if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+          const myRole = (window.MY_ROLE || localStorage.getItem('MY_ROLE') || 'USER').toUpperCase();
+          if (myRole !== 'ADMIN GUDANG') {
+            if (typeof loadAdminFaceReg === 'function') loadAdminFaceReg();
+            if (typeof loadAdminSigStatus === 'function') loadAdminSigStatus();
+          }
           // Ensure Admin UI elements are fully applied after render
           if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
         }, 50); // Reduced delay for better responsiveness
@@ -239,6 +279,10 @@
       }
       if (tab === 'lembur') {
         // init lembur logic if needed
+      }
+
+      if (tab === 'simapo') {
+        if (typeof switchSimapoSection === 'function') switchSimapoSection('katalog');
       }
 
       // Re-apply role based visibility on every switch to ensure consistency

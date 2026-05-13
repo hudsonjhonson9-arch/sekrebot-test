@@ -668,7 +668,7 @@
         // Langkah 2: Deteksi backend terbaik secara otomatis
         const bestBackend = await _detectBestBackend();
         const isMobile = _isMobileDevice();
-        const inputSize = isMobile ? 512 : 1024; // Lebih kecil = lebih cepat di HP
+        const inputSize = isMobile ? 512 : 1024; // Resolusi ditingkatkan sesuai permintaan
         console.log(`[AI] Device: ${isMobile ? 'Mobile' : 'Desktop'} | Backend: ${bestBackend} | InputSize: ${inputSize}`);
 
         const config = {
@@ -1342,22 +1342,10 @@
         const cnv = $('camCanvas');
         if (!vid || vid.videoWidth === 0) throw new Error('Kamera belum siap, silakan coba lagi.');
 
-        console.log('[AI] Phase 1: Drawing & Resizing Frame...');
-        const cnv = $('camCanvas');
+        console.log('[AI] Phase 1: Drawing Frame...');
         const ctx = cnv.getContext('2d');
-        
-        // DIUBAH: Disesuaikan dengan inputSize Human.js agar tidak ada bottleneck
-        const MAX_WIDTH = 512; 
-        let targetWidth = vid.videoWidth;
-        let targetHeight = vid.videoHeight;
-        
-        if (targetWidth > MAX_WIDTH) {
-           targetHeight = Math.round((MAX_WIDTH / targetWidth) * targetHeight);
-           targetWidth = MAX_WIDTH;
-        }
-
-        cnv.width = targetWidth;
-        cnv.height = targetHeight;
+        cnv.width = vid.videoWidth;
+        cnv.height = vid.videoHeight;
 
         // Mirroring agar hasil searah dengan preview
         ctx.save();
@@ -1467,3 +1455,4 @@
     function setLivenessStep(idx, state) {
       // dihapus mengikuti liveness logic
     }
+

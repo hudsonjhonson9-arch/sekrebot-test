@@ -13,6 +13,7 @@
     let _livenessHistory = [];
     let _lastLandmarks = null;
     let _isLive = false;
+    window._mejaUserMap = {};
 
     function _setMejaStatus(mode, icon, text, sub) {
       const dot = $('mejaStatusDot');
@@ -67,6 +68,7 @@
       _mejaStartTime = Date.now(); // Catat waktu mulai
       _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
       _updateMejaCnt();
+      if (!window._mejaUserMap) window._mejaUserMap = {};
 
       const btn = $('btnMejaAbsen');
       if (btn) btn.style.display = 'none';
@@ -102,6 +104,7 @@
         if (cached && cached.data && Array.isArray(cached.data) && cached.data.length > 0) {
           console.log(`[Meja] Memuat ${cached.data.length} wajah dari cache lokal...`);
           _allFaceDescriptors = cached.data;
+          if (cached.userMap) window._mejaUserMap = cached.userMap;
           _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai - Cache)`, 'Menjalankan Kamera...');
         }
       } catch (e) { console.warn('[Meja] Gagal baca cache:', e); }
@@ -143,7 +146,12 @@
         if (freshDescriptors.length > 0) {
           _allFaceDescriptors = freshDescriptors;
           // Save to cache for next time
-          await idb.set('master_data', { key: 'all_face_descriptors', data: freshDescriptors, timestamp: Date.now() });
+          await idb.set('master_data', { 
+            key: 'all_face_descriptors', 
+            data: freshDescriptors, 
+            userMap: window._mejaUserMap,
+            timestamp: Date.now() 
+          });
           console.log(`[Meja] Database wajah diperbarui: ${freshDescriptors.length} item.`);
           _setMejaStatus('active', '🔍', `Siap Scan (${_allFaceDescriptors.length} Pegawai)`, 'Menjalankan Kamera...');
         }
@@ -177,3 +185,4 @@
       if (btnStart) { btnStart.style.display = 'flex'; btnStart.disabled = false; $('btnMejaText').textContent = 'Mulai Meja Absen'; }
       if (btnStop) btnStop.style.display = 'none';
     }
+

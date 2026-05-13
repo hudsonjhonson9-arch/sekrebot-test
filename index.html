@@ -304,6 +304,10 @@
         <i class="fas fa-user-clock"></i>
         <span>Rekap Lembur</span>
       </button>
+      <button class="nav-item desktop-only" id="nav-simapo-desk" onclick="switchTab('simapo', true)" data-tab="simapo">
+        <i class="fas fa-boxes"></i>
+        <span>SIMAPO</span>
+      </button>
       <button class="nav-item desktop-only admin-only" id="nav-admin-desk" onclick="switchTab('admin', true)" data-tab="admin">
         <i class="fas fa-user-shield"></i>
         <span>Panel Admin</span>
@@ -327,6 +331,10 @@
         <button class="more-item" id="more-lembur" onclick="switchTab('lembur', true)">
           <i class="fas fa-user-clock"></i>
           <span>Rekap Lembur</span>
+        </button>
+        <button class="more-item" id="more-simapo" onclick="switchTab('simapo', true)">
+          <i class="fas fa-boxes"></i>
+          <span>Aset SIMAPO</span>
         </button>
         <div id="adminMoreSeparator" style="height:1px; background:var(--border); margin:5px 0; display:none"></div>
         <button class="more-item admin-only" id="more-admin" onclick="switchTab('admin', true)">
@@ -1105,6 +1113,10 @@
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">📜 Nomor Surat Tugas</label>
+          <input type="text" id="tugasNomorSurat" class="form-input" placeholder="Contoh: 800/123/BAPP-SB/2025">
+        </div>
+        <div class="form-group">
           <label class="form-label">📝 Keterangan Tugas</label>
           <textarea id="tugasKet" class="form-textarea" placeholder="Tuliskan detail tugas di sini..." style="min-height:80px"></textarea>
         </div>
@@ -1179,6 +1191,149 @@
       <div class="footer">Lembur menarik data absen harian dan mengecek konflik dengan penugasan.</div>
     </div>
 
+    <!-- ══ TAB SIMAPO ══ -->
+    <div class="panel" id="panel-simapo">
+      <div class="rekap-header" style="margin-bottom: 12px;">
+        <div class="rekap-title">📦 Sistem Inventaris (SIMAPO)</div>
+      </div>
+      
+      <!-- Sub-Navigation SIMAPO (Segmented Control) -->
+      <div style="margin-bottom: 18px; display:flex; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); gap: 4px; overflow-x: auto; scrollbar-width: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+        <button class="simapo-tab-btn active" id="btn-simapo-katalog" onclick="switchSimapoSection('katalog')">
+          <i class="fas fa-th-large"></i> Katalog
+        </button>
+        <button class="simapo-tab-btn" id="btn-simapo-pinjam" onclick="switchSimapoSection('pinjam')">
+          <i class="fas fa-handshake"></i> Pinjam
+        </button>
+        <button class="simapo-tab-btn" id="btn-simapo-tiket" onclick="switchSimapoSection('tiket')">
+          <i class="fas fa-tools"></i> Lapor
+        </button>
+      </div>
+      <style>
+        .simapo-tab-btn {
+          flex: 1;
+          background: transparent;
+          color: var(--muted);
+          border: none;
+          padding: 10px 0;
+          font-size: 13px;
+          font-weight: 700;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          min-width: 90px;
+        }
+        .simapo-tab-btn:hover {
+          color: var(--white);
+          background: rgba(255,255,255,0.05);
+        }
+        .simapo-tab-btn.active {
+          background: var(--card-bg, #1a2332);
+          color: var(--gold);
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+        .simapo-kat-badge {
+          padding: 6px 12px;
+          background: rgba(255,255,255,0.05);
+          color: var(--muted);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+        .simapo-kat-badge:hover {
+          background: rgba(255,255,255,0.1);
+          color: var(--white);
+        }
+        .simapo-kat-badge.active {
+          background: rgba(201,168,76,0.15);
+          color: var(--gold);
+          border-color: rgba(201,168,76,0.4);
+        }
+      </style>
+
+      <!-- SECTION: KATALOG ASET -->
+      <div id="simapo-section-katalog" class="simapo-section" style="display:block;">
+        <div style="border-radius: 12px; background: rgba(255,255,255,0.05); padding: 10px 14px; border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; margin-bottom:10px;">
+          <i class="fas fa-search" style="margin-right: 10px; opacity:0.5;"></i>
+          <input type="text" id="simapoSearchInput" placeholder="Cari nama barang atau kode..." oninput="if(typeof filterSimapoKatalog === 'function') filterSimapoKatalog(this.value)" autocomplete="off" style="background:transparent; border:none; color:white; width:100%; outline:none; font-family:inherit; font-size:13px;">
+        </div>
+        <div id="simapoKatFilterBar" style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:12px;"></div>
+        <div id="simapoKatalogList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+           <div class="shimmer-wrapper" style="width:100%">
+             <div class="shimmer sh-line" style="height:120px; border-radius:12px"></div>
+           </div>
+        </div>
+      </div>
+
+      <!-- SECTION: PEMINJAMAN -->
+      <div id="simapo-section-pinjam" class="simapo-section" style="display:none;">
+        <div class="card glass-card">
+          <div class="card-title">Ajukan Peminjaman Baru</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Pilih Aset/Barang</label>
+            <select class="form-input" id="simapoSelectPinjam">
+               <option value="">-- Pilih Barang --</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Tujuan Peminjaman</label>
+            <textarea class="form-textarea" id="simapoTujuanPinjam" placeholder="Untuk kegiatan apa?"></textarea>
+          </div>
+          <div class="form-group" style="display:flex; gap:10px; margin-bottom:10px;">
+            <div style="flex:1">
+              <label class="form-label">Tgl Mulai</label>
+              <input type="date" class="form-input" id="simapoPinjamMulai">
+            </div>
+            <div style="flex:1">
+              <label class="form-label">Tgl Selesai</label>
+              <input type="date" class="form-input" id="simapoPinjamSelesai">
+            </div>
+          </div>
+          <button class="btn-primary" onclick="if(typeof simapoSubmitPinjam === 'function') simapoSubmitPinjam()" style="width:100%">
+            <div class="btn-inner"><span>📤</span> Ajukan Pinjaman</div>
+          </button>
+        </div>
+        
+        <div class="card-title" style="margin-top:20px;">Riwayat Peminjaman Saya</div>
+        <div id="simapoRiwayatPinjamList">
+           <div class="shimmer-wrapper">
+             <div class="shimmer sh-line" style="height:60px; border-radius:12px"></div>
+           </div>
+        </div>
+      </div>
+
+      <!-- SECTION: LAPOR KERUSAKAN -->
+      <div id="simapo-section-tiket" class="simapo-section" style="display:none;">
+        <div class="card glass-card">
+          <div class="card-title">Laporkan Aset Rusak</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Judul / Singkat Masalah</label>
+            <input type="text" class="form-input" id="simapoTiketJudul" placeholder="Contoh: AC Ruang Rapat Bocor">
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Deskripsi Lengkap</label>
+            <textarea class="form-textarea" id="simapoTiketDesc" placeholder="Jelaskan secara detail masalahnya..."></textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Lokasi Aset</label>
+            <input type="text" class="form-input" id="simapoTiketLokasi" placeholder="Misal: Ruang Rapat Lt 2">
+          </div>
+          <button class="btn-primary" onclick="if(typeof simapoSubmitTiket === 'function') simapoSubmitTiket()" style="background:var(--danger); width:100%">
+            <div class="btn-inner"><span>🚨</span> Kirim Laporan Kerusakan</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ TAB ADMIN (conditional) ══ -->
     <div class="panel" id="panel-admin">
       <div class="admin-header-card" style="margin-bottom:12px">
@@ -1189,10 +1344,161 @@
 
       <!-- Sub-Navigation Admin -->
       <div class="admin-nav">
-        <button class="admin-nav-btn active" id="btn-nav-ops" onclick="switchAdminSection('ops')">🏢
-          Operasional</button>
+        <button class="admin-nav-btn active" id="btn-nav-ops" onclick="switchAdminSection('ops')">🏢 Operasional</button>
         <button class="admin-nav-btn" id="btn-nav-user" onclick="switchAdminSection('user')">👥 Kepegawaian</button>
         <button class="admin-nav-btn" id="btn-nav-config" onclick="switchAdminSection('config')">⚙️ Konfigurasi</button>
+        <button class="admin-nav-btn" id="btn-nav-simapo-admin" onclick="switchAdminSection('simapo-admin')">📦 Inventaris</button>
+      </div>
+
+      <!-- SECTION: ADMIN SIMAPO (Inventaris) -->
+      <div id="admin-section-simapo-admin" class="admin-section" style="display:none">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05));border:1px solid rgba(201,168,76,0.25);border-radius:16px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:28px">📦</div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--gold)">Panel Admin Inventaris</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Kelola aset, pinjaman, laporan kerusakan, dan stok</div>
+          </div>
+        </div>
+
+        <!-- Sub-Tab Internal SIMAPO Admin -->
+        <div style="overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">
+          <div style="display:flex;gap:6px;min-width:max-content;padding:5px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
+            <button class="sa-tab active" id="sa-tab-pinjam"  onclick="switchSATab('pinjam')" >📋 Pinjaman</button>
+            <button class="sa-tab"        id="sa-tab-tiket"  onclick="switchSATab('tiket')"  >🚨 Tiket</button>
+            <button class="sa-tab"        id="sa-tab-master" onclick="switchSATab('master')" >🗃️ Aset</button>
+            <button class="sa-tab"        id="sa-tab-mutasi" onclick="switchSATab('mutasi')" >🔄 Mutasi</button>
+            <button class="sa-tab"        id="sa-tab-opname" onclick="switchSATab('opname')" >📊 Opname</button>
+            <button class="sa-tab"        id="sa-tab-kat"    onclick="switchSATab('kat')"    >🏷️ Kategori</button>
+          </div>
+        </div>
+        <style>
+          .sa-tab{background:transparent;color:var(--muted);border:none;padding:9px 14px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;transition:all .25s;white-space:nowrap;font-family:inherit;}
+          .sa-tab:hover{color:var(--white);background:rgba(255,255,255,0.06);}
+          .sa-tab.active{background:var(--card-bg,#1a2332);color:var(--gold);box-shadow:0 3px 10px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);}
+        </style>
+
+        <!-- [TAB] PINJAMAN -->
+        <div id="sa-sect-pinjam" class="sa-sect">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>📋 Permintaan Peminjaman</span>
+              <button class="btn-sm-admin" onclick="loadAdminSimapoPinjam()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div style="display:flex;gap:6px;margin:10px 0;flex-wrap:wrap;">
+              <button onclick="filterSAPinjam('MENUNGGU',this)" class="sa-filter-btn active" data-filter="MENUNGGU">⏳ Pending</button>
+              <button onclick="filterSAPinjam('DISETUJUI',this)" class="sa-filter-btn">✅ Disetujui</button>
+              <button onclick="filterSAPinjam('DITOLAK',this)" class="sa-filter-btn">❌ Ditolak</button>
+              <button onclick="filterSAPinjam('KEMBALI',this)" class="sa-filter-btn">📦 Kembali</button>
+              <button onclick="filterSAPinjam('',this)" class="sa-filter-btn">🔍 Semua</button>
+            </div>
+            <style>.sa-filter-btn{padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;transition:all .2s;font-family:inherit;}.sa-filter-btn.active{background:rgba(201,168,76,0.15);color:var(--gold);border-color:rgba(201,168,76,0.4);}</style>
+            <div id="adminSimapoPinjamList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] TIKET -->
+        <div id="sa-sect-tiket" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🚨 Tiket Kerusakan Aset</span>
+              <button class="btn-sm-admin" onclick="loadAdminSimapoTiket()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div id="adminSimapoTiketList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] MASTER ASET -->
+        <div id="sa-sect-master" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🗃️ Data Master Aset</span>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-sm-admin" onclick="loadAdminSimapoMaster()" style="background:var(--primary)">🔄</button>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="showSimapoMasterForm()" style="width:100%;margin:10px 0;background:rgba(255,255,255,0.04);border:1px dashed var(--gold);color:var(--gold);">
+              <div class="btn-inner"><span>➕</span> Tambah Aset Baru</div>
+            </button>
+            <input type="text" id="saSearchMaster" class="form-input" placeholder="🔍 Cari nama atau kode aset..." oninput="filterSAMaster(this.value)" style="margin-bottom:10px;">
+            <div id="adminSimapoMasterList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] MUTASI STOK -->
+        <div id="sa-sect-mutasi" class="sa-sect" style="display:none">
+          <div class="card glass-card" style="margin-bottom:12px;">
+            <div class="card-title">🔄 Catat Mutasi Stok (Masuk / Keluar)</div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label">Pilih Barang</label>
+              <select class="form-input" id="mutasiBarangId">
+                <option value="">-- Pilih Barang --</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div class="form-group">
+                <label class="form-label">Jenis Mutasi</label>
+                <select class="form-input" id="mutasiJenis">
+                  <option value="MASUK">📥 Barang Masuk</option>
+                  <option value="KELUAR">📤 Barang Keluar</option>
+                  <option value="TRANSFER">🔁 Transfer Bidang</option>
+                  <option value="RUSAK">⚠️ Penghapusan/Rusak</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Jumlah</label>
+                <input class="form-input" type="number" id="mutasiJumlah" min="1" value="1" placeholder="1">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label class="form-label">Keterangan</label>
+              <textarea class="form-textarea" id="mutasiKet" placeholder="Sumber pengadaan, nomor SK, atau catatan lainnya..." style="min-height:60px;"></textarea>
+            </div>
+            <button class="btn-primary" onclick="submitMutasiBarang()" style="width:100%;">
+              <div class="btn-inner"><span>💾</span> Simpan Mutasi</div>
+            </button>
+          </div>
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>📜 Riwayat Mutasi</span>
+              <button class="btn-sm-admin" onclick="loadMutasiRiwayat()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div id="mutasiRiwayatList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] STOK OPNAME -->
+        <div id="sa-sect-opname" class="sa-sect" style="display:none">
+          <div class="card glass-card" style="margin-bottom:12px;">
+            <div class="card-title">📊 Stok Opname — Verifikasi Fisik Aset</div>
+            <div style="background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.3);border-radius:10px;padding:10px;margin-bottom:14px;font-size:11px;color:rgba(255,165,0,0.9);">
+              ⚠️ Stok Opname akan membandingkan stok sistem dengan stok fisik yang Anda masukkan. Pastikan data sudah dihitung dengan benar sebelum disimpan.
+            </div>
+            <div id="opnameFormList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+            <button class="btn-primary" onclick="submitStokOpname()" style="width:100%;margin-top:14px;">
+              <div class="btn-inner"><span>✅</span> Simpan Hasil Opname</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- [TAB] KATEGORI -->
+        <div id="sa-sect-kat" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🏷️ Manajemen Kategori Aset</span>
+              <button class="btn-sm-admin" onclick="loadSimapoKategori(true)" style="background:var(--primary)">🔄</button>
+            </div>
+            <div style="display:flex;gap:8px;margin:10px 0;">
+              <input class="form-input" type="text" id="katNamaInput" placeholder="Nama kategori baru..." style="flex:1;">
+              <button class="btn-primary" onclick="addSimapoKategori()" style="padding:0 16px;width:auto;">
+                <div class="btn-inner"><span>➕</span></div>
+              </button>
+            </div>
+            <div id="adminSimapoKatList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- SECTION: OPERASIONAL -->
@@ -2189,6 +2495,8 @@
   <script src="js/admin-mgmt.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/admin-face.js"></script>
+  <script src="js/simapo-admin.js"></script>
+  <script src="js/simapo-ext.js?v=999"></script>
 
   <!-- 6. Supplementary features -->
 
@@ -2197,6 +2505,7 @@
   <script src="js/meja.js"></script>
   <script src="js/rekap-pdf.js"></script>
   <script src="js/tugas_lembur.js?v=20260509p"></script>
+  <script src="js/simapo.js"></script>
 
   <!-- 7. Runtime & entry point -->
   <script src="js/offline.js"></script>

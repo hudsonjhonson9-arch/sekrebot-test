@@ -69,6 +69,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   }
 
   // JIKA WAJAH DIKENAL (telegramId sekarang berisi NIP dari meja.js)
+  if (!window._mejaUserMap) window._mejaUserMap = {};
   const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: telegramId };
   const score = Math.max(0, Math.round((distance || 0) * 100));
 

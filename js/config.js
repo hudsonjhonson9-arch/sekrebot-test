@@ -151,6 +151,26 @@ const P = {
   tugasAdd: isTest ? '/webhook-test/tugas-add' : '/webhook/tugas-add',
   tugasList: isTest ? '/webhook-test/tugas-list' : '/webhook/tugas-list',
   lemburGet: isTest ? '/webhook-test/lembur-get' : '/webhook/lembur-get',
+  simapoKatalog: isTest ? '/webhook-test/simapo-katalog' : '/webhook/simapo-katalog',
+  simapoPinjam: isTest ? '/webhook-test/simapo-pinjam' : '/webhook/simapo-pinjam',
+  simapoPinjamList: isTest ? '/webhook-test/simapo-pinjam-list' : '/webhook/simapo-pinjam-list',
+  simapoTiket: isTest ? '/webhook-test/simapo-tiket' : '/webhook/simapo-tiket',
+  simapoAdminPinjamList: isTest ? '/webhook-test/simapo-admin-pinjam-list' : '/webhook/simapo-admin-pinjam-list',
+  simapoAdminPinjamAction: isTest ? '/webhook-test/simapo-admin-pinjam-action' : '/webhook/simapo-admin-pinjam-action',
+  simapoAdminTiketList: isTest ? '/webhook-test/simapo-admin-tiket-list' : '/webhook/simapo-admin-tiket-list',
+  simapoAdminTiketAction: isTest ? '/webhook-test/simapo-admin-tiket-action' : '/webhook/simapo-admin-tiket-action',
+  simapoAdminMasterList: isTest ? '/webhook-test/simapo-admin-master-list' : '/webhook/simapo-admin-master-list',
+  simapoAdminMasterSave: isTest ? '/webhook-test/simapo-admin-master-save' : '/webhook/simapo-admin-master-save',
+  simapoAdminMasterDel: isTest ? '/webhook-test/simapo-admin-master-delete' : '/webhook/simapo-admin-master-delete',
+  // Mutasi Stok
+  simapoMutasiSave: isTest ? '/webhook-test/simapo-mutasi-save' : '/webhook/simapo-mutasi-save',
+  simapoMutasiList: isTest ? '/webhook-test/simapo-mutasi-list' : '/webhook/simapo-mutasi-list',
+  // Stok Opname
+  simapoOpnameSave: isTest ? '/webhook-test/simapo-opname-save' : '/webhook/simapo-opname-save',
+  // Kategori
+  simapoKategoriList: isTest ? '/webhook-test/simapo-kategori-list' : '/webhook/simapo-kategori-list',
+  simapoKategoriSave: isTest ? '/webhook-test/simapo-kategori-save' : '/webhook/simapo-kategori-save',
+  simapoKategoriDel: isTest ? '/webhook-test/simapo-kategori-delete' : '/webhook/simapo-kategori-delete',
 };
 
 function getScopedInstansiId() {
@@ -210,7 +230,7 @@ async function apiFetch(path, opts = {}) {
 
   for (const base of [SERVER_1, SERVER_2]) {
     try {
-      console.log(`[Fetch] Attempting: ${base}${path}`);
+      console.log(`[Fetch] -> ${base}${path}`);
       const fetchOpts = { ...opts };
       fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
       
@@ -218,9 +238,9 @@ async function apiFetch(path, opts = {}) {
         delete fetchOpts.headers['Content-Type'];
       }
 
-      // Add 10s timeout for each server
+      // Add 15s timeout for each server (increased for large inventory data)
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 10000);
+      const tid = setTimeout(() => ctrl.abort(), 15000);
       
       try {
         const r = await fetch(base + path, { ...fetchOpts, signal: ctrl.signal });

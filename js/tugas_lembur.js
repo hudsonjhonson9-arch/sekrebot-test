@@ -206,6 +206,7 @@
               <div style="font-size:11px; font-weight:800; color:var(--white)">${peg}</div>
               <div style="font-size:9px; color:var(--muted)">• ${tgl}</div>
             </div>
+            ${r.nomor_surat ? `<div style="font-size:9px; color:var(--gold); font-weight:700; margin-top:2px"><i class="fas fa-file-alt"></i> ${r.nomor_surat}</div>` : ''}
             <div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4">${r.keterangan || '—'}</div>
           </div>
           <div style="text-align:right; margin-left:15px">
@@ -287,6 +288,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
           <div style="flex:1; padding-right:10px">
             <div style="font-size:10px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; opacity:0.8">${tglDisplay}</div>
+            ${r.nomor_surat ? `<div style="font-size:11px; color:#fff; font-weight:700; margin-top:4px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; display:inline-block"><i class="fas fa-file-invoice" style="margin-right:6px; color:var(--gold)"></i> ${r.nomor_surat}</div>` : ''}
             <div style="font-size:15px; font-weight:800; color:var(--white); margin-top:6px; line-height:1.4">${ket}</div>
           </div>
           ${status === 'AKTIF' ? '<div class="status-badge s-warning" style="font-size:9px; letter-spacing:1px; font-weight:900">AKTIF</div>' : ''}
@@ -639,6 +641,7 @@
           nip: u.nip,
           lat, lon,
           keterangan: ket,
+          nomor_surat: $('tugasNomorSurat')?.value?.trim() || '',
           tanggal: tgl,
           radius: parseInt($('tugasRadius').value) || 100,
           created_by: creatorNama,
@@ -656,6 +659,7 @@
         
         // Reset
         $('tugasKet').value = '';
+        if ($('tugasNomorSurat')) $('tugasNomorSurat').value = '';
         if (_tugasMarker) { _tugasMap.removeLayer(_tugasMarker); _tugasMarker = null; }
         $('tugasLat').value = ''; $('tugasLon').value = '';
         _selectedTugasPegawai = [];

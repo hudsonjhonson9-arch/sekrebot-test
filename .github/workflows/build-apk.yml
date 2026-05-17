@@ -57,7 +57,7 @@ jobs:
           # Copy compiled debug APK to android-apk directory
           mkdir -p android-apk
           cp android/app/build/outputs/apk/debug/app-debug.apk android-apk/Absensi-Digital.apk
-          console.log('✅ Compiled APK moved to android-apk/Absensi-Digital.apk')
+          echo "✅ Compiled APK moved to android-apk/Absensi-Digital.apk"
 
       - name: Auto-Commit Compiled APK & version.json
         uses: stefanzweifel/git-auto-commit-action@v5

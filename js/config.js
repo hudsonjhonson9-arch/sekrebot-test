@@ -85,7 +85,7 @@ const isTest = false;
 // ADMIN_NIPS dimuat dinamis dari database via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
 let ADMIN_NIPS = [];         // diisi oleh loadAdminMgmt()
-let MANDATORY_FACE_NIPS = ['197907072003121006']; // Daftar NIP yang WAJIB face recognition
+let MANDATORY_FACE_NIPS = []; // Daftar NIP yang WAJIB face recognition
 window._adminRoleMap = {};   // Mapping NIP -> role (superadmin/admin/kepala/dkk)
 let REKAP_CHAT_ID = null;    // peninggalan bot lama, bisa diabaikan
 

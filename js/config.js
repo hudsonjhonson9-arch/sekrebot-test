@@ -80,12 +80,11 @@ idb.init();
 /* ════ KONFIGURASI N8N ════ */
 // Akan dihapus secara bertahap saat migrasi ke Supabase selesai
 const SERVER_1 = 'https://mindcloud.my.id';           // server utama (permanen)
-const SERVER_2 = 'https://n8n-sp8dtwslkxal.jkt3.sumopod.my.id'; // fallback/dev
 const isTest = false;
 // ADMIN_NIPS dimuat dinamis dari database via n8n
 // Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
 let ADMIN_NIPS = [];         // diisi oleh loadAdminMgmt()
-let MANDATORY_FACE_NIPS = ['197907072003121006']; // Daftar NIP yang WAJIB face recognition
+let MANDATORY_FACE_NIPS = []; // Daftar NIP yang WAJIB face recognition
 window._adminRoleMap = {};   // Mapping NIP -> role (superadmin/admin/kepala/dkk)
 let REKAP_CHAT_ID = null;    // peninggalan bot lama, bisa diabaikan
 

@@ -88,9 +88,36 @@
           ];
         });
 
-        // 4. Proses Tabel
+        // 4. Proses Tabel & Hitung Kop Dinamis
+        const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
+        const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+        const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
+        const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
+
+        doc.setFont('times', 'bold');
+        doc.setFontSize(15);
+        const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
+        
+        let currentHeaderY = 21;
+        headerLines.forEach(() => {
+          currentHeaderY += 5.5;
+        });
+
+        doc.setFont('times', 'normal');
+        doc.setFontSize(9.5);
+        const addressLines = doc.splitTextToSize(instAlamat, pageWidth - 55);
+        let currentAddressY = currentHeaderY;
+        addressLines.forEach(() => {
+          currentAddressY += 4.5;
+        });
+
+        const finalDividerY = Math.max(currentAddressY + 1, 37);
+        const docTitleY = finalDividerY + 9;
+        const docPeriodeY = docTitleY + 5.5;
+        const calculatedStartY = docPeriodeY + 6;
+
         doc.autoTable({
-          startY: 60,
+          startY: calculatedStartY,
           margin: { top: 20, left: 10, right: 10, bottom: 20 },
           head: [['No', 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
           body: tableBody,
@@ -132,14 +159,6 @@
           },
           didDrawPage: (data) => {
             if (data.pageNumber === 1) {
-              // 1. Get Dynamic Instansi Header and Logo
-              const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
-              const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
-              
-              // Dynamic Kop Header: full header text from the instansi's header column!
-              const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
-              const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
-              
               // Dynamic logo loading
               let logoSrc = rawLogoUrl;
               if (instData && instData.logo_url) {
@@ -149,7 +168,6 @@
               try {
                 doc.addImage(logoSrc, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
               } catch (e) {
-                // Graceful fallback to default Sumba Barat logo if loading custom logo fails (CORS, network)
                 try {
                   doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
                 } catch (err) { }
@@ -159,37 +177,35 @@
               doc.setFontSize(13);
               doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
               
-              // Dynamic line wrapping for long Kop headers
-              doc.setFontSize(16);
-              const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
-              
-              if (headerLines.length === 1) {
-                doc.text(headerLines[0], pageWidth / 2 + 10, 24, { align: 'center' });
-              } else if (headerLines.length === 2) {
-                doc.text(headerLines[0], pageWidth / 2 + 10, 21, { align: 'center' });
-                doc.text(headerLines[1], pageWidth / 2 + 10, 27, { align: 'center' });
-              } else {
-                let startY = 19;
-                const step = 5;
-                headerLines.forEach((line, idx) => {
-                  doc.text(line, pageWidth / 2 + 10, startY + (idx * step), { align: 'center' });
-                });
-              }
+              // Draw Dynamic Kop Header lines
+              doc.setFontSize(15);
+              let drawHeaderY = 21;
+              headerLines.forEach((line) => {
+                doc.text(line, pageWidth / 2 + 10, drawHeaderY, { align: 'center' });
+                drawHeaderY += 5.5;
+              });
 
+              // Draw Dynamic Address lines
               doc.setFont('times', 'normal');
-              doc.setFontSize(10.5);
-              doc.text(instAlamat, pageWidth / 2 + 10, 34, { align: 'center' });
+              doc.setFontSize(9.5);
+              let drawAddressY = drawHeaderY;
+              addressLines.forEach((line) => {
+                doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
+                drawAddressY += 4.5;
+              });
 
+              // Draw Divider lines
               doc.setLineWidth(0.7);
-              doc.line(15, 37, pageWidth - 15, 37);
+              doc.line(15, finalDividerY, pageWidth - 15, finalDividerY);
               doc.setLineWidth(0.2);
-              doc.line(15, 38, pageWidth - 15, 38);
+              doc.line(15, finalDividerY + 0.8, pageWidth - 15, finalDividerY + 0.8);
 
+              // Draw Document Title and Periode
               doc.setFontSize(11);
               doc.setFont('times', 'bold');
-              doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, 48, { align: 'center' });
+              doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
               doc.setFont('times', 'normal');
-              doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, 54, { align: 'center' });
+              doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, docPeriodeY, { align: 'center' });
             }
           }
         });

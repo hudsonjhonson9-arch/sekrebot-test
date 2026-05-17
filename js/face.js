@@ -26,6 +26,7 @@
     let _captureData = null; // { dataUrl, faceOk, livenessOk, faceMatchScore }
     let _absenCallbackAfterCam = null; // fungsi yang dipanggil setelah kamera selesai
     let _skipVerifikasi = false;
+    let _isLive = false;
 
     // Tantangan liveness ditiadakan sesuai permintaan
     function pickRandomChallenges() { return []; }
@@ -1399,7 +1400,12 @@
             const cb = _absenCallbackAfterCam;
             closeCamOverlay(false);
             if (cb) {
-              const result = { dataUrl, descriptor };
+              const result = { 
+                dataUrl, 
+                descriptor,
+                faceOk: _livenessState.faceOk || !!descriptor,
+                livenessOk: _isLive || false
+              };
               if (typeof cb === 'function') {
                 await cb(result);
               } else if (cb.onDone) {
@@ -1427,6 +1433,7 @@
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
       _livenessState = { faceOk: true, ch1: true, ch2: true };
+      _isLive = true;
       await doCapture();
     }
 

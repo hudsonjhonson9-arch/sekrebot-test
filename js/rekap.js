@@ -172,7 +172,7 @@ async function loadRekap() {
 
     // ── Enrichment (Hanya jika metadata kurang/fallback) ──
     // n8n v18.2+ sudah menyertakan jabatan/pangkat/order, jadi ini biasanya diskip
-    const hasMissingMeta = pegawai.some(p => !p.jabatan || p.jabatan === '—');
+    const hasMissingMeta = pegawai.some(p => !p.jabatan || p.jabatan === '—' || !p.pangkat || p.pangkat === '—');
     if (hasMissingMeta && rekapOK) {
        if (order.length === 0) order = await fetchUserListOrder();
        if (order.length > 0) {
@@ -311,7 +311,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
     if (!id) return;
     map[id] = {
       id,
-      nama: u.nama || '—', nip: u.nip || '—', jabatan: u.jabatan || '', urutan: u.urutan ?? idx,
+      nama: u.nama || '—', nip: u.nip || '—', jabatan: u.jabatan || '', pangkat: u.pangkat || '', urutan: u.urutan ?? idx,
       masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
       izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
       menit_terlambat: 0, menit_lebih_awal: 0,
@@ -334,7 +334,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
     const jamStr = getField(r, 'Jam', 'jam') || '';
     const id_log = r.ID_Log || r.id_log || r.id || ''; // Capture the primary key
     if (!map[id]) map[id] = {
-      id, nama, nip, jabatan: '', urutan: 9999,
+      id, nama, nip, jabatan: '', pangkat: '', urutan: 9999,
       masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
       izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
       menit_terlambat: 0, menit_lebih_awal: 0,

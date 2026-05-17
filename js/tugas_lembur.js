@@ -64,6 +64,8 @@
     loadMyAssignments();
     // 4. Load monitoring if manager
     if (isManager) loadMonitoringTasks();
+    // 5. Initialize Superadmin scoping dropdown
+    initSuperadminTugasScoping();
   }
   window.checkTugasLemburAccess = checkTugasLemburAccess;
 
@@ -112,8 +114,8 @@
         listEl.innerHTML = `
           <div class="empty-state" style="padding:40px 20px">
             <div style="font-size:40px; margin-bottom:15px">📋</div>
-            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Tugas Luar</div>
-            <div style="color:var(--muted); font-size:11px; margin-top:5px">Tugas yang diberikan atasan akan muncul di sini</div>
+            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Perjalanan Dinas</div>
+            <div style="color:var(--muted); font-size:11px; margin-top:5px">Perjalanan dinas yang diberikan atasan akan muncul di sini</div>
           </div>
         `;
         return;
@@ -121,7 +123,7 @@
 
       listEl.innerHTML = `
         <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
-          <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Tugas Saya
+          <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Perjalanan Dinas Saya
         </div>
         ${data.map(r => renderTugasCard(r)).join('')}
       `;
@@ -154,78 +156,12 @@
 
     // Monitoring Section
     if (isManager) {
-      loadMonitoringTasks(nip);
+      loadMonitoringTasks();
     } else {
       const monEl = $('tugasMonitoringSection');
       if (monEl) monEl.style.display = 'none';
     }
   }
-
-  /**
-   * Load tasks given by this manager
-   */
-  async function loadMonitoringTasks(myNip) {
-    const monEl = $('tugasMonitoringSection');
-    const monList = $('tugasMonitoringList');
-    if (!monEl || !monList) return;
-
-    monEl.style.display = 'block';
-    monList.innerHTML = `
-      <div class="shimmer-wrapper">
-        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px; margin-bottom:8px"></div>
-        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px"></div>
-      </div>
-    `;
-
-    try {
-      // Fetch where created_by_nip = myNip
-      const res = await apiGet(`${P.penugasanList}?created_by_nip=${myNip}&limit=30`);
-      const data = res.rows || parseApiResponse(res.data) || [];
-
-      if (data.length === 0) {
-        monList.innerHTML = '<div style="font-size:11px; color:var(--muted); padding:20px; text-align:center">Belum ada tugas yang Anda berikan.</div>';
-        return;
-      }
-
-      monList.innerHTML = data.map(r => renderMonitoringCard(r)).join('');
-    } catch (e) {
-      monList.innerHTML = `<div style="font-size:10px; color:var(--danger)">Gagal memuat monitoring: ${e.message}</div>`;
-    }
-  }
-
-  function renderMonitoringCard(r) {
-    const status = (r.status || 'AKTIF').toUpperCase();
-    const tgl = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'short'}) : '—';
-    const peg = r.nama || r.nip || 'Pegawai';
-    
-    return `
-      <div class="card glass-card" style="margin-bottom:10px; padding:12px; border-left:3px solid ${status === 'AKTIF' ? 'var(--gold)' : '#10b981'}">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-          <div style="flex:1">
-            <div style="display:flex; align-items:center; gap:8px">
-              <div style="font-size:11px; font-weight:800; color:var(--white)">${peg}</div>
-              <div style="font-size:9px; color:var(--muted)">• ${tgl}</div>
-            </div>
-            ${r.nomor_surat ? `<div style="font-size:9px; color:var(--gold); font-weight:700; margin-top:2px"><i class="fas fa-file-alt"></i> ${r.nomor_surat}</div>` : ''}
-            <div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4">${r.keterangan || '—'}</div>
-          </div>
-          <div style="text-align:right; margin-left:15px">
-             <div class="status-badge s-${status === 'AKTIF' ? 'warning' : 'success'}" style="font-size:8px; padding:2px 6px">${status}</div>
-             ${r.bukti ? `<div style="font-size:8px; color:var(--gold); margin-top:4px; cursor:pointer" onclick="viewTugasBukti('${r.bukti}')"><i class="fas fa-image"></i> Bukti</div>` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  window.viewTugasBukti = function(url) {
-    Swal.fire({
-      imageUrl: url,
-      imageAlt: 'Bukti Tugas',
-      background: '#0a192f',
-      confirmButtonText: 'Tutup'
-    });
-  };
   function renderTugasCard(r) {
     const rawTgl = r.tanggal || '—';
     let tglDisplay = rawTgl;
@@ -334,19 +270,22 @@
    */
   window.handleKerjakanTugas = function(r) {
     if ((r.status || '').toUpperCase() === 'SELESAI') {
-      Swal.fire('Info', 'Tugas ini sudah diselesaikan.', 'info');
+      Swal.fire('Info', 'Perjalanan dinas ini sudah diselesaikan.', 'info');
       return;
     }
     _activeTugasData = r;
     
+    // Check if target coordinates are defined
+    const hasTargetCoords = (r.lat && String(r.lat).trim() !== '' && r.lon && String(r.lon).trim() !== '');
+
     Swal.fire({
-      title: 'Kerjakan Tugas',
+      title: 'Kerjakan Perjalanan Dinas',
       html: `
         <div style="margin-bottom:10px">
           <i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px"></i> 
-          Pastikan Anda berada di lokasi penugasan.
+          ${hasTargetCoords ? 'Pastikan Anda berada di lokasi perjalanan dinas.' : 'Sistem akan mencatat lokasi koordinat penyelesaian perjalanan dinas Anda.'}
         </div>
-        <div style="font-size:12px; opacity:0.7">Sistem akan mengecek koordinat dan meminta bukti foto pengerjaan.</div>
+        <div style="font-size:12px; opacity:0.7">${hasTargetCoords ? 'Sistem akan mengecek jarak koordinat dan meminta bukti foto.' : 'Sistem akan mengambil koordinat lokasi Anda saat ini dan meminta bukti foto.'}</div>
       `,
       icon: 'info',
       showCancelButton: true,
@@ -365,10 +304,19 @@
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const myLat = pos.coords.latitude;
           const myLon = pos.coords.longitude;
-          const dist = getDistance(myLat, myLon, r.lat, r.lon);
+          
+          let insideRadius = true;
+          let dist = 0;
+          
+          if (hasTargetCoords) {
+            dist = getDistance(myLat, myLon, parseFloat(r.lat), parseFloat(r.lon));
+            if (dist > (r.radius || 100)) {
+              insideRadius = false;
+            }
+          }
 
-          if (dist > (r.radius || 100)) {
-            Swal.fire('❌ Gagal', `Anda berada ${Math.round(dist)}m dari titik tugas. Jarak maksimal adalah ${r.radius}m.`, 'error');
+          if (!insideRadius) {
+            Swal.fire('❌ Gagal', `Anda berada ${Math.round(dist)}m dari titik perjalanan dinas. Jarak maksimal adalah ${r.radius}m.`, 'error');
           } else {
             // 2. Trigger File Input
             Swal.close();
@@ -390,6 +338,52 @@
     if (!input.files || !input.files[0] || !_activeTugasData) return;
 
     const file = input.files[0];
+
+    // Check if offline
+    if (!navigator.onLine) {
+      Swal.fire({ title: 'Menyimpan Secara Offline...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = e.target.result;
+          
+          const offlineData = {
+            endpoint: P.penugasanSave,
+            method: 'POST',
+            payload: {
+              id: _activeTugasData.id,
+              status: 'SELESAI',
+              bukti_base64: base64,
+              bukti_mime: file.type,
+              bukti_nama: file.name,
+              actual_lat: _activeTugasData.actual_lat,
+              actual_lon: _activeTugasData.actual_lon,
+              pengerjaan_timestamp: Date.now()
+            },
+            timestamp: Date.now(),
+            type: 'tugas',
+            nip: _activeTugasData.nip
+          };
+          
+          await idb.set('offline_queue', offlineData);
+          
+          Swal.fire({
+            title: '📴 Disimpan Offline',
+            text: 'Penyelesaian Perjalanan Dinas disimpan sementara di perangkat Anda karena tidak ada koneksi internet. Data akan disinkronisasikan otomatis saat terhubung internet.',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+          });
+          loadMyAssignments();
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        Swal.fire('❌ Gagal', 'Gagal menyimpan data offline: ' + err.message, 'error');
+      } finally {
+        input.value = '';
+      }
+      return;
+    }
+
     Swal.fire({ title: 'Mengunggah Bukti...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
@@ -579,8 +573,9 @@
     const defCenter = [-9.6548, 119.4122]; 
     _tugasMap = L.map('tugasMap').setView(defCenter, 15);
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '&copy; Google Maps'
     }).addTo(_tugasMap);
 
     _tugasMap.on('click', function(e) {
@@ -616,8 +611,8 @@
     const ket = $('tugasKet').value.trim();
     const tgl = $('tugasTanggal').value;
 
-    if (_selectedTugasPegawai.length === 0 || !lat || !tgl) {
-      alert('⚠️ Harap pilih minimal satu pegawai, titik lokasi, dan tanggal tugas.');
+    if (_selectedTugasPegawai.length === 0 || !tgl) {
+      alert('⚠️ Harap pilih minimal satu pegawai dan tanggal tugas.');
       return;
     }
 
@@ -1126,8 +1121,8 @@
       el.innerHTML = `
         <div class="card glass-card" style="padding:20px; text-align:center; opacity:0.7">
           <div style="font-size:24px; margin-bottom:8px">📡</div>
-          <div style="font-size:11px; font-weight:700">Belum ada tugas yang Anda instruksikan</div>
-          <div style="font-size:9px; color:var(--muted)">Progres tugas yang Anda berikan ke staf akan muncul di sini.</div>
+          <div style="font-size:11px; font-weight:700">Belum ada perjalanan dinas yang Anda instruksikan</div>
+          <div style="font-size:9px; color:var(--muted)">Progres perjalanan dinas yang Anda berikan ke staf akan muncul di sini.</div>
         </div>
       `;
       return;
@@ -1135,7 +1130,7 @@
 
     const header = `
       <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; margin-top:25px; text-transform:uppercase; letter-spacing:1px">
-        <i class="fas fa-satellite-dish" style="margin-right:8px"></i> Monitoring Progres Tugas
+        <i class="fas fa-satellite-dish" style="margin-right:8px"></i> Monitoring Progres Perjalanan Dinas
       </div>
     `;
 
@@ -1144,6 +1139,16 @@
       const color = isSelesai ? 'var(--success)' : 'var(--warning)';
       const icon = isSelesai ? 'check-circle' : 'clock';
       
+      let tglDisplay = t.tanggal || '—';
+      try {
+        if (tglDisplay.includes('T') || tglDisplay.includes('-')) {
+          const d = new Date(tglDisplay);
+          if (!isNaN(d.getTime())) {
+            tglDisplay = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          }
+        }
+      } catch (err) {}
+
       return `
         <div class="card glass-card" style="margin-bottom:12px; border-left: 4px solid ${color}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
@@ -1162,7 +1167,7 @@
                 <strong>Ket:</strong> ${t.keterangan || '—'}
               </div>
               <div style="font-size:9px; color:var(--muted); margin-top:8px; display:flex; align-items:center; gap:10px">
-                 <span>📅 ${t.tanggal || '—'}</span>
+                 <span>📅 ${tglDisplay}</span>
                  <span>📍 Radius ${t.radius || 100}m</span>
               </div>
             </div>
@@ -1197,6 +1202,71 @@
     }
   };
 
+  function initSuperadminTugasScoping() {
+    const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+    const sec = $('tugasInstansiSection');
+    if (!sec) return;
+
+    if (isSA) {
+      sec.style.display = 'block';
+      const el = $('tugasInstansiSelect');
+      if (el && el.options.length <= 1) { // Not populated yet
+        try {
+          const cached = localStorage.getItem('absen_instansi_map');
+          if (cached) {
+            const map = JSON.parse(cached);
+            const keys = Object.keys(map);
+            el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+              keys.map(k => {
+                const inst = map[k];
+                const id = inst.id || inst.ID || k;
+                const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                return `<option value="${id}">${name}</option>`;
+              }).join('');
+
+            // Pre-select current instansi
+            const scoped = getScopedInstansiId();
+            if (scoped) {
+              el.value = scoped;
+            }
+          }
+        } catch (e) {
+          console.error('[Tugas Superadmin] populate error:', e);
+        }
+      }
+    } else {
+      sec.style.display = 'none';
+    }
+  }
+
+  function onTugasInstansiChange() {
+    const el = $('tugasInstansiSelect');
+    if (!el) return;
+    let val = el.value;
+    if (!val) {
+      try {
+        const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+        val = u.instansi_id || u.Instansi_Id || 'bapperida';
+      } catch (e) {
+        val = 'bapperida';
+      }
+    }
+    localStorage.setItem('MY_INSTANSI', val);
+    document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+    if (window.userProfile) {
+      window.userProfile.instansi_id = val;
+    }
+    
+    // Reload dynamic employee list for tugas
+    loadTugasPegawai();
+    
+    // Reload tugas list / monitoring for this instansi
+    loadMyAssignments();
+    loadMonitoringTasks();
+  }
+
+  window.initSuperadminTugasScoping = initSuperadminTugasScoping;
+  window.onTugasInstansiChange = onTugasInstansiChange;
   window.checkTugasLemburAccess = checkTugasLemburAccess;
   window.loadMonitoringTasks = loadMonitoringTasks;
 })();

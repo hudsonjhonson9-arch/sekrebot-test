@@ -175,19 +175,56 @@ const P = {
 };
 
 function getScopedInstansiId() {
-  // Priority 1: From URL parameters (Registration context / Override)
+  // Check if current user is Superadmin
+  const p = window.userProfile || {};
+  const myNip = p.nip || localStorage.getItem('MY_NIP');
+  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+  const isSA = storedRole.includes('super') ||
+               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
+               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
+               (p.role || '').toLowerCase().includes('super') ||
+               (window.IS_ADMIN && storedRole.includes('super'));
+
+  // Priority 0: Active tab specific dropdown overrides (explicit user intent)
+  const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
+  if (isSA) {
+    if (currentTab === 'rekap') {
+      const rekapSelect = document.getElementById('rekapInstansiSelect');
+      if (rekapSelect && rekapSelect.value) {
+        return rekapSelect.value;
+      }
+    } else if (currentTab === 'admin') {
+      const adminSelect = document.getElementById('inEditInstansiSelect');
+      if (adminSelect && adminSelect.value) {
+        return adminSelect.value;
+      }
+    } else if (currentTab === 'tugas') {
+      const tugasSelect = document.getElementById('tugasInstansiSelect');
+      if (tugasSelect && tugasSelect.value) {
+        return tugasSelect.value;
+      }
+    }
+  }
+
+  // Priority 1: Persistent storage (selected agency) for Superadmins
+  if (isSA) {
+    const savedInst = localStorage.getItem('MY_INSTANSI');
+    if (savedInst) return savedInst;
+  }
+
+  // Priority 2: From URL parameters (Registration context / Override)
   const urlParams = new URLSearchParams(window.location.search);
   let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
   if (inst) return inst;
 
-  // Priority 2: From live state (Most up to date)
+  // Priority 3: From live state (Most up to date)
   if (window.userProfile?.instansi_id) return window.userProfile.instansi_id;
 
-  // Priority 3: From persistent storage (Safe for refresh)
+  // Priority 4: From persistent storage (Safe for refresh)
   const savedInst = localStorage.getItem('MY_INSTANSI');
   if (savedInst) return savedInst;
 
-  // Priority 4: From logged in user data (User List cache)
+  // Priority 5: From logged in user data (User List cache)
   try {
     const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
     const uInst = u.instansi_id || u.Instansi_Id;
@@ -217,22 +254,27 @@ async function apiFetch(path, opts = {}) {
 
   // Auto-append instansi_id & nip scoping
   const p = window.userProfile || {};
-  const myRole = (p.role || '').toLowerCase();
+  const myNip = p.nip || localStorage.getItem('MY_NIP');
+  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+  const isSA = storedRole.includes('super') ||
+               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
+               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
+               (p.role || '').toLowerCase().includes('super');
   const inst = getScopedInstansiId();
   
   // Scoping Logic:
   // 1. If instansi_id is NOT in path, append it
   // 2. EXCEPT if user is SUPERADMIN (they see everything unless explicitly filtered)
-  if (inst && !path.includes('instansi_id=')) {
-    if (myRole !== 'superadmin') {
-      path += '&instansi_id=' + inst;
-    }
+  if (inst && !path.includes('instansi_id=') && !path.includes('log-absen')) {
+    path += '&instansi_id=' + inst;
   }
-
-  let myNip = p.nip || localStorage.getItem('MY_NIP');
   
   if (myNip && !path.includes('nip=')) {
-    path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
+    // Jangan auto-append NIP untuk superadmin dan admin agar tidak memblokir query monitoring/list
+    const isAdminOrSA = isSA || storedRole.includes('admin') || (p.role || '').toLowerCase().includes('admin') || !!window.IS_ADMIN;
+    if (!isAdminOrSA) {
+      path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
+    }
   }
 
   for (const base of [SERVER_1, SERVER_2]) {

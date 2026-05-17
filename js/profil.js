@@ -48,11 +48,19 @@
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
-            // Persist full object for other modules
+            // Persist role and full object for other modules
+            if (userProfile.role) {
+              localStorage.setItem('MY_ROLE', userProfile.role.toUpperCase());
+            }
             localStorage.setItem('tg_user_obj_v5', JSON.stringify(d));
             if (userProfile.instansi_id) {
-              localStorage.setItem('MY_INSTANSI', userProfile.instansi_id);
-              document.documentElement.style.setProperty('--agency-name', `'${userProfile.instansi_id.toUpperCase()}'`);
+              const myRole = (userProfile.role || '').toUpperCase();
+              const isSA = myRole.includes('SUPER');
+              if (!isSA || !localStorage.getItem('MY_INSTANSI')) {
+                localStorage.setItem('MY_INSTANSI', userProfile.instansi_id);
+              }
+              const currentInst = localStorage.getItem('MY_INSTANSI') || userProfile.instansi_id;
+              document.documentElement.style.setProperty('--agency-name', `'${currentInst.toUpperCase()}'`);
             }
             window.userProfile = userProfile;
             applyProfile();

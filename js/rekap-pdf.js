@@ -89,7 +89,7 @@
         });
 
         // 4. Proses Tabel & Hitung Kop Dinamis
-        const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
+        const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
         const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
         const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
         const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
@@ -239,9 +239,6 @@
 
         // Dynamic Signature Title: Inspektur, Kepala Dinas, Kepala Badan, Camat, etc.
         let leaderTitle = 'Kepala Badan';
-        const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
-        const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
-        const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
         const instNameLower = (instData?.nama_instansi || '').toLowerCase();
         const headerLower = fullHeader.toLowerCase();
         
@@ -284,12 +281,16 @@
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         const pdfMsg = `📄 *REKAP ABSENSI PDF*\n📅 Periode: ${tanggalLabel}\n👤 Peminta: ${userProfile?.nama || MY_ID}\n🪪 NIP: ${localStorage.getItem('MY_NIP') || '-'}\n\nLaporan telah siap.`;
         
+        const instName = instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
+
         await apiPost(P.kirimRekap, { 
           chat_id: REKAP_CHAT_ID, 
           pesan: pdfMsg,
           nip: localStorage.getItem('MY_NIP') || '',
           file_base64: pdfBase64,
-          file_name: fileName
+          file_name: fileName,
+          instansi_id: instId,
+          instansi_name: instName
         });
         showRekapToast('success', '✅ Rekap PDF berhasil dikirim!');
 

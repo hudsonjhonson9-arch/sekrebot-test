@@ -33,7 +33,9 @@ function onDateRangeChange() {
 async function fetchUserListOrder() {
   if (userListOrder.length > 0) return userListOrder;
   try {
-    const res = await apiGet(P.userList + '?format=full');
+    const instansiId = getScopedInstansiId();
+    const instansiParam = instansiId ? `&instansi_id=${encodeURIComponent(instansiId)}` : '';
+    const res = await apiGet(P.userList + '?format=full' + instansiParam);
     if (!res.ok) return [];
     const rows = res.rows || parseApiResponse(res.data) || [];
     userListOrder = rows.map((r, idx) => ({
@@ -54,6 +56,9 @@ async function fetchUserListOrder() {
  * @returns {Promise<void>}
  */
 async function loadRekap() {
+  if (typeof initSuperadminRekapScoping === 'function') {
+    initSuperadminRekapScoping();
+  }
   const dari = $('rekapDari').value, sampai = $('rekapSampai').value;
   if (!dari || !sampai) return;
   rekapLoaded = false;
@@ -65,8 +70,8 @@ async function loadRekap() {
   dom.shimmer('pegawaiList', 4);
   resetRekapStats();
   // Fetch jam periode secara paralel (minimal setup)
-  await Promise.all([fetchJamPeriode(), window._jamAbsenReady]); 
-  
+  await Promise.all([fetchJamPeriode(), window._jamAbsenReady]);
+
   const isHarianLoad = dari === sampai;
   try {
     let pegawai = [], ringkasan = {};
@@ -95,15 +100,17 @@ async function loadRekap() {
       const myNip = localStorage.getItem('MY_NIP') || '';
       const adminParam = IS_ADMIN ? '&is_admin=true' : '';
       const nipQuery = '&format=full'; // Show all employees to everyone
-      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}`, { method: 'GET' });
+      const instansiId = getScopedInstansiId();
+      const instansiParam = instansiId ? `&instansi_id=${encodeURIComponent(instansiId)}` : '';
+      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}${instansiParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
         const d = Array.isArray(json) ? json[0] : json;
-        if (d?.pegawai?.length) { 
-          ringkasan = d.ringkasan || {}; 
-          pegawai = d.pegawai; 
-          rekapOK = true; 
-          
+        if (d?.pegawai?.length) {
+          ringkasan = d.ringkasan || {};
+          pegawai = d.pegawai;
+          rekapOK = true;
+
           // Populate jamPegawaiMap from rekap metadata to avoid separate call
           pegawai.forEach(p => {
             const id = String(p.id || p.ID || p.telegram_id || '').trim();
@@ -121,7 +128,7 @@ async function loadRekap() {
             const currentBidang = bSel.value;
             const bidangSet = new Set(pegawai.map(p => p.bidang || p.Bidang).filter(Boolean));
             if (bidangSet.size > 0) {
-              bSel.innerHTML = '<option value="Semua">— Tampilkan Semua Bidang —</option>' + 
+              bSel.innerHTML = '<option value="Semua">— Tampilkan Semua Bidang —</option>' +
                 Array.from(bidangSet).sort().map(b => `<option value="${b}">${b}</option>`).join('');
               if (Array.from(bidangSet).includes(currentBidang)) bSel.value = currentBidang;
               else bSel.value = 'Semua';
@@ -131,28 +138,16 @@ async function loadRekap() {
       }
     } catch (_) { }
 
-    // ── Fallback frontend jika n8n gagal ──
+    // ── Fallback jika n8n gagal ──
     if (!rekapOK) {
-      console.log('[Rekap] Falling back to frontend calculation...');
-      if (!liburLoaded) await fetchLiburForRekap();
-      await fetchJamPegawai();
-      order = await fetchUserListOrder();
-
-      let allRowsRaw = [], periodRowsRaw = [];
-      try {
-        const adminParam = IS_ADMIN ? '&is_admin=true' : '';
-        const nipQuery = '&format=full'; 
-        const resAll = await apiGet(`${P.log}?dari=${dari}&sampai=${sampai}${nipQuery}${adminParam}`);
-        if (resAll.ok) allRowsRaw = (resAll.rows?.length ?? 0) ? resAll.rows : parseApiResponse(resAll.data);
-      } catch (_) { }
-
-      periodRowsRaw = allRowsRaw.filter(r => {
-        const t = getField(r, 'Tanggal', 'tanggal');
-        return t && t >= dari && t <= sampai;
-      });
-      const computed = computeRekap(periodRowsRaw, allRowsRaw, order, dari, sampai);
-      pegawai = computed.pegawai;
-      ringkasan = computed.ringkasan;
+      console.warn('[Rekap] Gagal memuat rekapitulasi data dari server.');
+      if (typeof showToast === 'function') {
+        showToast('Gagal memuat rekapitulasi data dari server.', 'error');
+      } else {
+        alert('Gagal memuat rekapitulasi data dari server.');
+      }
+      pegawai = [];
+      ringkasan = {};
     }
 
     // ── Untuk mode HARIAN ──
@@ -174,22 +169,22 @@ async function loadRekap() {
     // n8n v18.2+ sudah menyertakan jabatan/pangkat/order, jadi ini biasanya diskip
     const hasMissingMeta = pegawai.some(p => !p.jabatan || p.jabatan === '—' || !p.pangkat || p.pangkat === '—');
     if (hasMissingMeta && rekapOK) {
-       if (order.length === 0) order = await fetchUserListOrder();
-       if (order.length > 0) {
-          pegawai = pegawai.map(p => {
-            const pId = gf(p, 'id', 'ID', 'telegram_id');
-            const match = order.find(u => String(u.id || u.ID) === String(pId));
-            if (match) {
-              return {
-                ...p,
-                jabatan: (match.jabatan && match.jabatan !== '—') ? match.jabatan : p.jabatan,
-                pangkat: (match.pangkat && match.pangkat !== '—') ? match.pangkat : p.pangkat,
-                urutan: match.urutan ?? p.urutan
-              };
-            }
-            return p;
-          });
-       }
+      if (order.length === 0) order = await fetchUserListOrder();
+      if (order.length > 0) {
+        pegawai = pegawai.map(p => {
+          const pId = getField(p, 'id', 'ID', 'telegram_id');
+          const match = order.find(u => String(u.id || u.ID) === String(pId));
+          if (match) {
+            return {
+              ...p,
+              jabatan: (match.jabatan && match.jabatan !== '—') ? match.jabatan : p.jabatan,
+              pangkat: (match.pangkat && match.pangkat !== '—') ? match.pangkat : p.pangkat,
+              urutan: match.urutan ?? p.urutan
+            };
+          }
+          return p;
+        });
+      }
     }
 
     // Sort strictly by hierarchy
@@ -628,7 +623,7 @@ function renderRekap(pg) {
 
       // Serialize pins for map initialization
       const parsePin = (log, label, color) => {
-        if(!log) return null;
+        if (!log) return null;
         let lat = parseFloat(log.latitude || log.Latitude || log.lat || '');
         let lng = parseFloat(log.longitude || log.Longitude || log.lng || '');
         const koor = log.koordinat || log.Koordinat || '';
@@ -636,7 +631,7 @@ function renderRekap(pg) {
           const parts = koor.split(',');
           if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
         }
-        if(!lat || !lng) return null;
+        if (!lat || !lng) return null;
         return { lat, lng, label, color };
       };
       const pinsData = [parsePin(p._rawMasukLog, 'M', '#10b981'), parsePin(p._rawPulangLog, 'P', '#3b82f6')].filter(Boolean);
@@ -697,9 +692,9 @@ function renderRekap(pg) {
             `) : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
             ${rawMasuk
-            ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${rawMasuk.slice(0, 5)}</div>
+          ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${rawMasuk.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
-            : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
+          : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
                    <div style="font-size:9px;color:var(--muted);font-weight:700;margin-top:3px">${masukLabel}</div>`
         }
             <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≤ ${jmBatas}</div>
@@ -720,9 +715,9 @@ function renderRekap(pg) {
             `) : ''}
             <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
             ${rawPulang
-            ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${rawPulang.slice(0, 5)}</div>
+          ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${rawPulang.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
-            : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
+          : `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--muted);line-height:1">—:—</div>
                    <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
         }
             <div style="font-size:8px;color:var(--muted);margin-top:3px;opacity:.7">Batas ≥ ${jpBatas}</div>
@@ -758,56 +753,56 @@ function renderRekap(pg) {
 
         <!-- ── LOKASI DETAIL ── -->
         <div class="lokasi-detail" onclick="event.stopPropagation()" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1); font-size:10px; color:var(--muted); text-align:left; line-height:1.4;">
-          ${(function() {
-            const parseLog = (log) => {
-              if(!log) return null;
-              let lat = parseFloat(log.latitude || log.Latitude || log.lat || '');
-              let lng = parseFloat(log.longitude || log.Longitude || log.lng || '');
-              const koor = log.koordinat || log.Koordinat || '';
-              if (koor && koor !== '-') {
-                const parts = koor.split(',');
-                if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
-              }
-              const loc = log.Lokasi || log.lokasi || '';
-              return { lat, lng, loc, raw: log };
-            };
-            const m = parseLog(p._rawMasukLog);
-            const pu = parseLog(p._rawPulangLog);
-            const k = parseLog(p._rawKetLog);
-            
-            let html = '';
-            const renderLocText = (title, color, loc) => {
-               if(!loc) return '';
-               return `<div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;"><strong style="color:${color}">${title}:</strong> <span style="color:rgba(255,255,255,.75)">${loc}</span></div>`;
-            };
-
-            const pins = [];
-            if (m && m.lat && m.lng) {
-              pins.push({ lat: m.lat, lng: m.lng, color: '#10b981', label: 'M' });
-              html += `<div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--success);font-weight:700;font-size:11px;">🟢 Masuk</div><a href="https://www.google.com/maps?q=${m.lat},${m.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
-              if(m.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${m.loc}</div>`;
-            } else if (m) {
-              html += renderLocText('🟢 Masuk', 'var(--success)', m.loc);
+          ${(function () {
+          const parseLog = (log) => {
+            if (!log) return null;
+            let lat = parseFloat(log.latitude || log.Latitude || log.lat || '');
+            let lng = parseFloat(log.longitude || log.Longitude || log.lng || '');
+            const koor = log.koordinat || log.Koordinat || '';
+            if (koor && koor !== '-') {
+              const parts = koor.split(',');
+              if (parts.length >= 2) { lat = parseFloat(parts[0]); lng = parseFloat(parts[1]); }
             }
+            const loc = log.Lokasi || log.lokasi || '';
+            return { lat, lng, loc, raw: log };
+          };
+          const m = parseLog(p._rawMasukLog);
+          const pu = parseLog(p._rawPulangLog);
+          const k = parseLog(p._rawKetLog);
 
-            if (pu && pu.lat && pu.lng) {
-              pins.push({ lat: pu.lat, lng: pu.lng, color: '#3b82f6', label: 'P' });
-              html += `<div style="margin-bottom:4px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--info);font-weight:700;font-size:11px;">🔵 Pulang</div><a href="https://www.google.com/maps?q=${pu.lat},${pu.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
-              if(pu.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${pu.loc}</div>`;
-            } else if (pu) {
-              html += renderLocText('🔵 Pulang', 'var(--info)', pu.loc);
-            }
+          let html = '';
+          const renderLocText = (title, color, loc) => {
+            if (!loc) return '';
+            return `<div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;"><strong style="color:${color}">${title}:</strong> <span style="color:rgba(255,255,255,.75)">${loc}</span></div>`;
+          };
 
-            if (k) {
-               html += renderLocText('📝 Ket', masukColor, k.loc);
-            }
+          const pins = [];
+          if (m && m.lat && m.lng) {
+            pins.push({ lat: m.lat, lng: m.lng, color: '#10b981', label: 'M' });
+            html += `<div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--success);font-weight:700;font-size:11px;">🟢 Masuk</div><a href="https://www.google.com/maps?q=${m.lat},${m.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
+            if (m.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${m.loc}</div>`;
+          } else if (m) {
+            html += renderLocText('🟢 Masuk', 'var(--success)', m.loc);
+          }
 
-            if (pins.length > 0) {
-              let linkUrl = pins.length === 2 
-                ? `https://www.google.com/maps/dir/${pins[0].lat},${pins[0].lng}/${pins[1].lat},${pins[1].lng}` 
-                : `https://www.google.com/maps?q=${pins[0].lat},${pins[0].lng}`;
+          if (pu && pu.lat && pu.lng) {
+            pins.push({ lat: pu.lat, lng: pu.lng, color: '#3b82f6', label: 'P' });
+            html += `<div style="margin-bottom:4px;margin-top:10px;display:flex;justify-content:space-between;align-items:center;"><div style="color:var(--info);font-weight:700;font-size:11px;">🔵 Pulang</div><a href="https://www.google.com/maps?q=${pu.lat},${pu.lng}" target="_blank" onclick="event.stopPropagation()" style="font-size:8px;font-weight:700;color:#60a5fa;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);border-radius:5px;padding:3px 8px;text-decoration:none;">🗺 Buka Map ↗</a></div>`;
+            if (pu.loc) html += `<div style="font-size:9px;opacity:0.75;margin-bottom:8px;">📍 ${pu.loc}</div>`;
+          } else if (pu) {
+            html += renderLocText('🔵 Pulang', 'var(--info)', pu.loc);
+          }
 
-              html += `
+          if (k) {
+            html += renderLocText('📝 Ket', masukColor, k.loc);
+          }
+
+          if (pins.length > 0) {
+            let linkUrl = pins.length === 2
+              ? `https://www.google.com/maps/dir/${pins[0].lat},${pins[0].lng}/${pins[1].lat},${pins[1].lng}`
+              : `https://www.google.com/maps?q=${pins[0].lat},${pins[0].lng}`;
+
+            html += `
                 <div style="margin-top:12px;display:flex;justify-content:center;">
                   <a href="${linkUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:9px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:5px;padding:4px 10px;text-decoration:none;">
                     📍 Buka Rute di Google Maps
@@ -815,11 +810,11 @@ function renderRekap(pg) {
                 </div>
                 <div class="rekap-map-container" style="width:100%;height:160px;border-radius:10px;margin-top:8px;border:1px solid rgba(255,255,255,0.1);background:rgba(0,0,0,0.2);"></div>
               `;
-            }
+          }
 
-            if(!html) return `<div style="text-align:center;font-style:italic;opacity:0.6;padding:10px 0;">Tidak ada info lokasi GPS</div>`;
-            return html;
-          })()}
+          if (!html) return `<div style="text-align:center;font-style:italic;opacity:0.6;padding:10px 0;">Tidak ada info lokasi GPS</div>`;
+          return html;
+        })()}
         </div>
 
         ${(function () {
@@ -988,7 +983,7 @@ async function downloadRekap() {
   try {
     // 1. Persiapan Data & Perhitungan HK
     const hariIniStr = fmtD(nowWITA());
-    
+
     function countHK(dStart, dEnd, bts) {
       let c = 0;
       let d = new Date(dStart + 'T00:00:00');
@@ -1008,7 +1003,7 @@ async function downloadRekap() {
     const HK_EFEKTIF = HK_BERJALAN > 0 ? HK_BERJALAN : HK_TOTAL;
 
     const isHarian = dari === sampai;
-    const tglLabel = isHarian 
+    const tglLabel = isHarian
       ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
       : `${dari} s.d. ${sampai}`;
 
@@ -1033,7 +1028,7 @@ async function downloadRekap() {
         data['Jam Pulang'] = p.jamPulang || '—';
         data['Status'] = (p.izin > 0) ? 'Izin' : (p.sakit > 0) ? 'Sakit' : (p.tugas > 0) ? 'Tugas' : (hHadir > 0) ? 'Hadir' : 'TB';
         data['Keterangan'] = p.keterangan_log || '—';
-        
+
         // Tambahkan info akumulasi harian
         const mTerlambat = p.menit_terlambat || 0;
         const mCepat = p.menit_lebih_awal || 0;
@@ -1044,7 +1039,7 @@ async function downloadRekap() {
         const mC_p = p.menit_lebih_awal || 0;
         const mAlpa_p = (p.alpa || 0) * 450;
         const totalM_p = mT_p + mC_p + mAlpa_p;
-        
+
         data['HK Efektif'] = HK_EFEKTIF;
         data['Hadir (Tepat)'] = p.masuk || 0;
         data['Terlambat (Frekuensi)'] = lambat;
@@ -1061,13 +1056,13 @@ async function downloadRekap() {
 
     // 3. Generate File via SheetJS (XLSX)
     if (typeof XLSX === 'undefined') throw new Error('Library XLSX belum dimuat.');
-    
+
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(rowsExcel);
-    
+
     // Set column widths
     const wscols = [
-      {wch: 4}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 25}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}
+      { wch: 4 }, { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }
     ];
     ws['!cols'] = wscols;
 
@@ -1077,16 +1072,21 @@ async function downloadRekap() {
 
     showRekapToast('success', `✅ Excel berhasil diunduh: ${filename}`);
 
-    // 4. (Optional) Backup: Tetap kirim ke Telegram jika diperlukan
     try {
+      const instId = getScopedInstansiId();
+      const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+      const instName = instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
+
       const payload = {
         dari, sampai, nip: localStorage.getItem('MY_NIP') || '',
         is_harian: isHarian, tanggal_label: tglLabel,
         chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
-        pegawai: lastRekapPegawai
+        pegawai: lastRekapPegawai,
+        instansi_id: instId,
+        instansi_name: instName
       };
       apiPost(P.kirimRekap, payload); // Fire and forget
-    } catch(e) { console.warn('Backup Telegram failed', e); }
+    } catch (e) { console.warn('Backup Telegram failed', e); }
 
   } catch (e) {
     console.error('Download Excel Error:', e);
@@ -1098,9 +1098,9 @@ async function downloadRekap() {
 }
 
 // Global function to toggle and initialize Leaflet map for each card
-window.toggleRekapMap = function(cardEl, pins) {
-  const d = cardEl.querySelector('.lokasi-detail'); 
-  if(!d) return;
+window.toggleRekapMap = function (cardEl, pins) {
+  const d = cardEl.querySelector('.lokasi-detail');
+  if (!d) return;
   const isHidden = d.style.display === 'none';
   d.style.display = isHidden ? 'block' : 'none';
   if (isHidden && window.L) {
@@ -1108,7 +1108,7 @@ window.toggleRekapMap = function(cardEl, pins) {
     if (mc && !mc.dataset.init) {
       mc.dataset.init = '1';
       setTimeout(() => {
-        if(!pins || !pins.length) return;
+        if (!pins || !pins.length) return;
         const map = L.map(mc, { zoomControl: false });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
         const bounds = [];
@@ -1122,9 +1122,80 @@ window.toggleRekapMap = function(cardEl, pins) {
             })
           }).addTo(map);
         });
-        if(bounds.length > 1) map.fitBounds(bounds, { padding: [20,20], maxZoom: 16 });
+        if (bounds.length > 1) map.fitBounds(bounds, { padding: [20, 20], maxZoom: 16 });
         else map.setView(bounds[0], 16);
       }, 100);
     }
   }
 };
+
+// ==========================================
+// 🏛️ SUPERADMIN: MULTI-AGENCY REKAP SCOPING
+// ==========================================
+function initSuperadminRekapScoping() {
+  const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+  const sec = $('rekapInstansiSection');
+  if (!sec) return;
+
+  if (isSA) {
+    sec.style.display = 'block';
+    const el = $('rekapInstansiSelect');
+    if (el && el.options.length <= 1) { // Not populated yet
+      try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+          const map = JSON.parse(cached);
+          const keys = Object.keys(map);
+          el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+            keys.map(k => {
+              const inst = map[k];
+              const id = inst.id || inst.ID || k;
+              const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+              return `<option value="${id}">${name}</option>`;
+            }).join('');
+
+          // Pre-select current instansi
+          const scoped = getScopedInstansiId();
+          if (scoped) {
+            el.value = scoped;
+          }
+        }
+      } catch (e) {
+        console.error('[Rekap Superadmin] populate error:', e);
+      }
+    }
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function onRekapInstansiChange() {
+  const el = $('rekapInstansiSelect');
+  if (!el) return;
+  let val = el.value;
+  if (!val) {
+    try {
+      const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+      val = u.instansi_id || u.Instansi_Id || 'bapperida';
+    } catch (e) {
+      val = 'bapperida';
+    }
+  }
+  localStorage.setItem('MY_INSTANSI', val);
+  document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+  if (window.userProfile) {
+    window.userProfile.instansi_id = val;
+  }
+  // Invalidate userListOrder cache so it fetches new employees
+  userListOrder = [];
+  
+  // Reload dynamic Bidang list for this instansi
+  if (typeof loadBidangList === 'function') {
+    loadBidangList(val);
+  }
+  
+  // Reload Rekap data!
+  loadRekap();
+}
+window.initSuperadminRekapScoping = initSuperadminRekapScoping;
+window.onRekapInstansiChange = onRekapInstansiChange;

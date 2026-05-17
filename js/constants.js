@@ -20,7 +20,7 @@
       ]
     };
 
-    async function loadBidangList() {
+    async function loadBidangList(instansiId) {
       const regSelect = $('regBidang');
       const rekapSelect = $('rekapBidang');
       const adminSelect = $('inPegawaiBidang');
@@ -29,7 +29,14 @@
       try {
         const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
         if (!endpoint) return;
-        const { ok: bOk, data: d } = await apiGet(endpoint);
+        
+        const inst = instansiId || getScopedInstansiId();
+        const params = {};
+        if (inst) {
+          params.instansi_id = inst;
+        }
+        
+        const { ok: bOk, data: d } = await apiGet(endpoint, params);
         if (bOk && Array.isArray(d?.data)) {
           const options = d.data
             .filter(b => b.nama_bidang)

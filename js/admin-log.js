@@ -188,6 +188,7 @@
             telegram_id: uid,
             nama: pData.nama || pData.Nama || '',
             nip: pData.nip || pData.NIP || '',
+            instansi_id: pData.instansi_id || pData.Instansi_Id || '',
             tanggal: tgl,
             jam: jamRaw,
             jenis_absen: jenis,

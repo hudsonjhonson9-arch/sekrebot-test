@@ -39,7 +39,13 @@ const config = {
   appId: 'com.bapperida.absensi',
   appName: 'Absensi Digital',
   webDir: 'www',
-  bundledWebRuntime: false
+  bundledWebRuntime: false,
+  plugins: {
+    CapacitorUpdater: {
+      autoUpdate: true,
+      stats: false
+    }
+  }
 };
 fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));
 console.log('✅ capacitor.config.json written!');
@@ -125,5 +131,22 @@ if (!fs.existsSync(targetDir)) {
 
 fs.writeFileSync(mainActivityPath, secureJavaCode);
 console.log('🛡️ MainActivity.java has been secured against Developer Options & USB Debugging!');
+
+// 7. Upgrade Gradle version in gradle-wrapper.properties to 8.7 to prevent Java 17/21 multi-release JAR errors
+const wrapperPath = path.join('android', 'gradle', 'wrapper', 'gradle-wrapper.properties');
+if (fs.existsSync(wrapperPath)) {
+  let content = fs.readFileSync(wrapperPath, 'utf8');
+  if (content.includes('gradle-8.2.1-all.zip') || content.includes('gradle-8.2.1-bin.zip')) {
+    content = content.replace(/gradle-8\.2\.1-(all|bin)\.zip/, 'gradle-8.7-all.zip');
+    fs.writeFileSync(wrapperPath, content);
+    console.log('✅ gradle-wrapper.properties upgraded to Gradle 8.7!');
+  } else {
+    content = content.replace(/gradle-\d+\.\d+\.\d+-(all|bin)\.zip/, 'gradle-8.7-all.zip');
+    fs.writeFileSync(wrapperPath, content);
+    console.log('✅ gradle-wrapper.properties updated to Gradle 8.7!');
+  }
+} else {
+  console.log('⚠️ gradle-wrapper.properties not found! Skipping Gradle upgrade.');
+}
 
 console.log('🎉 Setup complete! You can now compile the project or run inside GitHub Actions.');

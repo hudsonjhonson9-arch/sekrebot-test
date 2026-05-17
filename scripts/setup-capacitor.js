@@ -4,7 +4,37 @@ const { execSync } = require('child_process');
 
 console.log('🚀 Starting Capacitor Android Setup...');
 
-// 1. Write capacitor.config.json
+// 1. Prepare clean web assets in "www" folder
+console.log('🧹 Cleaning and preparing clean web assets in "www" folder...');
+if (fs.existsSync('www')) {
+  fs.rmSync('www', { recursive: true, force: true });
+}
+fs.mkdirSync('www');
+
+// Helper to copy folder recursively
+function copyDirSync(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  let entries = fs.readdirSync(src, { withFileTypes: true });
+  for (let entry of entries) {
+    let srcPath = path.join(src, entry.name);
+    let destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+// Copy essential files and folders to "www"
+fs.copyFileSync('index.html', 'www/index.html');
+if (fs.existsSync('manifest.json')) fs.copyFileSync('manifest.json', 'www/manifest.json');
+if (fs.existsSync('service-worker.js')) fs.copyFileSync('service-worker.js', 'www/service-worker.js');
+if (fs.existsSync('css')) copyDirSync('css', 'www/css');
+if (fs.existsSync('js')) copyDirSync('js', 'www/js');
+console.log('✅ Clean web assets copied to "www"!');
+
+// 2. Write capacitor.config.json pointing to "www"
 const config = {
   appId: 'com.bapperida.absensi',
   appName: 'Absensi Digital',
@@ -12,50 +42,13 @@ const config = {
   bundledWebRuntime: false
 };
 fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));
-console.log('✅ capacitor.config.json written with webDir: "www"!');
+console.log('✅ capacitor.config.json written!');
 
-// Copy files and folders recursively to 'www'
-console.log('📂 Copying web assets to "www" directory...');
-if (!fs.existsSync('www')) {
-  fs.mkdirSync('www', { recursive: true });
-}
-
-const filesToCopy = ['index.html', 'manifest.json', 'service-worker.js', 'version.json'];
-filesToCopy.forEach(file => {
-  if (fs.existsSync(file)) {
-    fs.copyFileSync(file, path.join('www', file));
-  }
-});
-
-const foldersToCopy = ['css', 'js'];
-foldersToCopy.forEach(folder => {
-  if (fs.existsSync(folder)) {
-    const dest = path.join('www', folder);
-    if (!fs.existsSync(dest)) {
-      fs.mkdirSync(dest, { recursive: true });
-    }
-    const copyDir = (src, dst) => {
-      fs.readdirSync(src).forEach(item => {
-        const sPath = path.join(src, item);
-        const dPath = path.join(dst, item);
-        if (fs.lstatSync(sPath).isDirectory()) {
-          if (!fs.existsSync(dPath)) fs.mkdirSync(dPath, { recursive: true });
-          copyDir(sPath, dPath);
-        } else {
-          fs.copyFileSync(sPath, dPath);
-        }
-      });
-    };
-    copyDir(folder, dest);
-  }
-});
-console.log('✅ Web assets copied recursively to "www"!');
-
-// 2. Install Capacitor packages
+// 3. Install Capacitor packages
 console.log('📦 Installing Capacitor NPM packages...');
 execSync('npm install @capacitor/core @capacitor/cli @capacitor/android --save-dev', { stdio: 'inherit' });
 
-// 3. Initialize Android platform
+// 4. Initialize Android platform
 console.log('🤖 Adding Android Platform...');
 try {
   execSync('npx cap add android', { stdio: 'inherit' });
@@ -63,56 +56,39 @@ try {
   console.log('ℹ️ Android platform already added or skipped.');
 }
 
-// 3.5. Configure gradle.properties to ignore Bouncy Castle in Jetifier
-const gradlePropsPath = path.join('android', 'gradle.properties');
-if (fs.existsSync(gradlePropsPath)) {
-  let content = fs.readFileSync(gradlePropsPath, 'utf8');
-  if (!content.includes('android.jetifier.ignorelist')) {
-    content += '\n# Ignore Bouncy Castle signed jars in Jetifier to prevent configuration failure\nandroid.jetifier.ignorelist=bcprov-jdk15on,bcprov-jdk18on,bcprov-jdk15to18\n';
-    fs.writeFileSync(gradlePropsPath, content);
-    console.log('✅ Added Bouncy Castle to android.jetifier.ignorelist in gradle.properties!');
-  }
-}
-
-// 3.6. Upgrade Gradle Wrapper to 8.7 to support modern multi-release signed Jar files (Bouncy Castle)
-const wrapperPropsPath = path.join('android', 'gradle', 'wrapper', 'gradle-wrapper.properties');
-if (fs.existsSync(wrapperPropsPath)) {
-  let content = fs.readFileSync(wrapperPropsPath, 'utf8');
-  content = content.replace(/gradle-[\d\.]+-all\.zip/, 'gradle-8.7-all.zip');
-  fs.writeFileSync(wrapperPropsPath, content);
-  console.log('✅ Upgraded Gradle Wrapper to 8.7 in gradle-wrapper.properties!');
-}
-
-// 3.7. Upgrade Android SDK compile and target version to 35 (Android 15) in variables.gradle
-const variablesGradlePath = path.join('android', 'variables.gradle');
-if (fs.existsSync(variablesGradlePath)) {
-  let content = fs.readFileSync(variablesGradlePath, 'utf8');
-  content = content.replace(/compileSdkVersion\s*=\s*\d+/, 'compileSdkVersion = 35');
-  content = content.replace(/targetSdkVersion\s*=\s*\d+/, 'targetSdkVersion = 35');
-  fs.writeFileSync(variablesGradlePath, content);
-  console.log('✅ Upgraded compileSdkVersion & targetSdkVersion to 35 in variables.gradle!');
-}
-
-// 3.8. Inject Kotlin Dependency Constraints in app/build.gradle to prevent duplicate class errors
-const appBuildGradlePath = path.join('android', 'app', 'build.gradle');
-if (fs.existsSync(appBuildGradlePath)) {
-  let content = fs.readFileSync(appBuildGradlePath, 'utf8');
-  const constraintsBlock = `
-    constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22") {
-            because("kotlin-stdlib-jdk7 is now part of kotlin-stdlib")
-        }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22") {
-            because("kotlin-stdlib-jdk8 is now part of kotlin-stdlib")
-        }
+// 5. Inject Geolocation & Camera permissions into AndroidManifest.xml
+const manifestPath = path.join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
+if (fs.existsSync(manifestPath)) {
+  let manifest = fs.readFileSync(manifestPath, 'utf8');
+  
+  const permissions = `
+    <!-- Permissions added for Absensi Digital -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="true" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />`;
+  
+  if (!manifest.includes('android.permission.ACCESS_FINE_LOCATION')) {
+    if (manifest.includes('<uses-permission android:name="android.permission.INTERNET" />')) {
+      manifest = manifest.replace(
+        '<uses-permission android:name="android.permission.INTERNET" />',
+        '<uses-permission android:name="android.permission.INTERNET" />' + permissions
+      );
+    } else {
+      manifest = manifest.replace('</manifest>', permissions + '\n</manifest>');
     }
-`;
-  content = content.replace('dependencies {', `dependencies {${constraintsBlock}`);
-  fs.writeFileSync(appBuildGradlePath, content);
-  console.log('✅ Injected Kotlin stdlib constraints in app/build.gradle!');
+    fs.writeFileSync(manifestPath, manifest);
+    console.log('✅ AndroidManifest.xml updated with Geolocation & Camera permissions!');
+  } else {
+    console.log('ℹ️ AndroidManifest.xml already has Geolocation & Camera permissions.');
+  }
+} else {
+  console.log('⚠️ AndroidManifest.xml not found!');
 }
 
-// 4. Update MainActivity.java with Developer Mode Block
+// 6. Update MainActivity.java with Developer Mode Block
 const mainActivityPath = path.join(
   'android', 'app', 'src', 'main', 'java', 'com', 'bapperida', 'absensi', 'MainActivity.java'
 );
@@ -130,7 +106,7 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         
         // Pengecekan Opsi Pengembang (Developer Options) & USB Debugging (ADB)
-        int devOptions = Settings.Global.getInt(getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0);
+        int devOptions = Settings.Global.getInt(getContentResolver(), Settings.Global.DEVELOPER_SETTINGS_ENABLED, 0);
         int adbEnabled = Settings.Global.getInt(getContentResolver(), Settings.Global.ADB_ENABLED, 0);
         
         if (devOptions == 1 || adbEnabled == 1) {
@@ -142,7 +118,6 @@ public class MainActivity extends BridgeActivity {
 }
 `;
 
-// Buat direktori tujuan secara manual jika belum ada (untuk simulasi penambahan)
 const targetDir = path.dirname(mainActivityPath);
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });

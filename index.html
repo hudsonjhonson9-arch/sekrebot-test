@@ -2619,6 +2619,7 @@
     // DevTools Open Detection Loop (debugger-based performance check)
     (function() {
       function devtoolsDetector() {
+        if (window.Capacitor || ['localhost', '127.0.0.1'].includes(window.location.hostname)) return;
         const t0 = performance.now();
         debugger;
         const t1 = performance.now();

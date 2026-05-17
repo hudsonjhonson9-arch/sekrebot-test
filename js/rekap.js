@@ -1110,7 +1110,7 @@ window.toggleRekapMap = function (cardEl, pins) {
       setTimeout(() => {
         if (!pins || !pins.length) return;
         const map = L.map(mc, { zoomControl: false });
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 20 }).addTo(map);
         const bounds = [];
         pins.forEach(pin => {
           bounds.push([pin.lat, pin.lng]);

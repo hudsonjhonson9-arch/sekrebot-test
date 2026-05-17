@@ -51,7 +51,8 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 34.0.0 # Menggunakan Build Tools 34 untuk menghindari error zipalign
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
       # Mengubah path untuk mengambil output dari step sign_app
       - name: Upload Compiled APK Artifact

@@ -12,6 +12,25 @@
         $('tabRegister').classList.add('active');
         $('formLogin').style.display = 'none';
         $('formRegister').style.display = 'block';
+        // Populate & Toggle Telegram ID visibility
+        const regTg = $('regTelegram');
+        const regTgWrapper = $('regTelegramWrapper');
+        if (regTg) {
+          regTg.value = window.MY_ID || '';
+          if (window.MY_ID) {
+            if (regTgWrapper) regTgWrapper.style.display = 'block';
+            regTg.style.border = '1px solid rgba(100, 255, 100, 0.2)';
+            regTg.style.color = '#4ade80'; 
+          } else {
+            if (regTgWrapper) regTgWrapper.style.display = 'none';
+          }
+        }
+        // Pre-fill Instansi from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const instParam = urlParams.get('instansi') || urlParams.get('instansi_id');
+        if (instParam && $('regInstansi')) {
+          $('regInstansi').value = instParam;
+        }
       }
     }
 
@@ -26,6 +45,7 @@
         if (mode === 'login') {
           const nip = $('loginNip').value.trim();
           if (!nip) throw new Error('Silakan masukkan NIP');
+          if (nip.length < 18) throw new Error('NIP harus terdiri dari 18 digit angka');
 
           const res = await apiGet(`${P.userList}?nip=${nip}`);
           if (!res.ok) throw new Error('Server tidak merespons. Coba lagi.');
@@ -58,25 +78,38 @@
           localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
           localStorage.setItem('MY_NAME', String(user.nama || 'User'));
           localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+          
+          // Explicitly set agency to avoid stale fallbacks
+          const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
+          if (finalInst) {
+            localStorage.setItem('MY_INSTANSI', finalInst);
+          } else {
+            localStorage.removeItem('MY_INSTANSI');
+          }
+
           location.reload(); // Refresh to init with new ID
         } else {
-          // Register Mode
           const payload = {
+            id: $('regTelegram')?.value.trim() || window.MY_ID || Math.floor(Math.random() * 1000000),
             nama: $('regNama').value.trim(),
             nip: $('regNip').value.trim(),
             jabatan: $('regJabatan').value.trim(),
-            bidang: $('regBidang').value,
-            pangkat: $('regPangkat').value,
-            telegram_id: window.MY_ID || Math.floor(Math.random() * 1000000), // Random ID if no TG
-            instansi_id: $('regInstansi').value || getScopedInstansiId()
+            no_hp: $('regNomor')?.value.trim() || '',
+            bidang: $('regBidang').value || '',
+            pangkat: $('regPangkat').value || '',
+            status: 'AKTIF',
+            role: 'USER',
+            instansi_id: ($('regInstansi')?.value || '').trim() || getScopedInstansiId() || ''
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
+          if (payload.nip.length < 18) throw new Error('NIP harus terdiri dari 18 digit angka');
+          if (payload.no_hp && payload.no_hp.length < 10) throw new Error('Nomor WhatsApp minimal 10 digit');
 
           const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);
           if (!regOk || d?.ok === false) throw new Error(d?.message || 'Pendaftaran gagal');
 
-          window.MY_ID = payload.telegram_id;
+          window.MY_ID = payload.id;
           localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
           localStorage.setItem('MY_NIP', String(payload.nip));
           location.reload();

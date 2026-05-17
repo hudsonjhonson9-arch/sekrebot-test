@@ -44,9 +44,10 @@
       }
       if (sectionId === 'user') loadAdminFaceReg();
       if (sectionId === 'simapo-admin') {
+        // Staggered loading to prevent connection bottleneck
         if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
-        if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket();
-        if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
+        setTimeout(() => { if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket(); }, 300);
+        setTimeout(() => { if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster(); }, 600);
       }
 
       // Fix Leaflet Map rendering if switching to Config
@@ -170,9 +171,9 @@
       const sep = $('adminMoreSeparator');
       if (sep) sep.style.display = isAdmin ? 'block' : 'none';
 
-      // Panel Admin visibility
-      const panel = $('panel-admin');
-      if (panel) panel.style.display = isAdmin ? '' : 'none';
+      // Panel Admin visibility is handled by switchTab, 
+      // we only need to ensure the admin button/sidebar is visible
+      // (Removed redundant manual panel visibility forcing)
     }
     window.applyAdminVisibility = applyAdminVisibility;
 

@@ -38,10 +38,27 @@
         el.innerHTML = '<option value="">— Pilih Instansi —</option>' + 
           data.map(i => {
               const id = i.id || i.ID || i.instansi_id || '';
-              const name = i.nama_instansi || i.nama || i.Nama_Instansi || id || 'Instansi';
+              const name = i.nama_instansi || i.header || i.nama || i.Nama_Instansi || id || 'Instansi';
               return `<option value="${id}">${name}</option>`;
           }).join('');
         console.log('[Instansi] Populated', data.length, 'items');
+
+        // Cache the instansi mapping in localStorage for global access
+        try {
+          const instMap = {};
+          data.forEach(i => {
+            const id = i.id || i.ID || i.instansi_id || '';
+            if (id) instMap[id.toLowerCase()] = i;
+          });
+          localStorage.setItem('absen_instansi_map', JSON.stringify(instMap));
+          console.log('[Instansi] Cached full mapping to localStorage:', instMap);
+          
+          if (typeof populateSuperadminInstansiSelect === 'function') {
+            populateSuperadminInstansiSelect();
+          }
+        } catch(e) {
+          console.error('[Instansi] Cache error:', e);
+        }
 
         // Jika hanya ada 1 instansi selain BAPPERIDA (atau jika bapperida dipilih), auto-load bidang
         const selected = el.value || (data.length === 1 ? data[0].id : '');
@@ -95,8 +112,8 @@
       try {
         const res = await apiGet(P.liburList);
         if (!res.ok) return;
-        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
-        const rows = d.data || d.rows || [];
+        const rawRows = (res.rows && res.rows.length) ? res.rows : parseApiResponse(res.data);
+        const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || []);
         hariLiburMap = {};
         rows.forEach(r => {
           const tgl = String(r.tanggal || r.Tanggal || '').trim();
@@ -211,8 +228,8 @@
       try {
         const res = await apiGet(P.liburList);
         if (!res.ok) throw 0;
-        const d = res.rows.length ? res.rows : parseApiResponse(res.data);
-        const rows = (d.data || d.rows || [])
+        const rawRows = (res.rows && res.rows.length) ? res.rows : parseApiResponse(res.data);
+        const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || [])
           .filter(r => String(r.tanggal || r.Tanggal || '').trim())
           .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
         hariLiburMap = {};
@@ -279,4 +296,139 @@
         loadLiburAdmin();
       } catch { alert('Gagal menghapus. Coba lagi.'); }
     }
+
+    // ==========================================
+    // 🏛️ SUPERADMIN: MANAJEMEN INSTANSI & HEADER
+    // ==========================================
+    function populateSuperadminInstansiSelect() {
+      const el = $('inEditInstansiSelect');
+      if (!el) return;
+      
+      try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (!cached) {
+          el.innerHTML = '<option value="">— Tidak ada data instansi —</option>';
+          return;
+        }
+        
+        const map = JSON.parse(cached);
+        const keys = Object.keys(map);
+        if (keys.length === 0) {
+          el.innerHTML = '<option value="">— Tidak ada data instansi —</option>';
+          return;
+        }
+        
+        el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+          keys.map(k => {
+            const inst = map[k];
+            const id = inst.id || inst.ID || k;
+            const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+            return `<option value="${id}">${name}</option>`;
+          }).join('');
+      } catch (e) {
+        console.error('[Header Editor] populate error:', e);
+      }
+    }
+    window.populateSuperadminInstansiSelect = populateSuperadminInstansiSelect;
+
+    function loadInstansiToEditForm() {
+      const selectEl = $('inEditInstansiSelect');
+      const fieldsDiv = $('instansiEditFields');
+      if (!selectEl || !fieldsDiv) return;
+      
+      const instId = selectEl.value;
+      if (!instId) {
+        fieldsDiv.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+          const map = JSON.parse(cached);
+          const inst = map[instId.toLowerCase()] || map[instId];
+          if (inst) {
+            $('inEditInstansiId').value = inst.id || inst.ID || instId;
+            $('inEditInstansiNamaShort').value = inst.header || inst.nama || '';
+            $('inEditInstansiNama').value = inst.nama_instansi || inst.header || inst.nama || '';
+            $('inEditInstansiLogo').value = inst.logo_url || '';
+            $('inEditInstansiAlamat').value = inst.alamat || '';
+            
+            // Hide result card initially
+            dom.hide('instansiEditResult');
+            
+            // Show fields
+            fieldsDiv.style.display = 'block';
+          }
+        }
+      } catch (e) {
+        console.error('[Header Editor] load form error:', e);
+      }
+    }
+    window.loadInstansiToEditForm = loadInstansiToEditForm;
+
+    async function saveInstansiHeader() {
+      const id = $('inEditInstansiId').value.trim();
+      const namaShort = $('inEditInstansiNamaShort').value.trim();
+      const nama = $('inEditInstansiNama').value.trim();
+      const logo = $('inEditInstansiLogo').value.trim();
+      const alamat = $('inEditInstansiAlamat').value.trim();
+      
+      if (!id || !namaShort || !nama) {
+        showResult('instansiEditResult', 'instansiEditRIcon', 'instansiEditRTitle', 'instansiEditRMsg', 'warning', '⚠️', 'Input Tidak Lengkap', 'ID, Nama Tampilan (Short), dan Nama Instansi wajib diisi.');
+        dom.show('instansiEditResult', 'flex');
+        return;
+      }
+      
+      setBtnL('btnSaveInstansi', true, 'Menyimpan...');
+      dom.hide('instansiEditResult');
+      
+      try {
+        const res = await apiPost(P.instansiUpdate, {
+          id: id,
+          header: namaShort,
+          nama_instansi: nama,
+          logo_url: logo,
+          alamat: alamat,
+          nip: localStorage.getItem('MY_NIP') || '',
+          timestamp: Math.floor(Date.now() / 1000)
+        });
+        
+        // Update local cache immediately
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+          const map = JSON.parse(cached);
+          const updatedInst = {
+            ...(map[id.toLowerCase()] || {}),
+            id: id,
+            header: namaShort,
+            nama: namaShort,
+            nama_instansi: nama,
+            logo_url: logo,
+            alamat: alamat
+          };
+          map[id.toLowerCase()] = updatedInst;
+          localStorage.setItem('absen_instansi_map', JSON.stringify(map));
+          console.log('[Header Editor] Cache updated locally:', updatedInst);
+        }
+        
+        // Re-apply profile in header in real time!
+        if (typeof applyProfile === 'function') {
+          applyProfile();
+        }
+        
+        showResult('instansiEditResult', 'instansiEditRIcon', 'instansiEditRTitle', 'instansiEditRMsg', 'success', '✅', 'Berhasil Disimpan', 'Detail instansi dan header berhasil diperbarui!');
+        dom.show('instansiEditResult', 'flex');
+        
+        // Refresh instansi dropdowns
+        fetchInstansiList();
+      } catch (err) {
+        console.error('[Header Editor] Save error:', err);
+        showResult('instansiEditResult', 'instansiEditRIcon', 'instansiEditRTitle', 'instansiEditRMsg', 'fail', '❌', 'Gagal', 'Terjadi kesalahan saat menyimpan data ke server. Coba lagi.');
+        dom.show('instansiEditResult', 'flex');
+      } finally {
+        setBtnL('btnSaveInstansi', false, '💾 Simpan Perubahan');
+      }
+    }
+    window.saveInstansiHeader = saveInstansiHeader;
 

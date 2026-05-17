@@ -132,19 +132,53 @@
           },
           didDrawPage: (data) => {
             if (data.pageNumber === 1) {
+              // 1. Get Dynamic Instansi Header and Logo
+              const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
+              const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+              
+              // Dynamic Kop Header: full header text from the instansi's header column!
+              const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
+              const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
+              
+              // Dynamic logo loading
+              let logoSrc = rawLogoUrl;
+              if (instData && instData.logo_url) {
+                logoSrc = instData.logo_url;
+              }
+
               try {
-                doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
-              } catch (e) { }
+                doc.addImage(logoSrc, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+              } catch (e) {
+                // Graceful fallback to default Sumba Barat logo if loading custom logo fails (CORS, network)
+                try {
+                  doc.addImage(rawLogoUrl, 'PNG', 15, 10, 22, 25, undefined, 'FAST');
+                } catch (err) { }
+              }
 
               doc.setFont('times', 'bold');
-              doc.setFontSize(14);
+              doc.setFontSize(13);
               doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
-              doc.setFontSize(18);
-              doc.text('BADAN PERENCANAAN PEMBANGUNAN', pageWidth / 2 + 10, 22, { align: 'center' });
-              doc.text('RISET DAN INOVASI DAERAH', pageWidth / 2 + 10, 28, { align: 'center' });
+              
+              // Dynamic line wrapping for long Kop headers
+              doc.setFontSize(16);
+              const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
+              
+              if (headerLines.length === 1) {
+                doc.text(headerLines[0], pageWidth / 2 + 10, 24, { align: 'center' });
+              } else if (headerLines.length === 2) {
+                doc.text(headerLines[0], pageWidth / 2 + 10, 21, { align: 'center' });
+                doc.text(headerLines[1], pageWidth / 2 + 10, 27, { align: 'center' });
+              } else {
+                let startY = 19;
+                const step = 5;
+                headerLines.forEach((line, idx) => {
+                  doc.text(line, pageWidth / 2 + 10, startY + (idx * step), { align: 'center' });
+                });
+              }
+
               doc.setFont('times', 'normal');
-              doc.setFontSize(12);
-              doc.text('Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur', pageWidth / 2 + 10, 34, { align: 'center' });
+              doc.setFontSize(10.5);
+              doc.text(instAlamat, pageWidth / 2 + 10, 34, { align: 'center' });
 
               doc.setLineWidth(0.7);
               doc.line(15, 37, pageWidth - 15, 37);
@@ -186,7 +220,28 @@
         const signatureX = pageWidth - 60; // Posisi di sisi kanan
         doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
         doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
-        doc.text('Kepala Badan', signatureX, footerY + 11, { align: 'center' });
+
+        // Dynamic Signature Title: Inspektur, Kepala Dinas, Kepala Badan, Camat, etc.
+        let leaderTitle = 'Kepala Badan';
+        const instId = (window.userProfile?.instansi_id) || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : 'bapperida');
+        const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+        const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
+        const instNameLower = (instData?.nama_instansi || '').toLowerCase();
+        const headerLower = fullHeader.toLowerCase();
+        
+        if (instNameLower.includes('inspektorat') || headerLower.includes('inspektorat')) {
+          leaderTitle = 'Inspektur';
+        } else if (instNameLower.includes('dinas') || headerLower.includes('dinas')) {
+          leaderTitle = 'Kepala Dinas';
+        } else if (instNameLower.includes('sekretariat daerah') || headerLower.includes('sekretariat daerah')) {
+          leaderTitle = 'Sekretaris Daerah';
+        } else if (instNameLower.includes('sekretariat') || headerLower.includes('sekretariat')) {
+          leaderTitle = 'Sekretaris';
+        } else if (instNameLower.includes('kecamatan') || headerLower.includes('kecamatan')) {
+          leaderTitle = 'Camat';
+        }
+        
+        doc.text(leaderTitle, signatureX, footerY + 11, { align: 'center' });
 
         const kaban = filteredPegawai[0];
         const kabanSig = sigMap[String(kaban?.id)];

@@ -266,10 +266,10 @@
   <div class="app">
     <!-- Header -->
     <div class="header">
-      <div class="logo-wrap">🏛️</div>
+      <div class="logo-wrap" id="headerLogoWrap">🏛️</div>
       <div>
-        <div class="org-name">Sekretariat</div>
-        <div class="org-sub">BAPPERIDA Sumba Barat</div>
+        <div class="org-name" id="headerOrgName">Sekretariat</div>
+        <div class="org-sub" id="headerOrgSub">BAPPERIDA Sumba Barat</div>
       </div>
     </div>
 
@@ -933,7 +933,7 @@
         </div>
       </div>
       <div class="print-info" id="printInfo">
-        <strong>REKAP ABSENSI — BAPPERIDA SUMBA BARAT</strong><br>
+        <strong>REKAP ABSENSI PEGAWAI</strong><br>
         Periode: <span id="printPeriode">—</span><br>
         Dicetak: <span id="printTanggal">—</span>
       </div>
@@ -966,13 +966,6 @@
           <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
             onchange="renderRekap(lastRekapPegawai)">
             <option value="Semua">— Tampilkan Semua Bidang —</option>
-            <option value="Sekretariat">Sekretariat</option>
-            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
-            </option>
-            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
           </select>
         </div>
       </div>
@@ -1113,6 +1106,10 @@
           </select>
         </div>
         <div class="form-group">
+          <label class="form-label">📜 Nomor Surat Tugas</label>
+          <input type="text" id="tugasNomorSurat" class="form-input" placeholder="Contoh: 800/123/BAPP-SB/2025">
+        </div>
+        <div class="form-group">
           <label class="form-label">📝 Keterangan Tugas</label>
           <textarea id="tugasKet" class="form-textarea" placeholder="Tuliskan detail tugas di sini..." style="min-height:80px"></textarea>
         </div>
@@ -1232,6 +1229,27 @@
           color: var(--gold);
           box-shadow: 0 4px 10px rgba(0,0,0,0.3);
           border: 1px solid rgba(255,255,255,0.1);
+        }
+        .simapo-kat-badge {
+          padding: 6px 12px;
+          background: rgba(255,255,255,0.05);
+          color: var(--muted);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+        .simapo-kat-badge:hover {
+          background: rgba(255,255,255,0.1);
+          color: var(--white);
+        }
+        .simapo-kat-badge.active {
+          background: rgba(201,168,76,0.15);
+          color: var(--gold);
+          border-color: rgba(201,168,76,0.4);
         }
       </style>
 
@@ -1914,7 +1932,7 @@
             <!-- ✍️ FORM MANAJEMEN TERPADU (INLINE) -->
             <div id="pegawaiForm" style="display:none; background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.2); border-radius:16px; padding:25px; margin-bottom:30px; border-left: 4px solid var(--gold);">
               <div id="pegawaiFormTitle" style="font-size:14px; font-weight:800; color:var(--gold); margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px">
-                <span>👤</span> DATABASE KEPEGAWAIAN BAPPERIDA
+                <span>👤</span> <span id="pegawaiFormTitleText">DATABASE KEPEGAWAIAN BAPPERIDA</span>
               </div>
               <input type="hidden" id="editPegawaiId">
               
@@ -1933,12 +1951,7 @@
                   <div class="form-group"><label class="form-label">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" /></div>
                   <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label>
                     <select id="inPegawaiBidang" class="form-input">
-                      <option value="Sekretariat">Sekretariat</option>
-                      <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-                      <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-                      <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
-                      <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-                      <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+                      <option value="">— Memuat Bidang... —</option>
                     </select>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -2188,6 +2201,59 @@
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
+        <!-- 🏛️ SUPERADMIN: DETAIL INSTANSI & HEADER EDITOR ══ -->
+        <div class="card superadmin-section" style="margin-top:12px; display:none;" id="superadminHeaderCard">
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+            <span>🏛️</span> KELOLA DETAIL INSTANSI & HEADER
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Pilih Instansi</label>
+              <select id="inEditInstansiSelect" class="form-input" onchange="loadInstansiToEditForm()" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; transition:border-color 0.2s;">
+                <option value="">— Memuat instansi... —</option>
+              </select>
+            </div>
+            
+            <div id="instansiEditFields" style="display:none; border-top:1px dashed var(--border); padding-top:12px; margin-top:4px;">
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">ID Instansi (Read-only)</label>
+                <input type="text" id="inEditInstansiId" class="form-input" readonly style="background:rgba(255,255,255,0.01); color:var(--muted); cursor:not-allowed; font-family:monospace;" />
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Tampilan Header (Short)</label>
+                <input type="text" id="inEditInstansiNamaShort" class="form-input" placeholder="Contoh: BAPPERIDA" />
+              </div>
+
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Instansi</label>
+                <input type="text" id="inEditInstansiNama" class="form-input" placeholder="Contoh: BAPPERIDA Sumba Barat" />
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">URL Logo Instansi</label>
+                <input type="url" id="inEditInstansiLogo" class="form-input" placeholder="Contoh: https://example.com/logo.png" />
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Alamat Instansi</label>
+                <input type="text" id="inEditInstansiAlamat" class="form-input" placeholder="Contoh: Jl. Gajah Mada No. 1, Kota Tamu" />
+              </div>
+              
+              <div id="instansiEditResult" class="form-result" style="display:none; margin-bottom:12px;">
+                <span class="r-icon" id="instansiEditRIcon"></span>
+                <div>
+                  <div class="r-title" id="instansiEditRTitle"></div>
+                  <div class="r-msg" id="instansiEditRMsg"></div>
+                </div>
+              </div>
+              
+              <button id="btnSaveInstansi" class="btn-admin" onclick="saveInstansiHeader()" style="width:100%; height:40px; margin-top:8px;">💾 Simpan Perubahan</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 🖥️ MODE DESKTOP ══ -->
         <div class="card" style="margin-top:12px" id="desktopModeCard">
           <div
@@ -2233,13 +2299,17 @@
         <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
       </div>
       <div id="formLogin">
-        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
+        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan 18 Digit NIP" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
       </div>
       <div id="formRegister" style="display:none">
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
-        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
+        <input type="text" id="regNip" class="form-input-auth" placeholder="18 Digit NIP / No Pegawai" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
+        <input type="text" id="regNomor" class="form-input-auth" placeholder="Nomor WhatsApp (Aktif)">
+        <div id="regTelegramWrapper" style="display:none">
+          <input type="text" id="regTelegram" class="form-input-auth" placeholder="Telegram ID (Otomatis)" readonly style="background:rgba(255,255,255,0.05); color:var(--muted); cursor:not-allowed; margin-bottom:12px;">
+        </div>
         <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
           <option value="">— Memuat Instansi... —</option>
         </select>
@@ -2430,8 +2500,8 @@
   <!-- 8. Splash Screen -->
   <div id="appSplash" style="z-index: 99999;">
     <div class="splash-logo">🏛️</div>
-    <div class="splash-title">BAPPERIDA Sumba Barat</div>
-    <div class="splash-sub">Memuat aplikasi absensi...</div>
+    <div class="splash-title">Sistem Absensi</div>
+    <div class="splash-sub">Memuat profil dan data pegawai...</div>
     <div class="splash-bar"><div class="splash-progress"></div></div>
   </div>
 
@@ -2499,7 +2569,61 @@
     }
   </script>
 
+  <!-- 9. Source Code & DevTools Protection Guard -->
+  <script>
+    // Disable Right-Click
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
+    // Disable common inspection hotkeys
+    document.addEventListener('keydown', e => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+U (View Source)
+      if (e.ctrlKey && e.key.toUpperCase() === 'U') {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+S (Save)
+      if (e.ctrlKey && e.key.toUpperCase() === 'S') {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // DevTools Open Detection Loop (debugger-based performance check)
+    (function() {
+      function devtoolsDetector() {
+        const t0 = performance.now();
+        debugger;
+        const t1 = performance.now();
+        if (t1 - t0 > 100) {
+          document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#0b0f19; color:#f8fafc; font-family:'Outfit',sans-serif; text-align:center; padding:20px; box-sizing:border-box;">
+              <div style="font-size:64px; margin-bottom:20px; animation: pulse 2s infinite;">🛡️</div>
+              <h1 style="font-size:24px; font-weight:700; margin-bottom:10px; color:#ef4444;">Sistem Keamanan Aktif</h1>
+              <p style="font-size:14px; color:#94a3b8; max-width:400px; line-height:1.6; margin:0 0 20px 0;">Inspeksi kode sumber atau penggunaan Developer Tools tidak diizinkan untuk alasan keamanan data.</p>
+              <button onclick="window.location.reload()" style="padding:10px 20px; background:#2563eb; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; transition:all 0.2s; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.4);">Segarkan Halaman</button>
+            </div>
+            <style>
+              @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.05); opacity: 0.8; }
+              }
+            </style>
+          `;
+        }
+      }
+      setInterval(devtoolsDetector, 500);
+    })();
+  </script>
 
 </body>
 </html>

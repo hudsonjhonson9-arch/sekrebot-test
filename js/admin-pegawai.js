@@ -239,7 +239,19 @@
       dom.setText('btnSavePegawaiTxt', '💾 Menyimpan...');
       try {
         const path = isEdit ? P.userEdit : P.userAdd;
-        const mainPayload = { id, nama, nip, nomorhp: nohp, jabatan, pangkat, bidang, tipe, role, status, instansi_id: 'bapperida' };
+        const mainPayload = { 
+          id, 
+          nama, 
+          nip, 
+          nomorhp: nohp, 
+          jabatan, 
+          pangkat, 
+          bidang, 
+          tipe, 
+          role, 
+          status, 
+          instansi_id: getScopedInstansiId() 
+        };
 
         const { ok: saveOk, data: d } = await apiPost(path, mainPayload);
 

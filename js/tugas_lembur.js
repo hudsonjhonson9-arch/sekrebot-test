@@ -206,6 +206,7 @@
               <div style="font-size:11px; font-weight:800; color:var(--white)">${peg}</div>
               <div style="font-size:9px; color:var(--muted)">• ${tgl}</div>
             </div>
+            ${r.nomor_surat ? `<div style="font-size:9px; color:var(--gold); font-weight:700; margin-top:2px"><i class="fas fa-file-alt"></i> ${r.nomor_surat}</div>` : ''}
             <div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4">${r.keterangan || '—'}</div>
           </div>
           <div style="text-align:right; margin-left:15px">
@@ -287,6 +288,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
           <div style="flex:1; padding-right:10px">
             <div style="font-size:10px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; opacity:0.8">${tglDisplay}</div>
+            ${r.nomor_surat ? `<div style="font-size:11px; color:#fff; font-weight:700; margin-top:4px; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; display:inline-block"><i class="fas fa-file-invoice" style="margin-right:6px; color:var(--gold)"></i> ${r.nomor_surat}</div>` : ''}
             <div style="font-size:15px; font-weight:800; color:var(--white); margin-top:6px; line-height:1.4">${ket}</div>
           </div>
           ${status === 'AKTIF' ? '<div class="status-badge s-warning" style="font-size:9px; letter-spacing:1px; font-weight:900">AKTIF</div>' : ''}
@@ -639,6 +641,7 @@
           nip: u.nip,
           lat, lon,
           keterangan: ket,
+          nomor_surat: $('tugasNomorSurat')?.value?.trim() || '',
           tanggal: tgl,
           radius: parseInt($('tugasRadius').value) || 100,
           created_by: creatorNama,
@@ -656,6 +659,7 @@
         
         // Reset
         $('tugasKet').value = '';
+        if ($('tugasNomorSurat')) $('tugasNomorSurat').value = '';
         if (_tugasMarker) { _tugasMap.removeLayer(_tugasMarker); _tugasMarker = null; }
         $('tugasLat').value = ''; $('tugasLon').value = '';
         _selectedTugasPegawai = [];
@@ -886,13 +890,21 @@
       document.body.appendChild(printArea);
     }
 
-
-    // Find Kepala Badan dynamically
-    const kb = _allPegawaiLembur.find(u => (u.jabatan || '').toUpperCase().includes('KEPALA BADAN')) || {
+    // Find Kepala dynamically (e.g. Kepala Dinas, Kepala Badan, Inspektur)
+    const kb = _allPegawaiLembur.find(u => {
+      const j = (u.jabatan || '').toUpperCase();
+      return j.includes('KEPALA BADAN') || j.includes('KEPALA DINAS') || j.startsWith('KEPALA ') || j === 'KEPALA' || j.includes('INSPEKTUR');
+    }) || {
       nama: 'TITUS JURI, S.T., M.Si',
       pangkat: 'Pembina Utama Muda (IV/c)',
-      nip: '19740523 200212 1 004'
+      nip: '19740523 200212 1 004',
+      jabatan: 'Kepala Badan'
     };
+    const kepTitle = kb.jabatan ? kb.jabatan : 'Kepala';
+
+    const instId = getScopedInstansiId();
+    const instName = getInstansiName(instId);
+    const instNameUpper = instName ? instName.toUpperCase() : 'BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH';
 
     const html = `
       <style>
@@ -914,7 +926,6 @@
         .print-title { text-align: center; font-size: 14px; font-weight: bold; margin-top: 25px; text-decoration: underline; text-transform: uppercase; }
         .print-subtitle { text-align: center; font-size: 11px; margin-bottom: 25px; font-weight: normal; }
 
-        
         .print-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
         .print-table th, .print-table td { border: 1px solid #000; padding: 5px 3px; font-size: 10px; text-align: center; vertical-align: middle; }
         .print-table th { background: #e0e0e0 !important; font-weight: bold; -webkit-print-color-adjust: exact; }
@@ -929,15 +940,12 @@
         <img class="print-header-logo" src="https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png">
         <div class="print-header-text">
           <h1>PEMERINTAH KABUPATEN SUMBA BARAT</h1>
-          <h2>BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH</h2>
+          <h2>${instNameUpper}</h2>
           <p>Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur</p>
         </div>
       </div>
       <div class="print-header-line"></div>
 
-
-
-      
       <div class="print-title">REKAPITULASI KERJA LEMBUR PEGAWAI</div>
       <div class="print-subtitle">Periode: ${range.dari} s/d ${range.sampai}</div>
 
@@ -975,16 +983,13 @@
         <div class="print-sign">
           Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
           Mengetahui,<br>
-          Kepala Badan,<br><br><br><br><br>
+          ${kepTitle},<br><br><br><br><br>
           <b>${kb.nama}</b><br>
-          ${kb.pangkat || 'Pembina Utama Muda (IV/c)'}<br>
-          NIP. ${kb.nip}
+          ${kb.pangkat || '—'}<br>
+          NIP. ${kb.nip || '—'}
         </div>
       </div>
     `;
-
-
-
 
     printArea.innerHTML = html;
 

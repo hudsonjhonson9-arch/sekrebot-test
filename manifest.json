@@ -1,7 +1,7 @@
 {
-  "name": "Absensi BAPPERIDA",
+  "name": "Absensi Digital",
   "short_name": "Absensi",
-  "description": "Sistem Absensi Digital BAPPERIDA Sumba Barat",
+  "description": "Sistem Absensi Digital Sumba Barat",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0d1b2a",

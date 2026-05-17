@@ -43,9 +43,17 @@
               username: cleanS(d.username || d.Username || (typeof tgUser !== 'undefined' ? tgUser.username : '')),
               status: cleanS(d.status || d.Status || 'AKTIF'),
               role: cleanS(d.role || d.Role || 'user').toLowerCase().replace(/\s/g, ''),
+              instansi_id: cleanS(d.instansi_id || d.Instansi_Id || ''),
+              bidang: cleanS(d.bidang || d.Bidang || ''),
               tgl_pangkat: d.tgl_pangkat || d.tgl_kenaikan_pangkat || null,
               tgl_berkala: d.tgl_berkala || d.tgl_kenaikan_berkala || null
             };
+            // Persist full object for other modules
+            localStorage.setItem('tg_user_obj_v5', JSON.stringify(d));
+            if (userProfile.instansi_id) {
+              localStorage.setItem('MY_INSTANSI', userProfile.instansi_id);
+              document.documentElement.style.setProperty('--agency-name', `'${userProfile.instansi_id.toUpperCase()}'`);
+            }
             window.userProfile = userProfile;
             applyProfile();
             _profileLoading = false;
@@ -99,6 +107,37 @@
       setT('userJabatan', p.jabatan || '—'); setT('ketJabatan', p.jabatan || '—');
       setT('userMeta', `NIP: ${p.nip || '—'} · ID: ${window.MY_ID || '—'}`); 
       setT('ketMeta', `NIP: ${p.nip || '—'} · ID: ${window.MY_ID || '—'}`);
+
+      // Update dynamic header branding
+      const instId = p.instansi_id || getScopedInstansiId();
+      if (instId) {
+        const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+        const instName = instData ? (instData.header || instData.nama_instansi || instData.nama) : null;
+        const shortName = instData ? (instData.nama_instansi || instData.header || instData.nama || instId) : instId;
+        
+        // Render dynamic sidebar agency name
+        document.documentElement.style.setProperty('--agency-name', `'${shortName.toUpperCase()}'`);
+        
+        setT('headerOrgSub', shortName || instId.toUpperCase());
+        setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN ${instName ? instName.toUpperCase() : instId.toUpperCase()}`);
+        
+        // Render dynamic logo
+        const logoWrap = $('headerLogoWrap');
+        if (logoWrap) {
+          if (instData && instData.logo_url) {
+            logoWrap.innerHTML = `<img src="${instData.logo_url}" alt="Logo" style="height:32px; width:auto; border-radius:4px; object-fit:contain;" onerror="this.outerHTML='🏛️';" />`;
+          } else {
+            logoWrap.innerHTML = '🏛️';
+          }
+        }
+      }
+      if (p.bidang) {
+        setT('headerOrgName', p.bidang);
+      } else if (p.jabatan) {
+        setT('headerOrgName', p.jabatan);
+      } else {
+        setT('headerOrgName', 'Sekretariat');
+      }
       // ── Badge status (baca dari data, bukan hardcode) ──
       const st = (p.status || 'AKTIF').toUpperCase();
       const stEmoji = st === 'AKTIF' ? '✅' : st === 'SAKIT' ? '🤒' : st === 'IZIN' ? '🙏' : st === 'TUGAS' ? '💼' : st === 'NONAKTIF' ? '🚫' : '⚙️';
@@ -151,6 +190,24 @@
       };
       window.userProfile = userProfile;
       
+      // Fallback update branding
+      const instId = getScopedInstansiId();
+      if (instId) {
+        const instName = getInstansiName(instId);
+        setT('headerOrgSub', instName || instId.toUpperCase());
+        
+        // Render dynamic logo
+        const logoWrap = $('headerLogoWrap');
+        if (logoWrap) {
+          const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+          if (instData && instData.logo_url) {
+            logoWrap.innerHTML = `<img src="${instData.logo_url}" alt="Logo" style="height:32px; width:auto; border-radius:4px; object-fit:contain;" onerror="this.outerHTML='🏛️';" />`;
+          } else {
+            logoWrap.innerHTML = '🏛️';
+          }
+        }
+      }
+
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
       setT('userName', n); setT('ketNama', n);
       setT('userJabatan', '—'); setT('ketJabatan', '—');

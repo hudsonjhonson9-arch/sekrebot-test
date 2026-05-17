@@ -11,7 +11,7 @@ const S_HDR = {
 };
 
 /* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
-const DB_NAME = 'BapperidaOfflineDB';
+const DB_NAME = 'AbsensiOfflineDB';
 const DB_VERSION = 1;
 
 const idb = {
@@ -102,6 +102,7 @@ const WIFI_MODE = 'block';
 
 const P = {
   instansiList: isTest ? '/webhook-test/instansi-list' : '/webhook/instansi-list',
+  instansiUpdate: isTest ? '/webhook-test/instansi-update' : '/webhook/instansi-update',
   bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
   absen: isTest ? '/webhook-test/absen' : '/webhook/absen',
   ket: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
@@ -137,7 +138,7 @@ const P = {
   adminList: isTest ? '/webhook-test/admin-list' : '/webhook/admin-list',
   adminAdd: isTest ? '/webhook-test/admin-add' : '/webhook/admin-add',
   adminDel: isTest ? '/webhook-test/admin-delete' : '/webhook/admin-delete',
-  userAdd: '/webhook-test/user-add',
+  userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
   userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
   penugasanList: isTest ? '/webhook-test/penugasan-list' : '/webhook/penugasan-list',
   penugasanSave: isTest ? '/webhook-test/penugasan-save' : '/webhook/penugasan-save',
@@ -179,23 +180,28 @@ function getScopedInstansiId() {
   let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
   if (inst) return inst;
 
-  // Priority 2: From logged in user data (User List cache)
+  // Priority 2: From live state (Most up to date)
+  if (window.userProfile?.instansi_id) return window.userProfile.instansi_id;
+
+  // Priority 3: From persistent storage (Safe for refresh)
+  const savedInst = localStorage.getItem('MY_INSTANSI');
+  if (savedInst) return savedInst;
+
+  // Priority 4: From logged in user data (User List cache)
   try {
     const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-    if (u.instansi_id) return u.instansi_id;
+    const uInst = u.instansi_id || u.Instansi_Id;
+    if (uInst) return uInst;
   } catch (e) { }
 
-  // Priority 3: Global fallback
-  return 'bapperida';
+  return '';
 }
 
 /**
  * Fetch ke n8n API dengan fallback ke server cadangan.
  * Auto-append instansi_id ke semua request.
  * @param {string} path - Path endpoint (e.g. P.absen)
- * @param {RequestInit} [opts={}] - fetch options (method, body, headers)
- * @returns {Promise<Response>} Response object
- * @throws {Error} Jika semua server gagal
+ * @param {Object} opts - Fetch options
  */
 const API_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';
 
@@ -206,24 +212,25 @@ const HDR = {
   'X-App-Token': API_TOKEN 
 };
 async function apiFetch(path, opts = {}) {
+  // Auto-append cache buster to avoid stale results
+  path += (path.includes('?') ? '&' : '?') + '_t=' + Date.now();
+
   // Auto-append instansi_id & nip scoping
-  const myRole = (userProfile?.role || '').toLowerCase();
+  const p = window.userProfile || {};
+  const myRole = (p.role || '').toLowerCase();
   const inst = getScopedInstansiId();
   
-  // SUPERADMIN bypasses the instance filter to see everything
+  // Scoping Logic:
+  // 1. If instansi_id is NOT in path, append it
+  // 2. EXCEPT if user is SUPERADMIN (they see everything unless explicitly filtered)
   if (inst && !path.includes('instansi_id=')) {
-    path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
+    if (myRole !== 'superadmin') {
+      path += '&instansi_id=' + inst;
+    }
   }
 
-  let myNip = localStorage.getItem('MY_NIP');
-  if (!myNip) {
-    try {
-      const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-      myNip = u.nip || u.NIP || '';
-      if (myNip) localStorage.setItem('MY_NIP', myNip); // Auto-migrate
-    } catch (e) { }
-  }
-
+  let myNip = p.nip || localStorage.getItem('MY_NIP');
+  
   if (myNip && !path.includes('nip=')) {
     path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
   }
@@ -238,9 +245,9 @@ async function apiFetch(path, opts = {}) {
         delete fetchOpts.headers['Content-Type'];
       }
 
-      // Add 10s timeout for each server
+      // Add 15s timeout for each server (increased for large inventory data)
       const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const tid = setTimeout(() => ctrl.abort(), 15000);
       
       try {
         const r = await fetch(base + path, { ...fetchOpts, signal: ctrl.signal });

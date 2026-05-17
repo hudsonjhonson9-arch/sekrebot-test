@@ -168,7 +168,7 @@ async function tambahAdmin() {
       id: tgId,
       nip: nip,
       role: role.toUpperCase(),
-      instansi_id: 'bapperida'
+      instansi_id: getScopedInstansiId()
     });
 
     if (!ok || data?.ok === false) {
@@ -206,7 +206,7 @@ async function hapusAdmin(tgId, nama, nip) {
       id: tgId,
       nip: nip,
       role: 'USER',
-      instansi_id: 'bapperida'
+      instansi_id: getScopedInstansiId()
     });
 
     if (!ok || data?.ok === false) {

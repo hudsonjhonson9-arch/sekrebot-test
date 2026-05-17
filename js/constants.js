@@ -3,7 +3,7 @@
     const TZ = 'Asia/Makassar';
     const H_ID = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const H_DISP = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const LOK_DEF = { senin: ['Kantor Bupati', 'Kantor BAPPERIDA'], rabu: ['Kantor BPBD', 'Kantor BAPPERIDA'], default: ['Kantor BAPPERIDA'] };
+    const LOK_DEF = { senin: ['Kantor Utama'], rabu: ['Kantor Cabang'], default: ['Kantor Pusat'] };
 
     // ════ PANGKAT OPTIONS ════
     const PANGKAT_DATA = {
@@ -23,7 +23,8 @@
     async function loadBidangList() {
       const regSelect = $('regBidang');
       const rekapSelect = $('rekapBidang');
-      if (!regSelect && !rekapSelect) return;
+      const adminSelect = $('inPegawaiBidang');
+      if (!regSelect && !rekapSelect && !adminSelect) return;
 
       try {
         const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
@@ -39,6 +40,11 @@
             const currentVal = rekapSelect.value;
             rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>` + options;
             rekapSelect.value = currentVal;
+          }
+          if (adminSelect) {
+            const currentVal = adminSelect.value;
+            adminSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
+            if (currentVal) adminSelect.value = currentVal;
           }
         }
       } catch (e) {

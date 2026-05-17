@@ -158,6 +158,10 @@
         if (el) el.style.display = isSA ? 'block' : 'none';
       });
 
+      if (isSA && typeof populateSuperadminInstansiSelect === 'function') {
+        populateSuperadminInstansiSelect();
+      }
+
       // Meja Absen & Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
         const desktopCard = $('desktopModeCard');
@@ -175,3 +179,4 @@
       }
     }
     window.loadWeather = loadWeather;
+    window._isSuperAdmin = _isSuperAdmin;

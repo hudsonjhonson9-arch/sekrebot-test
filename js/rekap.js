@@ -114,6 +114,19 @@ async function loadRekap() {
               jamPegawaiMap[id] = { masuk: jm, pulang: jp, masukMenit: toM(jm), pulangMenit: toM(jp) };
             }
           });
+
+          // Update Bidang Filter options dynamically based on current data
+          const bSel = $('rekapBidang');
+          if (bSel) {
+            const currentBidang = bSel.value;
+            const bidangSet = new Set(pegawai.map(p => p.bidang || p.Bidang).filter(Boolean));
+            if (bidangSet.size > 0) {
+              bSel.innerHTML = '<option value="Semua">— Tampilkan Semua Bidang —</option>' + 
+                Array.from(bidangSet).sort().map(b => `<option value="${b}">${b}</option>`).join('');
+              if (Array.from(bidangSet).includes(currentBidang)) bSel.value = currentBidang;
+              else bSel.value = 'Semua';
+            }
+          }
         }
       }
     } catch (_) { }
@@ -652,7 +665,7 @@ function renderRekap(pg) {
         <!-- ── CARD JAM MASUK / PULANG ── -->
         ${isKet ? `
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden; margin-bottom:8px;">
-            ${IS_ADMIN && p._rawKetLog ? `
+            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) && p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
@@ -671,7 +684,7 @@ function renderRekap(pg) {
 
           <!-- JAM MASUK -->
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawMasukLog || p._rawKetLog ? `
+            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ? (p._rawMasukLog || p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
@@ -694,7 +707,7 @@ function renderRekap(pg) {
 
           <!-- JAM PULANG -->
           <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${IS_ADMIN ? (p._rawPulangLog || p._rawKetLog ? `
+            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ? (p._rawPulangLog || p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"

@@ -193,8 +193,8 @@ function openSimapoPinjamForm(id, nama) {
 async function simapoSubmitPinjam() {
   const id = document.getElementById('simapoSelectPinjam')?.value;
   const tujuan = document.getElementById('simapoTujuanPinjam')?.value;
-  const mulai = document.getElementById('simapoTglMulai')?.value;
-  const selesai = document.getElementById('simapoTglSelesai')?.value;
+  const mulai = document.getElementById('simapoPinjamMulai')?.value;
+  const selesai = document.getElementById('simapoPinjamSelesai')?.value;
 
   if (!id || !tujuan || !mulai || !selesai) {
     showToast('Harap isi semua kolom!', 'error');
@@ -232,7 +232,7 @@ async function simapoSubmitPinjam() {
 }
 
 async function loadSimapoRiwayatPinjam(force = false) {
-  const container = document.getElementById('simapoRiwayatList');
+  const container = document.getElementById('simapoRiwayatPinjamList');
   if (!container) return;
 
   container.innerHTML = '<div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:80px; border-radius:12px"></div></div>';
@@ -256,7 +256,7 @@ async function loadSimapoRiwayatPinjam(force = false) {
 }
 
 function renderSimapoRiwayatPinjam(data) {
-  const container = document.getElementById('simapoRiwayatList');
+  const container = document.getElementById('simapoRiwayatPinjamList');
   if (!container) return;
 
   if (data.length === 0) {

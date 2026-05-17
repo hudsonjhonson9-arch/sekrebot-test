@@ -668,7 +668,7 @@
         // Langkah 2: Deteksi backend terbaik secara otomatis
         const bestBackend = await _detectBestBackend();
         const isMobile = _isMobileDevice();
-        const inputSize = isMobile ? 224 : 320; // Lebih kecil = lebih cepat di HP
+        const inputSize = isMobile ? 512 : 1024; // Resolusi ditingkatkan sesuai permintaan
         console.log(`[AI] Device: ${isMobile ? 'Mobile' : 'Desktop'} | Backend: ${bestBackend} | InputSize: ${inputSize}`);
 
         const config = {
@@ -1396,12 +1396,14 @@
             await _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
           } else {
             console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
-            if (_absenCallbackAfterCam) {
+            const cb = _absenCallbackAfterCam;
+            closeCamOverlay(false);
+            if (cb) {
               const result = { dataUrl, descriptor };
-              if (typeof _absenCallbackAfterCam === 'function') {
-                await _absenCallbackAfterCam(result);
-              } else if (_absenCallbackAfterCam.onDone) {
-                await _absenCallbackAfterCam.onDone(result);
+              if (typeof cb === 'function') {
+                await cb(result);
+              } else if (cb.onDone) {
+                await cb.onDone(result);
               }
             }
           }

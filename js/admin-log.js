@@ -27,7 +27,12 @@
      * @param {string} hintJenis - Hint jenis absen ('MASUK' | 'PULANG' | ...)
      * @returns {Promise<void>}
      */
-        async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
+    async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
+      if (typeof _isSuperAdmin === 'function' && !_isSuperAdmin()) {
+        alert('Maaf, hanya Super Admin yang diizinkan untuk menambah atau mengedit log secara manual.');
+        return;
+      }
+
       const modal = $('logModal');
       if (!modal) return;
 

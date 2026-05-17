@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "build": 2,
+  "build": 3,
   "releaseNotes": "Inisialisasi aplikasi mobile Absensi Digital dengan fitur offline mode, proteksi Opsi Pengembang, dan auto-update.",
   "apkUrl": "https://github.com/hudsonjhonson9-arch/sekrebot-test/raw/main/android-apk/Absensi-Digital.apk"
 }

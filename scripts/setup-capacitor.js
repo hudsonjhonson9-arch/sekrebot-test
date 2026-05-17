@@ -112,8 +112,8 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         
         // Pengecekan Opsi Pengembang (Developer Options) & USB Debugging (ADB)
-        int devOptions = Settings.Global.getInt(getContentResolver(), Settings.Global.DEVELOPER_SETTINGS_ENABLED, 0);
-        int adbEnabled = Settings.Global.getInt(getContentResolver(), Settings.Global.ADB_ENABLED, 0);
+        int devOptions = Settings.Global.getInt(getContentResolver(), "development_settings_enabled", 0);
+        int adbEnabled = Settings.Global.getInt(getContentResolver(), "adb_enabled", 0);
         
         if (devOptions == 1 || adbEnabled == 1) {
             Toast.makeText(this, "⚠️ Opsi Pengembang (Developer Options) Aktif! Mohon matikan Opsi Pengembang di Pengaturan HP untuk menggunakan aplikasi ini.", Toast.LENGTH_LONG).show();

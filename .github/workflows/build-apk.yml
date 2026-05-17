@@ -65,34 +65,3 @@ jobs:
           npx @capgo/cli@latest bundle upload --channel=production
         env:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
-          npx cap sync
-          npx cap copy android
-
-      - name: Build Release APK using Gradle
-        run: |
-          cd android && ./gradlew assembleRelease
-
-      # Menambahkan proses Signing secara otomatis
-      - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          # Arahkan ke direktori tempat output Gradle berada
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.KEYSTORE_BASE64 }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-
-      # Mengubah path untuk mengambil output dari step sign_app
-      - name: Upload Compiled APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Absensi-Digital-Release-APK
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
-
-      - name: Upload Web Bundle to Capgo (OTA Update)
-        run: |
-          npx @capgo/cli@latest bundle upload --channel=production
-        env:
-          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}

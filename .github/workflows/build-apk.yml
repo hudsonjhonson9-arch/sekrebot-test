@@ -11,26 +11,26 @@ jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Diperlukan agar GitHub Actions memiliki izin untuk men-push berkas APK & version.json baru ke repositori
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
       - name: Install Dependencies and Setup Capacitor
         run: |
+          npm install
           node scripts/setup-capacitor.js
 
       - name: Copy Web Assets and Sync Capacitor
@@ -38,35 +38,18 @@ jobs:
           npx cap sync
           npx cap copy android
 
-      - name: Build Debug APK using Gradle (Auto-Signed)
+      - name: Build Release APK using Gradle
         run: |
-          cd android && ./gradlew assembleDebug
-
-      - name: Prepare APK and Increment Build Version
-        run: |
-          # Increment build number in version.json
-          node -e "
-            const fs = require('fs');
-            if (fs.existsSync('version.json')) {
-              const v = JSON.parse(fs.readFileSync('version.json', 'utf8'));
-              v.build = (v.build || 0) + 1;
-              fs.writeFileSync('version.json', JSON.stringify(v, null, 2));
-              console.log('✅ Incremented build to ' + v.build);
-            }
-          "
-          # Copy compiled debug APK to android-apk directory
-          mkdir -p android-apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk android-apk/Absensi-Digital.apk
-          echo "✅ Compiled APK moved to android-apk/Absensi-Digital.apk"
-
-      - name: Auto-Commit Compiled APK & version.json
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "📦 Auto-compiled Android APK and updated version.json [skip ci]"
-          file_pattern: "android-apk/Absensi-Digital.apk version.json"
+          cd android && ./gradlew assembleRelease
 
       - name: Upload Compiled APK Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: Absensi-Digital-Installable-APK
-          path: android-apk/Absensi-Digital.apk
+          name: Absensi-Digital-Release-APK
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+
+      - name: Upload Web Bundle to Capgo (OTA Update)
+        run: |
+          npx @capgo/cli@latest bundle upload --channel=production
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}

@@ -2,17 +2,17 @@
     /* ════ MEJA ABSEN (1:N matching) ════ */
     window._isMejaMode = false;
     window._mejaProcessing = false;
-    let _blinkDetected = false;
-    let _lastEyeRatio = 0;
-    let _allFaceDescriptors = [];
-    let _mejaGpsLocation = null;
-    let _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
+    var _blinkDetected = false;
+    var _lastEyeRatio = 0;
+    var _allFaceDescriptors = [];
+    var _mejaGpsLocation = null;
+    var _mejaCnt = { masuk: 0, pulang: 0, gagal: 0 };
 
     // Passive Liveness State
-    let _livenessScore = 0;
-    let _livenessHistory = [];
-    let _lastLandmarks = null;
-    let _isLive = false;
+    var _livenessScore = 0;
+    var _livenessHistory = [];
+    var _lastLandmarks = null;
+    // _isLive dikelola oleh face.js
     window._mejaUserMap = {};
 
     function _setMejaStatus(mode, icon, text, sub) {
@@ -59,7 +59,7 @@
      * Identifikasi pegawai otomatis tanpa perlu input manual.
      * @returns {Promise<void>}
      */
-        async function startMejaAbsen() {
+    async function startMejaAbsen() {
       // 0. RESET TOTAL STATE (Mencegah residu deteksi sebelumnya)
       _lastMejaId = null;
       _lastMejaTime = 0;
@@ -88,8 +88,8 @@
       if ($('livenessMini')) $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
       if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Menyiapkan Meja Absen...';
 
-    // 2. FETCH GPS DAN DATA WAJAH (Try Cache First)
-    const loadData = async () => {
+      // 2. FETCH GPS DAN DATA WAJAH (Try Cache First)
+      const loadData = async () => {
       const gps = await _getMejaGps();
       _mejaGpsLocation = gps;
       const locEl = $('mejaLocVal'), accEl = $('mejaLocAccuracy');
@@ -162,16 +162,16 @@
           stopMejaAbsen();
         }
       }
-    };
+      };
 
-    loadData();
+      loadData();
     }
 
     /**
      * Hentikan mode Meja Absen dan tutup kamera.
      * @returns {Promise<void>}
      */
-        async function stopMejaAbsen() {
+    async function stopMejaAbsen() {
       window._isMejaMode = false;
       _isMejaAbsen = false;
       window._mejaProcessing = false;

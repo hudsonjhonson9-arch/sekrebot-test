@@ -149,4 +149,13 @@ if (fs.existsSync(wrapperPath)) {
   console.log('⚠️ gradle-wrapper.properties not found! Skipping Gradle upgrade.');
 }
 
+// 8. Generate Android icons and splash screens dynamically from the assets folder
+console.log('🎨 Generating Android icons and splash screens from assets...');
+try {
+  execSync('npx @capacitor/assets generate --android', { stdio: 'inherit' });
+  console.log('✅ Android icons and splash screens generated successfully!');
+} catch (e) {
+  console.log('⚠️ Failed to generate assets dynamically. Skipping asset generation.');
+}
+
 console.log('🎉 Setup complete! You can now compile the project or run inside GitHub Actions.');

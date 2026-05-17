@@ -1,0 +1,70 @@
+{
+  "name": "SIMAPO - Tiket Kerusakan (User & Admin)",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "POST", "path": "simapo-tiket", "responseMode": "responseNode", "options": {} },
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0],
+      "id": "wh-tiket-create", "name": "WH Lapor Kerusakan", "webhookId": "simapo-tiket"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.judul) throw new Error('Judul tiket kosong');\nreturn [{ json: { \n  userid: nip, \n  judul: b.judul, \n  deskripsi: b.deskripsi, \n  lokasi: b.lokasi || '', \n  nomortiket: 'TKT-' + Date.now(),\n  status: 'MENUNGGU_PENGECEKAN'\n} }];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 0],
+      "id": "code-tiket-create", "name": "Validate Tiket"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"SIMAPO\".tiket_kerusakan (id, nomortiket, userid, judul, deskripsi, lokasi, status, createdat, updatedat) VALUES (gen_random_uuid(), '{{ $json.nomortiket }}', '{{ $json.userid }}', '{{ $json.judul }}', '{{ $json.deskripsi }}', '{{ $json.lokasi }}', '{{ $json.status }}', NOW(), NOW()) RETURNING id, status;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [480, 0],
+      "id": "pg-tiket-create", "name": "PG Insert Tiket",
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ { \"success\": true, \"message\": \"Tiket berhasil dibuat\", \"id\": $json.id } }}", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 0],
+      "id": "res-tiket-create", "name": "Res Lapor Kerusakan"
+    },
+
+    {
+      "parameters": { "httpMethod": "GET", "path": "simapo-admin-tiket-list", "responseMode": "responseNode", "options": {} },
+      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 300],
+      "id": "wh-admin-tiket-list", "name": "WH Admin Tiket List", "webhookId": "simapo-admin-tiket-list"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 300],
+      "id": "pg-admin-tiket-list", "name": "PG Admin Tiket List",
+      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+      },
+      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 300],
+      "id": "code-agg-admin-tiket", "name": "Agg Admin Tiket"
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": {} },
+      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 300],
+      "id": "res-admin-tiket-list", "name": "Res Admin Tiket List"
+    }
+  ],
+  "connections": {
+    "WH Lapor Kerusakan":     { "main": [[{ "node": "Validate Tiket",         "type": "main", "index": 0 }]] },
+    "Validate Tiket":         { "main": [[{ "node": "PG Insert Tiket",         "type": "main", "index": 0 }]] },
+    "PG Insert Tiket":        { "main": [[{ "node": "Res Lapor Kerusakan",     "type": "main", "index": 0 }]] },
+    "WH Admin Tiket List":    { "main": [[{ "node": "PG Admin Tiket List",     "type": "main", "index": 0 }]] },
+    "PG Admin Tiket List":    { "main": [[{ "node": "Agg Admin Tiket",         "type": "main", "index": 0 }]] },
+    "Agg Admin Tiket":        { "main": [[{ "node": "Res Admin Tiket List",    "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "meta": { "templateCredsSetupCompleted": true, "instanceId": "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67" }
+}

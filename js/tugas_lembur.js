@@ -898,8 +898,12 @@
     const kepTitle = kb.jabatan ? kb.jabatan : 'Kepala';
 
     const instId = getScopedInstansiId();
-    const instName = getInstansiName(instId);
+    const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+    const instName = instData?.header || instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
     const instNameUpper = instName ? instName.toUpperCase() : 'BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH';
+    const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
+    const instKontak = instData?.kontak || '';
+    const instLogo = instData?.logo_url || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
 
     const html = `
       <style>
@@ -930,13 +934,14 @@
         .print-sign { text-align: left; width: 250px; font-size: 11px; line-height: 1.4; }
         .print-sign b { text-decoration: underline; font-size: 12px; }
       </style>
-
+ 
       <div class="print-header">
-        <img class="print-header-logo" src="https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png">
+        <img class="print-header-logo" src="${instLogo}">
         <div class="print-header-text">
           <h1>PEMERINTAH KABUPATEN SUMBA BARAT</h1>
           <h2>${instNameUpper}</h2>
-          <p>Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur</p>
+          <p>${instAlamat}</p>
+          ${instKontak ? `<p style="font-weight:600; margin-top:2px;">${instKontak}</p>` : ''}
         </div>
       </div>
       <div class="print-header-line"></div>

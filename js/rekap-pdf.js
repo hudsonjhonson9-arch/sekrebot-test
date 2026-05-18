@@ -93,6 +93,7 @@
         const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
         const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
         const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
+        const instKontak = instData?.kontak || '';
 
         doc.setFont('times', 'bold');
         doc.setFontSize(15);
@@ -110,6 +111,10 @@
         addressLines.forEach(() => {
           currentAddressY += 4.5;
         });
+
+        if (instKontak) {
+          currentAddressY += 4.5;
+        }
 
         const finalDividerY = Math.max(currentAddressY + 1, 37);
         const docTitleY = finalDividerY + 9;
@@ -193,6 +198,13 @@
                 doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
                 drawAddressY += 4.5;
               });
+
+              if (instKontak) {
+                doc.setFont('times', 'normal');
+                doc.setFontSize(8.5);
+                doc.text(instKontak, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
+                drawAddressY += 4.5;
+              }
 
               // Draw Divider lines
               doc.setLineWidth(0.7);

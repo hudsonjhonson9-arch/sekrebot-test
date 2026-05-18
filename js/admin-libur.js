@@ -331,6 +331,24 @@
     }
     window.populateSuperadminInstansiSelect = populateSuperadminInstansiSelect;
 
+    function updateKopPreview() {
+      const headerText = $('inEditInstansiNamaShort').value.trim() || 'NAMA INSTANSI PEGAWAI';
+      const logo = $('inEditInstansiLogo').value.trim() || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
+      const alamat = $('inEditInstansiAlamat').value.trim() || 'Alamat Instansi Belum Diatur';
+      const kontak = $('inEditInstansiKontak').value.trim() || 'Kontak Instansi Belum Diatur';
+      
+      const previewNama = $('kopPreviewNama');
+      const previewLogo = $('kopPreviewLogo');
+      const previewAlamat = $('kopPreviewAlamat');
+      const previewKontak = $('kopPreviewKontak');
+      
+      if (previewNama) previewNama.innerHTML = headerText.toUpperCase().replace(/\n/g, '<br>');
+      if (previewLogo) previewLogo.src = logo;
+      if (previewAlamat) previewAlamat.textContent = alamat;
+      if (previewKontak) previewKontak.textContent = kontak;
+    }
+    window.updateKopPreview = updateKopPreview;
+
     function loadInstansiToEditForm() {
       const selectEl = $('inEditInstansiSelect');
       const fieldsDiv = $('instansiEditFields');
@@ -353,9 +371,13 @@
             $('inEditInstansiNama').value = inst.nama_instansi || inst.header || inst.nama || '';
             $('inEditInstansiLogo').value = inst.logo_url || '';
             $('inEditInstansiAlamat').value = inst.alamat || '';
+            $('inEditInstansiKontak').value = inst.kontak || '';
             
             // Hide result card initially
             dom.hide('instansiEditResult');
+            
+            // Update preview card right away
+            updateKopPreview();
             
             // Show fields
             fieldsDiv.style.display = 'block';
@@ -373,6 +395,7 @@
       const nama = $('inEditInstansiNama').value.trim();
       const logo = $('inEditInstansiLogo').value.trim();
       const alamat = $('inEditInstansiAlamat').value.trim();
+      const kontak = $('inEditInstansiKontak').value.trim();
       
       if (!id || !namaShort || !nama) {
         showResult('instansiEditResult', 'instansiEditRIcon', 'instansiEditRTitle', 'instansiEditRMsg', 'warning', '⚠️', 'Input Tidak Lengkap', 'ID, Nama Tampilan (Short), dan Nama Instansi wajib diisi.');
@@ -390,6 +413,7 @@
           nama_instansi: nama,
           logo_url: logo,
           alamat: alamat,
+          kontak: kontak,
           nip: localStorage.getItem('MY_NIP') || '',
           timestamp: Math.floor(Date.now() / 1000)
         });
@@ -405,7 +429,8 @@
             nama: namaShort,
             nama_instansi: nama,
             logo_url: logo,
-            alamat: alamat
+            alamat: alamat,
+            kontak: kontak
           };
           map[id.toLowerCase()] = updatedInst;
           localStorage.setItem('absen_instansi_map', JSON.stringify(map));

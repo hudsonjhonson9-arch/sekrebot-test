@@ -2241,22 +2241,43 @@
               
               <div style="margin-bottom:12px;">
                 <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Tampilan Header (Short)</label>
-                <input type="text" id="inEditInstansiNamaShort" class="form-input" placeholder="Contoh: BAPPERIDA" />
+                <textarea id="inEditInstansiNamaShort" class="form-input" style="height: 65px; padding: 8px 12px; resize: vertical; line-height: 1.4; font-family: inherit;" placeholder="Contoh: BADAN PERENCANAAN PEMBANGUNAN&#10;RISET DAN INOVASI DAERAH" oninput="updateKopPreview()"></textarea>
               </div>
 
               <div style="margin-bottom:12px;">
                 <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Instansi</label>
-                <input type="text" id="inEditInstansiNama" class="form-input" placeholder="Contoh: BAPPERIDA Sumba Barat" />
+                <input type="text" id="inEditInstansiNama" class="form-input" placeholder="Contoh: BAPPERIDA Sumba Barat" oninput="updateKopPreview()" />
               </div>
               
               <div style="margin-bottom:12px;">
                 <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">URL Logo Instansi</label>
-                <input type="url" id="inEditInstansiLogo" class="form-input" placeholder="Contoh: https://example.com/logo.png" />
+                <input type="url" id="inEditInstansiLogo" class="form-input" placeholder="Contoh: https://example.com/logo.png" oninput="updateKopPreview()" />
               </div>
               
               <div style="margin-bottom:12px;">
                 <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Alamat Instansi</label>
-                <input type="text" id="inEditInstansiAlamat" class="form-input" placeholder="Contoh: Jl. Gajah Mada No. 1, Kota Tamu" />
+                <input type="text" id="inEditInstansiAlamat" class="form-input" placeholder="Contoh: Jl. Gajah Mada No. 1, Kota Tamu" oninput="updateKopPreview()" />
+              </div>
+
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Kontak Instansi (Telepon, Email, Fax, dll.)</label>
+                <input type="text" id="inEditInstansiKontak" class="form-input" placeholder="Contoh: Telp: (0387) 21034 | Email: bapperida@sumbabaratkab.go.id" oninput="updateKopPreview()" />
+              </div>
+
+              <!-- 📜 PRATINJAU KOP SURAT (HEADER PREVIEW) -->
+              <div style="margin-top:20px; border-top:1px dashed var(--border); padding-top:16px; margin-bottom:16px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:10px;">📜 Pratinjau Kop Surat (Header Preview)</label>
+                <div id="kopPreviewContainer" style="background:#ffffff; color:#000000; border-radius:8px; padding:18px; box-shadow:0 6px 16px rgba(0,0,0,0.15); border:1px solid #dddddd; overflow:hidden; font-family:'Plus Jakarta Sans', Arial, sans-serif; display:flex; flex-direction:column; align-items:center; position:relative;">
+                  <div style="display:flex; align-items:center; width:100%; border-bottom:3.5px double #000000; padding-bottom:10px; gap:18px; position:relative; text-align:center;">
+                    <img id="kopPreviewLogo" src="https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png" style="width:55px; height:auto; flex-shrink:0;" />
+                    <div style="flex:1; text-align:center; padding-right:35px;">
+                      <h3 style="font-size:11px; margin:0; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; line-height:1.2; color:#000000;">PEMERINTAH KABUPATEN SUMBA BARAT</h3>
+                      <h2 id="kopPreviewNama" style="font-size:14px; margin:3px 0; font-weight:800; text-transform:uppercase; line-height:1.2; color:#000000;">BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH</h2>
+                      <p id="kopPreviewAlamat" style="font-size:8.5px; margin:2px 0; color:#333333; line-height:1.3;">Jl. Gajah Mada No. 1, Waikabubak - Sumba Barat</p>
+                      <p id="kopPreviewKontak" style="font-size:8.5px; margin:1px 0; color:#333333; font-weight:600; line-height:1.3;">Telp: (0387) 21034 | Email: bapperida@sumbabaratkab.go.id</p>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div id="instansiEditResult" class="form-result" style="display:none; margin-bottom:12px;">

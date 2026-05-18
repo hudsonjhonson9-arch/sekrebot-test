@@ -331,23 +331,26 @@
     }
     window.populateSuperadminInstansiSelect = populateSuperadminInstansiSelect;
 
-    function updateKopPreview() {
-      const headerText = $('inEditInstansiNamaShort').value.trim() || 'NAMA INSTANSI PEGAWAI';
-      const logo = $('inEditInstansiLogo').value.trim() || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
-      const alamat = $('inEditInstansiAlamat').value.trim() || 'Alamat Instansi Belum Diatur';
-      const kontak = $('inEditInstansiKontak').value.trim() || 'Kontak Instansi Belum Diatur';
-      
-      const previewNama = $('kopPreviewNama');
-      const previewLogo = $('kopPreviewLogo');
-      const previewAlamat = $('kopPreviewAlamat');
-      const previewKontak = $('kopPreviewKontak');
-      
-      if (previewNama) previewNama.innerHTML = headerText.toUpperCase().replace(/\n/g, '<br>');
-      if (previewLogo) previewLogo.src = logo;
-      if (previewAlamat) previewAlamat.textContent = alamat;
-      if (previewKontak) previewKontak.textContent = kontak;
+    function updateInstansiHeaderPreview() {
+      const nama = ($('inEditInstansiNama')?.value || '').trim() || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
+      const logo = ($('inEditInstansiLogo')?.value || '').trim() || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
+      const alamat = ($('inEditInstansiAlamat')?.value || '').trim() || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
+      const kontak = ($('inEditInstansiKontak')?.value || '').trim() || '';
+
+      const logoImg = $('previewKopLogo');
+      const namaDiv = $('previewKopNama');
+      const alamatDiv = $('previewKopAlamat');
+      const kontakDiv = $('previewKopKontak');
+
+      if (logoImg) logoImg.src = logo;
+      if (namaDiv) namaDiv.textContent = nama.toUpperCase();
+      if (alamatDiv) alamatDiv.textContent = alamat;
+      if (kontakDiv) {
+        kontakDiv.textContent = kontak;
+        kontakDiv.style.display = kontak ? 'block' : 'none';
+      }
     }
-    window.updateKopPreview = updateKopPreview;
+    window.updateInstansiHeaderPreview = updateInstansiHeaderPreview;
 
     function loadInstansiToEditForm() {
       const selectEl = $('inEditInstansiSelect');
@@ -376,11 +379,11 @@
             // Hide result card initially
             dom.hide('instansiEditResult');
             
-            // Update preview card right away
-            updateKopPreview();
-            
             // Show fields
             fieldsDiv.style.display = 'block';
+
+            // Trigger preview update
+            updateInstansiHeaderPreview();
           }
         }
       } catch (e) {

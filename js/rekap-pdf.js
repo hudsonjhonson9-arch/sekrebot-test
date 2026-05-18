@@ -97,18 +97,7 @@
 
         doc.setFont('times', 'bold');
         doc.setFontSize(15);
-        
-        // Split by manual newline first, then split each chunk to size
-        const rawHeaderParts = fullHeader.split('\n');
-        const headerLines = [];
-        rawHeaderParts.forEach(part => {
-          const splitParts = doc.splitTextToSize(part.toUpperCase().trim(), pageWidth - 55);
-          if (Array.isArray(splitParts)) {
-            headerLines.push(...splitParts);
-          } else {
-            headerLines.push(splitParts);
-          }
-        });
+        const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
         
         let currentHeaderY = 21;
         headerLines.forEach(() => {
@@ -123,11 +112,17 @@
           currentAddressY += 4.5;
         });
 
+        // Account for contact lines in height calculation
         if (instKontak) {
-          currentAddressY += 4.5;
+          doc.setFont('times', 'bold');
+          doc.setFontSize(8.5);
+          const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
+          contactLines.forEach(() => {
+            currentAddressY += 4;
+          });
         }
 
-        const finalDividerY = Math.max(currentAddressY + 1, 37);
+        const finalDividerY = Math.max(currentAddressY + 1.5, 37);
         const docTitleY = finalDividerY + 9;
         const docPeriodeY = docTitleY + 5.5;
         const calculatedStartY = docPeriodeY + 6;
@@ -210,11 +205,15 @@
                 drawAddressY += 4.5;
               });
 
+              // Draw Dynamic Contact lines
               if (instKontak) {
-                doc.setFont('times', 'normal');
+                doc.setFont('times', 'bold');
                 doc.setFontSize(8.5);
-                doc.text(instKontak, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
-                drawAddressY += 4.5;
+                const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
+                contactLines.forEach((line) => {
+                  doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
+                  drawAddressY += 4;
+                });
               }
 
               // Draw Divider lines

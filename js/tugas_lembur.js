@@ -899,11 +899,12 @@
 
     const instId = getScopedInstansiId();
     const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
-    const instName = instData?.header || instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
-    const instNameUpper = instName ? instName.toUpperCase().replace(/\n/g, '<br>') : 'BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH';
+    const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
     const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
     const instKontak = instData?.kontak || '';
-    const instLogo = instData?.logo_url || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
+    const logoUrl = instData?.logo_url || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
+    const headerFont = instData?.header_font || 'times';
+    const headerSize = parseFloat(instData?.header_size || '15');
 
     const html = `
       <style>
@@ -913,13 +914,13 @@
           #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: auto; margin: 0; padding: 0; background: #fff !important; color: #000 !important; }
           @page { size: portrait; margin: 1cm; }
         }
-        #printArea { font-family: 'Times New Roman', serif; padding: 20px; background: white; color: black; display: none; }
+        #printArea { font-family: ${headerFont === 'times' ? "'Times New Roman', serif" : headerFont === 'helvetica' ? "Arial, Helvetica, sans-serif" : "'Courier New', Courier, monospace"}; padding: 20px; background: white; color: black; display: none; }
         .print-header { display: flex; align-items: center; border-bottom: 0.8px solid #000; padding-bottom: 2px; margin-bottom: 2px; width: 100%; position: relative; }
         .print-header-line { border-bottom: 2.5px solid #000; margin-bottom: 20px; width: 100%; }
         .print-header-logo { width: 65px; height: auto; position: absolute; left: 10px; top: 0; }
         .print-header-text { flex: 1; text-align: center; width: 100%; padding-left: 50px; }
         .print-header-text h1 { font-size: 15px; margin: 0; font-weight: bold; line-height: 1.2; text-transform: uppercase; }
-        .print-header-text h2 { font-size: 18px; margin: 2px 0; font-weight: bold; line-height: 1.1; text-transform: uppercase; }
+        .print-header-text h2 { font-size: ${headerSize}px; margin: 2px 0; font-weight: bold; line-height: 1.1; text-transform: uppercase; }
         .print-header-text p { font-size: 11px; margin: 2px 0 0 0; font-style: normal; }
         
         .print-title { text-align: center; font-size: 14px; font-weight: bold; margin-top: 25px; text-decoration: underline; text-transform: uppercase; }
@@ -934,14 +935,14 @@
         .print-sign { text-align: left; width: 250px; font-size: 11px; line-height: 1.4; }
         .print-sign b { text-decoration: underline; font-size: 12px; }
       </style>
- 
+
       <div class="print-header">
-        <img class="print-header-logo" src="${instLogo}">
+        <img class="print-header-logo" src="${logoUrl}">
         <div class="print-header-text">
           <h1>PEMERINTAH KABUPATEN SUMBA BARAT</h1>
-          <h2>${instNameUpper}</h2>
-          <p>${instAlamat}</p>
-          ${instKontak ? `<p style="font-weight:600; margin-top:2px;">${instKontak}</p>` : ''}
+          <h2>${fullHeader}</h2>
+          <p style="white-space: pre-line;">${instAlamat}</p>
+          ${instKontak ? `<p style="white-space: pre-line; font-weight: bold; margin-top: 2px; font-size: 10px;">${instKontak}</p>` : ''}
         </div>
       </div>
       <div class="print-header-line"></div>

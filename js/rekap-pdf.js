@@ -95,8 +95,11 @@
         const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
         const instKontak = instData?.kontak || '';
 
-        doc.setFont('times', 'bold');
-        doc.setFontSize(15);
+        const headerFont = instData?.header_font || 'times';
+        const headerSize = parseFloat(instData?.header_size || '15');
+
+        doc.setFont(headerFont, 'bold');
+        doc.setFontSize(headerSize);
         const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
         
         let currentHeaderY = 21;
@@ -104,7 +107,7 @@
           currentHeaderY += 5.5;
         });
 
-        doc.setFont('times', 'normal');
+        doc.setFont(headerFont, 'normal');
         doc.setFontSize(9.5);
         const addressLines = doc.splitTextToSize(instAlamat, pageWidth - 55);
         let currentAddressY = currentHeaderY;
@@ -114,7 +117,7 @@
 
         // Account for contact lines in height calculation
         if (instKontak) {
-          doc.setFont('times', 'bold');
+          doc.setFont(headerFont, 'bold');
           doc.setFontSize(8.5);
           const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
           contactLines.forEach(() => {
@@ -189,7 +192,8 @@
               doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
               
               // Draw Dynamic Kop Header lines
-              doc.setFontSize(15);
+              doc.setFont(headerFont, 'bold');
+              doc.setFontSize(headerSize);
               let drawHeaderY = 21;
               headerLines.forEach((line) => {
                 doc.text(line, pageWidth / 2 + 10, drawHeaderY, { align: 'center' });
@@ -197,7 +201,7 @@
               });
 
               // Draw Dynamic Address lines
-              doc.setFont('times', 'normal');
+              doc.setFont(headerFont, 'normal');
               doc.setFontSize(9.5);
               let drawAddressY = drawHeaderY;
               addressLines.forEach((line) => {
@@ -207,7 +211,7 @@
 
               // Draw Dynamic Contact lines
               if (instKontak) {
-                doc.setFont('times', 'bold');
+                doc.setFont(headerFont, 'bold');
                 doc.setFontSize(8.5);
                 const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
                 contactLines.forEach((line) => {

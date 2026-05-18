@@ -332,22 +332,42 @@
     window.populateSuperadminInstansiSelect = populateSuperadminInstansiSelect;
 
     function updateInstansiHeaderPreview() {
-      const nama = ($('inEditInstansiNama')?.value || '').trim() || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
+      // Prioritaskan Nama Tampilan Header (Short) untuk Header/Kop! Jika kosong, gunakan nama instansi.
+      const nama = ($('inEditInstansiNamaShort')?.value || '').trim() || ($('inEditInstansiNama')?.value || '').trim() || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
       const logo = ($('inEditInstansiLogo')?.value || '').trim() || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
       const alamat = ($('inEditInstansiAlamat')?.value || '').trim() || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
       const kontak = ($('inEditInstansiKontak')?.value || '').trim() || '';
+      const font = $('inEditInstansiFont')?.value || 'times';
+      const fontSize = $('inEditInstansiFontSize')?.value || '15';
 
       const logoImg = $('previewKopLogo');
       const namaDiv = $('previewKopNama');
       const alamatDiv = $('previewKopAlamat');
       const kontakDiv = $('previewKopKontak');
+      const previewBox = $('instansiHeaderPreview');
 
       if (logoImg) logoImg.src = logo;
-      if (namaDiv) namaDiv.textContent = nama.toUpperCase();
+      if (namaDiv) {
+        namaDiv.textContent = nama.toUpperCase();
+        // Atur ukuran font berdasarkan input dropdown (ubah pt ke px perkiraan untuk CSS)
+        const pxSize = Math.round(parseFloat(fontSize) * 1.05); // e.g. 15pt -> ~16px
+        namaDiv.style.fontSize = pxSize + 'px';
+      }
       if (alamatDiv) alamatDiv.textContent = alamat;
       if (kontakDiv) {
         kontakDiv.textContent = kontak;
         kontakDiv.style.display = kontak ? 'block' : 'none';
+      }
+
+      // Atur font family preview secara dinamis
+      if (previewBox) {
+        if (font === 'times') {
+          previewBox.style.fontFamily = "'Times New Roman', Times, serif";
+        } else if (font === 'helvetica') {
+          previewBox.style.fontFamily = "Arial, Helvetica, sans-serif";
+        } else if (font === 'courier') {
+          previewBox.style.fontFamily = "'Courier New', Courier, monospace";
+        }
       }
     }
     window.updateInstansiHeaderPreview = updateInstansiHeaderPreview;
@@ -375,6 +395,8 @@
             $('inEditInstansiLogo').value = inst.logo_url || '';
             $('inEditInstansiAlamat').value = inst.alamat || '';
             $('inEditInstansiKontak').value = inst.kontak || '';
+            $('inEditInstansiFont').value = inst.header_font || 'times';
+            $('inEditInstansiFontSize').value = inst.header_size || '15';
             
             // Hide result card initially
             dom.hide('instansiEditResult');
@@ -399,6 +421,8 @@
       const logo = $('inEditInstansiLogo').value.trim();
       const alamat = $('inEditInstansiAlamat').value.trim();
       const kontak = $('inEditInstansiKontak').value.trim();
+      const font = $('inEditInstansiFont').value;
+      const fontSize = $('inEditInstansiFontSize').value;
       
       if (!id || !namaShort || !nama) {
         showResult('instansiEditResult', 'instansiEditRIcon', 'instansiEditRTitle', 'instansiEditRMsg', 'warning', '⚠️', 'Input Tidak Lengkap', 'ID, Nama Tampilan (Short), dan Nama Instansi wajib diisi.');
@@ -417,6 +441,8 @@
           logo_url: logo,
           alamat: alamat,
           kontak: kontak,
+          header_font: font,
+          header_size: fontSize,
           nip: localStorage.getItem('MY_NIP') || '',
           timestamp: Math.floor(Date.now() / 1000)
         });
@@ -433,7 +459,9 @@
             nama_instansi: nama,
             logo_url: logo,
             alamat: alamat,
-            kontak: kontak
+            kontak: kontak,
+            header_font: font,
+            header_size: fontSize
           };
           map[id.toLowerCase()] = updatedInst;
           localStorage.setItem('absen_instansi_map', JSON.stringify(map));

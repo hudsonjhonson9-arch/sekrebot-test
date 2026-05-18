@@ -40,9 +40,10 @@ async function handleAbsen() {
   }
   setBtnL('btnAbsen', true, 'Memeriksa...');
   const initData = window.tg?.initData || '';
+  const isCapacitor = !!window.Capacitor || window.location.protocol === 'capacitor:';
   // ── Fallback Telegram X: izinkan jika MY_ID valid dari user_list ──
-  const isTgX = !initData && window.MY_ID && window.userProfile;
-  console.log('[Absen] Identity check:', { hasInitData: !!initData, MY_ID: window.MY_ID, hasProfile: !!window.userProfile, isTgX });
+  const isTgX = (!initData && window.MY_ID && window.userProfile) || isCapacitor;
+  console.log('[Absen] Identity check:', { hasInitData: !!initData, MY_ID: window.MY_ID, hasProfile: !!window.userProfile, isTgX, isCapacitor });
 
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram', 'Aplikasi harus dibuka melalui Telegram, bukan browser biasa.');
@@ -580,7 +581,8 @@ async function handlePulangLuar() {
     return;
   }
   const initData = window.tg?.initData || '';
-  const isTgX = !initData && window.MY_ID && window.userProfile;
+  const isCapacitor = !!window.Capacitor || window.location.protocol === 'capacitor:';
+  const isTgX = (!initData && window.MY_ID && window.userProfile) || isCapacitor;
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram',
       'Aplikasi harus dibuka melalui Telegram.');

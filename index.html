@@ -266,10 +266,10 @@
   <div class="app">
     <!-- Header -->
     <div class="header">
-      <div class="logo-wrap">🏛️</div>
+      <div class="logo-wrap" id="headerLogoWrap">🏛️</div>
       <div>
-        <div class="org-name">Sekretariat</div>
-        <div class="org-sub">BAPPERIDA Sumba Barat</div>
+        <div class="org-name" id="headerOrgName">Sekretariat</div>
+        <div class="org-sub" id="headerOrgSub">BAPPERIDA Sumba Barat</div>
       </div>
     </div>
 
@@ -298,7 +298,7 @@
       <!-- Desktop Only Items (Show in sidebar) -->
       <button class="nav-item desktop-only" id="nav-tugas-desk" onclick="switchTab('tugas', true)" data-tab="tugas">
         <i class="fas fa-tasks"></i>
-        <span>Tugas Luar</span>
+        <span>Perjalanan Dinas</span>
       </button>
       <button class="nav-item desktop-only" id="nav-lembur-desk" onclick="switchTab('lembur', true)" data-tab="lembur">
         <i class="fas fa-user-clock"></i>
@@ -326,7 +326,7 @@
       <div class="more-menu-content" onclick="event.stopPropagation()">
         <button class="more-item" id="more-tugas" onclick="switchTab('tugas', true)">
           <i class="fas fa-tasks"></i>
-          <span>Tugas Luar</span>
+          <span>Perjalanan Dinas</span>
         </button>
         <button class="more-item" id="more-lembur" onclick="switchTab('lembur', true)">
           <i class="fas fa-user-clock"></i>
@@ -933,7 +933,7 @@
         </div>
       </div>
       <div class="print-info" id="printInfo">
-        <strong>REKAP ABSENSI — BAPPERIDA SUMBA BARAT</strong><br>
+        <strong>REKAP ABSENSI PEGAWAI</strong><br>
         Periode: <span id="printPeriode">—</span><br>
         Dicetak: <span id="printTanggal">—</span>
       </div>
@@ -960,19 +960,21 @@
             style="display:none">Kustom</button>
         </div>
 
+        <!-- Filter Instansi (Only visible to Superadmin) -->
+        <div id="rekapInstansiSection" style="display: none; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <div class="date-range-label" style="margin-bottom: 4px">🏢 Pilih Instansi (Superadmin)</div>
+          <select id="rekapInstansiSelect" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
+            onchange="onRekapInstansiChange()">
+            <option value="">— Pilih Instansi —</option>
+          </select>
+        </div>
+
         <!-- Filter Bidang -->
         <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
           <div class="date-range-label" style="margin-bottom: 4px">Filter Bidang / Unit Kerja</div>
           <select id="rekapBidang" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
             onchange="renderRekap(lastRekapPegawai)">
             <option value="Semua">— Tampilkan Semua Bidang —</option>
-            <option value="Sekretariat">Sekretariat</option>
-            <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-            <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-            <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia
-            </option>
-            <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-            <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
           </select>
         </div>
       </div>
@@ -1076,7 +1078,16 @@
       <input type="file" id="tugasBuktiInput" accept="image/*" capture="camera" style="display:none" onchange="processTugasBukti(this)">
       
       <div class="rekap-header">
-        <div class="rekap-title">📍 Penugasan & Tugas Luar</div>
+        <div class="rekap-title">📍 Penugasan & Perjalanan Dinas</div>
+      </div>
+
+      <!-- Filter Instansi Tugas (Only visible to Superadmin) -->
+      <div id="tugasInstansiSection" style="display: none; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-label" style="margin-bottom: 4px; font-weight:800; color:var(--gold);">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="tugasInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: var(--card); color: var(--white); border: 1px solid var(--border); border-radius: 12px;"
+          onchange="onTugasInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
       </div>
 
       <!-- FORM PEMBUATAN (Admin/Kabid Only) -->
@@ -1099,7 +1110,7 @@
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">📍 Titik Koordinat Tugas</label>
+          <label class="form-label">📍 Titik Koordinat Tugas (Opsional - jika kosong, koordinat diambil saat pengerjaan)</label>
           <div id="tugasMap" style="height:220px; border-radius:14px; border:1px solid var(--border); margin-bottom:10px; z-index:1"></div>
           <div style="display:flex; gap:8px">
             <input type="text" id="tugasLat" class="form-input" placeholder="Latitude" readonly style="font-family:'JetBrains Mono',monospace">
@@ -1159,6 +1170,15 @@
     <div class="panel" id="panel-lembur">
       <div class="rekap-header">
         <div class="rekap-title">🌙 Rekap Lembur</div>
+      </div>
+
+      <!-- Filter Instansi Lembur (Only visible to Superadmin) -->
+      <div id="lemburInstansiSection" style="display: none; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-label" style="margin-bottom: 4px; font-weight:800; color:var(--gold);">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="lemburInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: var(--card); color: var(--white); border: 1px solid var(--border); border-radius: 12px;"
+          onchange="onLemburInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
       </div>
       <div class="card glass-card">
         <div class="form-group">
@@ -1342,6 +1362,15 @@
         <div class="admin-sub">Kelola kehadiran, data pegawai, dan konfigurasi sistem</div>
       </div>
 
+      <!-- Filter Instansi (Only visible to Superadmin) -->
+      <div id="adminInstansiSection" style="display: none; margin-bottom: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 12px;">
+        <div class="date-range-label" style="margin-bottom: 4px; font-weight: 700; color: var(--gold); font-size: 11px;">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="adminInstansiSelect" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
+          onchange="onAdminInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
+      </div>
+
       <!-- Sub-Navigation Admin -->
       <div class="admin-nav">
         <button class="admin-nav-btn active" id="btn-nav-ops" onclick="switchAdminSection('ops')">🏢 Operasional</button>
@@ -1509,7 +1538,7 @@
             <div style="font-size:11px;font-weight:800;color:var(--white)">📋 KONFIRMASI KETERANGAN PEGAWAI</div>
             <button class="btn-sm-admin" onclick="loadKonfirmasiAdmin()">🔄</button>
           </div>
-          <div class="radius-note" style="margin-bottom:12px">Persetujuan untuk izin, sakit, atau tugas luar yang
+          <div class="radius-note" style="margin-bottom:12px">Persetujuan untuk izin, sakit, atau perjalanan dinas yang
             pending.</div>
           <div id="konfirmasiAdminList">
             <div class="shimmer" style="height:80px;border-radius:12px"></div>
@@ -1939,7 +1968,7 @@
             <!-- ✍️ FORM MANAJEMEN TERPADU (INLINE) -->
             <div id="pegawaiForm" style="display:none; background:rgba(201,168,76,0.05); border:1px solid rgba(201,168,76,0.2); border-radius:16px; padding:25px; margin-bottom:30px; border-left: 4px solid var(--gold);">
               <div id="pegawaiFormTitle" style="font-size:14px; font-weight:800; color:var(--gold); margin-bottom:20px; text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px">
-                <span>👤</span> DATABASE KEPEGAWAIAN BAPPERIDA
+                <span>👤</span> <span id="pegawaiFormTitleText">DATABASE KEPEGAWAIAN BAPPERIDA</span>
               </div>
               <input type="hidden" id="editPegawaiId">
               
@@ -1958,12 +1987,7 @@
                   <div class="form-group"><label class="form-label">Jabatan</label><input id="inPegawaiJabatan" type="text" class="form-input" /></div>
                   <div class="form-group"><label class="form-label">Bidang / Unit Kerja</label>
                     <select id="inPegawaiBidang" class="form-input">
-                      <option value="Sekretariat">Sekretariat</option>
-                      <option value="Bidang Perencanaan">Bidang Perencanaan</option>
-                      <option value="Bidang Ekonomi dan SDA">Bidang Ekonomi dan SDA</option>
-                      <option value="Bidang Pemerintahan dan Pembangunan Manusia">Bidang Pemerintahan dan Pembangunan Manusia</option>
-                      <option value="Bidang Infrastruktur dan Kewilayahan">Bidang Infrastruktur dan Kewilayahan</option>
-                      <option value="Bidang Riset dan Inovasi Daerah">Bidang Riset dan Inovasi Daerah</option>
+                      <option value="">— Memuat Bidang... —</option>
                     </select>
                   </div>
                   <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
@@ -2213,6 +2237,103 @@
           <button class="btn-admin" onclick="simpanFaceToggle()" style="margin-top:12px">💾 Terapkan Perubahan</button>
         </div>
 
+        <!-- 🏛️ SUPERADMIN: DETAIL INSTANSI & HEADER EDITOR ══ -->
+        <div class="card superadmin-section" style="margin-top:12px; display:none;" id="superadminHeaderCard">
+          <div style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border); display:flex; align-items:center; gap:6px;">
+            <span>🏛️</span> KELOLA DETAIL INSTANSI & HEADER
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Pilih Instansi</label>
+              <select id="inEditInstansiSelect" class="form-input" onchange="loadInstansiToEditForm()" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; transition:border-color 0.2s;">
+                <option value="">— Memuat instansi... —</option>
+              </select>
+            </div>
+            
+            <div id="instansiEditFields" style="display:none; border-top:1px dashed var(--border); padding-top:12px; margin-top:4px;">
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">ID Instansi (Read-only)</label>
+                <input type="text" id="inEditInstansiId" class="form-input" readonly style="background:rgba(255,255,255,0.01); color:var(--muted); cursor:not-allowed; font-family:monospace;" />
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Tampilan Header (Bisa Baris Baru)</label>
+                <textarea id="inEditInstansiNamaShort" class="form-input" oninput="updateInstansiHeaderPreview()" placeholder="Contoh: BAPPERIDA&#10;SUMBA BARAT" style="height:65px; resize:vertical; padding:8px 12px; font-family:inherit; line-height:1.4;"></textarea>
+              </div>
+
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Nama Instansi</label>
+                <input type="text" id="inEditInstansiNama" class="form-input" oninput="updateInstansiHeaderPreview()" placeholder="Contoh: BAPPERIDA Sumba Barat" />
+              </div>
+
+              <div style="margin-bottom:12px; display:flex; gap:12px;">
+                <div style="flex:1;">
+                  <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Font Kop</label>
+                  <select id="inEditInstansiFont" class="form-input" onchange="updateInstansiHeaderPreview()" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+                    <option value="times">Times New Roman (Serif)</option>
+                    <option value="helvetica">Arial / Helvetica (Sans-serif)</option>
+                    <option value="courier">Courier New (Monospace)</option>
+                  </select>
+                </div>
+                <div style="width:120px;">
+                  <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Ukuran Font</label>
+                  <select id="inEditInstansiFontSize" class="form-input" onchange="updateInstansiHeaderPreview()" style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+                    <option value="11">Kecil (11pt)</option>
+                    <option value="13">Sedang (13pt)</option>
+                    <option value="15" selected>Normal (15pt)</option>
+                    <option value="17">Besar (17pt)</option>
+                    <option value="19">Sangat Besar (19pt)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">URL Logo Instansi</label>
+                <input type="url" id="inEditInstansiLogo" class="form-input" oninput="updateInstansiHeaderPreview()" placeholder="Contoh: https://example.com/logo.png" />
+              </div>
+              
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Alamat Instansi (Bisa Baris Baru)</label>
+                <textarea id="inEditInstansiAlamat" class="form-input" oninput="updateInstansiHeaderPreview()" placeholder="Contoh: Jl. Gajah Mada No. 1&#10;Kota Waikabubak, Sumba Barat" style="height:65px; resize:vertical; padding:8px 12px; font-family:inherit; line-height:1.4;"></textarea>
+              </div>
+
+              <div style="margin-bottom:12px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Kontak Instansi (Bisa Baris Baru)</label>
+                <textarea id="inEditInstansiKontak" class="form-input" oninput="updateInstansiHeaderPreview()" placeholder="Contoh: Telp: (0387) 21111&#10;Email: bapperida@sumbabarabkab.go.id" style="height:65px; resize:vertical; padding:8px 12px; font-family:inherit; line-height:1.4;"></textarea>
+              </div>
+
+              <!-- 🖼️ Kop Surat Live Preview -->
+              <div style="margin-top:16px; margin-bottom:16px;">
+                <label style="display:block; font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:8px;">Live Preview Kop Surat</label>
+                <div id="instansiHeaderPreview" style="background:#ffffff; color:#000000; padding:15px; border-radius:8px; border:1px solid #ccc; font-family:'Times New Roman', Times, serif; line-height:1.2; box-shadow:0 4px 10px rgba(0,0,0,0.15); overflow:hidden;">
+                  <div style="display:flex; align-items:center; justify-content:center; gap:12px; position:relative;">
+                    <img id="previewKopLogo" src="https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png" style="width:45px; height:55px; object-fit:contain; flex-shrink:0;" />
+                    <div style="text-align:center; flex-grow:1;">
+                      <div style="font-size:10px; font-weight:bold; letter-spacing:0.3px; color:#000000;">PEMERINTAH KABUPATEN SUMBA BARAT</div>
+                      <div id="previewKopNama" style="font-size:12px; font-weight:bold; text-transform:uppercase; margin:2px 0; color:#000000; line-height:1.3; white-space:pre-line;">BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH</div>
+                      <div id="previewKopAlamat" style="font-size:8px; font-style:normal; white-space:pre-line; color:#333333; line-height:1.3;">Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur&#10;WAIKABUBAK</div>
+                      <div id="previewKopKontak" style="font-size:7.5px; font-style:normal; margin-top:2px; font-weight:bold; white-space:pre-line; color:#111111; line-height:1.3;"></div>
+                    </div>
+                  </div>
+                  <div style="border-bottom:3px solid #000000; margin-top:8px;"></div>
+                  <div style="border-bottom:1px solid #000000; margin-top:1px;"></div>
+                </div>
+              </div>
+              
+              <div id="instansiEditResult" class="form-result" style="display:none; margin-bottom:12px;">
+                <span class="r-icon" id="instansiEditRIcon"></span>
+                <div>
+                  <div class="r-title" id="instansiEditRTitle"></div>
+                  <div class="r-msg" id="instansiEditRMsg"></div>
+                </div>
+              </div>
+              
+              <button id="btnSaveInstansi" class="btn-admin" onclick="saveInstansiHeader()" style="width:100%; height:40px; margin-top:8px;">💾 Simpan Perubahan</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 🖥️ MODE DESKTOP ══ -->
         <div class="card" style="margin-top:12px" id="desktopModeCard">
           <div
@@ -2258,13 +2379,17 @@
         <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
       </div>
       <div id="formLogin">
-        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP Anda">
+        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan 18 Digit NIP" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
       </div>
       <div id="formRegister" style="display:none">
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
-        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / No Pegawai">
+        <input type="text" id="regNip" class="form-input-auth" placeholder="18 Digit NIP / No Pegawai" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
+        <input type="text" id="regNomor" class="form-input-auth" placeholder="Nomor WhatsApp (Aktif)">
+        <div id="regTelegramWrapper" style="display:none">
+          <input type="text" id="regTelegram" class="form-input-auth" placeholder="Telegram ID (Otomatis)" readonly style="background:rgba(255,255,255,0.05); color:var(--muted); cursor:not-allowed; margin-bottom:12px;">
+        </div>
         <select id="regInstansi" class="form-input-auth" onchange="fetchBidangList(this.value)">
           <option value="">— Memuat Instansi... —</option>
         </select>
@@ -2455,8 +2580,8 @@
   <!-- 8. Splash Screen -->
   <div id="appSplash" style="z-index: 99999;">
     <div class="splash-logo">🏛️</div>
-    <div class="splash-title">BAPPERIDA Sumba Barat</div>
-    <div class="splash-sub">Memuat aplikasi absensi...</div>
+    <div class="splash-title">Sistem Absensi</div>
+    <div class="splash-sub">Memuat profil dan data pegawai...</div>
     <div class="splash-bar"><div class="splash-progress"></div></div>
   </div>
 
@@ -2524,7 +2649,208 @@
     }
   </script>
 
+  <!-- 9. Source Code & DevTools Protection Guard -->
+  <script>
+    // Disable Right-Click
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
+    // Disable common inspection hotkeys
+    document.addEventListener('keydown', e => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+      if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+U (View Source)
+      if (e.ctrlKey && e.key.toUpperCase() === 'U') {
+        e.preventDefault();
+        return false;
+      }
+      // Ctrl+S (Save)
+      if (e.ctrlKey && e.key.toUpperCase() === 'S') {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    // DevTools Open Detection Loop (debugger-based performance check)
+    (function() {
+      function devtoolsDetector() {
+        if (window.Capacitor || ['localhost', '127.0.0.1'].includes(window.location.hostname)) return;
+        const t0 = performance.now();
+        debugger;
+        const t1 = performance.now();
+        if (t1 - t0 > 100) {
+          document.body.innerHTML = `
+            <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh; background:#0b0f19; color:#f8fafc; font-family:'Outfit',sans-serif; text-align:center; padding:20px; box-sizing:border-box;">
+              <div style="font-size:64px; margin-bottom:20px; animation: pulse 2s infinite;">🛡️</div>
+              <h1 style="font-size:24px; font-weight:700; margin-bottom:10px; color:#ef4444;">Sistem Keamanan Aktif</h1>
+              <p style="font-size:14px; color:#94a3b8; max-width:400px; line-height:1.6; margin:0 0 20px 0;">Inspeksi kode sumber atau penggunaan Developer Tools tidak diizinkan untuk alasan keamanan data.</p>
+              <button onclick="window.location.reload()" style="padding:10px 20px; background:#2563eb; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:14px; transition:all 0.2s; box-shadow: 0 4px 6px -1px rgba(37,99,235,0.4);">Segarkan Halaman</button>
+            </div>
+            <style>
+              @keyframes pulse {
+                0%, 100% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.05); opacity: 0.8; }
+              }
+            </style>
+          `;
+        }
+      }
+      setInterval(devtoolsDetector, 500);
+    })();
+  </script>
+
+  <!-- ══ MODAL SETTINGS & PREVIEW PDF REKAP ══ -->
+  <div id="pdfPreviewModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999999; background:rgba(11, 15, 25, 0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#111827; border:1px solid rgba(255, 255, 255, 0.08); border-radius:20px; width:95%; max-width:1200px; height:90%; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow:hidden; color:#f8fafc; font-family:'Outfit', sans-serif;">
+      <!-- Modal Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.01);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">📄</span>
+          <div>
+            <h3 style="margin:0; font-size:16px; font-weight:700; color:#fff;">Pengaturan & Pratinjau PDF Rekap</h3>
+            <p style="margin:0; font-size:11px; color:#94a3b8;">Sesuaikan orientasi, ukuran kertas, margin, dan padding sebelum diunduh.</p>
+          </div>
+        </div>
+        <button onclick="closePdfPreviewModal()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:10px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:16px;">&times;</button>
+      </div>
+      
+      <!-- Modal Body (Two Column Layout) -->
+      <div style="display:flex; flex:1; overflow:hidden;">
+        <!-- Left Side: Config Panel -->
+        <div style="width:320px; border-right:1px solid rgba(255,255,255,0.08); padding:20px; box-sizing:border-box; overflow-y:auto; background:rgba(255,255,255,0.01); display:flex; flex-direction:column; gap:16px;">
+          
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Orientasi Halaman</label>
+            <select id="pdfOptOrientation" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="p" selected>Portrait (Tegak)</option>
+              <option value="l">Landscape (Mendatar)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Ukuran Kertas</label>
+            <select id="pdfOptSize" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="f4" selected>F4 / Folio (215x330 mm)</option>
+              <option value="a4">A4 (210x297 mm)</option>
+              <option value="letter">Letter (216x279 mm)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Margin Kertas (mm)</label>
+            <select id="pdfOptMargin" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="10" selected>Sempit (10 mm)</option>
+              <option value="15">Sedang (15 mm)</option>
+              <option value="20">Lebar (20 mm)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Ukuran Font Tabel</label>
+            <select id="pdfOptFontSize" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="6.5">Sangat Kecil (6.5pt)</option>
+              <option value="7.5" selected>Normal (7.5pt)</option>
+              <option value="8.5">Besar (8.5pt)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Padding Baris (Tinggi Baris)</label>
+            <select id="pdfOptPadding" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="1.5">Sangat Rapat (1.5)</option>
+              <option value="2.0" selected>Normal (2.0)</option>
+              <option value="2.8">Longgar (2.8)</option>
+            </select>
+          </div>
+
+          <div>
+            <label style="display:block; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Cegah Baris Terpotong</label>
+            <select id="pdfOptRowBreak" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none;">
+              <option value="avoid" selected>Ya (Pindahkan ke Halaman Baru)</option>
+              <option value="auto">Tidak (Izinkan Terpotong)</option>
+            </select>
+          </div>
+
+          <!-- Dynamic Letterhead Overrides -->
+          <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:14px; margin-top:4px;">
+            <span style="font-size:10px; font-weight:800; color:#3b82f6; text-transform:uppercase; display:block; margin-bottom:12px; letter-spacing:0.5px;">✍️ Ubah Kop Secara Bebas</span>
+            
+            <div style="margin-bottom:10px;">
+              <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Nama Instansi (Judul Kop)</label>
+              <textarea id="pdfOptHeaderName" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:55px; color:#fff; font-size:11px; padding:8px; outline:none; resize:vertical; font-family:inherit; line-height:1.3; box-sizing:border-box;"></textarea>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Alamat (Bisa Baris Baru)</label>
+              <textarea id="pdfOptHeaderAlamat" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:55px; color:#fff; font-size:11px; padding:8px; outline:none; resize:vertical; font-family:inherit; line-height:1.3; box-sizing:border-box;"></textarea>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Kontak (Bisa Baris Baru)</label>
+              <textarea id="pdfOptHeaderKontak" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:50px; color:#fff; font-size:11px; padding:8px; outline:none; resize:vertical; font-family:inherit; line-height:1.3; box-sizing:border-box;"></textarea>
+            </div>
+
+            <div style="margin-bottom:10px;">
+              <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">URL Logo Kop</label>
+              <input type="url" id="pdfOptHeaderLogo" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:34px; color:#fff; font-size:11px; padding:0 10px; outline:none; box-sizing:border-box;" />
+            </div>
+
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1;">
+                <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Font Kop</label>
+                <select id="pdfOptHeaderFont" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:34px; color:#fff; font-size:11px; padding:0 8px; outline:none; box-sizing:border-box;">
+                  <option value="times">Times</option>
+                  <option value="helvetica">Arial</option>
+                  <option value="courier">Courier</option>
+                </select>
+              </div>
+              <div style="width:105px;">
+                <label style="display:block; font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Ukuran Font</label>
+                <select id="pdfOptHeaderFontSize" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:34px; color:#fff; font-size:11px; padding:0 8px; outline:none; box-sizing:border-box;">
+                  <option value="11">11pt</option>
+                  <option value="13">13pt</option>
+                  <option value="15">15pt</option>
+                  <option value="17">17pt</option>
+                  <option value="19">19pt</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="refreshPdfPreview()" class="btn-admin" style="margin:8px 0 0 0; width:100%; height:40px; background:#2563eb; color:#fff; font-weight:700; font-size:12px;">🔄 Terapkan & Segarkan</button>
+          
+        </div>
+        
+        <!-- Right Side: PDF Viewer Frame -->
+        <div style="flex:1; background:#1e293b; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative;">
+          <iframe id="pdfPreviewIframe" style="width:100%; height:100%; border:none; display:block;" src="about:blank"></iframe>
+          <div id="pdfPreviewLoader" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(30, 41, 59, 0.8); align-items:center; justify-content:center; flex-direction:column; gap:12px; z-index:10;">
+            <span class="spin-lg" style="width:40px; height:40px; border:3px solid rgba(255,255,255,0.1); border-top-color:#3b82f6; border-radius:50%; animation:spin_loader 1s linear infinite;"></span>
+            <div style="font-size:12px; color:#94a3b8; font-weight:600;">Membuat Pratinjau PDF...</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Footer Action Buttons -->
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; padding:16px 24px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.01);">
+        <button onclick="closePdfPreviewModal()" class="btn-admin" style="margin:0; width:100px; height:38px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.08);">Batal</button>
+        <button id="btnPdfModalSendTelegram" onclick="triggerPdfModalSendTelegram()" class="btn-admin" style="margin:0; width:160px; height:38px; background:#eab308; color:#000; font-weight:700;"><span style="margin-right:4px;">📤</span> Kirim ke Telegram</button>
+        <button onclick="triggerPdfModalDownload()" class="btn-admin" style="margin:0; width:160px; height:38px; background:#22c55e; color:#fff; font-weight:700;"><span style="margin-right:4px;">💾</span> Unduh Laporan</button>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes spin_loader {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 
 </body>
 </html>

@@ -266,7 +266,7 @@
       const rc = $('faceToggleResult');
       if (rc) rc.style.display = 'flex';
       try {
-        const instId = localStorage.getItem('MY_INSTANSI') || 'bapperida';
+        const instId = getScopedInstansiId();
         await apiPost(P.faceToggle, { enabled, instansi_id: instId, admin_id: MY_ID, admin_nips: ADMIN_NIPS });
         FACE_RECOGNITION_ENABLED = enabled;
         try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }

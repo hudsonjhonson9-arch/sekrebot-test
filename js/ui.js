@@ -234,7 +234,17 @@
       if (tab === 'profil' && !logLoaded) loadLog();
       if (tab === 'profil' && !dokumenLoaded) loadDokumen();
       if (tab === 'rekap' && !rekapLoaded) loadRekap();
+      if (tab === 'rekap') {
+        if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
+      }
+      if (tab === 'tugas') {
+        if (typeof initSuperadminTugasScoping === 'function') initSuperadminTugasScoping();
+      }
+      if (tab === 'lembur') {
+        if (typeof initSuperadminLemburScoping === 'function') initSuperadminLemburScoping();
+      }
       if (tab === 'admin' && IS_ADMIN) {
+        if (typeof initSuperadminAdminScoping === 'function') initSuperadminAdminScoping();
         // Remove forced section reset to 'ops' to preserve user context
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
@@ -278,7 +288,7 @@
         }
       }
       if (tab === 'lembur') {
-        // init lembur logic if needed
+        if (typeof initSuperadminLemburScoping === 'function') initSuperadminLemburScoping();
       }
 
       if (tab === 'simapo') {

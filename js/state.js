@@ -38,14 +38,57 @@
     window.tgUser = {};
     window.MY_ID = null;
 
+    // ─── LEGACY CLEANUP (One-time purge of hardcoded agency keys) ───
+    (function _purgeLegacy() {
+      const keysToPurge = [
+        'MY_INSTANSI_BAPPERIDA', 
+        'tg_user_obj_v4', 
+        'absen_last_agency',
+        'is_bapperida_user'
+      ];
+      // If MY_INSTANSI is literally "bapperida" but the user object says otherwise, clear it
+      const cachedUser = localStorage.getItem('tg_user_obj_v5');
+      if (cachedUser) {
+        try {
+          const u = JSON.parse(cachedUser);
+          const realInst = u.instansi_id || u.Instansi_Id;
+          const currentInst = localStorage.getItem('MY_INSTANSI');
+          if (realInst && currentInst === 'bapperida' && realInst !== 'bapperida') {
+             localStorage.setItem('MY_INSTANSI', realInst);
+             console.log('[Cleanup] Forced agency sync from user object');
+          }
+        } catch(e){}
+      }
+      keysToPurge.forEach(k => localStorage.removeItem(k));
+    })();
+
     // 1. Prioritas Utama: Ambil dari Cache Logal (Instant pada Refresh)
     try {
       const cachedId = localStorage.getItem(STORAGE_KEYS.USER_ID);
       const cachedUser = localStorage.getItem(STORAGE_KEYS.USER_OBJ);
       if (cachedId) {
         window.MY_ID = String(cachedId);
-        if (cachedUser) window.tgUser = JSON.parse(cachedUser);
-      }
+        if (cachedUser) {
+          const u = JSON.parse(cachedUser);
+          window.tgUser = u;
+          // Pre-fill userProfile from cache to avoid "bapperida" fallback while waiting for server
+          const instId = u.instansi_id || u.Instansi_Id;
+          const nip = u.nip || u.NIP;
+          if (instId || nip) {
+            window.userProfile = { 
+              instansi_id: instId, 
+              nip: nip,
+              role: u.role || localStorage.getItem('MY_ROLE'),
+              ...u 
+            };
+            // Sync scoping keys immediately to avoid race conditions with apiFetch
+            if (instId) {
+              localStorage.setItem('MY_INSTANSI', instId);
+              console.log('[State] Agency synced from cache:', instId);
+            }
+            if (nip) localStorage.setItem('MY_NIP', nip);
+          }
+        }      }
     } catch (e) { }
 
     // Sinkronkan dengan data asli Telegram

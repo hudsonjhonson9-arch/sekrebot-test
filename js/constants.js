@@ -3,7 +3,7 @@
     const TZ = 'Asia/Makassar';
     const H_ID = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
     const H_DISP = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const LOK_DEF = { senin: ['Kantor Bupati', 'Kantor BAPPERIDA'], rabu: ['Kantor BPBD', 'Kantor BAPPERIDA'], default: ['Kantor BAPPERIDA'] };
+    const LOK_DEF = { senin: ['Kantor Utama'], rabu: ['Kantor Cabang'], default: ['Kantor Pusat'] };
 
     // ════ PANGKAT OPTIONS ════
     const PANGKAT_DATA = {
@@ -20,25 +20,48 @@
       ]
     };
 
-    async function loadBidangList() {
+    async function loadBidangList(instansiId) {
       const regSelect = $('regBidang');
       const rekapSelect = $('rekapBidang');
-      if (!regSelect && !rekapSelect) return;
+      const adminSelect = $('inPegawaiBidang');
+      if (!regSelect && !rekapSelect && !adminSelect) return;
 
       try {
         const endpoint = P.bidangList || (P.userList ? P.userList.replace('user-list', 'bidang-list') : '');
         if (!endpoint) return;
-        const { ok: bOk, data: d } = await apiGet(endpoint);
-        if (bOk && Array.isArray(d?.data)) {
-          const options = d.data
-            .filter(b => b.nama_bidang)
-            .map(b => `<option value="${b.nama_bidang}">${b.nama_bidang}</option>`)
-            .join('');
-          if (regSelect) regSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
-          if (rekapSelect) {
-            const currentVal = rekapSelect.value;
-            rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>` + options;
-            rekapSelect.value = currentVal;
+        
+        const inst = instansiId || getScopedInstansiId();
+        const params = {};
+        if (inst) {
+          params.instansi_id = inst;
+        }
+        
+        const { ok: bOk, data: d } = await apiGet(endpoint, params);
+        if (bOk) {
+          const rawBidangs = (d?.rows && d.rows.length > 0) ? d.rows : (Array.isArray(d?.data) ? d.data : (Array.isArray(d) ? d : []));
+          if (rawBidangs.length > 0) {
+            const options = rawBidangs
+              .filter(b => b && (b.nama_bidang || b.Nama_Bidang))
+              .map(b => {
+                const name = b.nama_bidang || b.Nama_Bidang;
+                return `<option value="${name}">${name}</option>`;
+              })
+              .join('');
+            if (regSelect) regSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
+            if (rekapSelect) {
+              const currentVal = rekapSelect.value;
+              rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>` + options;
+              if (currentVal && options.includes(`value="${currentVal}"`)) rekapSelect.value = currentVal;
+            }
+            if (adminSelect) {
+              const currentVal = adminSelect.value;
+              adminSelect.innerHTML = `<option value="">— Pilih Bidang —</option>` + options;
+              if (currentVal && options.includes(`value="${currentVal}"`)) adminSelect.value = currentVal;
+            }
+          } else {
+            if (regSelect) regSelect.innerHTML = `<option value="">— Tidak Ada Bidang —</option>`;
+            if (rekapSelect) rekapSelect.innerHTML = `<option value="Semua">— Tampilkan Semua Bidang —</option>`;
+            if (adminSelect) adminSelect.innerHTML = `<option value="">— Pilih Bidang —</option>`;
           }
         }
       } catch (e) {

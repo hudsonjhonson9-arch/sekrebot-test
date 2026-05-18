@@ -140,9 +140,12 @@
     }
 
     function _isSuperAdmin() {
+      // Prioritize persistent MY_ROLE storage first!
+      const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+      if (storedRole.includes('super')) return true;
+
       const myNip = localStorage.getItem('MY_NIP');
-      if (!IS_ADMIN || !myNip) return false;
-      const role = (window._adminRoleMap && window._adminRoleMap[myNip]) || userProfile?.role || null;
+      const role = (window._adminRoleMap && myNip && window._adminRoleMap[myNip]) || userProfile?.role || null;
       if (role) {
         return role.toLowerCase().includes('super');
       }
@@ -157,6 +160,24 @@
       document.querySelectorAll('.superadmin-section').forEach(el => {
         if (el) el.style.display = isSA ? 'block' : 'none';
       });
+
+      if (isSA) {
+        if (typeof populateSuperadminInstansiSelect === 'function') {
+          populateSuperadminInstansiSelect();
+        }
+        if (typeof initSuperadminAdminScoping === 'function') {
+          initSuperadminAdminScoping();
+        }
+        if (typeof initSuperadminRekapScoping === 'function') {
+          initSuperadminRekapScoping();
+        }
+        if (typeof initSuperadminTugasScoping === 'function') {
+          initSuperadminTugasScoping();
+        }
+        if (typeof initSuperadminLemburScoping === 'function') {
+          initSuperadminLemburScoping();
+        }
+      }
 
       // Meja Absen & Desktop mode tersedia untuk semua admin (bukan hanya superadmin)
       if (IS_ADMIN) {
@@ -175,3 +196,4 @@
       }
     }
     window.loadWeather = loadWeather;
+    window._isSuperAdmin = _isSuperAdmin;

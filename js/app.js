@@ -66,6 +66,13 @@
             setTimeout(() => splash.remove(), 500);
           }
           console.log('[Init] Application ready.');
+
+          // Notify Capgo OTA system that the app is successfully loaded and ready
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater) {
+            window.Capacitor.Plugins.CapacitorUpdater.notifyAppReady()
+              .then(() => console.log('[Capgo] App successfully marked as ready for OTA updates.'))
+              .catch(err => console.error('[Capgo] Failed to notify app ready:', err));
+          }
         }, 300);
       }
     }

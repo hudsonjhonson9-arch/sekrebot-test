@@ -11,7 +11,7 @@ const S_HDR = {
 };
 
 /* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
-const DB_NAME = 'BapperidaOfflineDB';
+const DB_NAME = 'AbsensiOfflineDB';
 const DB_VERSION = 1;
 
 const idb = {
@@ -102,6 +102,7 @@ const WIFI_MODE = 'block';
 
 const P = {
   instansiList: isTest ? '/webhook-test/instansi-list' : '/webhook/instansi-list',
+  instansiUpdate: isTest ? '/webhook-test/instansi-update' : '/webhook/instansi-update',
   bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
   absen: isTest ? '/webhook-test/absen' : '/webhook/absen',
   ket: isTest ? '/webhook-test/keterangan' : '/webhook/keterangan',
@@ -137,7 +138,7 @@ const P = {
   adminList: isTest ? '/webhook-test/admin-list' : '/webhook/admin-list',
   adminAdd: isTest ? '/webhook-test/admin-add' : '/webhook/admin-add',
   adminDel: isTest ? '/webhook-test/admin-delete' : '/webhook/admin-delete',
-  userAdd: '/webhook-test/user-add',
+  userAdd: isTest ? '/webhook-test/user-add' : '/webhook/user-add',
   userEdit: isTest ? '/webhook-test/user-edit' : '/webhook/user-edit',
   penugasanList: isTest ? '/webhook-test/penugasan-list' : '/webhook/penugasan-list',
   penugasanSave: isTest ? '/webhook-test/penugasan-save' : '/webhook/penugasan-save',
@@ -174,28 +175,70 @@ const P = {
 };
 
 function getScopedInstansiId() {
-  // Priority 1: From URL parameters (Registration context / Override)
+  // Check if current user is Superadmin
+  const p = window.userProfile || {};
+  const myNip = p.nip || localStorage.getItem('MY_NIP');
+  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+  const isSA = storedRole.includes('super') ||
+               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
+               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
+               (p.role || '').toLowerCase().includes('super') ||
+               (window.IS_ADMIN && storedRole.includes('super'));
+
+  // Priority 0: Active tab specific dropdown overrides (explicit user intent)
+  const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
+  if (isSA) {
+    if (currentTab === 'rekap') {
+      const rekapSelect = document.getElementById('rekapInstansiSelect');
+      if (rekapSelect && rekapSelect.value) {
+        return rekapSelect.value;
+      }
+    } else if (currentTab === 'admin') {
+      const adminSelect = document.getElementById('inEditInstansiSelect');
+      if (adminSelect && adminSelect.value) {
+        return adminSelect.value;
+      }
+    } else if (currentTab === 'tugas') {
+      const tugasSelect = document.getElementById('tugasInstansiSelect');
+      if (tugasSelect && tugasSelect.value) {
+        return tugasSelect.value;
+      }
+    }
+  }
+
+  // Priority 1: Persistent storage (selected agency) for Superadmins
+  if (isSA) {
+    const savedInst = localStorage.getItem('MY_INSTANSI');
+    if (savedInst) return savedInst;
+  }
+
+  // Priority 2: From URL parameters (Registration context / Override)
   const urlParams = new URLSearchParams(window.location.search);
   let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
   if (inst) return inst;
 
-  // Priority 2: From logged in user data (User List cache)
+  // Priority 3: From live state (Most up to date)
+  if (window.userProfile?.instansi_id) return window.userProfile.instansi_id;
+
+  // Priority 4: From persistent storage (Safe for refresh)
+  const savedInst = localStorage.getItem('MY_INSTANSI');
+  if (savedInst) return savedInst;
+
+  // Priority 5: From logged in user data (User List cache)
   try {
     const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-    if (u.instansi_id) return u.instansi_id;
+    const uInst = u.instansi_id || u.Instansi_Id;
+    if (uInst) return uInst;
   } catch (e) { }
 
-  // Priority 3: Global fallback
-  return 'bapperida';
+  return '';
 }
 
 /**
  * Fetch ke n8n API dengan fallback ke server cadangan.
  * Auto-append instansi_id ke semua request.
  * @param {string} path - Path endpoint (e.g. P.absen)
- * @param {RequestInit} [opts={}] - fetch options (method, body, headers)
- * @returns {Promise<Response>} Response object
- * @throws {Error} Jika semua server gagal
+ * @param {Object} opts - Fetch options
  */
 const API_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';
 
@@ -206,26 +249,32 @@ const HDR = {
   'X-App-Token': API_TOKEN 
 };
 async function apiFetch(path, opts = {}) {
+  // Auto-append cache buster to avoid stale results
+  path += (path.includes('?') ? '&' : '?') + '_t=' + Date.now();
+
   // Auto-append instansi_id & nip scoping
-  const myRole = (userProfile?.role || '').toLowerCase();
+  const p = window.userProfile || {};
+  const myNip = p.nip || localStorage.getItem('MY_NIP');
+  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+  const isSA = storedRole.includes('super') ||
+               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
+               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
+               (p.role || '').toLowerCase().includes('super');
   const inst = getScopedInstansiId();
   
-  // SUPERADMIN bypasses the instance filter to see everything
-  if (inst && !path.includes('instansi_id=')) {
-    path += (path.includes('?') ? '&' : '?') + 'instansi_id=' + inst;
+  // Scoping Logic:
+  // 1. If instansi_id is NOT in path, append it
+  // 2. EXCEPT if user is SUPERADMIN (they see everything unless explicitly filtered)
+  if (inst && !path.includes('instansi_id=') && !path.includes('log-absen')) {
+    path += '&instansi_id=' + inst;
   }
-
-  let myNip = localStorage.getItem('MY_NIP');
-  if (!myNip) {
-    try {
-      const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
-      myNip = u.nip || u.NIP || '';
-      if (myNip) localStorage.setItem('MY_NIP', myNip); // Auto-migrate
-    } catch (e) { }
-  }
-
+  
   if (myNip && !path.includes('nip=')) {
-    path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
+    // Jangan auto-append NIP untuk superadmin dan admin agar tidak memblokir query monitoring/list
+    const isAdminOrSA = isSA || storedRole.includes('admin') || (p.role || '').toLowerCase().includes('admin') || !!window.IS_ADMIN;
+    if (!isAdminOrSA) {
+      path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
+    }
   }
 
   for (const base of [SERVER_1, SERVER_2]) {

@@ -11,7 +11,7 @@
       adminMapInited = true;
       setTimeout(() => {
         adminMap = L.map('adminMap', { zoomControl: true }).setView([-9.6567, 119.3894], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM', maxZoom: 19 }).addTo(adminMap);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { attribution: '© Google', maxZoom: 20 }).addTo(adminMap);
         adminMap.on('click', e => {
           const { lat, lng } = e.latlng; selectedPin = { lat, lng };
           if (adminMarker) adminMap.removeLayer(adminMarker);

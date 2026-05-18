@@ -64,6 +64,8 @@
     loadMyAssignments();
     // 4. Load monitoring if manager
     if (isManager) loadMonitoringTasks();
+    // 5. Initialize Superadmin scoping dropdown
+    initSuperadminTugasScoping();
   }
   window.checkTugasLemburAccess = checkTugasLemburAccess;
 
@@ -112,8 +114,8 @@
         listEl.innerHTML = `
           <div class="empty-state" style="padding:40px 20px">
             <div style="font-size:40px; margin-bottom:15px">📋</div>
-            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Tugas Luar</div>
-            <div style="color:var(--muted); font-size:11px; margin-top:5px">Tugas yang diberikan atasan akan muncul di sini</div>
+            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Perjalanan Dinas</div>
+            <div style="color:var(--muted); font-size:11px; margin-top:5px">Perjalanan dinas yang diberikan atasan akan muncul di sini</div>
           </div>
         `;
         return;
@@ -121,7 +123,7 @@
 
       listEl.innerHTML = `
         <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
-          <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Tugas Saya
+          <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Perjalanan Dinas Saya
         </div>
         ${data.map(r => renderTugasCard(r)).join('')}
       `;
@@ -154,78 +156,12 @@
 
     // Monitoring Section
     if (isManager) {
-      loadMonitoringTasks(nip);
+      loadMonitoringTasks();
     } else {
       const monEl = $('tugasMonitoringSection');
       if (monEl) monEl.style.display = 'none';
     }
   }
-
-  /**
-   * Load tasks given by this manager
-   */
-  async function loadMonitoringTasks(myNip) {
-    const monEl = $('tugasMonitoringSection');
-    const monList = $('tugasMonitoringList');
-    if (!monEl || !monList) return;
-
-    monEl.style.display = 'block';
-    monList.innerHTML = `
-      <div class="shimmer-wrapper">
-        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px; margin-bottom:8px"></div>
-        <div class="shimmer sh-line" style="width:100%; height:60px; border-radius:12px"></div>
-      </div>
-    `;
-
-    try {
-      // Fetch where created_by_nip = myNip
-      const res = await apiGet(`${P.penugasanList}?created_by_nip=${myNip}&limit=30`);
-      const data = res.rows || parseApiResponse(res.data) || [];
-
-      if (data.length === 0) {
-        monList.innerHTML = '<div style="font-size:11px; color:var(--muted); padding:20px; text-align:center">Belum ada tugas yang Anda berikan.</div>';
-        return;
-      }
-
-      monList.innerHTML = data.map(r => renderMonitoringCard(r)).join('');
-    } catch (e) {
-      monList.innerHTML = `<div style="font-size:10px; color:var(--danger)">Gagal memuat monitoring: ${e.message}</div>`;
-    }
-  }
-
-  function renderMonitoringCard(r) {
-    const status = (r.status || 'AKTIF').toUpperCase();
-    const tgl = r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID', {day:'numeric', month:'short'}) : '—';
-    const peg = r.nama || r.nip || 'Pegawai';
-    
-    return `
-      <div class="card glass-card" style="margin-bottom:10px; padding:12px; border-left:3px solid ${status === 'AKTIF' ? 'var(--gold)' : '#10b981'}">
-        <div style="display:flex; justify-content:space-between; align-items:center">
-          <div style="flex:1">
-            <div style="display:flex; align-items:center; gap:8px">
-              <div style="font-size:11px; font-weight:800; color:var(--white)">${peg}</div>
-              <div style="font-size:9px; color:var(--muted)">• ${tgl}</div>
-            </div>
-            ${r.nomor_surat ? `<div style="font-size:9px; color:var(--gold); font-weight:700; margin-top:2px"><i class="fas fa-file-alt"></i> ${r.nomor_surat}</div>` : ''}
-            <div style="font-size:12px; color:var(--muted); margin-top:4px; line-height:1.4">${r.keterangan || '—'}</div>
-          </div>
-          <div style="text-align:right; margin-left:15px">
-             <div class="status-badge s-${status === 'AKTIF' ? 'warning' : 'success'}" style="font-size:8px; padding:2px 6px">${status}</div>
-             ${r.bukti ? `<div style="font-size:8px; color:var(--gold); margin-top:4px; cursor:pointer" onclick="viewTugasBukti('${r.bukti}')"><i class="fas fa-image"></i> Bukti</div>` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  window.viewTugasBukti = function(url) {
-    Swal.fire({
-      imageUrl: url,
-      imageAlt: 'Bukti Tugas',
-      background: '#0a192f',
-      confirmButtonText: 'Tutup'
-    });
-  };
   function renderTugasCard(r) {
     const rawTgl = r.tanggal || '—';
     let tglDisplay = rawTgl;
@@ -334,19 +270,22 @@
    */
   window.handleKerjakanTugas = function(r) {
     if ((r.status || '').toUpperCase() === 'SELESAI') {
-      Swal.fire('Info', 'Tugas ini sudah diselesaikan.', 'info');
+      Swal.fire('Info', 'Perjalanan dinas ini sudah diselesaikan.', 'info');
       return;
     }
     _activeTugasData = r;
     
+    // Check if target coordinates are defined
+    const hasTargetCoords = (r.lat && String(r.lat).trim() !== '' && r.lon && String(r.lon).trim() !== '');
+
     Swal.fire({
-      title: 'Kerjakan Tugas',
+      title: 'Kerjakan Perjalanan Dinas',
       html: `
         <div style="margin-bottom:10px">
           <i class="fas fa-map-marker-alt" style="color:#ef4444; margin-right:8px"></i> 
-          Pastikan Anda berada di lokasi penugasan.
+          ${hasTargetCoords ? 'Pastikan Anda berada di lokasi perjalanan dinas.' : 'Sistem akan mencatat lokasi koordinat penyelesaian perjalanan dinas Anda.'}
         </div>
-        <div style="font-size:12px; opacity:0.7">Sistem akan mengecek koordinat dan meminta bukti foto pengerjaan.</div>
+        <div style="font-size:12px; opacity:0.7">${hasTargetCoords ? 'Sistem akan mengecek jarak koordinat dan meminta bukti foto.' : 'Sistem akan mengambil koordinat lokasi Anda saat ini dan meminta bukti foto.'}</div>
       `,
       icon: 'info',
       showCancelButton: true,
@@ -365,10 +304,19 @@
         navigator.geolocation.getCurrentPosition(async (pos) => {
           const myLat = pos.coords.latitude;
           const myLon = pos.coords.longitude;
-          const dist = getDistance(myLat, myLon, r.lat, r.lon);
+          
+          let insideRadius = true;
+          let dist = 0;
+          
+          if (hasTargetCoords) {
+            dist = getDistance(myLat, myLon, parseFloat(r.lat), parseFloat(r.lon));
+            if (dist > (r.radius || 100)) {
+              insideRadius = false;
+            }
+          }
 
-          if (dist > (r.radius || 100)) {
-            Swal.fire('❌ Gagal', `Anda berada ${Math.round(dist)}m dari titik tugas. Jarak maksimal adalah ${r.radius}m.`, 'error');
+          if (!insideRadius) {
+            Swal.fire('❌ Gagal', `Anda berada ${Math.round(dist)}m dari titik perjalanan dinas. Jarak maksimal adalah ${r.radius}m.`, 'error');
           } else {
             // 2. Trigger File Input
             Swal.close();
@@ -390,6 +338,52 @@
     if (!input.files || !input.files[0] || !_activeTugasData) return;
 
     const file = input.files[0];
+
+    // Check if offline
+    if (!navigator.onLine) {
+      Swal.fire({ title: 'Menyimpan Secara Offline...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = e.target.result;
+          
+          const offlineData = {
+            endpoint: P.penugasanSave,
+            method: 'POST',
+            payload: {
+              id: _activeTugasData.id,
+              status: 'SELESAI',
+              bukti_base64: base64,
+              bukti_mime: file.type,
+              bukti_nama: file.name,
+              actual_lat: _activeTugasData.actual_lat,
+              actual_lon: _activeTugasData.actual_lon,
+              pengerjaan_timestamp: Date.now()
+            },
+            timestamp: Date.now(),
+            type: 'tugas',
+            nip: _activeTugasData.nip
+          };
+          
+          await idb.set('offline_queue', offlineData);
+          
+          Swal.fire({
+            title: '📴 Disimpan Offline',
+            text: 'Penyelesaian Perjalanan Dinas disimpan sementara di perangkat Anda karena tidak ada koneksi internet. Data akan disinkronisasikan otomatis saat terhubung internet.',
+            icon: 'warning',
+            confirmButtonText: 'OK'
+          });
+          loadMyAssignments();
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
+        Swal.fire('❌ Gagal', 'Gagal menyimpan data offline: ' + err.message, 'error');
+      } finally {
+        input.value = '';
+      }
+      return;
+    }
+
     Swal.fire({ title: 'Mengunggah Bukti...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
@@ -579,8 +573,9 @@
     const defCenter = [-9.6548, 119.4122]; 
     _tugasMap = L.map('tugasMap').setView(defCenter, 15);
     
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap'
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: '&copy; Google Maps'
     }).addTo(_tugasMap);
 
     _tugasMap.on('click', function(e) {
@@ -616,8 +611,8 @@
     const ket = $('tugasKet').value.trim();
     const tgl = $('tugasTanggal').value;
 
-    if (_selectedTugasPegawai.length === 0 || !lat || !tgl) {
-      alert('⚠️ Harap pilih minimal satu pegawai, titik lokasi, dan tanggal tugas.');
+    if (_selectedTugasPegawai.length === 0 || !tgl) {
+      alert('⚠️ Harap pilih minimal satu pegawai dan tanggal tugas.');
       return;
     }
 
@@ -862,10 +857,24 @@
   /**
    * Handle PDF Export (Matrix Format)
    */
-  window.handleExportLemburPDF = function() {
+  const rawLogoUrl = "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
+
+  window.generateLemburPDF = async function(options = {}) {
+    const cfg = Object.assign({
+      orientation: 'p',
+      size: 'f4',
+      margin: 10,
+      fontSize: 7.5,
+      padding: 2.0,
+      rowPageBreak: 'avoid',
+      previewOnly: false
+    }, options);
+
     const data = window._currentLemburData;
     const range = window._currentLemburRange;
-    if (!data || data.length === 0) return alert('Tidak ada data untuk dicetak.');
+    if (!data || data.length === 0) {
+      throw new Error('Tidak ada data lembur untuk dicetak.');
+    }
 
     // 1. Get unique dates in range (sorted)
     const dates = [...new Set(data.map(r => r.tanggal))].sort();
@@ -883,123 +892,298 @@
       groups[r.nip].dates[r.tanggal] = calculateOvertime(r.jam_pulang);
     });
 
-    let printArea = document.getElementById('printArea');
-    if (!printArea) {
-      printArea = document.createElement('div');
-      printArea.id = 'printArea';
-      document.body.appendChild(printArea);
-    }
+    // Find true Kepala dynamically (excluding sub-heads like Kepala Bidang)
+    const getKepalaSignatureData = (employees) => {
+      if (!Array.isArray(employees)) return null;
+      // 1. Strict top-level Kepala check
+      let found = employees.find(u => {
+        const j = (u.jabatan || u.Jabatan || '').toUpperCase();
+        if (j.includes('BIDANG') || j.includes('SEKSI') || j.includes('SUB') || j.includes('BAGIAN') || j.includes('UPTD') || j.includes('PELAKSANA') || j.includes('FUNGSIONAL')) {
+          return false;
+        }
+        return j.includes('KEPALA BADAN') || j.includes('KEPALA DINAS') || j.includes('INSPEKTUR') || j.includes('SEKRETARIS DAERAH') || j.includes('CAMAT') || j === 'KEPALA';
+      });
 
-
-    // Find Kepala Badan dynamically
-    const kb = _allPegawaiLembur.find(u => (u.jabatan || '').toUpperCase().includes('KEPALA BADAN')) || {
-      nama: 'TITUS JURI, S.T., M.Si',
-      pangkat: 'Pembina Utama Muda (IV/c)',
-      nip: '19740523 200212 1 004'
+      // 2. Broad Kepala check
+      if (!found) {
+        found = employees.find(u => {
+          const j = (u.jabatan || u.Jabatan || '').toUpperCase();
+          if (j.includes('BIDANG') || j.includes('SEKSI') || j.includes('SUB') || j.includes('BAGIAN') || j.includes('UPTD') || j.includes('PELAKSANA') || j.includes('FUNGSIONAL')) {
+            return false;
+          }
+          return j.includes('KEPALA');
+        });
+      }
+      return found;
     };
 
-    const html = `
-      <style>
-        @media print {
-          body > *:not(#printArea) { display: none !important; }
-          body::before, body::after { display: none !important; content: none !important; }
-          #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; height: auto; margin: 0; padding: 0; background: #fff !important; color: #000 !important; }
-          @page { size: portrait; margin: 1cm; }
-        }
-        #printArea { font-family: 'Times New Roman', serif; padding: 20px; background: white; color: black; display: none; }
-        .print-header { display: flex; align-items: center; border-bottom: 0.8px solid #000; padding-bottom: 2px; margin-bottom: 2px; width: 100%; position: relative; }
-        .print-header-line { border-bottom: 2.5px solid #000; margin-bottom: 20px; width: 100%; }
-        .print-header-logo { width: 65px; height: auto; position: absolute; left: 10px; top: 0; }
-        .print-header-text { flex: 1; text-align: center; width: 100%; padding-left: 50px; }
-        .print-header-text h1 { font-size: 15px; margin: 0; font-weight: bold; line-height: 1.2; text-transform: uppercase; }
-        .print-header-text h2 { font-size: 18px; margin: 2px 0; font-weight: bold; line-height: 1.1; text-transform: uppercase; }
-        .print-header-text p { font-size: 11px; margin: 2px 0 0 0; font-style: normal; }
-        
-        .print-title { text-align: center; font-size: 14px; font-weight: bold; margin-top: 25px; text-decoration: underline; text-transform: uppercase; }
-        .print-subtitle { text-align: center; font-size: 11px; margin-bottom: 25px; font-weight: normal; }
+    const kb = getKepalaSignatureData(_allPegawaiLembur) || {
+      nama: 'TITUS JURI, S.T., M.Si',
+      pangkat: 'Pembina Utama Muda (IV/c)',
+      nip: '19740523 200212 1 004',
+      jabatan: 'Kepala Badan'
+    };
+    const kepTitle = kb.jabatan ? kb.jabatan : 'Kepala';
 
-        
-        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        .print-table th, .print-table td { border: 1px solid #000; padding: 5px 3px; font-size: 10px; text-align: center; vertical-align: middle; }
-        .print-table th { background: #e0e0e0 !important; font-weight: bold; -webkit-print-color-adjust: exact; }
-        .print-table .pegawai-col { text-align: left; padding-left: 6px; width: 200px; }
-        
-        .print-footer { display: flex; justify-content: flex-end; margin-top: 40px; }
-        .print-sign { text-align: left; width: 250px; font-size: 11px; line-height: 1.4; }
-        .print-sign b { text-decoration: underline; font-size: 12px; }
-      </style>
+    const { jsPDF } = window.jspdf;
+    if (!jsPDF) throw new Error('Library jsPDF tidak ditemukan');
 
-      <div class="print-header">
-        <img class="print-header-logo" src="https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png">
-        <div class="print-header-text">
-          <h1>PEMERINTAH KABUPATEN SUMBA BARAT</h1>
-          <h2>BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH</h2>
-          <p>Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur</p>
-        </div>
-      </div>
-      <div class="print-header-line"></div>
+    // 3. Setup paper size
+    let width = 215;
+    let height = 330;
+    if (cfg.size === 'a4') { width = 210; height = 297; }
+    else if (cfg.size === 'letter') { width = 216; height = 279; }
 
+    const format = (cfg.orientation === 'l') ? [height, width] : [width, height];
+    const doc = new jsPDF({
+      orientation: cfg.orientation,
+      unit: 'mm',
+      format: format,
+      compress: true
+    });
 
+    const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
+    const margin = cfg.margin;
 
-      
-      <div class="print-title">REKAPITULASI KERJA LEMBUR PEGAWAI</div>
-      <div class="print-subtitle">Periode: ${range.dari} s/d ${range.sampai}</div>
+    // 4. Proses Tabel & Hitung Kop Dinamis
+    const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
+    const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
 
-      <table class="print-table">
-        <thead>
-          <tr>
-            <th width="30">NO</th>
-            <th class="pegawai-col">NAMA / NIP</th>
-            ${dates.map(d => `<th>${d.split('-').slice(1).join('/')}</th>`).join('')}
-            <th width="80">TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${Object.values(groups).map((g, i) => {
-            let rowTotal = 0;
-            const cells = dates.map(d => {
-              const mins = g.dates[d] || 0;
-              rowTotal += mins;
-              return `<td>${mins > 0 ? formatDuration(mins) : '—'}</td>`;
-            }).join('');
-            
-            return `
-              <tr>
-                <td>${i + 1}</td>
-                <td class="pegawai-col"><b>${g.nama}</b><br><small>NIP. ${g.nip}</small></td>
-                ${cells}
-                <td style="font-weight:bold">${formatDuration(rowTotal)}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
+    // Overrides from options or DOM
+    const fullHeader = cfg.headerName !== undefined ? cfg.headerName : (($('pdfOptHeaderName')?.value || '').trim() || instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
+    const instAlamat = cfg.headerAlamat !== undefined ? cfg.headerAlamat : (($('pdfOptHeaderAlamat')?.value || '').trim() || instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
+    const instKontak = cfg.headerKontak !== undefined ? cfg.headerKontak : (($('pdfOptHeaderKontak')?.value || '').trim() || instData?.kontak || '');
+    const logoUrl = cfg.headerLogo !== undefined ? cfg.headerLogo : (($('pdfOptHeaderLogo')?.value || '').trim() || instData?.logo_url || rawLogoUrl);
 
-      <div class="print-footer">
-        <div class="print-sign">
-          Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br>
-          Mengetahui,<br>
-          Kepala Badan,<br><br><br><br><br>
-          <b>${kb.nama}</b><br>
-          ${kb.pangkat || 'Pembina Utama Muda (IV/c)'}<br>
-          NIP. ${kb.nip}
-        </div>
-      </div>
-    `;
+    const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || instData?.header_font || 'times');
+    const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || instData?.header_size || '15'));
 
+    doc.setFont(headerFont, 'bold');
+    doc.setFontSize(headerSize);
+    const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
+    
+    let currentHeaderY = 21;
+    headerLines.forEach(() => {
+      currentHeaderY += 5.5;
+    });
 
+    doc.setFont(headerFont, 'normal');
+    doc.setFontSize(9.5);
+    const addressLines = doc.splitTextToSize(instAlamat, pageWidth - 55);
+    let currentAddressY = currentHeaderY;
+    addressLines.forEach(() => {
+      currentAddressY += 4.5;
+    });
 
-
-    printArea.innerHTML = html;
-
-    // Wait for logo to load before printing
-    const img = printArea.querySelector('.print-header-logo');
-    if (img && !img.complete) {
-      img.onload = () => window.print();
-      img.onerror = () => window.print(); // Still print if logo fails
-    } else {
-      window.print();
+    if (instKontak) {
+      doc.setFont(headerFont, 'bold');
+      doc.setFontSize(8.5);
+      const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
+      contactLines.forEach(() => {
+        currentAddressY += 4;
+      });
     }
+
+    const finalDividerY = Math.max(currentAddressY + 1.5, 37);
+    const docTitleY = finalDividerY + 9;
+    const docPeriodeY = docTitleY + 5.5;
+    const calculatedStartY = docPeriodeY + 6;
+
+    // 5. Build Overtime Matrix Table Header and Body
+    const head = [['No', 'Nama / NIP', ...dates.map(d => d.split('-').slice(1).join('/')), 'Total']];
+    
+    const body = Object.values(groups).map((g, i) => {
+      let rowTotal = 0;
+      const cells = dates.map(d => {
+        const mins = g.dates[d] || 0;
+        rowTotal += mins;
+        return mins > 0 ? formatDuration(mins) : '—';
+      });
+      return [i + 1, `${g.nama}\nNIP. ${g.nip}`, ...cells, formatDuration(rowTotal)];
+    });
+
+    doc.autoTable({
+      startY: calculatedStartY,
+      margin: { top: 20, left: margin, right: margin, bottom: 20 },
+      head: head,
+      body: body,
+      theme: 'grid',
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
+      styles: { font: 'times', fontSize: cfg.fontSize, cellPadding: cfg.padding, valign: 'middle', overflow: 'linebreak' },
+      rowPageBreak: cfg.rowPageBreak,
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { minCellWidth: 35 }
+      },
+      didDrawPage: (data) => {
+        if (data.pageNumber === 1) {
+          try {
+            const drawLogo = window._pdfImageCache[logoUrl] || logoUrl;
+            doc.addImage(drawLogo, 'PNG', margin + 5, 10, 22, 25, undefined, 'FAST');
+          } catch (e) {
+            try {
+              const drawDefault = window._pdfImageCache[rawLogoUrl] || rawLogoUrl;
+              doc.addImage(drawDefault, 'PNG', margin + 5, 10, 22, 25, undefined, 'FAST');
+            } catch (err) { }
+          }
+
+          doc.setFont('times', 'bold');
+          doc.setFontSize(13);
+          doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
+          
+          // Draw Dynamic Kop Header lines
+          doc.setFont(headerFont, 'bold');
+          doc.setFontSize(headerSize);
+          let drawHeaderY = 21;
+          headerLines.forEach((line) => {
+            doc.text(line, pageWidth / 2 + 10, drawHeaderY, { align: 'center' });
+            drawHeaderY += 5.5;
+          });
+
+          // Draw Dynamic Address lines
+          doc.setFont(headerFont, 'normal');
+          doc.setFontSize(9.5);
+          let drawAddressY = drawHeaderY;
+          addressLines.forEach((line) => {
+            doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
+            drawAddressY += 4.5;
+          });
+
+          // Draw Dynamic Contact lines
+          if (instKontak) {
+            doc.setFont(headerFont, 'bold');
+            doc.setFontSize(8.5);
+            const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
+            contactLines.forEach((line) => {
+              doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
+              drawAddressY += 4;
+            });
+          }
+
+          // Draw Divider lines
+          doc.setLineWidth(0.7);
+          doc.line(margin + 5, finalDividerY, pageWidth - (margin + 5), finalDividerY);
+          doc.setLineWidth(0.2);
+          doc.line(margin + 5, finalDividerY + 0.8, pageWidth - (margin + 5), finalDividerY + 0.8);
+
+          // Draw Document Title and Periode
+          doc.setFontSize(11);
+          doc.setFont('times', 'bold');
+          doc.text('REKAPITULASI KERJA LEMBUR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
+          doc.setFont('times', 'normal');
+          doc.text(`Periode: ${range.dari} s/d ${range.sampai}`, pageWidth / 2, docPeriodeY, { align: 'center' });
+        }
+      }
+    });
+
+    // 6. Signature Footer
+    let footerY = doc.lastAutoTable.finalY + 15;
+    if (footerY + 45 > pageHeight) {
+      doc.addPage();
+      footerY = 25;
+    }
+
+    doc.setFontSize(10);
+    const signatureX = pageWidth - 60;
+    doc.text(`Waikabubak, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, signatureX, footerY, { align: 'center' });
+    doc.text('Mengetahui,', signatureX, footerY + 6, { align: 'center' });
+    doc.text(kepTitle, signatureX, footerY + 11, { align: 'center' });
+
+    doc.setFont('times', 'bold');
+    doc.text(kb.nama, signatureX, footerY + 38, { align: 'center' });
+    doc.setFont('times', 'normal');
+    if (kb.pangkat) {
+      doc.text(kb.pangkat, signatureX, footerY + 44, { align: 'center' });
+      doc.text(`NIP. ${kb.nip || '—'}`, signatureX, footerY + 49, { align: 'center' });
+    } else {
+      doc.text(`NIP. ${kb.nip || '—'}`, signatureX, footerY + 44, { align: 'center' });
+    }
+
+    // 7. Store references
+    const fileName = `Rekap_Kerja_Lembur_${range.dari}_${range.sampai}.pdf`;
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+    const pdfMsg = `📄 *REKAPITULASI KERJA LEMBUR PDF*\n📅 Periode: ${range.dari} s/d ${range.sampai}\n👤 Peminta: ${window.userProfile?.nama || window.MY_ID}\n🪪 NIP: ${localStorage.getItem('MY_NIP') || '-'}\n\nLaporan lembur telah siap.`;
+    const instName = instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
+
+    window.lastGeneratedDoc = doc;
+    window.lastGeneratedFileName = fileName;
+    window.lastGeneratedPdfBase64 = pdfBase64;
+    window.lastGeneratedPdfMsg = pdfMsg;
+    window.lastGeneratedInstId = instId;
+    window.lastGeneratedInstName = instName;
+
+    if (cfg.previewOnly) {
+      return;
+    }
+
+    // Android Native Download Support
+    if (window.Capacitor) {
+      try {
+        const { Filesystem } = window.Capacitor.Plugins;
+        const { Share } = window.Capacitor.Plugins;
+        
+        if (Filesystem) {
+          const writeResult = await Filesystem.writeFile({
+            path: fileName,
+            data: pdfBase64,
+            directory: 'CACHE',
+            encoding: ''
+          });
+          
+          if (Share) {
+            await Share.share({
+              title: 'Unduh Rekap Lembur',
+              text: 'Berikut adalah laporan rekap lembur yang Anda unduh.',
+              url: writeResult.uri,
+              dialogTitle: 'Buka atau Simpan PDF'
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Capacitor download error:", err);
+        alert('❌ Gagal menyimpan PDF: ' + err.message);
+      }
+    } else {
+      doc.save(fileName);
+    }
+
+    // Send to Telegram Webhook
+    await apiPost(P.kirimRekap, { 
+      chat_id: REKAP_CHAT_ID, 
+      pesan: pdfMsg,
+      nip: localStorage.getItem('MY_NIP') || '',
+      file_base64: pdfBase64,
+      file_name: fileName,
+      instansi_id: instId,
+      instansi_name: instName
+    });
+    alert('✅ Rekap Lembur PDF berhasil dikirim!');
+  };
+
+  window.handleExportLemburPDF = async function(options = null) {
+    const data = window._currentLemburData;
+    if (!data || data.length === 0) return alert('Tidak ada data untuk dicetak.');
+
+    // Check desktop mode preview flow
+    if (window.innerWidth >= 992 && (!options || !options.previewOnly)) {
+      window.pdfPreviewContext = 'lembur';
+      window.openPdfPreviewModal();
+      return;
+    }
+
+    const defaults = {
+      orientation: 'p',
+      size: 'f4',
+      margin: 10,
+      fontSize: 7.5,
+      padding: 2.0,
+      rowPageBreak: 'avoid',
+      previewOnly: false
+    };
+    const cfg = Object.assign({}, defaults, options);
+
+    await window.generateLemburPDF(cfg);
   };
 
   /**
@@ -1125,8 +1309,8 @@
       el.innerHTML = `
         <div class="card glass-card" style="padding:20px; text-align:center; opacity:0.7">
           <div style="font-size:24px; margin-bottom:8px">📡</div>
-          <div style="font-size:11px; font-weight:700">Belum ada tugas yang Anda instruksikan</div>
-          <div style="font-size:9px; color:var(--muted)">Progres tugas yang Anda berikan ke staf akan muncul di sini.</div>
+          <div style="font-size:11px; font-weight:700">Belum ada perjalanan dinas yang Anda instruksikan</div>
+          <div style="font-size:9px; color:var(--muted)">Progres perjalanan dinas yang Anda berikan ke staf akan muncul di sini.</div>
         </div>
       `;
       return;
@@ -1134,7 +1318,7 @@
 
     const header = `
       <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; margin-top:25px; text-transform:uppercase; letter-spacing:1px">
-        <i class="fas fa-satellite-dish" style="margin-right:8px"></i> Monitoring Progres Tugas
+        <i class="fas fa-satellite-dish" style="margin-right:8px"></i> Monitoring Progres Perjalanan Dinas
       </div>
     `;
 
@@ -1143,6 +1327,16 @@
       const color = isSelesai ? 'var(--success)' : 'var(--warning)';
       const icon = isSelesai ? 'check-circle' : 'clock';
       
+      let tglDisplay = t.tanggal || '—';
+      try {
+        if (tglDisplay.includes('T') || tglDisplay.includes('-')) {
+          const d = new Date(tglDisplay);
+          if (!isNaN(d.getTime())) {
+            tglDisplay = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          }
+        }
+      } catch (err) {}
+
       return `
         <div class="card glass-card" style="margin-bottom:12px; border-left: 4px solid ${color}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
@@ -1161,7 +1355,7 @@
                 <strong>Ket:</strong> ${t.keterangan || '—'}
               </div>
               <div style="font-size:9px; color:var(--muted); margin-top:8px; display:flex; align-items:center; gap:10px">
-                 <span>📅 ${t.tanggal || '—'}</span>
+                 <span>📅 ${tglDisplay}</span>
                  <span>📍 Radius ${t.radius || 100}m</span>
               </div>
             </div>
@@ -1196,6 +1390,155 @@
     }
   };
 
+  function initSuperadminTugasScoping() {
+    const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+    const sec = $('tugasInstansiSection');
+    if (!sec) return;
+
+    if (isSA) {
+      sec.style.display = 'block';
+      const el = $('tugasInstansiSelect');
+      if (el) {
+        if (el.options.length <= 1) { // Not populated yet
+          try {
+            const cached = localStorage.getItem('absen_instansi_map');
+            if (cached) {
+              const map = JSON.parse(cached);
+              const keys = Object.keys(map);
+              el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+                keys.map(k => {
+                  const inst = map[k];
+                  const id = inst.id || inst.ID || k;
+                  const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                  return `<option value="${id}">${name}</option>`;
+                }).join('');
+            }
+          } catch (e) {
+            console.error('[Tugas Superadmin] populate error:', e);
+          }
+        }
+        // Pre-select current instansi ALWAYS
+        const scoped = getScopedInstansiId();
+        if (scoped) {
+          el.value = scoped;
+        }
+      }
+    } else {
+      sec.style.display = 'none';
+    }
+  }
+
+  function onTugasInstansiChange() {
+    const el = $('tugasInstansiSelect');
+    if (!el) return;
+    let val = el.value;
+    if (!val) {
+      try {
+        const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+        val = u.instansi_id || u.Instansi_Id || 'bapperida';
+      } catch (e) {
+        val = 'bapperida';
+      }
+    }
+    localStorage.setItem('MY_INSTANSI', val);
+    document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+    if (window.userProfile) {
+      window.userProfile.instansi_id = val;
+    }
+
+    // Sync other superadmin dropdowns to match
+    const adminSelect = $('adminInstansiSelect');
+    if (adminSelect) adminSelect.value = val;
+    const rekapSelect = $('rekapInstansiSelect');
+    if (rekapSelect) rekapSelect.value = val;
+    const lemburSelect = $('lemburInstansiSelect');
+    if (lemburSelect) lemburSelect.value = val;
+    
+    // Reload dynamic employee list for tugas
+    loadTugasPegawai();
+    
+    // Reload tugas list / monitoring for this instansi
+    loadMyAssignments();
+    loadMonitoringTasks();
+  }
+
+  function initSuperadminLemburScoping() {
+    const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+    const sec = $('lemburInstansiSection');
+    if (!sec) return;
+
+    if (isSA) {
+      sec.style.display = 'block';
+      const el = $('lemburInstansiSelect');
+      if (el) {
+        if (el.options.length <= 1) { // Not populated yet
+          try {
+            const cached = localStorage.getItem('absen_instansi_map');
+            if (cached) {
+              const map = JSON.parse(cached);
+              const keys = Object.keys(map);
+              el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+                keys.map(k => {
+                  const inst = map[k];
+                  const id = inst.id || inst.ID || k;
+                  const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                  return `<option value="${id}">${name}</option>`;
+                }).join('');
+            }
+          } catch (e) {
+            console.error('[Lembur Superadmin] populate error:', e);
+          }
+        }
+        // Pre-select current instansi ALWAYS
+        const scoped = getScopedInstansiId();
+        if (scoped) {
+          el.value = scoped;
+        }
+      }
+    } else {
+      sec.style.display = 'none';
+    }
+  }
+
+  function onLemburInstansiChange() {
+    const el = $('lemburInstansiSelect');
+    if (!el) return;
+    let val = el.value;
+    if (!val) {
+      try {
+        const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+        val = u.instansi_id || u.Instansi_Id || 'bapperida';
+      } catch (e) {
+        val = 'bapperida';
+      }
+    }
+    localStorage.setItem('MY_INSTANSI', val);
+    document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+    if (window.userProfile) {
+      window.userProfile.instansi_id = val;
+    }
+
+    // Sync other superadmin dropdowns to match
+    const adminSelect = $('adminInstansiSelect');
+    if (adminSelect) adminSelect.value = val;
+    const rekapSelect = $('rekapInstansiSelect');
+    if (rekapSelect) rekapSelect.value = val;
+    const tugasSelect = $('tugasInstansiSelect');
+    if (tugasSelect) tugasSelect.value = val;
+    
+    // Invalidate caches & selected employees
+    _allPegawaiLembur = [];
+    _selectedLemburPegawai = [];
+    renderLemburPills();
+    
+    // Reload dynamic employee list for Overtime (Lembur)
+    loadLemburPegawai();
+  }
+
+  window.initSuperadminTugasScoping = initSuperadminTugasScoping;
+  window.onTugasInstansiChange = onTugasInstansiChange;
+  window.initSuperadminLemburScoping = initSuperadminLemburScoping;
+  window.onLemburInstansiChange = onLemburInstansiChange;
   window.checkTugasLemburAccess = checkTugasLemburAccess;
   window.loadMonitoringTasks = loadMonitoringTasks;
 })();

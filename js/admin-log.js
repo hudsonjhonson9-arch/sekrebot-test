@@ -27,7 +27,12 @@
      * @param {string} hintJenis - Hint jenis absen ('MASUK' | 'PULANG' | ...)
      * @returns {Promise<void>}
      */
-        async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
+    async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
+      if (typeof _isSuperAdmin === 'function' && !_isSuperAdmin()) {
+        alert('Maaf, hanya Super Admin yang diizinkan untuk menambah atau mengedit log secara manual.');
+        return;
+      }
+
       const modal = $('logModal');
       if (!modal) return;
 
@@ -183,6 +188,7 @@
             telegram_id: uid,
             nama: pData.nama || pData.Nama || '',
             nip: pData.nip || pData.NIP || '',
+            instansi_id: pData.instansi_id || pData.Instansi_Id || '',
             tanggal: tgl,
             jam: jamRaw,
             jenis_absen: jenis,

@@ -26,6 +26,7 @@
     let _captureData = null; // { dataUrl, faceOk, livenessOk, faceMatchScore }
     let _absenCallbackAfterCam = null; // fungsi yang dipanggil setelah kamera selesai
     let _skipVerifikasi = false;
+    let _isLive = false;
 
     // Tantangan liveness ditiadakan sesuai permintaan
     function pickRandomChallenges() { return []; }
@@ -1396,12 +1397,19 @@
             await _onMejaAbsenMatchFound(bestMatch.id, descriptor, dataUrl, bestMatch.score);
           } else {
             console.log('[AI] Phase 4: Manual Capture / Personal Mode.');
-            if (_absenCallbackAfterCam) {
-              const result = { dataUrl, descriptor };
-              if (typeof _absenCallbackAfterCam === 'function') {
-                await _absenCallbackAfterCam(result);
-              } else if (_absenCallbackAfterCam.onDone) {
-                await _absenCallbackAfterCam.onDone(result);
+            const cb = _absenCallbackAfterCam;
+            closeCamOverlay(false);
+            if (cb) {
+              const result = { 
+                dataUrl, 
+                descriptor,
+                faceOk: _livenessState.faceOk || !!descriptor,
+                livenessOk: _isLive || false
+              };
+              if (typeof cb === 'function') {
+                await cb(result);
+              } else if (cb.onDone) {
+                await cb.onDone(result);
               }
             }
           }
@@ -1425,6 +1433,7 @@
     async function skipVerifikasi() {
       // Ambil foto lewati liveness check
       _livenessState = { faceOk: true, ch1: true, ch2: true };
+      _isLive = true;
       await doCapture();
     }
 

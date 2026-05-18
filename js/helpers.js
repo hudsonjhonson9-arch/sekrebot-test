@@ -392,3 +392,44 @@
     }
     window.showToast = showToast;
     window.toast = showToast; // Alias
+
+    function getInstansiName(instansiId) {
+      if (!instansiId) return '';
+      try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+          const map = JSON.parse(cached);
+          const inst = map[instansiId.toLowerCase()] || map[instansiId];
+          if (inst) {
+            if (typeof inst === 'object') {
+              return inst.nama_instansi || inst.header || inst.nama || inst.Nama_Instansi || inst.id || inst.ID || '';
+            }
+            return inst;
+          }
+        }
+      } catch(e){}
+      
+      // Fallback
+      if (instansiId.toLowerCase() === 'bapperida') return 'BAPPERIDA Sumba Barat';
+      return instansiId.toUpperCase();
+    }
+    window.getInstansiName = getInstansiName;
+
+    /**
+     * Mendapatkan data instansi lengkap secara dinamis berdasarkan ID instansi.
+     * @param {string} instansiId - ID instansi
+     * @returns {Object|null} Data instansi lengkap dari cache
+     */
+    function getInstansiData(instansiId) {
+      if (!instansiId) return null;
+      try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+          const map = JSON.parse(cached);
+          const inst = map[instansiId.toLowerCase()] || map[instansiId];
+          if (inst && typeof inst === 'object') return inst;
+        }
+      } catch(e){}
+      return null;
+    }
+    window.getInstansiData = getInstansiData;

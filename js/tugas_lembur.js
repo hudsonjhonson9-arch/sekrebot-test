@@ -920,7 +920,7 @@
         .print-header-logo { width: 65px; height: auto; position: absolute; left: 10px; top: 0; }
         .print-header-text { flex: 1; text-align: center; width: 100%; padding-left: 50px; }
         .print-header-text h1 { font-size: 15px; margin: 0; font-weight: bold; line-height: 1.2; text-transform: uppercase; }
-        .print-header-text h2 { font-size: ${headerSize}px; margin: 2px 0; font-weight: bold; line-height: 1.1; text-transform: uppercase; }
+        .print-header-text h2 { font-size: ${headerSize}px; margin: 2px 0; font-weight: bold; line-height: 1.1; text-transform: uppercase; white-space: pre-line; }
         .print-header-text p { font-size: 11px; margin: 2px 0 0 0; font-style: normal; }
         
         .print-title { text-align: center; font-size: 14px; font-weight: bold; margin-top: 25px; text-decoration: underline; text-transform: uppercase; }

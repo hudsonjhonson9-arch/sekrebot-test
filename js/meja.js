@@ -87,6 +87,7 @@
       if ($('btnCapture')) $('btnCapture').style.display = 'none'; // Sembunyikan tombol capture
       if ($('livenessMini')) $('livenessMini').style.display = 'block'; // Tampilkan instruksi kedip
       if ($('camHeaderTitle')) $('camHeaderTitle').textContent = '🖥️ Menyiapkan Meja Absen...';
+
       // 2. FETCH GPS DAN DATA WAJAH (Try Cache First)
       const loadData = async () => {
         const gps = await _getMejaGps();

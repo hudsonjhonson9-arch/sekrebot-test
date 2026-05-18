@@ -97,7 +97,18 @@
 
         doc.setFont('times', 'bold');
         doc.setFontSize(15);
-        const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
+        
+        // Split by manual newline first, then split each chunk to size
+        const rawHeaderParts = fullHeader.split('\n');
+        const headerLines = [];
+        rawHeaderParts.forEach(part => {
+          const splitParts = doc.splitTextToSize(part.toUpperCase().trim(), pageWidth - 55);
+          if (Array.isArray(splitParts)) {
+            headerLines.push(...splitParts);
+          } else {
+            headerLines.push(splitParts);
+          }
+        });
         
         let currentHeaderY = 21;
         headerLines.forEach(() => {

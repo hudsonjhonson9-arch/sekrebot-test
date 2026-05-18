@@ -900,7 +900,7 @@
     const instId = getScopedInstansiId();
     const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
     const instName = instData?.header || instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
-    const instNameUpper = instName ? instName.toUpperCase() : 'BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH';
+    const instNameUpper = instName ? instName.toUpperCase().replace(/\n/g, '<br>') : 'BADAN PERENCANAAN PEMBANGUNAN<br>RISET DAN INOVASI DAERAH';
     const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur';
     const instKontak = instData?.kontak || '';
     const instLogo = instData?.logo_url || 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';

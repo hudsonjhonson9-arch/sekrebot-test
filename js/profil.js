@@ -120,14 +120,25 @@
       const instId = p.instansi_id || getScopedInstansiId();
       if (instId) {
         const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
-        const instName = instData ? (instData.header || instData.nama_instansi || instData.nama) : null;
-        const shortName = instData ? (instData.nama_instansi || instData.header || instData.nama || instId) : instId;
+        const kopShort = instData ? (instData.header || instData.nama_instansi || instData.nama || instId) : instId;
+        const kopLong = instData ? (instData.nama_instansi || instData.nama || instData.header) : null;
         
         // Render dynamic sidebar agency name
-        document.documentElement.style.setProperty('--agency-name', `'${shortName.toUpperCase()}'`);
+        document.documentElement.style.setProperty('--agency-name', `'${kopShort.toUpperCase()}'`);
         
-        setT('headerOrgSub', shortName || instId.toUpperCase());
-        setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN ${instName ? instName.toUpperCase() : instId.toUpperCase()}`);
+        // Update header on mobile to strictly follow database Kop settings
+        setT('headerOrgSub', kopShort.toUpperCase());
+        if (kopLong) {
+          setT('headerOrgName', kopLong.toUpperCase());
+        } else if (p.bidang) {
+          setT('headerOrgName', p.bidang);
+        } else if (p.jabatan) {
+          setT('headerOrgName', p.jabatan);
+        } else {
+          setT('headerOrgName', 'Sekretariat');
+        }
+        
+        setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN ${kopShort.toUpperCase()}`);
         
         // Render dynamic logo
         const logoWrap = $('headerLogoWrap');
@@ -138,13 +149,14 @@
             logoWrap.innerHTML = '🏛️';
           }
         }
-      }
-      if (p.bidang) {
-        setT('headerOrgName', p.bidang);
-      } else if (p.jabatan) {
-        setT('headerOrgName', p.jabatan);
       } else {
-        setT('headerOrgName', 'Sekretariat');
+        if (p.bidang) {
+          setT('headerOrgName', p.bidang);
+        } else if (p.jabatan) {
+          setT('headerOrgName', p.jabatan);
+        } else {
+          setT('headerOrgName', 'Sekretariat');
+        }
       }
       // ── Badge status (baca dari data, bukan hardcode) ──
       const st = (p.status || 'AKTIF').toUpperCase();
@@ -203,13 +215,18 @@
       // Fallback update branding
       const instId = getScopedInstansiId();
       if (instId) {
-        const instName = getInstansiName(instId);
-        setT('headerOrgSub', instName || instId.toUpperCase());
+        const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+        const kopShort = instData ? (instData.header || instData.nama_instansi || instData.nama || instId) : instId;
+        const kopLong = instData ? (instData.nama_instansi || instData.nama || instData.header) : null;
+        
+        setT('headerOrgSub', kopShort.toUpperCase());
+        if (kopLong) {
+          setT('headerOrgName', kopLong.toUpperCase());
+        }
         
         // Render dynamic logo
         const logoWrap = $('headerLogoWrap');
         if (logoWrap) {
-          const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
           if (instData && instData.logo_url) {
             logoWrap.innerHTML = `<img src="${instData.logo_url}" alt="Logo" style="height:32px; width:auto; border-radius:4px; object-fit:contain;" onerror="this.outerHTML='🏛️';" />`;
           } else {

@@ -31,9 +31,13 @@
       return rows;
     }
 
+    let _isLogLoading = false;
     async function loadLog() {
-      const btn = $('btnRefresh'); btn.disabled = true;
-      $('rIcon2').outerHTML = '<span class="spin-sm" id="rIcon2"></span>';
+      if (_isLogLoading) return;
+      _isLogLoading = true;
+      const btn = $('btnRefresh'); if (btn) btn.disabled = true;
+      const rIcon = $('rIcon2');
+      if (rIcon) rIcon.outerHTML = '<span class="spin-sm" id="rIcon2"></span>';
       dom.shimmer('logList');
       try {
         // Reset cache jam agar selalu dapat data terbaru dari server
@@ -53,7 +57,11 @@
         console.error('[Fetch Log Error]', e);
         dom.errorState('logList', `Gagal memuat data — ${e.message || 'Network Error'}`);
       }
-      finally { btn.disabled = false; const s = $('rIcon2'); if (s) s.outerHTML = '<span id="rIcon2">🔄</span>'; }
+      finally { 
+        _isLogLoading = false;
+        if (btn) btn.disabled = false; 
+        const s = $('rIcon2'); if (s) s.outerHTML = '<span id="rIcon2">🔄</span>'; 
+      }
     }
     function getLC(j) {
       const x = (j || '').toUpperCase().trim();

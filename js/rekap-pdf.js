@@ -157,30 +157,34 @@
         const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || instData?.header_font || 'times');
         const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || instData?.header_size || '15'));
 
+        const sizePemerintah = Math.max(9, headerSize * 0.72);
+        const sizeAlamat = Math.max(7, headerSize * 0.55);
+        const sizeKontak = Math.max(6, headerSize * 0.5);
+
         doc.setFont(headerFont, 'bold');
         doc.setFontSize(headerSize);
         const headerLines = doc.splitTextToSize(fullHeader.toUpperCase(), pageWidth - 55);
         
-        let currentHeaderY = 21;
+        let currentHeaderY = 20;
         headerLines.forEach(() => {
-          currentHeaderY += 5.5;
+          currentHeaderY += (headerSize * 0.35);
         });
 
         doc.setFont(headerFont, 'normal');
-        doc.setFontSize(9.5);
+        doc.setFontSize(sizeAlamat);
         const addressLines = doc.splitTextToSize(instAlamat, pageWidth - 55);
         let currentAddressY = currentHeaderY;
         addressLines.forEach(() => {
-          currentAddressY += 4.5;
+          currentAddressY += (sizeAlamat * 0.45);
         });
 
         // Account for contact lines in height calculation
         if (instKontak) {
           doc.setFont(headerFont, 'bold');
-          doc.setFontSize(8.5);
+          doc.setFontSize(sizeKontak);
           const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
           contactLines.forEach(() => {
-            currentAddressY += 4;
+            currentAddressY += (sizeKontak * 0.45);
           });
         }
 
@@ -241,35 +245,35 @@
               }
 
               doc.setFont('times', 'bold');
-              doc.setFontSize(13);
+              doc.setFontSize(sizePemerintah);
               doc.text('PEMERINTAH KABUPATEN SUMBA BARAT', pageWidth / 2 + 10, 15, { align: 'center' });
               
               // Draw Dynamic Kop Header lines
               doc.setFont(headerFont, 'bold');
               doc.setFontSize(headerSize);
-              let drawHeaderY = 21;
+              let drawHeaderY = 20;
               headerLines.forEach((line) => {
                 doc.text(line, pageWidth / 2 + 10, drawHeaderY, { align: 'center' });
-                drawHeaderY += 5.5;
+                drawHeaderY += (headerSize * 0.35);
               });
 
               // Draw Dynamic Address lines
               doc.setFont(headerFont, 'normal');
-              doc.setFontSize(9.5);
+              doc.setFontSize(sizeAlamat);
               let drawAddressY = drawHeaderY;
               addressLines.forEach((line) => {
                 doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
-                drawAddressY += 4.5;
+                drawAddressY += (sizeAlamat * 0.45);
               });
 
               // Draw Dynamic Contact lines
               if (instKontak) {
                 doc.setFont(headerFont, 'bold');
-                doc.setFontSize(8.5);
+                doc.setFontSize(sizeKontak);
                 const contactLines = doc.splitTextToSize(instKontak, pageWidth - 55);
                 contactLines.forEach((line) => {
                   doc.text(line, pageWidth / 2 + 10, drawAddressY, { align: 'center' });
-                  drawAddressY += 4;
+                  drawAddressY += (sizeKontak * 0.45);
                 });
               }
 

@@ -143,7 +143,11 @@
      * Simpan entri log absensi (tambah baru atau update yang sudah ada).
      * @returns {Promise<void>}
      */
-        async function saveLog() {
+    let _isLogSubmitting = false; // Idempotency Lock
+    
+    async function saveLog() {
+      if (_isLogSubmitting) return; // Prevent double submission
+      
       let editId = $('editLogId').value;
       const uid = $('inLogPegawai').value;
       const tgl = $('inLogTanggal').value;
@@ -174,9 +178,13 @@
         return;
       }
 
+      _isLogSubmitting = true;
       setBtnL('btnSaveLog', true, 'Menyimpan...');
       try {
         const path = isEdit ? P.logEdit : P.logAdd;
+
+        // ── Stabil Idempotency Key ──
+        const reqId = isEdit ? `log_edit_${editId}_${Date.now()}` : `log_add_${uid}_${tgl}_${jenis.replace(/\s+/g, '_')}`;
 
         // Cari data p untuk nama & nip (utamakan cache dari dropdown)
         const pData = (_pegawaiListCache || []).find(u => String(u.id || u.ID) === String(uid))
@@ -194,6 +202,7 @@
             jenis_absen: jenis,
             keterangan: ket,
             admin_id: MY_ID,
+            request_id: reqId, // Include idempotency key
             timestamp: Math.floor(Date.now() / 1000)
           });
         const d = res?.data ?? {};
@@ -210,6 +219,7 @@
       } catch (e) {
         showResult('logFormResult', 'logFormRIcon', 'logFormRTitle', 'logFormRMsg', 'fail', '🔌', 'Koneksi Error', 'Server tidak merespons.');
       } finally {
+        _isLogSubmitting = false; // Reset Lock
         setBtnL('btnSaveLog', false, 'Simpan Log');
       }
     }

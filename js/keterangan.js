@@ -44,15 +44,37 @@
         }
       }
     }
-    (function () { const t = fmtD(nowWITA()); $('tglMulai').value = $('tglSelesai').value = t; updateDur(); })();
+    // Init Flatpickr range picker for keterangan form (default: today)
+    (function () {
+      const t = fmtD(nowWITA());
+      $('tglMulai').value = $('tglSelesai').value = t;
+      updateDur();
+      const el = document.getElementById('ketDateRangePicker');
+      if (el && window.flatpickr) {
+        flatpickr(el, {
+          mode: 'range',
+          dateFormat: 'Y-m-d',
+          defaultDate: [t, t],
+          locale: { rangeSeparator: ' s/d ' },
+          disableMobile: true,
+          onChange: function(dates) {
+            if (dates.length >= 1) {
+              const dari   = flatpickr.formatDate(dates[0], 'Y-m-d');
+              const sampai = flatpickr.formatDate(dates[dates.length - 1], 'Y-m-d');
+              $('tglMulai').value   = dari;
+              $('tglSelesai').value = sampai;
+              updateDur();
+            }
+          }
+        });
+      }
+    })();
     function updateDur() {
       const a = $('tglMulai').value, b = $('tglSelesai').value;
       if (!a || !b) return;
       const d = Math.round((new Date(b) - new Date(a)) / 86400000) + 1;
       if (d > 0) { dom.show('durLabel', 'block'); $('durText').textContent = `📅 Durasi: ${d} hari`; }
     }
-    $('tglMulai').addEventListener('change', updateDur);
-    $('tglSelesai').addEventListener('change', updateDur);
 
     /* ── Compress image to max 5MB ── */
     async function compressKetImage(base64, mime, maxMB = 4.5) {

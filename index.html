@@ -13,6 +13,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Flatpickr (Dark Theme to match app) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  
   <!--
     Google Maps Static API digunakan untuk peta inline di Riwayat Log.
     Ganti "AIzaSyD-placeholder" di js/log.js dengan API Key Anda.
@@ -29,7 +34,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
   <!-- App Styles -->
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=6" />
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
@@ -544,10 +549,17 @@
                 style="font-family:'JetBrains Mono',monospace;" /></div>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">📅 Tanggal Mulai</label><input type="date" class="form-input"
-            id="tglMulai" /></div>
-        <div class="form-group"><label class="form-label">📅 Tanggal Selesai</label><input type="date"
-            class="form-input" id="tglSelesai" /></div>
+        <div class="form-group">
+          <label class="form-label">📅 Rentang Tanggal</label>
+          <div style="position:relative;">
+            <input type="text" id="ketDateRangePicker" class="form-input" placeholder="Ketuk untuk memilih tanggal..." readonly
+              style="cursor:pointer; padding-right:40px; font-weight:600;">
+            <i class="fas fa-calendar-alt" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--primary); pointer-events:none;"></i>
+          </div>
+          <!-- Hidden inputs for JS compatibility -->
+          <input type="hidden" id="tglMulai" />
+          <input type="hidden" id="tglSelesai" />
+        </div>
         <div class="form-group" id="durLabel" style="display:none">
           <div
             style="font-size:11px;color:var(--gold);font-weight:600;padding:6px 10px;background:var(--gold-dim);border-radius:8px;text-align:center"
@@ -939,25 +951,25 @@
       </div>
       <div class="date-range-card"
         style="box-shadow: 0 4px 20px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); background: linear-gradient(145deg, var(--card-bg), rgba(255,255,255,0.02));">
-        <div class="date-range-row">
-          <div>
-            <div class="date-range-label">Dari Tanggal</div>
-            <input type="date" class="date-range-input" id="rekapDari" onchange="onDateRangeChange()" />
-          </div>
-          <div>
-            <div class="date-range-label">Sampai Tanggal</div>
-            <input type="date" class="date-range-input" id="rekapSampai" onchange="onDateRangeChange()" />
-          </div>
-        </div>
 
-        <!-- Presets relocated back below date inputs -->
-        <div class="date-preset-bar" style="margin-top: 10px; margin-bottom: 2px;">
-          <button class="date-preset active" id="dp-today" onclick="setPreset('today', this)">Hari Ini</button>
-          <button class="date-preset" id="dp-week" onclick="setPreset('week',  this)">Minggu Ini</button>
-          <button class="date-preset" id="dp-month" onclick="setPreset('month', this)">Bulan Ini</button>
-          <button class="date-preset" id="dp-last30" onclick="setPreset('last30',this)">30 Hari</button>
-          <button class="date-preset" id="dp-custom" onclick="setPreset('custom',this)"
-            style="display:none">Kustom</button>
+        <!-- Unified Flatpickr Range Picker for Rekap -->
+        <div class="date-range-label" style="margin-bottom:8px">📅 Pilih Rentang Tanggal</div>
+        <div style="position:relative;">
+          <input type="text" id="rekapRangePicker" class="date-range-input" placeholder="Ketuk untuk memilih rentang tanggal..." readonly
+            style="width:100%; cursor:pointer; padding-right:40px; box-sizing:border-box;" />
+          <i class="fas fa-calendar-alt" style="position:absolute; right:13px; top:50%; transform:translateY(-50%); color:var(--primary); pointer-events:none;"></i>
+        </div>
+        <!-- Hidden inputs kept for JS compatibility -->
+        <input type="hidden" id="rekapDari" />
+        <input type="hidden" id="rekapSampai" />
+
+        <!-- Presets -->
+        <div class="date-preset-bar" style="margin-top:10px; margin-bottom:2px;">
+          <button class="date-preset active" id="dp-today"  onclick="setPreset('today', this)">Hari Ini</button>
+          <button class="date-preset"        id="dp-week"   onclick="setPreset('week',  this)">Minggu Ini</button>
+          <button class="date-preset"        id="dp-month"  onclick="setPreset('month', this)">Bulan Ini</button>
+          <button class="date-preset"        id="dp-last30" onclick="setPreset('last30',this)">30 Hari</button>
+          <button class="date-preset"        id="dp-custom" style="display:none">Kustom</button>
         </div>
 
         <!-- Filter Instansi (Only visible to Superadmin) -->
@@ -1182,10 +1194,25 @@
       </div>
       <div class="card glass-card">
         <div class="form-group">
-          <label class="form-label">📅 Rentang Tanggal</label>
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(135px, 1fr)); gap:10px">
-            <input type="date" id="lemburDari" class="form-input">
-            <input type="date" id="lemburSampai" class="form-input">
+          <label class="form-label">📅 Pilih Rentang Tanggal Lembur</label>
+          <div style="position:relative;">
+            <input type="text" id="lemburDateSelect" class="form-input" placeholder="Ketuk untuk memilih tanggal..." readonly
+              style="background:var(--card-bg); color:var(--white); font-weight:600; cursor:pointer; padding-right:40px;">
+            <i class="fas fa-calendar-alt" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--primary); pointer-events:none;"></i>
+          </div>
+
+          <!-- Info badge: shown after date selection -->
+          <div id="lemburSelectedDatesList" style="margin-top:10px;"></div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; background:rgba(255,255,255,0.03); padding:10px 15px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div>
+              <div style="font-size:13px; font-weight:600; color:var(--white);">Sertakan Hari Sabtu</div>
+              <div style="font-size:10px; color:var(--muted); margin-top:2px;">Abaikan jika hari libur akhir pekan</div>
+            </div>
+            <label class="lembur-toggle-wrap">
+              <input type="checkbox" id="lemburIncludeSabtu" onchange="recalculateLemburDates()">
+              <span class="lembur-knob"></span>
+            </label>
           </div>
         </div>
         <div class="form-group">
@@ -1199,6 +1226,12 @@
             <div class="dropdown-list-wrap" id="lemburOptionsList"></div>
             <select id="lemburPegawai" style="display:none"></select>
           </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📋 Dalam Rangka</label>
+          <input type="text" id="lemburDalamRangka" class="form-input"
+            placeholder="Contoh: Persiapan Musrenbang Tahun 2026..."
+            style="font-size:13px;">
         </div>
         <button class="btn-primary" onclick="handleFetchLembur()" id="btnFetchLembur">
           <div class="btn-inner"><span>📊</span> Tarik Data Lembur</div>

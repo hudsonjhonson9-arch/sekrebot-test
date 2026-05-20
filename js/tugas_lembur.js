@@ -786,43 +786,212 @@
     `).join('');
   }
 
+  window._selectedLemburDates = new Set();
+  let _rawLemburRange = { start: null, end: null };
+
+  // Setup Flatpickr when DOM loads or script runs
+  setTimeout(() => {
+    if (window.flatpickr && $('lemburDateSelect')) {
+      flatpickr("#lemburDateSelect", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        onChange: function(selectedDates, dateStr, instance) {
+          if (selectedDates.length === 2) {
+            _rawLemburRange.start = instance.formatDate(selectedDates[0], "Y-m-d");
+            _rawLemburRange.end = instance.formatDate(selectedDates[1], "Y-m-d");
+            window.recalculateLemburDates();
+          } else {
+            _rawLemburRange.start = null;
+            _rawLemburRange.end = null;
+            window._selectedLemburDates.clear();
+            renderLemburDates();
+          }
+        }
+      });
+    }
+  }, 500);
+
+  window.recalculateLemburDates = async function() {
+    if (!_rawLemburRange.start || !_rawLemburRange.end) return;
+    
+    const c = $('lemburSelectedDatesList');
+    if (c) c.innerHTML = '<div class="shimmer" style="height:30px; width:100%; border-radius:8px"></div>';
+
+    const start = new Date(_rawLemburRange.start);
+    const end = new Date(_rawLemburRange.end);
+    const includeSabtu = $('lemburIncludeSabtu')?.checked;
+
+    // Fetch libur (holidays)
+    let liburDates = new Set();
+    try {
+      const res = await apiGet(P.liburList);
+      if (res.ok && res.data) {
+        const liburData = parseApiResponse(res.data) || [];
+        liburData.forEach(L => {
+          if (L.tanggal) liburDates.add(L.tanggal);
+        });
+      }
+    } catch(e) {
+      console.warn("Gagal menarik data libur:", e);
+    }
+
+    window._selectedLemburDates.clear();
+    
+    let current = new Date(start);
+    while (current <= end) {
+      const day = current.getDay();
+      const dStr = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0');
+      
+      let skip = false;
+      if (day === 0) skip = true; // Sunday
+      if (day === 6 && !includeSabtu) skip = true; // Saturday
+      if (liburDates.has(dStr)) skip = true; // Hari Libur
+
+      if (!skip) {
+        window._selectedLemburDates.add(dStr);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    
+    renderLemburDates();
+  };
+
+  window.removeLemburDate = function(d) {
+    window._selectedLemburDates.delete(d);
+    renderLemburDates();
+  };
+
+  function renderLemburDates() {
+    const c = $('lemburSelectedDatesList');
+    if (!c) return;
+
+    if (window._selectedLemburDates.size === 0) {
+      c.innerHTML = '';
+      return;
+    }
+
+    const datesArr = Array.from(window._selectedLemburDates).sort();
+    const n = datesArr.length;
+    const first = datesArr[0].split('-').reverse().join('/');
+    const last  = datesArr[n - 1].split('-').reverse().join('/');
+    const label = n === 1 ? `📅 ${first}` : `📅 ${first} — ${last} &nbsp;·&nbsp; <strong>${n} hari kerja</strong>`;
+
+    c.innerHTML = `
+      <div style="
+        background: rgba(212,175,55,0.08);
+        border: 1px solid rgba(212,175,55,0.25);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      ">
+        <span>${label}</span>
+        <span style="font-size:10px; opacity:0.7; cursor:pointer;" onclick="window._selectedLemburDates.clear(); renderLemburDates(); renderLemburPills();">✕ Reset</span>
+      </div>
+    `;
+  }
+
   /**
    * Fetch Overtime Data
    */
   window.handleFetchLembur = async function() {
-    const dari = $('lemburDari').value;
-    const sampai = $('lemburSampai').value;
-
-    if (!dari || !sampai || _selectedLemburPegawai.length === 0) {
-      alert('⚠️ Harap isi rentang tanggal dan pilih minimal satu pegawai.');
+    if (window._selectedLemburDates.size === 0 || _selectedLemburPegawai.length === 0) {
+      alert('⚠️ Harap pilih minimal satu tanggal dan pilih minimal satu pegawai.');
       return;
     }
+
+    const nips = _selectedLemburPegawai.map(p => p.nip).join(',');
+    const datesArr = Array.from(window._selectedLemburDates).sort();
+    const dari = datesArr[0];
+    const sampai = datesArr[datesArr.length - 1];
 
     const listEl = $('lemburResultList');
     listEl.innerHTML = '<div class="shimmer" style="height:100px; border-radius:15px"></div>';
     
-    const nips = _selectedLemburPegawai.map(p => p.nip).join(',');
-    if (!nips) {
-      alert('Pilih minimal satu pegawai.');
-      return;
-    }
-
     setBtnL('btnFetchLembur', true, '⌛ Menarik Data...');
 
     try {
-      const res = await apiGet(`${P.lemburGet}?dari=${dari}&sampai=${sampai}&nips=${nips}`);
-      if (!res.ok) {
-        const msg = getApiErrorMsg(res.data, 'Gagal menarik data dari server.');
+      const [resLembur, resSig] = await Promise.all([
+        apiGet(`${P.lemburGet}?dari=${dari}&sampai=${sampai}&nips=${nips}`),
+        apiGet(P.signatureList)
+      ]);
+
+      if (!resLembur.ok) {
+        const msg = getApiErrorMsg(resLembur.data, 'Gagal menarik data dari server.');
         listEl.innerHTML = `<div class="empty-state">❌ ${msg}</div>`;
         return;
       }
       
-      const data = parseApiResponse(res.data);
-      renderLemburResults(data);
+      let lemburData = parseApiResponse(resLembur.data) || [];
+      
+      const sigData = resSig.ok ? (parseApiResponse(resSig.data) || []) : [];
+      const sigMap = {};
+      sigData.forEach(s => {
+        if (s.signature && s.signature.length > 100) {
+          if (s.nip)         sigMap[String(s.nip).replace(/\s/g, '')] = s.signature;
+          if (s.nip)         sigMap[String(s.nip)]                    = s.signature;
+          if (s.telegram_id) sigMap[String(s.telegram_id)]            = s.signature;
+        }
+      });
+      window._currentSigMap = sigMap;
+
+      // Build NIP → signature map by cross-referencing pegawai list (id = telegram_id)
+      const nipSigMap = {};
+      (_allPegawaiLembur || []).forEach(p => {
+        const nip = String(p.nip || '').replace(/\s/g, '');
+        if (!nip) return;
+        // Try direct NIP lookup first
+        let sig = sigMap[nip] || sigMap[p.nip];
+        // Fallback: lookup by id (telegram_id)
+        if (!sig) {
+          const tid = String(p.id || p.telegram_id || '');
+          if (tid) sig = sigMap[tid];
+        }
+        if (sig) nipSigMap[nip] = sig;
+      });
+      window._currentNipSigMap = nipSigMap;
+
+      // Filter only selected dates
+      lemburData = lemburData.filter(r => window._selectedLemburDates.has(r.tanggal));
+      
+      // keterangan_status is now returned directly from lembur-get SQL (from Log_Absen SAKIT/TUGAS/IZIN entries)
+      // For days where an employee has keterangan but NO masuk/pulang, lembur-get returns a row with
+      // keterangan_status filled and jam_masuk/jam_pulang = null.
+      // We just need to ensure all selected employees have rows for all selected dates.
+      datesArr.forEach(date => {
+        _selectedLemburPegawai.forEach(pegawai => {
+          const exists = lemburData.find(l =>
+            (l.nip || '').toString().trim() === (pegawai.nip || '').toString().trim()
+            && l.tanggal === date
+          );
+          if (!exists) {
+            // No log at all for this employee on this date → blank row
+            lemburData.push({
+              nip: pegawai.nip,
+              nama: pegawai.nama,
+              tanggal: date,
+              jam_masuk: null,
+              jam_pulang: null,
+              keterangan_status: null
+            });
+          }
+        });
+      });
+
+      
+      // Sort final data by date
+      lemburData.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+      
+      renderLemburResults(lemburData);
       
       // Store data for PDF
-      window._currentLemburData = data;
-      window._currentLemburRange = { dari, sampai };
+      window._currentLemburData = lemburData;
+      window._currentLemburRange = { dari, sampai, dates: datesArr };
       
     } catch (e) {
       listEl.innerHTML = `<div class="empty-state">❌ Terjadi kesalahan jaringan atau server offline.</div>`;
@@ -861,7 +1030,7 @@
 
   window.generateLemburPDF = async function(options = {}) {
     const cfg = Object.assign({
-      orientation: 'p',
+      orientation: 'l',
       size: 'f4',
       margin: 10,
       fontSize: 7.5,
@@ -877,7 +1046,7 @@
     }
 
     // 1. Get unique dates in range (sorted)
-    const dates = [...new Set(data.map(r => r.tanggal))].sort();
+    const dates = range.dates || [...new Set(data.map(r => r.tanggal))].sort();
     
     // 2. Group data by employee (NIP)
     const groups = {};
@@ -889,7 +1058,14 @@
           dates: {}
         };
       }
-      groups[r.nip].dates[r.tanggal] = calculateOvertime(r.jam_pulang);
+      if (r.keterangan_status) {
+        groups[r.nip].dates[r.tanggal] = { ket: r.keterangan_status };
+      } else {
+        groups[r.nip].dates[r.tanggal] = {
+          pulang: r.jam_pulang,
+          mins: calculateOvertime(r.jam_pulang)
+        };
+      }
     });
 
     // Find true Kepala dynamically (excluding sub-heads like Kepala Bidang)
@@ -989,23 +1165,102 @@
       });
     }
 
+    const dalamRangka = ($('lemburDalamRangka')?.value || '').trim();
     const finalDividerY = Math.max(currentAddressY + 1.5, 37);
-    const docTitleY = finalDividerY + 9;
+    const docTitleY   = finalDividerY + 9;
     const docPeriodeY = docTitleY + 5.5;
-    const calculatedStartY = docPeriodeY + 6;
+    const docRangkaY  = dalamRangka ? docPeriodeY + 5 : docPeriodeY;
+    const calculatedStartY = docRangkaY + 7;
 
-    // 5. Build Overtime Matrix Table Header and Body
-    const head = [['No', 'Nama / NIP', ...dates.map(d => d.split('-').slice(1).join('/')), 'Total']];
-    
-    const body = Object.values(groups).map((g, i) => {
-      let rowTotal = 0;
-      const cells = dates.map(d => {
-        const mins = g.dates[d] || 0;
-        rowTotal += mins;
-        return mins > 0 ? formatDuration(mins) : '—';
-      });
-      return [i + 1, `${g.nama}\nNIP. ${g.nip}`, ...cells, formatDuration(rowTotal)];
+    // 5. Build Overtime Matrix Table — 2-row header (matches paper format)
+    // Row1: NO(r2) | NAMA(r2) | [DD-Mon-YY colSpan:2] | JML JAM(r2) | PARAF(r2) | ...
+    // Row2:                     MASUK | PULANG
+    // Body: 4 cols per date: MASUK | PULANG | JML JAM | PARAF
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    // Single-row header: NO | NAMA | [DD-Mon-YY colSpan:2] | JML JAM | TTD | ...
+    const headRow = [
+      { content: 'NO',      styles: { halign: 'center', valign: 'middle' } },
+      { content: 'NAMA\n& NIP', styles: { halign: 'center', valign: 'middle' } }
+    ];
+
+    dates.forEach(d => {
+      const [y, m, day] = d.split('-');
+      const label = `${day}-${monthNames[parseInt(m,10)-1]}-${y.substring(2)}`;
+      headRow.push({ content: label,      colSpan: 2, styles: { halign: 'center', valign: 'middle' } });
+      headRow.push({ content: 'JML\nJAM',             styles: { halign: 'center', valign: 'middle' } });
+      headRow.push({ content: 'TTD',                   styles: { halign: 'center', valign: 'middle' } });
     });
+
+    const head = [headRow];
+
+    // Body: 4 items per date [MASUK][PULANG][JML JAM][PARAF]
+    const body = Object.values(groups).map((g, i) => {
+      const row = [
+        { content: i + 1, styles: { halign: 'center', valign: 'middle' } },
+        { content: `${g.nama}\nNIP. ${g.nip}`, styles: { valign: 'middle' } }
+      ];
+      dates.forEach(d => {
+        const val = g.dates[d];
+        if (!val) {
+          row.push(
+            { content: '—', styles: { halign: 'center' } },
+            { content: '—', styles: { halign: 'center' } },
+            { content: '—', styles: { halign: 'center' } },
+            { content: '',  styles: { halign: 'center' } }
+          );
+        } else if (val.ket) {
+          // keterangan: span MASUK+PULANG+JML JAM = 3, PARAF kosong
+          row.push(
+            { content: val.ket, colSpan: 3,
+              styles: { halign: 'center', fontStyle: 'bold', textColor: [160, 60, 0] } },
+            { content: '', styles: { halign: 'center' } }
+          );
+        } else {
+          const mins = val.mins || 0;
+          row.push(
+            { content: '14.30',                                    styles: { halign: 'center' } },
+            { content: (val.pulang || '').replace(':', '.'),       styles: { halign: 'center' } },
+            { content: mins > 0 ? formatDuration(mins) : '—',     styles: { halign: 'center' } },
+            { content: '',                                         styles: { halign: 'center' } }
+          );
+        }
+      });
+      return row;
+    });
+
+    // Auto-scale column widths to fit page exactly (4 cols per date)
+    const usableWidth = pageWidth - margin * 2;
+    const noW    = 7;
+    const namaW  = 38;
+    const nDates = dates.length;
+    const remainW = usableWidth - noW - namaW;
+    const perDateW = Math.floor(remainW / nDates);
+    // split per date: masuk ~30%, pulang ~30%, jml ~22%, paraf ~18%
+    const parafW  = Math.max(9,  Math.floor(perDateW * 0.20));
+    const jmlW    = Math.max(9,  Math.floor(perDateW * 0.22));
+    const subW    = Math.max(9,  Math.floor((perDateW - parafW - jmlW) / 2)); // masuk & pulang
+
+    // Font/padding scale
+    const autoFontSize = Math.max(5.5, Math.min(cfg.fontSize, cfg.fontSize - (nDates - 3) * 0.3));
+    const autoPad      = Math.max(0.8, Math.min(cfg.padding,  cfg.padding  - (nDates - 3) * 0.15));
+
+    // Column styles: per date = [masuk][pulang][jml][ttd]
+    const ttdW   = Math.max(16, parafW + 4); // TTD needs more space for signature image
+    const colStyles = {
+      0: { cellWidth: noW,   halign: 'center' },
+      1: { cellWidth: namaW, halign: 'left'   }
+    };
+    dates.forEach((_, i) => {
+      const base = 2 + i * 4;
+      colStyles[base]     = { cellWidth: subW,  halign: 'center' }; // MASUK
+      colStyles[base + 1] = { cellWidth: subW,  halign: 'center' }; // PULANG
+      colStyles[base + 2] = { cellWidth: jmlW,  halign: 'center' }; // JML JAM
+      colStyles[base + 3] = { cellWidth: ttdW,  halign: 'center', minCellHeight: 14 }; // TTD
+    });
+
+    // Build indexed groups array for direct row lookup in didDrawCell
+    const groupsArr = Object.values(groups);
 
     doc.autoTable({
       startY: calculatedStartY,
@@ -1013,12 +1268,77 @@
       head: head,
       body: body,
       theme: 'grid',
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
-      styles: { font: 'times', fontSize: cfg.fontSize, cellPadding: cfg.padding, valign: 'middle', overflow: 'linebreak' },
+      headStyles: {
+        fillColor: [240, 240, 240],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        halign: 'center',
+        valign: 'middle',
+        fontSize: autoFontSize,
+        lineWidth: 0.2,
+        lineColor: [100, 100, 100]
+      },
+      styles: {
+        font: 'times',
+        fontSize: autoFontSize,
+        cellPadding: autoPad,
+        valign: 'middle',
+        overflow: 'linebreak',
+        lineWidth: 0.2,
+        lineColor: [120, 120, 120]
+      },
       rowPageBreak: cfg.rowPageBreak,
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 8 },
-        1: { minCellWidth: 35 }
+      columnStyles: colStyles,
+      didDrawCell: (data) => {
+        // Auto-render TTD: find signature by NIP first, then by telegram_id fallback
+        if (data.section !== 'body' || data.column.index < 2) return;
+        const dataColIdx = data.column.index - 2;
+        if (dataColIdx % 4 !== 3) return; // only TTD columns
+
+        const g = groupsArr[data.row.index];
+        if (!g) return;
+
+        // Check if this date has keterangan (skip TTD)
+        const dateIdx = Math.floor(dataColIdx / 4);
+        const dateKey = dates[dateIdx];
+        const val = g.dates[dateKey];
+        if (!val || val.ket) return; // keterangan or no data → no TTD
+
+        const nipClean  = String(g.nip || '').replace(/\s/g, '');
+        const nipSigMap = window._currentNipSigMap || {};
+        const sigMap    = window._currentSigMap    || {};
+
+        // DEBUG (remove after fix)
+        if (dataColIdx === 3 && data.row.index === 0) {
+          console.log('[TTD-DEBUG] nipClean:', nipClean,
+            '| nipSigMap keys:', Object.keys(nipSigMap),
+            '| found:', !!nipSigMap[nipClean]);
+        }
+
+        // Use NIP-keyed map (built via _allPegawaiLembur cross-ref at fetch time)
+        let sig = nipSigMap[nipClean] || sigMap[nipClean] || sigMap[g.nip];
+
+        // Fallback: find telegram_id via _selectedLemburPegawai
+        if (!sig) {
+          const peg = (window._selectedLemburPegawai || []).find(p =>
+            String(p.nip || '').replace(/\s/g, '') === nipClean);
+          if (peg) {
+            const tid = String(peg.id || peg.telegram_id || '');
+            sig = sigMap[tid];
+          }
+        }
+
+        if (!sig) return;
+
+        try {
+          const pad = 2;
+          doc.addImage(sig, 'PNG',
+            data.cell.x + pad,
+            data.cell.y + pad,
+            data.cell.width  - pad * 2,
+            data.cell.height - pad * 2,
+            undefined, 'FAST');
+        } catch(e) {}
       },
       didDrawPage: (data) => {
         if (data.pageNumber === 1) {
@@ -1076,7 +1396,13 @@
           doc.setFont('times', 'bold');
           doc.text('REKAPITULASI KERJA LEMBUR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
           doc.setFont('times', 'normal');
+          doc.setFontSize(9);
           doc.text(`Periode: ${range.dari} s/d ${range.sampai}`, pageWidth / 2, docPeriodeY, { align: 'center' });
+          if (dalamRangka) {
+            doc.setFont('times', 'italic');
+            doc.setFontSize(8.5);
+            doc.text(`Dalam Rangka: ${dalamRangka}`, pageWidth / 2, docRangkaY, { align: 'center' });
+          }
         }
       }
     });
@@ -1177,7 +1503,7 @@
     }
 
     const defaults = {
-      orientation: 'p',
+      orientation: 'l',
       size: 'f4',
       margin: 10,
       fontSize: 7.5,
@@ -1202,6 +1528,15 @@
       return;
     }
 
+    // Color palette per status
+    const KET_STYLE = {
+      'SAKIT':  { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '🤒', border: '#ef4444' },
+      'TUGAS':  { color: '#f97316', bg: 'rgba(249,115,22,0.12)',  icon: '💼', border: '#f97316' },
+      'IZIN':   { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: '🙏', border: '#3b82f6' },
+      'CUTI':   { color: '#a855f7', bg: 'rgba(168,85,247,0.12)',  icon: '🏖️', border: '#a855f7' },
+      'TUBEL':  { color: '#ec4899', bg: 'rgba(236,72,153,0.12)',  icon: '🎓', border: '#ec4899' },
+    };
+
     const header = `
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; margin-top:20px">
         <div style="font-size:12px; font-weight:800; color:var(--white)">📋 HASIL PENCARIAN (${data.length})</div>
@@ -1213,10 +1548,41 @@
 
     const items = data.map(r => {
       const minutes = calculateOvertime(r.jam_pulang);
-      const isConflict = r.is_tugas;
-      
+      const ket = (r.keterangan_status || '').toString().toUpperCase().trim();
+      const ketStyle = KET_STYLE[ket];
+
+      // Determine card border color
+      let borderColor = ket && ketStyle ? ketStyle.border : (minutes > 0 ? 'var(--success)' : 'rgba(255,255,255,0.1)');
+
+      // Duration / status display
+      let durasiHtml;
+      if (ket && ketStyle) {
+        durasiHtml = `
+          <div style="font-size:9px; color:var(--muted)">STATUS</div>
+          <div style="
+            display:inline-flex; align-items:center; gap:4px;
+            background:${ketStyle.bg};
+            color:${ketStyle.color};
+            border:1px solid ${ketStyle.color}55;
+            border-radius:8px;
+            padding:3px 10px;
+            font-size:12px;
+            font-weight:900;
+            margin-top:2px;
+            letter-spacing:0.5px;
+          ">${ketStyle.icon} ${ket}</div>
+        `;
+      } else {
+        const dur = formatDuration(minutes);
+        const durColor = minutes > 0 ? 'var(--gold)' : 'var(--muted)';
+        durasiHtml = `
+          <div style="font-size:9px; color:var(--muted)">DURASI LEMBUR</div>
+          <div style="font-size:14px; font-weight:900; color:${durColor}">${dur}</div>
+        `;
+      }
+
       return `
-        <div class="card glass-card" style="margin-bottom:12px; border-left:4px solid ${isConflict ? 'var(--danger)' : 'var(--success)'}">
+        <div class="card glass-card" style="margin-bottom:12px; border-left:4px solid ${borderColor}">
           <div style="display:flex; justify-content:space-between; align-items:flex-start">
             <div>
               <div style="font-size:13px; font-weight:800; color:var(--white)">${r.nama}</div>
@@ -1234,18 +1600,10 @@
               </div>
             </div>
             
-            <div style="text-align:right">
-              <div style="font-size:9px; color:var(--muted)">DURASI LEMBUR</div>
-              <div style="font-size:14px; font-weight:900; color:var(--gold)">${formatDuration(minutes)}</div>
-              ${isConflict ? '<div class="status-badge s-fail" style="font-size:8px; padding:2px 6px; margin-top:5px">⚠️ TUGAS</div>' : ''}
+            <div style="text-align:right; min-width:90px">
+              ${durasiHtml}
             </div>
           </div>
-          
-          ${isConflict ? `
-            <div style="margin-top:10px; padding:8px; background:rgba(239,68,68,0.1); border-radius:8px; font-size:10px; color:rgba(239,68,68,0.8)">
-              <strong>Keterangan Tugas:</strong> ${r.tugas_detail || 'Sedang dalam tugas luar.'}
-            </div>
-          ` : ''}
         </div>
       `;
     }).join('');

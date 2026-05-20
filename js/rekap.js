@@ -9,6 +9,40 @@ let liburLoaded = false;
 let userListOrder = [];
 let lastRekapPegawai = [];
 
+// Flatpickr instance for rekap range picker
+let _rekapFp = null;
+
+function _initRekapFlatpickr() {
+  const el = document.getElementById('rekapRangePicker');
+  if (!el || !window.flatpickr) return;
+  const today = fmtD(nowWITA());
+  _rekapFp = flatpickr(el, {
+    mode: 'range',
+    dateFormat: 'Y-m-d',
+    defaultDate: [today, today],
+    locale: { rangeSeparator: ' s/d ' },
+    disableMobile: true,
+    onChange: function(selectedDates) {
+      if (selectedDates.length === 2) {
+        const dari   = flatpickr.formatDate(selectedDates[0], 'Y-m-d');
+        const sampai = flatpickr.formatDate(selectedDates[1], 'Y-m-d');
+        $('rekapDari').value   = dari;
+        $('rekapSampai').value = sampai;
+        // Mark as custom and trigger load
+        document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
+        const c = $('dp-custom');
+        if (c) { c.style.display = 'inline-block'; c.classList.add('active'); }
+        loadRekap();
+      }
+    }
+  });
+}
+
+function _syncRekapFlatpickr(dari, sampai) {
+  if (!_rekapFp) return;
+  _rekapFp.setDate([dari, sampai], false);
+}
+
 function setPreset(preset, el) {
   const n = nowWITA(); let dari, sampai;
   document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
@@ -20,15 +54,31 @@ function setPreset(preset, el) {
     case 'last30': { const d = new Date(n); d.setDate(n.getDate() - 29); dari = fmtD(d); sampai = fmtD(n); break; }
     default: return;
   }
-  $('rekapDari').value = dari; $('rekapSampai').value = sampai;
+  $('rekapDari').value = dari;
+  $('rekapSampai').value = sampai;
+  _syncRekapFlatpickr(dari, sampai);
   loadRekap();
 }
+
 function onDateRangeChange() {
   document.querySelectorAll('.date-preset').forEach(b => b.classList.remove('active'));
   const c = $('dp-custom'); c.style.display = 'inline-block'; c.classList.add('active');
   loadRekap();
 }
-(function () { const t = fmtD(nowWITA()); $('rekapDari').value = $('rekapSampai').value = t; })();
+
+// Init: set today as default & init flatpickr
+(function () {
+  const t = fmtD(nowWITA());
+  $('rekapDari').value = $('rekapSampai').value = t;
+  // Flatpickr needs DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _initRekapFlatpickr);
+  } else {
+    _initRekapFlatpickr();
+    _syncRekapFlatpickr(t, t);
+  }
+})();
+
 
 async function fetchUserListOrder() {
   if (userListOrder.length > 0) return userListOrder;

@@ -5949,3 +5949,36 @@
 .swal2-icon.swal2-error { border-color: #ef4444 !important; color: #ef4444 !important; }
 .swal2-timer-progress-bar { background: #d4af37 !important; }
   }
+
+/* Custom Toggle Switch for Lembur */
+.lembur-toggle-wrap { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0; }
+.lembur-toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+.lembur-knob {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: background-color .3s ease, border-color .3s ease;
+  border-radius: 26px;
+}
+.lembur-knob::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  transition: transform .3s ease;
+  border-radius: 50%;
+}
+.lembur-toggle-wrap input:checked + .lembur-knob {
+  background-color: var(--primary, #d4af37);
+  border-color: var(--primary, #d4af37);
+}
+.lembur-toggle-wrap input:checked + .lembur-knob::before {
+  transform: translateY(-50%) translateX(20px);
+}

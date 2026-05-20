@@ -487,6 +487,12 @@
         if ($('pdfOptHeaderFont')) $('pdfOptHeaderFont').value = headerFont;
         if ($('pdfOptHeaderFontSize')) $('pdfOptHeaderFontSize').value = headerSize;
 
+        // Set default orientation based on context: lembur → landscape, rekap → portrait
+        const orientEl = $('pdfOptOrientation');
+        if (orientEl) {
+          orientEl.value = (window.pdfPreviewContext === 'lembur') ? 'l' : 'p';
+        }
+
         if (typeof window.preloadPdfImage === 'function') {
           window.preloadPdfImage(logoUrl).then(() => {
             refreshPdfPreview();
@@ -535,6 +541,9 @@
 
       try {
         if (window.pdfPreviewContext === 'lembur') {
+          if (!window._currentLemburData || window._currentLemburData.length === 0) {
+            throw new Error('Data lembur belum ada. Tarik data terlebih dahulu.');
+          }
           if (typeof window.generateLemburPDF === 'function') {
             await window.generateLemburPDF({
               orientation,
@@ -574,9 +583,17 @@
         if (iframe && window.lastGeneratedDoc) {
           const blobUrl = window.lastGeneratedDoc.output('bloburl');
           iframe.src = blobUrl;
+        } else if (iframe) {
+          iframe.srcdoc = '<div style="padding:20px;color:red;font-family:sans-serif">⚠️ PDF gagal di-generate. Coba tutup dan buka kembali modal ini.</div>';
         }
       } catch (err) {
         console.error("Gagal refresh preview PDF:", err);
+        const iframe = $('pdfPreviewIframe');
+        if (iframe) {
+          iframe.srcdoc = `<div style="padding:20px;color:#c00;font-family:sans-serif;font-size:14px">
+            <b>❌ Error:</b> ${err.message || err}
+          </div>`;
+        }
       } finally {
         if (loader) loader.style.display = 'none';
       }

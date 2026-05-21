@@ -834,6 +834,7 @@
     } catch(e) {
       console.warn("Gagal menarik data libur:", e);
     }
+    window._currentLiburDates = liburDates; // Store globally for PDF coloring
 
     window._selectedLemburDates.clear();
     
@@ -992,6 +993,8 @@
       // Store data for PDF
       window._currentLemburData = lemburData;
       window._currentLemburRange = { dari, sampai, dates: datesArr };
+      // Also re-fetch & store holiday set for PDF coloring (reuse from selection phase if available)
+      if (!window._currentLiburDates) window._currentLiburDates = new Set();
       
     } catch (e) {
       listEl.innerHTML = `<div class="empty-state">❌ Terjadi kesalahan jaringan atau server offline.</div>`;
@@ -1229,24 +1232,46 @@
       return row;
     });
 
-    // Auto-scale column widths to fit page exactly (4 cols per date)
+    // ── Auto-scale to ALWAYS fit in 1 page width ──────────────────────────────
     const usableWidth = pageWidth - margin * 2;
-    const noW    = 7;
-    const namaW  = 38;
     const nDates = dates.length;
-    const remainW = usableWidth - noW - namaW;
-    const perDateW = Math.floor(remainW / nDates);
-    // split per date: masuk ~30%, pulang ~30%, jml ~22%, paraf ~18%
-    const parafW  = Math.max(9,  Math.floor(perDateW * 0.20));
-    const jmlW    = Math.max(9,  Math.floor(perDateW * 0.22));
-    const subW    = Math.max(9,  Math.floor((perDateW - parafW - jmlW) / 2)); // masuk & pulang
 
-    // Font/padding scale
-    const autoFontSize = Math.max(5.5, Math.min(cfg.fontSize, cfg.fontSize - (nDates - 3) * 0.3));
-    const autoPad      = Math.max(0.8, Math.min(cfg.padding,  cfg.padding  - (nDates - 3) * 0.15));
+    // Shrink NAMA column as dates grow; minimum 24mm
+    const namaW = Math.max(24, Math.min(38, 38 - (nDates - 3) * 1.5));
+    // NO column stays fixed
+    const noW = 6;
+    const remainW = usableWidth - noW - namaW;
+    // Each date group = MASUK + PULANG + JML + TTD (4 sub-cols)
+    // Allocate ratios: 22% masuk, 22% pulang, 22% jml, 34% ttd
+    const perDateW = remainW / nDates;
+    const subW  = Math.max(7,  perDateW * 0.22);
+    const jmlW  = Math.max(7,  perDateW * 0.22);
+    const ttdW  = Math.max(14, perDateW * 0.34);
+
+    // Aggressive font/padding shrink so rows fit vertically too
+    // Base row height is roughly (fontSize * 1.8 + padding*2) in mm
+    // Target: (nEmployees + 1 header) rows * rowH <= usablePageH
+    const usablePageH = pageHeight - calculatedStartY - 65; // reserve footer
+    const nRows = Object.keys(groups).length + 1;
+    const maxRowH = Math.max(6, usablePageH / nRows);
+    // fontSize that fits: maxRowH ≈ fontSize * 0.45 + padding*2
+    const fsByHeight = Math.max(5.5, (maxRowH - 4) / 0.45);
+    const autoFontSize = Math.min(cfg.fontSize, Math.max(5.5, cfg.fontSize - (nDates - 3) * 0.25), fsByHeight);
+    const autoPad      = Math.max(0.6, Math.min(cfg.padding, cfg.padding - (nDates - 3) * 0.12));
+
+    // ── Weekend / Holiday helper ───────────────────────────────────────────────
+    const liburSet = window._currentLiburDates || new Set();
+    function isWeekendOrLibur(dateStr) {
+      if (!dateStr) return false;
+      const d = new Date(dateStr + 'T00:00:00');
+      const day = d.getDay();
+      return day === 0 || day === 6 || liburSet.has(dateStr);
+    }
+    // Build set of "red" date indices for quick lookup in didDrawCell
+    const redDateIndices = new Set();
+    dates.forEach((d, i) => { if (isWeekendOrLibur(d)) redDateIndices.add(i); });
 
     // Column styles: per date = [masuk][pulang][jml][ttd]
-    const ttdW   = Math.max(16, parafW + 4); // TTD needs more space for signature image
     const colStyles = {
       0: { cellWidth: noW,   halign: 'center' },
       1: { cellWidth: namaW, halign: 'left'   }
@@ -1256,7 +1281,7 @@
       colStyles[base]     = { cellWidth: subW,  halign: 'center' }; // MASUK
       colStyles[base + 1] = { cellWidth: subW,  halign: 'center' }; // PULANG
       colStyles[base + 2] = { cellWidth: jmlW,  halign: 'center' }; // JML JAM
-      colStyles[base + 3] = { cellWidth: ttdW,  halign: 'center', minCellHeight: 14 }; // TTD
+      colStyles[base + 3] = { cellWidth: ttdW,  halign: 'center', minCellHeight: 12 }; // TTD
     });
 
     // Build indexed groups array for direct row lookup in didDrawCell
@@ -1289,6 +1314,24 @@
       },
       rowPageBreak: cfg.rowPageBreak,
       columnStyles: colStyles,
+      willDrawCell: (data) => {
+        // Color weekend/holiday columns red (header + body)
+        if (data.column.index < 2) return;
+        const colOffset = data.column.index - 2;
+        const dateIdx = Math.floor(colOffset / 4);
+        if (!redDateIndices.has(dateIdx)) return;
+
+        if (data.section === 'head') {
+          // Light red background for header
+          data.cell.styles.fillColor = [255, 220, 220];
+          data.cell.styles.textColor = [180, 0, 0];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.section === 'body') {
+          // Very light red tint for body cells
+          data.cell.styles.fillColor = [255, 240, 240];
+          data.cell.styles.textColor = [180, 0, 0];
+        }
+      },
       didDrawCell: (data) => {
         // Auto-render TTD: find signature by NIP first, then by telegram_id fallback
         if (data.section !== 'body' || data.column.index < 2) return;

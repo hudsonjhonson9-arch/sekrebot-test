@@ -1236,17 +1236,21 @@
     const usableWidth = pageWidth - margin * 2;
     const nDates = dates.length;
 
-    // Shrink NAMA column as dates grow; minimum 24mm
-    const namaW = Math.max(24, Math.min(38, 38 - (nDates - 3) * 1.5));
-    // NO column stays fixed
+    // Fixed columns
     const noW = 6;
+    // Shrink NAMA column as dates grow; minimum 20mm
+    const namaW = Math.max(20, Math.min(36, 36 - (nDates - 3) * 1.2));
+
+    // Total width available for all date groups combined
     const remainW = usableWidth - noW - namaW;
-    // Each date group = MASUK + PULANG + JML + TTD (4 sub-cols)
-    // Allocate ratios: 22% masuk, 22% pulang, 22% jml, 34% ttd
-    const perDateW = remainW / nDates;
-    const subW  = Math.max(7,  perDateW * 0.22);
-    const jmlW  = Math.max(7,  perDateW * 0.22);
-    const ttdW  = Math.max(14, perDateW * 0.34);
+    // Each date = 4 sub-cols: MASUK(ratio 2) + PULANG(ratio 2) + JML(ratio 2) + TTD(ratio 3) = 9 parts
+    // Total parts = nDates * 9
+    const totalParts = nDates * 9;
+    const onePart = remainW / totalParts;
+    // Sub-col widths derived from one "part" unit — guaranteed to sum exactly to remainW
+    const subW = onePart * 2;   // MASUK & PULANG each
+    const jmlW = onePart * 2;   // JML JAM
+    const ttdW = onePart * 3;   // TTD (wider for signature)
 
     // Aggressive font/padding shrink so rows fit vertically too
     // Base row height is roughly (fontSize * 1.8 + padding*2) in mm

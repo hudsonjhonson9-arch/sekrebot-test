@@ -17,34 +17,6 @@
           try {
             let finalPayload = item.payload || item.data;
             
-            // Special interception for offline Travel Duty proof upload
-            if (item.type === 'tugas' && finalPayload && finalPayload.bukti_base64) {
-              const parts = finalPayload.bukti_base64.split(',');
-              const mime = parts[0].match(/:(.*?);/)[1];
-              const bstr = atob(parts[1]);
-              let n = bstr.length;
-              const u8arr = new Uint8Array(n);
-              while (n--) {
-                u8arr[n] = bstr.charCodeAt(n);
-              }
-              const blob = new Blob([u8arr], { type: mime });
-              const file = new File([blob], finalPayload.bukti_nama || 'bukti.jpg', { type: mime });
-              
-              const formData = new FormData();
-              formData.append('file', file);
-              formData.append('nip', item.nip);
-              formData.append('id', finalPayload.id);
-              
-              const uploadRes = await apiUpload(P.upload, formData);
-              if (!uploadRes.ok) throw new Error('Gagal mengunggah bukti perjalanan dinas offline');
-              
-              const imageUrl = uploadRes.data?.url || uploadRes.data?.link;
-              finalPayload.bukti = imageUrl;
-              delete finalPayload.bukti_base64;
-              delete finalPayload.bukti_mime;
-              delete finalPayload.bukti_nama;
-            }
-
             const { ok: syncOk, data: res, status: syncStatus } = await apiPost(item.endpoint, finalPayload);
             if (syncOk) {
               await idb.delete('offline_queue', item.id);

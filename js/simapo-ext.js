@@ -125,7 +125,7 @@ window.renderAdminSimapoPinjam = function(data) {
     let badge = `<span style="background:var(--warning);color:#000;">⏳ ${st}</span>`;
     if (st === 'DISETUJUI' || st === 'DIPINJAM') badge = `<span style="background:var(--success);color:#fff;">✅ ${st}</span>`;
     if (st === 'DITOLAK') badge = `<span style="background:var(--danger);color:#fff;">❌ ${st}</span>`;
-    if (st === 'KEMBALI') badge = `<span style="background:rgba(100,180,255,0.3);color:#64b4ff;">📦 ${st}</span>`;
+    if (st === 'KEMBALI' || st === 'DIKEMBALIKAN') badge = `<span style="background:rgba(100,180,255,0.3);color:#64b4ff;">📦 ${st}</span>`;
 
     return `
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
@@ -143,7 +143,7 @@ window.renderAdminSimapoPinjam = function(data) {
           <button onclick="window.adminSimapoPinjamAction('${item.id}','DISETUJUI')" style="flex:1;padding:8px;background:var(--success);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">✅ Setujui</button>
           <button onclick="window.adminSimapoPinjamAction('${item.id}','DITOLAK')" style="flex:1;padding:8px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">❌ Tolak</button>
         </div>` : (st === 'DISETUJUI' || st === 'DIPINJAM' ? `
-        <button onclick="window.adminSimapoPinjamAction('${item.id}','KEMBALI')" style="width:100%;padding:8px;background:rgba(100,180,255,0.2);color:#64b4ff;border:1px solid rgba(100,180,255,0.3);border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;margin-top:12px;">📦 Tandai Kembali</button>
+        <button onclick="window.adminSimapoPinjamAction('${item.id}','DIKEMBALIKAN')" style="width:100%;padding:8px;background:rgba(100,180,255,0.2);color:#64b4ff;border:1px solid rgba(100,180,255,0.3);border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;margin-top:12px;">📦 Tandai Kembali</button>
         ` : '')}
       </div>`;
   }).join('');
@@ -343,11 +343,15 @@ window.loadOpnameForm = async function() {
   const el = document.getElementById('opnameFormList'); if (!el) return;
   let data = window._allMasterData;
   if (!data.length) try { data = parseApiResponse(await (await apiFetch(P.simapoAdminMasterList)).json()); } catch { data=[]; }
-  el.innerHTML = data.map(b => `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;"><div style="flex:1;"><div style="font-weight:700;font-size:13px">${b.nama}</div><div style="font-size:11px">${b.kodebarang} · Sistem: ${b.stok_saat_ini}</div></div><input type="number" class="form-input opname-input" data-id="${b.id}" value="${b.stok_saat_ini}" style="width:70px;padding:6px;"></div>`).join('');
+  el.innerHTML = data.map(b => `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;"><div style="flex:1;"><div style="font-weight:700;font-size:13px">${b.nama}</div><div style="font-size:11px">${b.kodebarang} · Sistem: ${b.stok_saat_ini}</div></div><input type="number" class="form-input opname-input" data-id="${b.id}" data-sistem="${b.stok_saat_ini}" value="${b.stok_saat_ini}" style="width:70px;padding:6px;"></div>`).join('');
 };
 
 window.submitStokOpname = async function() {
-  const items = Array.from(document.querySelectorAll('.opname-input')).map(i => ({ id: i.dataset.id, stok_fisik: parseInt(i.value)||0 }));
+  const items = Array.from(document.querySelectorAll('.opname-input')).map(i => ({
+    id: i.dataset.id,
+    stok_fisik: parseInt(i.value) || 0,
+    stok_sistem: parseInt(i.dataset.sistem) || 0
+  }));
   if (!confirm('Simpan hasil opname?')) return;
   showToast('Menyimpan...', 'info');
   try {

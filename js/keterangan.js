@@ -76,62 +76,62 @@
       if (d > 0) { dom.show('durLabel', 'block'); $('durText').textContent = `📅 Durasi: ${d} hari`; }
     }
 
-    /* ── Compress image to max 5MB ── */
-    async function compressKetImage(base64, mime, maxMB = 4.5) {
-      return new Promise(resolve => {
-        const maxBytes = maxMB * 1024 * 1024;
-        const raw = atob(base64);
-        if (raw.length <= maxBytes) { resolve(base64); return; }
-        const img = new Image();
-        img.onload = () => {
-          let w = img.width, h = img.height, q = 0.85;
-          const canvas = document.createElement('canvas');
-          const tryCompress = () => {
-            const scale = Math.min(1, Math.sqrt(maxBytes / (w * h * 3)));
-            canvas.width = Math.round(w * scale);
-            canvas.height = Math.round(h * scale);
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const out = canvas.toDataURL('image/jpeg', q).split(',')[1];
-            if (atob(out).length <= maxBytes || q < 0.3) { resolve(out); }
-            else { q -= 0.1; tryCompress(); }
-          };
-          tryCompress();
-        };
-        img.src = 'data:' + mime + ';base64,' + base64;
-      });
-    }
-
     function handleBukti(e, src) {
       const f = e.target.files[0];
       if (!f) return;
       fileOrigName = f.name; fileMime = f.type;
       const lbl = src === 'kamera' ? $('lblKamera') : $('lblGaleri');
       lbl.textContent = '⏳ Memproses...';
-      const reader = new FileReader();
-      reader.onload = async ev => {
-        let b64 = ev.target.result.split(',')[1];
-        const mime = f.type;
-        // Kompres jika gambar dan >5MB
-        if (mime.startsWith('image/') && atob(b64).length > 5 * 1024 * 1024) {
-          b64 = await compressKetImage(b64, mime, 4.5);
-          fileMime = 'image/jpeg';
+      
+      const processFile = async () => {
+        try {
+          let b64 = null;
+          if (f.type.startsWith('image/')) {
+            const compressedDataUrl = await compressImage(f, 1280, 0.7);
+            b64 = compressedDataUrl.split(',')[1];
+            fileMime = 'image/jpeg';
+          } else {
+            b64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(f);
+            });
+          }
+
+          const sizeBytes = atob(b64).length;
+          if (sizeBytes > 5 * 1024 * 1024) {
+            Swal.fire({
+              title: '❌ File Terlalu Besar',
+              text: `Ukuran file (${(sizeBytes / 1024 / 1024).toFixed(2)} MB) melebihi batas maksimal 5 MB.`,
+              icon: 'error',
+              confirmButtonColor: '#3085d6'
+            });
+            clearBukti();
+            return;
+          }
+
+          fileBase64 = b64;
+          const preview = $('buktiPreview'), img = $('buktiImg');
+          preview.classList.add('show');
+          if (fileMime.startsWith('image/')) {
+            img.src = 'data:' + fileMime + ';base64,' + b64;
+            img.style.display = 'block';
+          } else { img.style.display = 'none'; }
+          $('buktiNamaText').textContent = f.name;
+          const btn = src === 'kamera' ? $('btnKamera') : $('btnGaleri');
+          document.querySelectorAll('.bukti-btn').forEach(b => b.classList.remove('has-file'));
+          btn.classList.add('has-file');
+          const sizeMB = (sizeBytes / 1024 / 1024).toFixed(1);
+          lbl.textContent = (f.name.length > 12 ? f.name.substring(0, 10) + '…' : f.name) + ` (${sizeMB}MB)`;
+        } catch (err) {
+          console.error(err);
+          Swal.fire('❌ Gagal', 'Gagal memproses file bukti.', 'error');
+          clearBukti();
         }
-        fileBase64 = b64;
-        const preview = $('buktiPreview'), img = $('buktiImg');
-        preview.classList.add('show');
-        if (mime.startsWith('image/')) {
-          img.src = 'data:' + fileMime + ';base64,' + b64;
-          img.style.display = 'block';
-        } else { img.style.display = 'none'; }
-        $('buktiNamaText').textContent = f.name;
-        const btn = src === 'kamera' ? $('btnKamera') : $('btnGaleri');
-        document.querySelectorAll('.bukti-btn').forEach(b => b.classList.remove('has-file'));
-        btn.classList.add('has-file');
-        const sizeMB = (atob(b64).length / 1024 / 1024).toFixed(1);
-        lbl.textContent = (f.name.length > 12 ? f.name.substring(0, 10) + '…' : f.name) + ` (${sizeMB}MB)`;
       };
-      reader.readAsDataURL(f);
+
+      processFile();
       e.target.value = '';
     }
     function clearBukti() {
@@ -152,27 +152,42 @@
             $('lblKamera').textContent = 'Ambil Foto';
             return;
           }
-          let b64 = cap.dataUrl.split(',')[1];
-          // Pastikan payload tidak terlalu besar untuk n8n
-          if (atob(b64).length > 2 * 1024 * 1024) {
-            b64 = await compressKetImage(b64, 'image/jpeg', 1.8);
+          try {
+            const compressedDataUrl = await compressImage(cap.dataUrl, 1280, 0.7);
+            const b64 = compressedDataUrl.split(',')[1];
+            const sizeBytes = atob(b64).length;
+
+            if (sizeBytes > 5 * 1024 * 1024) {
+              Swal.fire({
+                title: '❌ File Terlalu Besar',
+                text: `Ukuran foto (${(sizeBytes / 1024 / 1024).toFixed(2)} MB) melebihi batas maksimal 5 MB.`,
+                icon: 'error',
+                confirmButtonColor: '#3085d6'
+              });
+              clearBukti();
+              return;
+            }
+
+            fileBase64 = b64;
+            fileMime = 'image/jpeg';
+            fileOrigName = 'Kamera_' + Math.floor(Date.now() / 1000) + '.jpg';
+
+            const preview = $('buktiPreview'), img = $('buktiImg');
+            preview.classList.add('show');
+            img.src = 'data:image/jpeg;base64,' + b64;
+            img.style.display = 'block';
+            $('buktiNamaText').textContent = fileOrigName;
+
+            $('btnKamera').classList.add('has-file');
+            $('btnGaleri').classList.remove('has-file');
+
+            const sizeMB = (sizeBytes / 1024 / 1024).toFixed(1);
+            $('lblKamera').textContent = `Foto Tersimpan (${sizeMB}MB)`;
+          } catch (err) {
+            console.error(err);
+            Swal.fire('❌ Gagal', 'Gagal memproses foto kamera.', 'error');
+            clearBukti();
           }
-
-          fileBase64 = b64;
-          fileMime = 'image/jpeg';
-          fileOrigName = 'Kamera_' + Math.floor(Date.now() / 1000) + '.jpg';
-
-          const preview = $('buktiPreview'), img = $('buktiImg');
-          preview.classList.add('show');
-          img.src = 'data:image/jpeg;base64,' + b64;
-          img.style.display = 'block';
-          $('buktiNamaText').textContent = fileOrigName;
-
-          $('btnKamera').classList.add('has-file');
-          $('btnGaleri').classList.remove('has-file');
-
-          const sizeMB = (atob(b64).length / 1024 / 1024).toFixed(1);
-          $('lblKamera').textContent = `Foto Tersimpan (${sizeMB}MB)`;
         },
         onCancel: () => {
           $('lblKamera').textContent = 'Ambil Foto';

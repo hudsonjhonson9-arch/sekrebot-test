@@ -1055,9 +1055,16 @@
       cnv.height = vid.videoHeight;
       const ctx = cnv.getContext('2d');
       ctx.drawImage(vid, 0, 0);
-      const dataUrl = cnv.toDataURL('image/jpeg', 0.85);
+      const rawDataUrl = cnv.toDataURL('image/jpeg', 0.85);
 
       stopCamStream();
+
+      let dataUrl = rawDataUrl;
+      try {
+        dataUrl = await compressImage(rawDataUrl, 1280, 0.7);
+      } catch (err) {
+        console.error('[doBuktiCapture] compress image failed:', err);
+      }
 
       // Tampilkan Preview Singkat
       $('buktiPreviewCamImg').src = dataUrl;

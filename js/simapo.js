@@ -164,6 +164,9 @@ function showSimapoDetail(id) {
     showCancelButton: true,
     confirmButtonText: isOut ? 'Stok Habis' : 'Pinjam Aset',
     confirmButtonColor: isOut ? '#333' : '#d4af37',
+    customClass: {
+      confirmButton: isOut ? 'swal2-confirm-disabled' : ''
+    },
     cancelButtonText: 'Tutup',
     preConfirm: () => {
       if (isOut) {

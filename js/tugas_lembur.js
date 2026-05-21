@@ -338,71 +338,85 @@
     if (!input.files || !input.files[0] || !_activeTugasData) return;
 
     const file = input.files[0];
-
-    // Check if offline
-    if (!navigator.onLine) {
-      Swal.fire({ title: 'Menyimpan Secara Offline...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-      try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64 = e.target.result;
-          
-          const offlineData = {
-            endpoint: P.penugasanSave,
-            method: 'POST',
-            payload: {
-              id: _activeTugasData.id,
-              status: 'SELESAI',
-              bukti_base64: base64,
-              bukti_mime: file.type,
-              bukti_nama: file.name,
-              actual_lat: _activeTugasData.actual_lat,
-              actual_lon: _activeTugasData.actual_lon,
-              pengerjaan_timestamp: Date.now()
-            },
-            timestamp: Date.now(),
-            type: 'tugas',
-            nip: _activeTugasData.nip
-          };
-          
-          await idb.set('offline_queue', offlineData);
-          
-          Swal.fire({
-            title: '📴 Disimpan Offline',
-            text: 'Penyelesaian Perjalanan Dinas disimpan sementara di perangkat Anda karena tidak ada koneksi internet. Data akan disinkronisasikan otomatis saat terhubung internet.',
-            icon: 'warning',
-            confirmButtonText: 'OK'
-          });
-          loadMyAssignments();
-        };
-        reader.readAsDataURL(file);
-      } catch (err) {
-        Swal.fire('❌ Gagal', 'Gagal menyimpan data offline: ' + err.message, 'error');
-      } finally {
-        input.value = '';
-      }
-      return;
-    }
-
-    Swal.fire({ title: 'Mengunggah Bukti...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    Swal.fire({ title: 'Memproses Bukti...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     try {
-      // 1. Upload Photo
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('nip', _activeTugasData.nip);
-      formData.append('id', _activeTugasData.id);
-      
-      const uploadRes = await apiUpload(P.upload, formData);
-      if (!uploadRes.ok) throw new Error('Gagal mengunggah foto');
+      let b64 = null;
+      let fileMime = file.type;
+      let fileName = file.name;
 
-      const imageUrl = uploadRes.data?.url || uploadRes.data?.link;
-      
-      // 2. Update Task Status
+      if (file.type.startsWith('image/')) {
+        const compressedDataUrl = await compressImage(file, 1280, 0.7);
+        b64 = compressedDataUrl.split(',')[1];
+        fileMime = 'image/jpeg';
+        if (!fileName.toLowerCase().endsWith('.jpg') && !fileName.toLowerCase().endsWith('.jpeg')) {
+          fileName = fileName.substring(0, fileName.lastIndexOf('.')) + '.jpg';
+        }
+      } else {
+        b64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result.split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Check size (5MB limit)
+      const sizeBytes = atob(b64).length;
+      if (sizeBytes > 5 * 1024 * 1024) {
+        Swal.fire({
+          title: '❌ File Terlalu Besar',
+          text: `Ukuran file (${(sizeBytes / 1024 / 1024).toFixed(2)} MB) melebihi batas maksimal 5 MB.`,
+          icon: 'error',
+          confirmButtonColor: '#3085d6'
+        });
+        input.value = '';
+        return;
+      }
+
+      // Check if offline
+      if (!navigator.onLine) {
+        const base64DataUrl = `data:${fileMime};base64,${b64}`;
+        const offlineData = {
+          endpoint: P.penugasanSave,
+          method: 'POST',
+          payload: {
+            id: _activeTugasData.id,
+            status: 'SELESAI',
+            bukti_base64: base64DataUrl,
+            bukti_mime: fileMime,
+            bukti_nama: fileName,
+            actual_lat: _activeTugasData.actual_lat,
+            actual_lon: _activeTugasData.actual_lon,
+            pengerjaan_timestamp: Date.now()
+          },
+          timestamp: Date.now(),
+          type: 'tugas',
+          nip: _activeTugasData.nip
+        };
+        
+        await idb.set('offline_queue', offlineData);
+        
+        Swal.fire({
+          title: '📴 Disimpan Offline',
+          text: 'Penyelesaian Perjalanan Dinas disimpan sementara di perangkat Anda karena tidak ada koneksi internet. Data akan disinkronisasikan otomatis saat terhubung internet.',
+          icon: 'warning',
+          confirmButtonText: 'OK'
+        });
+        loadMyAssignments();
+        input.value = '';
+        return;
+      }
+
+      // If online, send the payload with base64 image data directly
+      const base64DataUrl = `data:${fileMime};base64,${b64}`;
       const updateRes = await apiPost(P.penugasanSave, {
         id: _activeTugasData.id,
         status: 'SELESAI',
-        bukti: imageUrl,
+        bukti_base64: base64DataUrl,
+        bukti_mime: fileMime,
+        bukti_nama: fileName,
         actual_lat: _activeTugasData.actual_lat,
         actual_lon: _activeTugasData.actual_lon,
         pengerjaan_timestamp: Date.now()
@@ -412,7 +426,7 @@
         Swal.fire('✅ Berhasil', 'Tugas telah diselesaikan!', 'success');
         loadMyAssignments();
       } else {
-        throw new Error('Gagal memperbarui status tugas');
+        throw new Error(updateRes.data?.message || 'Gagal memperbarui status tugas');
       }
 
     } catch (e) {

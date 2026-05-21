@@ -7,16 +7,16 @@
   <title>Absensi</title>
 
   <!-- External Libraries -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/lib/telegram-web-app.js"></script>
+  <script src="js/lib/xlsx.full.min.js" defer></script>
+  <script src="js/lib/jspdf.umd.min.js" defer></script>
+  <script src="js/lib/jspdf.plugin.autotable.min.js" defer></script>
+  <script src="js/lib/leaflet.min.js" defer></script>
+  <script src="js/lib/sweetalert2.all.min.js"></script>
   
   <!-- Flatpickr (Dark Theme to match app) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="css/lib/flatpickr-dark.css">
+  <script src="js/lib/flatpickr.min.js"></script>
   
   <!--
     Google Maps Static API digunakan untuk peta inline di Riwayat Log.
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="stylesheet" href="css/lib/leaflet.min.css" />
 
   <!-- App Styles -->
   <link rel="stylesheet" href="css/styles.css?v=6" />
@@ -39,7 +39,7 @@
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0d1b2a">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+  <link rel="stylesheet" href="css/lib/font-awesome.min.css" />
   <style>
     /* ════ DOKUMEN CARDS (MODERN UI) ════ */
     .log-list {
@@ -2879,6 +2879,62 @@
       </div>
     </div>
   </div>
+
+  <!-- ══ MODAL FORM SIMAPO MASTER ══ -->
+  <div id="modalSimapoMaster" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999999; background:rgba(11, 15, 25, 0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#111827; border:1px solid rgba(255, 255, 255, 0.08); border-radius:20px; width:100%; max-width:500px; display:flex; flex-direction:column; box-shadow:0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow:hidden; color:#f8fafc; font-family:'Outfit', sans-serif;">
+      <!-- Modal Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px; border-bottom:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.01);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">📦</span>
+          <h3 id="smfTitle" style="margin:0; font-size:16px; font-weight:700; color:#fff;">Form Aset</h3>
+        </div>
+        <button onclick="closeSimapoMasterForm()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:10px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:16px;">&times;</button>
+      </div>
+      <!-- Modal Body -->
+      <div style="padding:24px; display:flex; flex-direction:column; gap:16px; max-height:70vh; overflow-y:auto; box-sizing:border-box;">
+        <div>
+          <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Nama Aset</label>
+          <input type="text" id="smfNama" class="form-input" placeholder="Nama Barang / Aset" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Kode Barang</label>
+          <input type="text" id="smfKode" class="form-input" placeholder="Kode Barang (misal: BRG-001)" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; box-sizing:border-box;" />
+        </div>
+        <div style="display:flex; gap:12px;">
+          <div style="flex:1;">
+            <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Satuan</label>
+            <select id="smfSatuan" class="form-input" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; box-sizing:border-box;">
+              <option value="Unit">Unit</option>
+              <option value="Pcs">Pcs</option>
+              <option value="Box">Box</option>
+              <option value="Rim">Rim</option>
+              <option value="Set">Set</option>
+              <option value="Meter">Meter</option>
+            </select>
+          </div>
+          <div style="width:120px;">
+            <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Stok Awal</label>
+            <input type="number" id="smfStok" class="form-input" min="0" value="0" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; box-sizing:border-box;" />
+          </div>
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Harga Satuan (Rp)</label>
+          <input type="number" id="smfHarga" class="form-input" min="0" value="0" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:38px; color:#fff; font-size:12px; padding:0 12px; outline:none; box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block; font-size:11px; color:#94a3b8; font-weight:700; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.5px;">Spesifikasi / Deskripsi</label>
+          <textarea id="smfSpesifikasi" class="form-input" placeholder="Spesifikasi teknis, lokasi penyimpanan, dll." style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; width:100%; height:80px; color:#fff; font-size:12px; padding:10px 12px; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
+        </div>
+      </div>
+      <!-- Modal Footer -->
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:12px; padding:16px 24px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.01);">
+        <button onclick="closeSimapoMasterForm()" class="btn-admin" style="margin:0; width:100px; height:38px; background:rgba(255,255,255,0.05); color:#94a3b8; border:1px solid rgba(255,255,255,0.08);">Batal</button>
+        <button onclick="saveSimapoMaster()" class="btn-admin" style="margin:0; width:160px; height:38px; background:#2563eb; color:#fff; font-weight:700; border:none; border-radius:8px; cursor:pointer;">💾 Simpan Aset</button>
+      </div>
+    </div>
+  </div>
+
   <style>
     @keyframes spin_loader {
       to { transform: rotate(360deg); }

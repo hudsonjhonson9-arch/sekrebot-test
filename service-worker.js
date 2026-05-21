@@ -1,11 +1,44 @@
 // Service Worker — Absensi Digital
 // Caching strategy: Network First, offline fallback ke cache
 
-const CACHE_NAME = 'absensi-digital-v2';
+const CACHE_NAME = 'absensi-digital-v3';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
+  './manifest.json',
   './css/styles.css',
+  
+  // Local CSS Libraries
+  './css/lib/flatpickr-dark.css',
+  './css/lib/leaflet.min.css',
+  './css/lib/font-awesome.min.css',
+  
+  // Leaflet images
+  './css/lib/images/marker-icon.png',
+  './css/lib/images/marker-icon-2x.png',
+  './css/lib/images/marker-shadow.png',
+  
+  // FontAwesome Webfonts
+  './css/webfonts/fa-solid-900.woff2',
+  './css/webfonts/fa-solid-900.woff',
+  './css/webfonts/fa-solid-900.ttf',
+  './css/webfonts/fa-regular-400.woff2',
+  './css/webfonts/fa-regular-400.woff',
+  './css/webfonts/fa-regular-400.ttf',
+  './css/webfonts/fa-brands-400.woff2',
+  './css/webfonts/fa-brands-400.woff',
+  './css/webfonts/fa-brands-400.ttf',
+
+  // Local JS Libraries
+  './js/lib/telegram-web-app.js',
+  './js/lib/xlsx.full.min.js',
+  './js/lib/jspdf.umd.min.js',
+  './js/lib/jspdf.plugin.autotable.min.js',
+  './js/lib/leaflet.min.js',
+  './js/lib/sweetalert2.all.min.js',
+  './js/lib/flatpickr.min.js',
+
+  // Core App Scripts
   './js/config.js',
   './js/constants.js',
   './js/state.js',
@@ -16,12 +49,30 @@ const OFFLINE_ASSETS = [
   './js/helpers.js',
   './js/network.js',
   './js/profil.js',
+  './js/face.js',
   './js/absen.js',
   './js/keterangan.js',
   './js/log.js',
   './js/rekap.js',
+  './js/admin-libur.js',
+  './js/admin-lokasi.js',
+  './js/admin-pegawai.js',
+  './js/admin-log.js',
+  './js/admin-mgmt.js',
+  './js/weather.js',
+  './js/admin-face.js',
+  './js/simapo-admin.js',
+  './js/simapo-ext.js',
+  './js/desktop.js',
+  './js/signature.js',
+  './js/meja.js',
+  './js/rekap-pdf.js',
+  './js/tugas_lembur.js',
+  './js/simapo.js',
+  './js/offline.js',
+  './js/meja-handler.js',
   './js/auth.js',
-  './js/app.js',
+  './js/app.js'
 ];
 
 self.addEventListener('install', (e) => {

@@ -338,20 +338,25 @@
      * Kompresi gambar Base64 atau File ke format JPEG dengan kualitas tertentu.
      * Berguna untuk mengurangi beban bandwidth saat mengirim foto/ttd ke n8n.
      * @param {string|File} source - Source image (Base64 atau File)
-     * @param {number} [maxWidth=800] - Lebar maksimal
+     * @param {number} [maxDimension=1280] - Batas dimensi maksimal (lebar atau tinggi)
      * @param {number} [quality=0.7] - Kualitas JPEG (0.1 - 1.0)
      * @returns {Promise<string>} - Base64 hasil kompresi
      */
-    async function compressImage(source, maxWidth = 800, quality = 0.7) {
+    async function compressImage(source, maxDimension = 1280, quality = 0.7) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          if (width > maxWidth) {
-            height = (maxWidth / width) * height;
-            width = maxWidth;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (maxDimension / width) * height;
+              width = maxDimension;
+            } else {
+              width = (maxDimension / height) * width;
+              height = maxDimension;
+            }
           }
           canvas.width = width;
           canvas.height = height;

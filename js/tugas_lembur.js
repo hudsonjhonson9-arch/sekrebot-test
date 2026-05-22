@@ -7,6 +7,8 @@
   let _tugasMap = null;
   let _tugasMarker = null;
   let _activeTugasData = null; // Store data of the task being worked on
+  let _activeMonitoringTasks = []; // Store data of monitoring tasks
+  let _activeMyTasks = []; // Store data of personal assignments
 
   /**
    * Helper: Get direct/thumbnail URL for Google Drive links or return original
@@ -30,6 +32,80 @@
       }
     }
     return url;
+  }
+
+  /**
+   * Helper: Convert raw binary string to Base64
+   */
+  function binaryStringToBase64(str) {
+    try {
+      const bytes = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        bytes[i] = str.charCodeAt(i) & 0xff;
+      }
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    } catch (e) {
+      console.error('[TugasLembur] Failed to convert binary string to base64:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Helper: Detect mime type from raw binary string
+   */
+  function detectMimeType(str) {
+    if (!str) return 'image/jpeg';
+    // Check PDF signature %PDF
+    if (str.startsWith('%PDF') || (str.charCodeAt(0) === 0x25 && str.charCodeAt(1) === 0x50 && str.charCodeAt(2) === 0x44 && str.charCodeAt(3) === 0x46)) {
+      return 'application/pdf';
+    }
+    // Check PNG signature
+    if (str.charCodeAt(0) === 0x89 && str.charCodeAt(1) === 0x50 && str.charCodeAt(2) === 0x4E && str.charCodeAt(3) === 0x47) {
+      return 'image/png';
+    }
+    // Check JPEG signature
+    if (str.charCodeAt(0) === 0xFF && str.charCodeAt(1) === 0xD8 && str.charCodeAt(2) === 0xFF) {
+      return 'image/jpeg';
+    }
+    if (str.startsWith('GIF8')) {
+      return 'image/gif';
+    }
+    return 'image/jpeg';
+  }
+
+  /**
+   * Helper: Get direct image URL or Base64 representation (handles raw binary fallback)
+   */
+  function getDirectImageUrlOrBase64(bukti) {
+    if (!bukti) return '';
+    
+    // If it's a URL or already a base64 data URL
+    if (bukti.startsWith('data:') || bukti.startsWith('http://') || bukti.startsWith('https://') || bukti.startsWith('/')) {
+      return getDirectImageUrl(bukti);
+    }
+    
+    // Check if it is a pure Base64 string (no prefix)
+    const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+    if (bukti.length > 20 && base64Regex.test(bukti.replace(/[\r\n\s]/g, ''))) {
+      return `data:image/jpeg;base64,${bukti.replace(/[\r\n\s]/g, '')}`;
+    }
+    
+    // Otherwise, treat as raw binary bytes
+    try {
+      const mime = detectMimeType(bukti);
+      const b64 = binaryStringToBase64(bukti);
+      if (b64) {
+        return `data:${mime};base64,${b64}`;
+      }
+    } catch (e) {
+      console.error('[TugasLembur] Error parsing binary bukti:', e);
+    }
+    return '';
   }
 
   /**
@@ -131,6 +207,7 @@
       
       // Handle n8n wrap { data: [...] } or direct array via apiGet's logic
       const data = res.rows || parseApiResponse(res.data) || [];
+      _activeMyTasks = data;
       console.log('[TugasLembur] Parsed Data:', data);
 
       if (data.length === 0) {
@@ -232,14 +309,46 @@
 
     let buktiTag = '';
     if (bukti) {
-      buktiTag = `
-        <div style="margin-top:15px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); position:relative">
-          <img src="${getDirectImageUrl(bukti)}" style="width:100%; height:140px; object-fit:cover; display:block" alt="Bukti Tugas">
-          <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.8)); padding:10px; font-size:9px; color:#fff; font-weight:600">
-             <i class="fas fa-check-circle" style="color:#10b981; margin-right:5px"></i> Bukti Terlampir
+      const processedBukti = getDirectImageUrlOrBase64(bukti);
+      if (processedBukti) {
+        const isPdf = processedBukti.startsWith('data:application/pdf');
+        if (isPdf) {
+          buktiTag = `
+            <div style="margin-top:15px; border-radius:12px; padding:15px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between">
+              <div style="display:flex; align-items:center; gap:12px">
+                <div style="font-size:24px; color:#ef4444"><i class="fas fa-file-pdf"></i></div>
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#fff">Dokumen Bukti (PDF)</div>
+                  <div style="font-size:10px; color:var(--muted)">Format PDF terlampir</div>
+                </div>
+              </div>
+              <button type="button" onclick="viewMyTugasBuktiById('${r.id}')" class="btn-sm" style="background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:700">
+                📄 Buka PDF
+              </button>
+            </div>
+          `;
+        } else {
+          buktiTag = `
+            <div style="margin-top:15px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); position:relative; cursor:pointer" onclick="viewMyTugasBuktiById('${r.id}')">
+              <img src="${processedBukti}" style="width:100%; height:140px; object-fit:cover; display:block" alt="Bukti Tugas">
+              <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.8)); padding:10px; font-size:9px; color:#fff; font-weight:600; display:flex; justify-content:space-between; align-items:center">
+                 <span><i class="fas fa-check-circle" style="color:#10b981; margin-right:5px"></i> Bukti Terlampir</span>
+                 <span style="opacity:0.8">Klik untuk memperbesar</span>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        buktiTag = `
+          <div style="margin-top:15px; border-radius:12px; padding:12px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.15); display:flex; align-items:center; gap:10px">
+            <span style="font-size:18px">⚠️</span>
+            <div>
+              <div style="font-size:11px; font-weight:700; color:#f87171">Bukti Rusak / Tidak Dikenali</div>
+              <div style="font-size:9px; color:var(--muted)">Format data bukti tidak valid</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
     }
 
     return `
@@ -1740,6 +1849,7 @@
       if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
       
       const data = res.rows || parseApiResponse(res.data) || [];
+      _activeMonitoringTasks = data; // Store data in module scope for id-based lookup
       renderMonitoringTasks(data);
     } catch (e) {
       console.error('[TugasLembur] Monitoring Load Error:', e);
@@ -1807,7 +1917,7 @@
             </div>
             
             ${t.bukti ? `
-              <button onclick="viewTugasBukti('${t.bukti}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--white); padding:6px 12px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer">
+              <button onclick="viewTugasBuktiById('${t.id}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--white); padding:6px 12px; border-radius:10px; font-size:10px; font-weight:700; cursor:pointer">
                 📷 BUKTI
               </button>
             ` : ''}
@@ -1819,14 +1929,62 @@
     el.innerHTML = header + cards;
   }
 
-  window.viewTugasBukti = function(url) {
+  window.viewTugasBuktiById = function(id) {
+    const t = _activeMonitoringTasks.find(x => x.id === id);
+    if (!t || !t.bukti) return;
+    viewTugasBukti(t.bukti, t.nama);
+  };
+
+  window.viewMyTugasBuktiById = function(id) {
+    const t = _activeMyTasks.find(x => x.id === id);
+    if (!t || !t.bukti) return;
+    viewTugasBukti(t.bukti, t.nama || (typeof userProfile !== 'undefined' && userProfile ? userProfile.nama : 'bukti'));
+  };
+
+  window.downloadPdfFromBase64 = function(base64Data, filename) {
+    try {
+      const link = document.createElement('a');
+      link.href = base64Data;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('[TugasLembur] Failed to download PDF:', e);
+      alert('Gagal mengunduh file PDF.');
+    }
+  };
+
+  window.viewTugasBukti = function(url, namaPegawai = 'bukti') {
     if (!url) return;
-    const directUrl = getDirectImageUrl(url);
+    const processedUrl = getDirectImageUrlOrBase64(url);
+    if (!processedUrl) {
+      Swal.fire('Info', 'Data bukti rusak atau tidak valid.', 'info');
+      return;
+    }
     const isGDrive = url.includes('drive.google.com');
-    if (typeof Swal !== 'undefined') {
+    const isPdf = processedUrl.startsWith('data:application/pdf');
+    
+    if (isPdf) {
+      Swal.fire({
+        title: 'Bukti Pengerjaan (PDF)',
+        html: `
+          <div style="margin: 15px 0;">
+            <p style="font-size: 12px; opacity: 0.8; margin-bottom:15px">Dokumen bukti pengerjaan tugas dalam format PDF.</p>
+            <button onclick="downloadPdfFromBase64('${processedUrl}', '${namaPegawai.replace(/'/g, "\\'")}_bukti.pdf')" class="btn-sm" style="background:#ef4444; color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px;">
+              <i class="fas fa-download"></i> Unduh PDF
+            </button>
+          </div>
+        `,
+        confirmButtonText: 'Tutup',
+        background: '#0a192f',
+        color: '#fff',
+        confirmButtonColor: '#3b82f6'
+      });
+    } else {
       Swal.fire({
         title: 'Bukti Pengerjaan',
-        imageUrl: directUrl,
+        imageUrl: processedUrl,
         imageAlt: 'Foto Bukti',
         html: isGDrive ? `
           <div style="margin-top: 15px;">
@@ -1840,8 +1998,6 @@
         color: '#fff',
         confirmButtonColor: '#3b82f6'
       });
-    } else {
-      window.open(url, '_blank');
     }
   };
 

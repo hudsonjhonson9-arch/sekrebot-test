@@ -8,6 +8,29 @@
   let _tugasMarker = null;
   let _activeTugasData = null; // Store data of the task being worked on
 
+  /**
+   * Helper: Get direct/thumbnail URL for Google Drive links or return original
+   */
+  function getDirectImageUrl(url) {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    if (url.includes('drive.google.com')) {
+      let fileId = '';
+      const fileDMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileDMatch && fileDMatch[1]) {
+        fileId = fileDMatch[1];
+      } else {
+        const idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) {
+          fileId = idMatch[1];
+        }
+      }
+      if (fileId) {
+        return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+      }
+    }
+    return url;
+  }
 
   /**
    * Inisialisasi Modul
@@ -211,7 +234,7 @@
     if (bukti) {
       buktiTag = `
         <div style="margin-top:15px; border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.08); position:relative">
-          <img src="${bukti}" style="width:100%; height:140px; object-fit:cover; display:block" alt="Bukti Tugas">
+          <img src="${getDirectImageUrl(bukti)}" style="width:100%; height:140px; object-fit:cover; display:block" alt="Bukti Tugas">
           <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.8)); padding:10px; font-size:9px; color:#fff; font-weight:600">
              <i class="fas fa-check-circle" style="color:#10b981; margin-right:5px"></i> Bukti Terlampir
           </div>
@@ -1798,11 +1821,20 @@
 
   window.viewTugasBukti = function(url) {
     if (!url) return;
+    const directUrl = getDirectImageUrl(url);
+    const isGDrive = url.includes('drive.google.com');
     if (typeof Swal !== 'undefined') {
       Swal.fire({
         title: 'Bukti Pengerjaan',
-        imageUrl: url,
+        imageUrl: directUrl,
         imageAlt: 'Foto Bukti',
+        html: isGDrive ? `
+          <div style="margin-top: 15px;">
+            <a href="${url}" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #60a5fa; border-radius: 12px; font-size: 11px; font-weight: 700; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15)">
+              <i class="fas fa-external-link-alt"></i> Buka di Google Drive
+            </a>
+          </div>
+        ` : '',
         confirmButtonText: 'Tutup',
         background: '#0a192f',
         color: '#fff',

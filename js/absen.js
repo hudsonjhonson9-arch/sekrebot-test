@@ -484,8 +484,9 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
         console.log('[Absen] Webhook response:', { absenOk, absenStatus, absenData });
 
-        if (!absenOk && absenStatus === 0) {
-          handleAbsenError(new AbsenError('Server tidak merespons. Periksa koneksi dan coba lagi.', ERROR_CODES.UNKNOWN), 'resultCard');
+        if (!absenOk) {
+          const errMsg = absenStatus === 0 ? 'Server tidak merespons. Periksa koneksi dan coba lagi.' : `Terjadi kesalahan pada server (Status ${absenStatus}).`;
+          handleAbsenError(new AbsenError(errMsg, ERROR_CODES.UNKNOWN), 'resultCard');
           setBtnL('btnAbsen', false, '🔄 Coba Lagi');
           _isAbsenSubmitting = false; resolve(); return;
         }
@@ -493,7 +494,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         const d = absenData || {};
         const ket = d?.message || d?.validasi?.keterangan || 'Data absen diterima';
         const lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
-        const isValid = d?.validasi?.is_valid !== false || d?.ok === true;
+        const isValid = (d?.validasi?.is_valid === true) || (d?.ok === true);
         const kode_tolak = d?.validasi?.kode_tolak || '';
         
         if (lokNm) { 
@@ -516,6 +517,15 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           if (typeof autoUpdateStatusAktif === 'function') autoUpdateStatusAktif();
           setTimeout(loadTodayHistory, 2000);
           if (window.tg) setTimeout(() => window.tg.close(), 3500);
+
+          Swal.fire({
+            title: '✅ Absen Berhasil!',
+            html: `<b>${ket}</b><br><br>📅 ${tanggal}<br>🕐 ${jam}<br>📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}<br>${fotoKet.replace(/\n/g, '<br>')}`,
+            icon: 'success',
+            timer: 4000,
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          });
         } else if (kode_tolak === 'SUDAH_ABSEN') {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', 'ℹ️', 'Sudah Absen',
             `${ket}\n\nRiwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.`);
@@ -524,9 +534,25 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           logLoaded = false;
           setTimeout(loadTodayHistory, 1500);
           if (window.tg) setTimeout(() => window.tg.close(), 3500);
+
+          Swal.fire({
+            title: 'ℹ️ Sudah Absen',
+            text: 'Riwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.',
+            icon: 'info',
+            timer: 3000,
+            showConfirmButton: true
+          });
         } else {
-          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak', ket);
-          setBtnL('btnAbsen', false, '🔄 Coba Lagi');
+          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'Absen Ditolak',
+            `${ket}\n\nKode: ${kode_tolak || 'ERROR'}`);
+          setBtnL('btnAbsen', false, '❌ Ditolak');
+
+          Swal.fire({
+            title: '❌ Absen Ditolak',
+            text: ket + (kode_tolak ? ` (Kode: ${kode_tolak})` : ''),
+            icon: 'error',
+            confirmButtonText: 'Tutup'
+          });
         }
       } catch (err) {
         console.error('[Absen] GPS Success Callback Critical Error:', err);
@@ -673,16 +699,15 @@ async function handlePulangLuar() {
 
       try {
         const { ok: absenOk, data: absenData, status: absenStatus } = await apiPost(P.absen, payload);
-        // BUG FIX: Cek network/CORS error lebih dulu (status 0 = tidak ada response)
-        if (!absenOk && absenStatus === 0) {
-          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Server Tidak Merespons',
-            'Pastikan n8n & koneksi internet aktif, lalu coba lagi.');
+        if (!absenOk) {
+          const errMsg = absenStatus === 0 ? 'Server Tidak Merespons. Pastikan n8n & koneksi internet aktif, lalu coba lagi.' : `Terjadi kesalahan pada server (Status ${absenStatus}).`;
+          showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🔌', 'Gagal', errMsg);
           $('btnPulangLuar').disabled = false;
           if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
           return;
         }
         const d = absenData || {};
-        const isValid = d?.validasi?.is_valid !== false;
+        const isValid = (d?.validasi?.is_valid === true) || (d?.ok === true);
         if (isValid) {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'success', '✅', 'Pulang Lapangan Tercatat!',
             `${ket}\n📅 ${tanggal}\n🕐 ${jam}\n📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);

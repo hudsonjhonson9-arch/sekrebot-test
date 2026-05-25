@@ -962,7 +962,6 @@
         <!-- Hidden inputs kept for JS compatibility -->
         <input type="hidden" id="rekapDari" />
         <input type="hidden" id="rekapSampai" />
-
         <!-- Presets -->
         <div class="date-preset-bar" style="margin-top:10px; margin-bottom:2px;">
           <button class="date-preset active" id="dp-today"  onclick="setPreset('today', this)">Hari Ini</button>
@@ -978,6 +977,16 @@
           <select id="rekapInstansiSelect" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer"
             onchange="onRekapInstansiChange()">
             <option value="">— Pilih Instansi —</option>
+          </select>
+        </div>
+
+        <!-- Filter Role (Only visible to Superadmin/Admin) -->
+        <div id="rekapRoleFilterSection" style="display: none; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+          <div class="date-range-label" style="margin-bottom: 4px">👥 Tampilkan Pegawai/Magang (Admin)</div>
+          <select id="rekapRoleFilter" class="date-range-input" style="width: 100%; height: 38px; cursor: pointer" onchange="refreshRekap()">
+            <option value="pegawai" selected>Hanya Pegawai (NIP/PPPK)</option>
+            <option value="magang">Hanya Anak Magang / Lainnya</option>
+            <option value="all">Semua Data</option>
           </select>
         </div>
 
@@ -2011,7 +2020,7 @@
                 <div>
                   <div class="form-group"><label class="form-label">Telegram ID (Unique)</label><input id="inPegawaiId" type="number" class="form-input" /></div>
                   <div class="form-group"><label class="form-label">Nama Lengkap & Gelar</label><input id="inPegawaiNama" type="text" class="form-input" /></div>
-                  <div class="form-group"><label class="form-label">NIP</label><input id="inPegawaiNip" type="text" class="form-input" maxlength="18" /></div>
+                  <div class="form-group"><label class="form-label">NIP / ID Pegawai</label><input id="inPegawaiNip" type="text" class="form-input"  /></div>
                   <div class="form-group"><label class="form-label">Nomor WhatsApp (No HP)</label><input id="inPegawaiNoHp" type="text" class="form-input" placeholder="08..." /></div>
                 </div>
 
@@ -2109,7 +2118,7 @@
           <div id="adminAddForm" style="display:none; margin-top:15px; background:rgba(201,168,76,.05); border:1px solid rgba(201,168,76,.15); border-radius:12px; padding:15px; animation: slideDown 0.3s ease">
             <div style="font-size:10px; font-weight:800; color:var(--gold); margin-bottom:12px">TAMBAH HAK AKSES BARU</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
-              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">NIP Pegawai (Utama)</label><input id="inputAdminNip" type="text" class="form-input" placeholder="198..." /></div>
+              <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">NIP / ID Pegawai</label><input id="inputAdminNip" type="text" class="form-input" placeholder="NIP / NISN / ID..." /></div>
               <div class="form-group" style="margin:0"><label class="form-label" style="font-size:9px">Telegram ID (Opsional)</label><input id="inputAdminTgId" type="number" class="form-input" placeholder="12345..." /></div>
             </div>
             <div class="form-group"><label class="form-label" style="font-size:9px">Nama Lengkap</label><input id="inputAdminNama" type="text" class="form-input" placeholder="Nama..." /></div>
@@ -2406,18 +2415,18 @@
   <div id="authOverlay" class="auth-overlay" style="display:none">
     <div class="auth-card">
       <div class="auth-title">Selamat Datang</div>
-      <div class="auth-sub">Silakan masuk menggunakan NIP Anda atau daftar sebagai pegawai baru</div>
+      <div class="auth-sub">Silakan masuk menggunakan NIP/ID Anda atau daftar sebagai pengguna baru</div>
       <div class="auth-tabs">
         <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Masuk</div>
         <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Daftar</div>
       </div>
       <div id="formLogin">
-        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan 18 Digit NIP" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        <input type="text" id="loginNip" class="form-input-auth" placeholder="Masukkan NIP / NISN / NIM / ID" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9a-zA-Z]/g, '')">
         <button id="btnLogin" class="btn-auth" onclick="handleAuthAction('login')">Masuk Sekarang 🚀</button>
       </div>
       <div id="formRegister" style="display:none">
         <input type="text" id="regNama" class="form-input-auth" placeholder="Nama Lengkap">
-        <input type="text" id="regNip" class="form-input-auth" placeholder="18 Digit NIP / No Pegawai" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        <input type="text" id="regNip" class="form-input-auth" placeholder="NIP / NISN / NIM / No ID" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9a-zA-Z]/g, '')">
         <input type="text" id="regJabatan" class="form-input-auth" placeholder="Jabatan">
         <input type="text" id="regNomor" class="form-input-auth" placeholder="Nomor WhatsApp (Aktif)">
         <div id="regTelegramWrapper" style="display:none">
@@ -2951,3 +2960,5 @@
 
 </body>
 </html>
+
+

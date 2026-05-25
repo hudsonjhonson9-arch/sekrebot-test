@@ -155,13 +155,25 @@ async function loadRekap() {
       const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}${instansiParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
-        const d = Array.isArray(json) ? json[0] : json;
-        if (d?.pegawai?.length) {
-          ringkasan = d.ringkasan || {};
-          pegawai = d.pegawai;
-          rekapOK = true;
+          const d = Array.isArray(json) ? json[0] : json;
+          if (d?.pegawai?.length) {
+            ringkasan = d.ringkasan || {};
+            let fetchedPegawai = d.pegawai;
 
-          // Populate jamPegawaiMap from rekap metadata to avoid separate call
+            // Filter Pegawai vs Magang based on NIP length
+            const roleFilter = document.getElementById('rekapRoleFilter');
+            const roleFilterVal = roleFilter ? roleFilter.value : 'pegawai'; // Default ke pegawai
+            if (roleFilterVal === 'pegawai') {
+              pegawai = fetchedPegawai.filter(p => p.nip && String(p.nip).trim().length === 18);
+            } else if (roleFilterVal === 'magang') {
+              pegawai = fetchedPegawai.filter(p => !p.nip || String(p.nip).trim().length !== 18);
+            } else {
+              pegawai = fetchedPegawai;
+            }
+
+            rekapOK = true;
+
+            // Populate jamPegawaiMap from rekap metadata to avoid separate call
           pegawai.forEach(p => {
             const id = String(p.id || p.ID || p.telegram_id || '').trim();
             const jm = (p.jam_masuk || '').trim();
@@ -1184,6 +1196,13 @@ window.toggleRekapMap = function (cardEl, pins) {
 // ==========================================
 function initSuperadminRekapScoping() {
   const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+  const isAdmin = isSA || (window.userProfile?.role?.toLowerCase().includes('admin')) || !!window.IS_ADMIN;
+  
+  const roleSec = $('rekapRoleFilterSection');
+  if (roleSec && isAdmin) {
+    roleSec.style.display = 'block';
+  }
+
   const sec = $('rekapInstansiSection');
   if (!sec) return;
 

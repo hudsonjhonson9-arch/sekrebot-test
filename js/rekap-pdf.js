@@ -605,8 +605,16 @@
 
         const iframe = $('pdfPreviewIframe');
         if (iframe && window.lastGeneratedDoc) {
-          const blobUrl = window.lastGeneratedDoc.output('bloburl');
-          iframe.src = blobUrl;
+          try {
+            if (window.innerWidth > 768) {
+              const blobUrl = window.lastGeneratedDoc.output('bloburl');
+              iframe.src = blobUrl;
+            } else {
+              iframe.src = 'about:blank'; // Skip preview rendering on mobile
+            }
+          } catch (err) {
+            console.warn("Pratinjau PDF gagal dirender di browser ini.");
+          }
         } else if (iframe) {
           iframe.srcdoc = '<div style="padding:20px;color:red;font-family:sans-serif">⚠️ PDF gagal di-generate. Coba tutup dan buka kembali modal ini.</div>';
         }

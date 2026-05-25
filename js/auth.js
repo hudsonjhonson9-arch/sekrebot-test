@@ -45,7 +45,7 @@
         if (mode === 'login') {
           const nip = $('loginNip').value.trim();
           if (!nip) throw new Error('Silakan masukkan NIP');
-          if (nip.length < 18) throw new Error('NIP harus terdiri dari 18 digit angka');
+          if (nip.length < 3) throw new Error('ID / NIP minimal terdiri dari 3 karakter');
 
           const res = await apiGet(`${P.userList}?nip=${nip}`);
           if (!res.ok) throw new Error('Server tidak merespons. Coba lagi.');
@@ -103,7 +103,7 @@
           };
 
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
-          if (payload.nip.length < 18) throw new Error('NIP harus terdiri dari 18 digit angka');
+          if (payload.nip.length < 3) throw new Error('ID / NIP minimal terdiri dari 3 karakter');
           if (payload.no_hp && payload.no_hp.length < 10) throw new Error('Nomor WhatsApp minimal 10 digit');
 
           const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);

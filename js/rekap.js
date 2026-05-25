@@ -1069,6 +1069,11 @@ async function downloadRekap() {
       ? new Date(dari + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
       : `${dari} s.d. ${sampai}`;
 
+    // Logika Magang vs Pegawai untuk label Excel
+    const roleFilter = document.getElementById('rekapRoleFilter');
+    const isMagang = roleFilter && roleFilter.value === 'magang';
+    const idLabel = isMagang ? 'ID / NISN' : 'NIP';
+
     // 2. Mapping Data ke format Excel
     const rowsExcel = lastRekapPegawai.map((p, i) => {
       const masuk = p.masuk || 0;
@@ -1080,7 +1085,7 @@ async function downloadRekap() {
       const data = {
         'No': i + 1,
         'Nama Pegawai': p.nama || '—',
-        'NIP': p.nip || '—',
+        [idLabel]: p.nip || '—',
         'Bidang': p.bidang || '—',
         'Jabatan': p.jabatan || '—'
       };

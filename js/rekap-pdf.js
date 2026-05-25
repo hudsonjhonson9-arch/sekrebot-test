@@ -111,6 +111,10 @@
         // Statistik untuk ringkasan di bawah
         const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tubel: 0, cuti: 0, tanpaBerita: 0, terlambat: 0 };
 
+        // Logika Magang vs Pegawai untuk label PDF
+        const roleFilter = document.getElementById('rekapRoleFilter');
+        const isMagang = roleFilter && roleFilter.value === 'magang';
+
         // 3. Update Table Body: Tambahkan Jabatan & Keterangan
         const tableBody = filteredPegawai.map((p, i) => {
           const row = p.dataExcelRow || {};
@@ -134,7 +138,7 @@
 
           return [
             i + 1,
-            `${p.nama}\nNIP. ${p.nip || '—'}`,
+            `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
             (p.jabatan || '—') + (p.pangkat ? `\n(${p.pangkat})` : ''),
             jamM,
             '',
@@ -203,7 +207,7 @@
         doc.autoTable({
           startY: calculatedStartY,
           margin: { top: 20, left: margin, right: margin, bottom: 20 },
-          head: [['No', 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          head: [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
           body: tableBody,
           theme: 'grid',
           headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
@@ -293,7 +297,7 @@
               // Draw Document Title and Periode
               doc.setFontSize(11);
               doc.setFont('times', 'bold');
-              doc.text('DAFTAR HADIR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
+              doc.text(isMagang ? 'DAFTAR HADIR MAGANG / LAINNYA' : 'DAFTAR HADIR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
               doc.setFont('times', 'normal');
               doc.text(`Periode: ${tanggalLabel}`, pageWidth / 2, docPeriodeY, { align: 'center' });
             }

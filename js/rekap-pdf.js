@@ -36,8 +36,8 @@
         return;
       }
 
-      // Check desktop mode preview flow
-      if (window.innerWidth >= 992 && (!options || !options.previewOnly)) {
+      // Show preview and settings modal on all devices before generating
+      if (!options || !options.previewOnly) {
         window.pdfPreviewContext = 'rekap';
         openPdfPreviewModal();
         return;

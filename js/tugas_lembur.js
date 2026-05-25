@@ -1695,10 +1695,10 @@
     const data = window._currentLemburData;
     if (!data || data.length === 0) return alert('Tidak ada data untuk dicetak.');
 
-    // Check desktop mode preview flow
-    if (window.innerWidth >= 992 && (!options || !options.previewOnly)) {
+    // Show preview and settings modal on all devices before generating
+    if (!options || !options.previewOnly) {
       window.pdfPreviewContext = 'lembur';
-      window.openPdfPreviewModal();
+      if (typeof window.openPdfPreviewModal === 'function') window.openPdfPreviewModal();
       return;
     }
 

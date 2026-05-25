@@ -638,18 +638,20 @@
                   directory: 'CACHE',
                   encoding: ''
                 });
-                
                 if (Share) {
                   await Share.share({
                     title: 'Unduh Rekap Absensi',
                     text: 'Berikut adalah laporan rekap absensi yang Anda unduh.',
                     url: writeResult.uri,
-                    dialogTitle: 'Buka atau Simpan PDF'
                   });
                 }
+              } else {
+                // Fallback for browser / PWA
+                window.lastGeneratedDoc.save(window.lastGeneratedFileName);
               }
-            } catch (err) {
-              console.error("Native download from modal error:", err);
+            } catch (e) {
+              // If it fails, fallback to web download
+              window.lastGeneratedDoc.save(window.lastGeneratedFileName);
             }
           })();
         } else {
@@ -675,7 +677,7 @@
         }
 
         await apiPost(P.kirimRekap, { 
-          chat_id: REKAP_CHAT_ID, 
+          chat_id: String(typeof REKAP_CHAT_ID !== 'undefined' && REKAP_CHAT_ID ? REKAP_CHAT_ID : (window.MY_ID || localStorage.getItem('MY_ID') || '')), 
           pesan: window.lastGeneratedPdfMsg,
           nip: localStorage.getItem('MY_NIP') || '',
           file_base64: window.lastGeneratedPdfBase64,

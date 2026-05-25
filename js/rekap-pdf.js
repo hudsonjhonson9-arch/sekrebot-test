@@ -148,14 +148,21 @@
         const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
         const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
 
-        // Prioritize dynamic letterhead overrides if present in options or DOM elements
-        const fullHeader = cfg.headerName !== undefined ? cfg.headerName : (($('pdfOptHeaderName')?.value || '').trim() || instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
-        const instAlamat = cfg.headerAlamat !== undefined ? cfg.headerAlamat : (($('pdfOptHeaderAlamat')?.value || '').trim() || instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
-        const instKontak = cfg.headerKontak !== undefined ? cfg.headerKontak : (($('pdfOptHeaderKontak')?.value || '').trim() || instData?.kontak || '');
-        const logoUrl = cfg.headerLogo !== undefined ? cfg.headerLogo : (($('pdfOptHeaderLogo')?.value || '').trim() || instData?.logo_url || rawLogoUrl);
+        // Prioritize dynamic letterhead overrides if present in options or DOM elements or LocalStorage
+        const savedName = localStorage.getItem('absen_pdf_opt_header_name');
+        const savedAlamat = localStorage.getItem('absen_pdf_opt_header_alamat');
+        const savedKontak = localStorage.getItem('absen_pdf_opt_header_kontak');
+        const savedLogo = localStorage.getItem('absen_pdf_opt_header_logo');
+        const savedFont = localStorage.getItem('absen_pdf_opt_header_font');
+        const savedFontSize = localStorage.getItem('absen_pdf_opt_header_font_size');
 
-        const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || instData?.header_font || 'times');
-        const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || instData?.header_size || '15'));
+        const fullHeader = cfg.headerName !== undefined ? cfg.headerName : (($('pdfOptHeaderName')?.value || '').trim() || savedName || instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
+        const instAlamat = cfg.headerAlamat !== undefined ? cfg.headerAlamat : (($('pdfOptHeaderAlamat')?.value || '').trim() || savedAlamat || instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
+        const instKontak = cfg.headerKontak !== undefined ? cfg.headerKontak : (($('pdfOptHeaderKontak')?.value || '').trim() || savedKontak || instData?.kontak || '');
+        const logoUrl = cfg.headerLogo !== undefined ? cfg.headerLogo : (($('pdfOptHeaderLogo')?.value || '').trim() || savedLogo || instData?.logo_url || rawLogoUrl);
+
+        const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || savedFont || instData?.header_font || 'times');
+        const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || savedFontSize || instData?.header_size || '15'));
 
         const sizePemerintah = Math.max(9, headerSize * 0.72);
         const sizeAlamat = Math.max(7, headerSize * 0.55);
@@ -472,12 +479,19 @@
         const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
         const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
         
-        const fullHeader = instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH';
-        const instAlamat = instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK';
-        const instKontak = instData?.kontak || '';
-        const logoUrl = instData?.logo_url || "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png";
-        const headerFont = instData?.header_font || 'times';
-        const headerSize = instData?.header_size || '15';
+        const savedName = localStorage.getItem('absen_pdf_opt_header_name');
+        const savedAlamat = localStorage.getItem('absen_pdf_opt_header_alamat');
+        const savedKontak = localStorage.getItem('absen_pdf_opt_header_kontak');
+        const savedLogo = localStorage.getItem('absen_pdf_opt_header_logo');
+        const savedFont = localStorage.getItem('absen_pdf_opt_header_font');
+        const savedFontSize = localStorage.getItem('absen_pdf_opt_header_font_size');
+
+        const fullHeader = savedName !== null ? savedName : (instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
+        const instAlamat = savedAlamat !== null ? savedAlamat : (instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
+        const instKontak = savedKontak !== null ? savedKontak : (instData?.kontak || '');
+        const logoUrl = savedLogo !== null ? savedLogo : (instData?.logo_url || "https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png");
+        const headerFont = savedFont !== null ? savedFont : (instData?.header_font || 'times');
+        const headerSize = savedFontSize !== null ? savedFontSize : (instData?.header_size || '15');
 
         // Load into inputs
         if ($('pdfOptHeaderName')) $('pdfOptHeaderName').value = fullHeader;
@@ -532,6 +546,16 @@
       const headerLogo = $('pdfOptHeaderLogo')?.value || '';
       const headerFont = $('pdfOptHeaderFont')?.value || '';
       const headerFontSize = $('pdfOptHeaderFontSize')?.value || '';
+
+      // Save to localStorage for persistence
+      try {
+        if ($('pdfOptHeaderName')) localStorage.setItem('absen_pdf_opt_header_name', headerName);
+        if ($('pdfOptHeaderAlamat')) localStorage.setItem('absen_pdf_opt_header_alamat', headerAlamat);
+        if ($('pdfOptHeaderKontak')) localStorage.setItem('absen_pdf_opt_header_kontak', headerKontak);
+        if ($('pdfOptHeaderLogo')) localStorage.setItem('absen_pdf_opt_header_logo', headerLogo);
+        if ($('pdfOptHeaderFont')) localStorage.setItem('absen_pdf_opt_header_font', headerFont);
+        if ($('pdfOptHeaderFontSize')) localStorage.setItem('absen_pdf_opt_header_font_size', headerFontSize);
+      } catch (e) {}
 
       if (headerLogo && typeof window.preloadPdfImage === 'function') {
         try {

@@ -1275,14 +1275,21 @@
     const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
     const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
 
-    // Overrides from options or DOM
-    const fullHeader = cfg.headerName !== undefined ? cfg.headerName : (($('pdfOptHeaderName')?.value || '').trim() || instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
-    const instAlamat = cfg.headerAlamat !== undefined ? cfg.headerAlamat : (($('pdfOptHeaderAlamat')?.value || '').trim() || instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
-    const instKontak = cfg.headerKontak !== undefined ? cfg.headerKontak : (($('pdfOptHeaderKontak')?.value || '').trim() || instData?.kontak || '');
-    const logoUrl = cfg.headerLogo !== undefined ? cfg.headerLogo : (($('pdfOptHeaderLogo')?.value || '').trim() || instData?.logo_url || rawLogoUrl);
+    // Overrides from options, DOM, or LocalStorage
+    const savedName = localStorage.getItem('absen_pdf_opt_header_name');
+    const savedAlamat = localStorage.getItem('absen_pdf_opt_header_alamat');
+    const savedKontak = localStorage.getItem('absen_pdf_opt_header_kontak');
+    const savedLogo = localStorage.getItem('absen_pdf_opt_header_logo');
+    const savedFont = localStorage.getItem('absen_pdf_opt_header_font');
+    const savedFontSize = localStorage.getItem('absen_pdf_opt_header_font_size');
 
-    const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || instData?.header_font || 'times');
-    const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || instData?.header_size || '15'));
+    const fullHeader = cfg.headerName !== undefined ? cfg.headerName : (($('pdfOptHeaderName')?.value || '').trim() || savedName || instData?.header || instData?.nama_instansi || 'BADAN PERENCANAAN PEMBANGUNAN RISET DAN INOVASI DAERAH');
+    const instAlamat = cfg.headerAlamat !== undefined ? cfg.headerAlamat : (($('pdfOptHeaderAlamat')?.value || '').trim() || savedAlamat || instData?.alamat || 'Jl. Weekarou, Waikabubak, Sumba Barat, Nusa Tenggara Timur\nWAIKABUBAK');
+    const instKontak = cfg.headerKontak !== undefined ? cfg.headerKontak : (($('pdfOptHeaderKontak')?.value || '').trim() || savedKontak || instData?.kontak || '');
+    const logoUrl = cfg.headerLogo !== undefined ? cfg.headerLogo : (($('pdfOptHeaderLogo')?.value || '').trim() || savedLogo || instData?.logo_url || rawLogoUrl);
+
+    const headerFont = cfg.headerFont !== undefined ? cfg.headerFont : ($('pdfOptHeaderFont')?.value || savedFont || instData?.header_font || 'times');
+    const headerSize = parseFloat(cfg.headerFontSize !== undefined ? cfg.headerFontSize : ($('pdfOptHeaderFontSize')?.value || savedFontSize || instData?.header_size || '15'));
 
     const sizePemerintah = Math.max(9, headerSize * 0.72);
     const sizeAlamat = Math.max(7, headerSize * 0.55);

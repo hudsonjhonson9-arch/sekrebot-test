@@ -597,6 +597,8 @@ function renderRekap(pg) {
     tanggalLabel = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   }
 
+  const isMagang = document.getElementById('rekapRoleFilter')?.value === 'magang';
+
   el.innerHTML = filteredPg.map((p, idx) => {
     const nama = p.nama || '—';
     const nip = p.nip || '—';
@@ -709,7 +711,7 @@ function renderRekap(pg) {
           <div style="flex:1;min-width:0">
             <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
             ${jabatanStr}
-            <div class="pegawai-jabatan" style="margin-top:2px">NIP: ${nip} · ${p.pangkat || '—'} · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+            <div class="pegawai-jabatan" style="margin-top:2px">${isMagang ? 'ID' : 'NIP'}: ${nip} ${!isMagang ? `· ${p.pangkat || '—'} ` : ''}· ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
             ${periodeHarianNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeHarianNama}</div>` : ''}
           </div>
           <!-- Badge status utama -->
@@ -968,7 +970,7 @@ function renderRekap(pg) {
             <div style="flex:1;min-width:0">
               <div class="pegawai-name">${nama}</div>
               ${jabatanStr}
-              <div class="pegawai-jabatan">NIP: ${nip} · ${p.pangkat || '—'} · ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+              <div class="pegawai-jabatan">${isMagang ? 'ID' : 'NIP'}: ${nip} ${!isMagang ? `· ${p.pangkat || '—'} ` : ''}· ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
             </div>
           </div>
 

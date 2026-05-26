@@ -139,7 +139,7 @@
           return [
             i + 1,
             `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
-            (p.jabatan || '—') + (p.pangkat ? `\n(${p.pangkat})` : ''),
+            (p.jabatan || '—') + (!isMagang && p.pangkat ? `\n(${p.pangkat})` : ''),
             jamM,
             '',
             jamP,
@@ -207,7 +207,7 @@
         doc.autoTable({
           startY: calculatedStartY,
           margin: { top: 20, left: margin, right: margin, bottom: 20 },
-          head: [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          head: [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', isMagang ? 'Jabatan / Institusi' : 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
           body: tableBody,
           theme: 'grid',
           headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },

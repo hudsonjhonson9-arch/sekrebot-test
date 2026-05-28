@@ -2,123 +2,383 @@
   "name": "SIMAPO - Katalog & Master Barang",
   "nodes": [
     {
-      "parameters": { "httpMethod": "GET", "path": "simapo-katalog", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0],
-      "id": "wh-katalog", "name": "WH Katalog", "webhookId": "simapo-katalog"
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "simapo-katalog",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "wh-katalog",
+      "name": "WH Katalog",
+      "webhookId": "simapo-katalog"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive FROM \"SIMAPO\".barang WHERE isactive = true ORDER BY nama ASC;",
+        "query": "SELECT id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive FROM \"SIMAPO\".barang WHERE isactive = true AND instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY nama ASC;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 0],
-      "id": "pg-katalog", "name": "PG Katalog",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        0
+      ],
+      "id": "pg-katalog",
+      "name": "PG Katalog",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
       },
-      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 0],
-      "id": "code-agg-katalog", "name": "Agg Katalog"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "code-agg-katalog",
+      "name": "Agg Katalog"
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 0],
-      "id": "res-katalog", "name": "Res Katalog"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "res-katalog",
+      "name": "Res Katalog"
     },
-
     {
-      "parameters": { "httpMethod": "GET", "path": "simapo-admin-master-list", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 300],
-      "id": "wh-master-list", "name": "WH Master List", "webhookId": "simapo-admin-master-list"
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "simapo-admin-master-list",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "id": "wh-master-list",
+      "name": "WH Master List",
+      "webhookId": "simapo-admin-master-list"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT b.id, b.kodebarang, b.nama, b.satuan, b.spesifikasi, b.foto, b.stok_saat_ini, b.minimumstok, b.hargasatuan, b.kategoriid, k.nama AS nama_kategori, b.isactive, TO_CHAR(b.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".barang b LEFT JOIN \"SIMAPO\".kategori_barang k ON k.id = b.kategoriid ORDER BY b.isactive DESC, b.nama ASC;",
+        "query": "SELECT b.id, b.kodebarang, b.nama, b.satuan, b.spesifikasi, b.foto, b.stok_saat_ini, b.minimumstok, b.hargasatuan, b.kategoriid, k.nama AS nama_kategori, b.isactive, TO_CHAR(b.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".barang b LEFT JOIN \"SIMAPO\".kategori_barang k ON k.id = b.kategoriid WHERE b.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY b.isactive DESC, b.nama ASC;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 300],
-      "id": "pg-master-list", "name": "PG Master List",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        300
+      ],
+      "id": "pg-master-list",
+      "name": "PG Master List",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
       },
-      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 300],
-      "id": "code-agg-master", "name": "Agg Master"
-    },
-    {
-      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 300],
-      "id": "res-master-list", "name": "Res Master List"
-    },
-
-    {
-      "parameters": { "httpMethod": "POST", "path": "simapo-admin-master-save", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 600],
-      "id": "wh-master-save", "name": "WH Master Save", "webhookId": "simapo-admin-master-save"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "id": "code-agg-master",
+      "name": "Agg Master"
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.item.json.body || $input.item.json;\nif (!b.nama) throw new Error('Nama barang wajib diisi');\nif (!b.kodebarang) throw new Error('Kode barang wajib diisi');\nreturn [{ json: {\n  id: b.id || null,\n  nama: b.nama,\n  kodebarang: b.kodebarang,\n  satuan: b.satuan || 'Unit',\n  spesifikasi: b.spesifikasi || '',\n  foto: b.foto || '',\n  stok_saat_ini: parseInt(b.stok_saat_ini) || 0,\n  hargasatuan: parseFloat(b.hargasatuan) || 0,\n  kategoriid: b.kategoriid || null\n} }];"
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
       },
-      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [240, 600],
-      "id": "code-master-save", "name": "Validate Barang"
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        300
+      ],
+      "id": "res-master-list",
+      "name": "Res Master List"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-admin-master-save",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        600
+      ],
+      "id": "wh-master-save",
+      "name": "WH Master Save",
+      "webhookId": "simapo-admin-master-save"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nif (!b.nama) throw new Error('Nama barang wajib diisi');\nif (!b.kodebarang) throw new Error('Kode barang wajib diisi');\nreturn [{ json: {\n  id: b.id || null,\n  nama: b.nama,\n  kodebarang: b.kodebarang,\n  satuan: b.satuan || 'Unit',\n  spesifikasi: b.spesifikasi || '',\n  foto: b.foto || '',\n  stok_saat_ini: parseInt(b.stok_saat_ini) || 0,\n  hargasatuan: parseFloat(b.hargasatuan) || 0,\n  kategoriid: b.kategoriid || null,\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        600
+      ],
+      "id": "code-master-save",
+      "name": "Validate Barang"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".barang (id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive, createdat, updatedat)\nVALUES (COALESCE('{{ $json.id }}'::uuid, gen_random_uuid()), '{{ $json.kodebarang }}', '{{ $json.nama }}', '{{ $json.satuan }}', '{{ $json.spesifikasi }}', '{{ $json.foto }}', {{ $json.stok_saat_ini }}, 0, {{ $json.hargasatuan }}, {{ $json.kategoriid ? \"'\" + $json.kategoriid + \"'\" : 'NULL' }}, true, NOW(), NOW())\nON CONFLICT (id) DO UPDATE SET nama=EXCLUDED.nama, kodebarang=EXCLUDED.kodebarang, satuan=EXCLUDED.satuan, spesifikasi=EXCLUDED.spesifikasi, foto=EXCLUDED.foto, hargasatuan=EXCLUDED.hargasatuan, kategoriid=EXCLUDED.kategoriid, updatedat=NOW()\nRETURNING id, nama;",
+        "query": "INSERT INTO \"SIMAPO\".barang (id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive, createdat, updatedat, instansi_id)\nVALUES (COALESCE('{{ ($json.id).toString().replace(/'/g, '' '') }}'::uuid, gen_random_uuid()), '{{ ($json.kodebarang).toString().replace(/'/g, '' '') }}', '{{ ($json.nama).toString().replace(/'/g, '' '') }}', '{{ ($json.satuan).toString().replace(/'/g, '' '') }}', '{{ ($json.spesifikasi).toString().replace(/'/g, '' '') }}', '{{ ($json.foto).toString().replace(/'/g, '' '') }}', {{ ($json.stok_saat_ini).toString().replace(/'/g, '' '') }}, 0, {{ ($json.hargasatuan).toString().replace(/'/g, '' '') }}, {{ ($json.kategoriid ? \"'\" + $json.kategoriid + \"'\" : 'NULL').toString().replace(/'/g, '' '') }}, true, NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, '' '') }}')\nON CONFLICT (id) DO UPDATE SET nama=EXCLUDED.nama, kodebarang=EXCLUDED.kodebarang, satuan=EXCLUDED.satuan, spesifikasi=EXCLUDED.spesifikasi, foto=EXCLUDED.foto, hargasatuan=EXCLUDED.hargasatuan, kategoriid=EXCLUDED.kategoriid, updatedat=NOW(), instansi_id=EXCLUDED.instansi_id\nRETURNING id, nama;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [480, 600],
-      "id": "pg-master-save", "name": "PG UPSERT Barang",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        480,
+        600
+      ],
+      "id": "pg-master-save",
+      "name": "PG UPSERT Barang",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ { \"success\": true, \"message\": \"Data aset berhasil disimpan\", \"id\": $json.id } }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 600],
-      "id": "res-master-save", "name": "Res Master Save"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Data aset berhasil disimpan\", \"id\": $json.id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        600
+      ],
+      "id": "res-master-save",
+      "name": "Res Master Save"
     },
-
     {
-      "parameters": { "httpMethod": "POST", "path": "simapo-admin-master-delete", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 900],
-      "id": "wh-master-del", "name": "WH Master Delete", "webhookId": "simapo-admin-master-delete"
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-admin-master-delete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        900
+      ],
+      "id": "wh-master-del",
+      "name": "WH Master Delete",
+      "webhookId": "simapo-admin-master-delete"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".barang SET isactive = false, updatedat = NOW() WHERE id = '{{ ($input.item.json.body || $input.item.json).id }}' RETURNING id, nama;",
+        "query": "UPDATE \"SIMAPO\".barang SET isactive = false, updatedat = NOW() WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, '' '') }}' RETURNING id, nama;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 900],
-      "id": "pg-master-del", "name": "PG Soft Delete",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        900
+      ],
+      "id": "pg-master-del",
+      "name": "PG Soft Delete",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ { \"success\": true, \"message\": \"Aset dinonaktifkan\", \"id\": $json.id } }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [480, 900],
-      "id": "res-master-del", "name": "Res Master Delete"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Aset dinonaktifkan\", \"id\": $json.id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        900
+      ],
+      "id": "res-master-del",
+      "name": "Res Master Delete"
     }
   ],
   "connections": {
-    "WH Katalog":      { "main": [[{ "node": "PG Katalog",        "type": "main", "index": 0 }]] },
-    "PG Katalog":      { "main": [[{ "node": "Agg Katalog",       "type": "main", "index": 0 }]] },
-    "Agg Katalog":     { "main": [[{ "node": "Res Katalog",       "type": "main", "index": 0 }]] },
-    "WH Master List":  { "main": [[{ "node": "PG Master List",    "type": "main", "index": 0 }]] },
-    "PG Master List":  { "main": [[{ "node": "Agg Master",        "type": "main", "index": 0 }]] },
-    "Agg Master":      { "main": [[{ "node": "Res Master List",   "type": "main", "index": 0 }]] },
-    "WH Master Save":  { "main": [[{ "node": "Validate Barang",   "type": "main", "index": 0 }]] },
-    "Validate Barang": { "main": [[{ "node": "PG UPSERT Barang",  "type": "main", "index": 0 }]] },
-    "PG UPSERT Barang":{ "main": [[{ "node": "Res Master Save",   "type": "main", "index": 0 }]] },
-    "WH Master Delete":{ "main": [[{ "node": "PG Soft Delete",    "type": "main", "index": 0 }]] },
-    "PG Soft Delete":  { "main": [[{ "node": "Res Master Delete", "type": "main", "index": 0 }]] }
+    "WH Katalog": {
+      "main": [
+        [
+          {
+            "node": "PG Katalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Katalog": {
+      "main": [
+        [
+          {
+            "node": "Agg Katalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agg Katalog": {
+      "main": [
+        [
+          {
+            "node": "Res Katalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WH Master List": {
+      "main": [
+        [
+          {
+            "node": "PG Master List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Master List": {
+      "main": [
+        [
+          {
+            "node": "Agg Master",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agg Master": {
+      "main": [
+        [
+          {
+            "node": "Res Master List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WH Master Save": {
+      "main": [
+        [
+          {
+            "node": "Validate Barang",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Barang": {
+      "main": [
+        [
+          {
+            "node": "PG UPSERT Barang",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG UPSERT Barang": {
+      "main": [
+        [
+          {
+            "node": "Res Master Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WH Master Delete": {
+      "main": [
+        [
+          {
+            "node": "PG Soft Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Soft Delete": {
+      "main": [
+        [
+          {
+            "node": "Res Master Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "pinData": {},
-  "meta": { "templateCredsSetupCompleted": true, "instanceId": "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67" }
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67"
+  }
 }

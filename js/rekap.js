@@ -1278,6 +1278,29 @@ function onRekapInstansiChange() {
   if (tugasSelect) tugasSelect.value = val;
   const lemburSelect = $('lemburInstansiSelect');
   if (lemburSelect) lemburSelect.value = val;
+  const pegawaiSelect = $('pegawaiInstansiSelect');
+  if (pegawaiSelect) pegawaiSelect.value = val;
+  const adminKetSelect = $('adminKetInstansiSelect');
+  if (adminKetSelect) adminKetSelect.value = val;
+
+  // Clear SIMAPO Cache
+  if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
+    window._simapoCache.clear();
+  }
+
+  // Trigger reloading of all active admin sections!
+  if (typeof loadAdminMgmt === 'function') loadAdminMgmt();
+  if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+  if (typeof loadPegawaiMgmt === 'function') loadPegawaiMgmt();
+  if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
+  if (typeof loadLiburAdmin === 'function') loadLiburAdmin();
+  if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
+  if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
+
+  // Trigger reloading of SIMAPO components if active
+  if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
+  if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket();
+  if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
   
   // Reload Rekap data!
   loadRekap();

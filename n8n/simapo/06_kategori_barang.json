@@ -2,84 +2,260 @@
   "name": "SIMAPO - Kategori Barang",
   "nodes": [
     {
-      "parameters": { "httpMethod": "GET", "path": "simapo-kategori-list", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 0],
-      "id": "wh-kat-list", "name": "WH Kat List", "webhookId": "simapo-kategori-list"
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "simapo-kategori-list",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "wh-kat-list",
+      "name": "WH Kat List",
+      "webhookId": "simapo-kategori-list"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true WHERE k.isactive = true GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC;",
+        "query": "SELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' WHERE k.isactive = true AND k.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 0],
-      "id": "pg-kat-list", "name": "PG Kat List",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        0
+      ],
+      "id": "pg-kat-list",
+      "name": "PG Kat List",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
       "parameters": {
         "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
       },
-      "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [480, 0],
-      "id": "code-agg-kat", "name": "Agg Kat"
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "code-agg-kat",
+      "name": "Agg Kat"
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [720, 0],
-      "id": "res-kat-list", "name": "Res Kat List"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ],
+      "id": "res-kat-list",
+      "name": "Res Kat List"
     },
-
     {
-      "parameters": { "httpMethod": "POST", "path": "simapo-kategori-save", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 300],
-      "id": "wh-kat-save", "name": "WH Kat Save", "webhookId": "simapo-kategori-save"
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-kategori-save",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "id": "wh-kat-save",
+      "name": "WH Kat Save",
+      "webhookId": "simapo-kategori-save"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, isactive, createdat) VALUES (gen_random_uuid(), '{{ ($input.item.json.body || $input.item.json).nama }}', '{{ ($input.item.json.body || $input.item.json).deskripsi || \"\" }}', true, NOW()) RETURNING id, nama;",
+        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, isactive, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, '' '') }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, '' '') }}', true, NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, '' '') }}') RETURNING id, nama;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 300],
-      "id": "pg-kat-save", "name": "PG Kat Save",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        300
+      ],
+      "id": "pg-kat-save",
+      "name": "PG Kat Save",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ { \"success\": true, \"message\": \"Kategori disimpan\", \"id\": $json.id } }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [480, 300],
-      "id": "res-kat-save", "name": "Res Kat Save"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Kategori disimpan\", \"id\": $json.id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        300
+      ],
+      "id": "res-kat-save",
+      "name": "Res Kat Save"
     },
-
     {
-      "parameters": { "httpMethod": "POST", "path": "simapo-kategori-delete", "responseMode": "responseNode", "options": {} },
-      "type": "n8n-nodes-base.webhook", "typeVersion": 2, "position": [0, 600],
-      "id": "wh-kat-del", "name": "WH Kat Delete", "webhookId": "simapo-kategori-delete"
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-kategori-delete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        600
+      ],
+      "id": "wh-kat-del",
+      "name": "WH Kat Delete",
+      "webhookId": "simapo-kategori-delete"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".kategori_barang SET isactive = false WHERE id = '{{ ($input.item.json.body || $input.item.json).id }}' RETURNING id, nama;",
+        "query": "UPDATE \"SIMAPO\".kategori_barang SET isactive = false WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, '' '') }}' RETURNING id, nama;",
         "options": {}
       },
-      "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [240, 600],
-      "id": "pg-kat-del", "name": "PG Kat Delete",
-      "credentials": { "postgres": { "id": "vYOiyrTftLtD3zzd", "name": "Postgres account" } }
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        240,
+        600
+      ],
+      "id": "pg-kat-del",
+      "name": "PG Kat Delete",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
     },
     {
-      "parameters": { "respondWith": "json", "responseBody": "={{ { \"success\": true, \"message\": \"Kategori dihapus\", \"id\": $json.id } }}", "options": {} },
-      "type": "n8n-nodes-base.respondToWebhook", "typeVersion": 1.1, "position": [480, 600],
-      "id": "res-kat-del", "name": "Res Kat Delete"
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Kategori dihapus\", \"id\": $json.id } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        600
+      ],
+      "id": "res-kat-del",
+      "name": "Res Kat Delete"
     }
   ],
   "connections": {
-    "WH Kat List":   { "main": [[{ "node": "PG Kat List",   "type": "main", "index": 0 }]] },
-    "PG Kat List":   { "main": [[{ "node": "Agg Kat",       "type": "main", "index": 0 }]] },
-    "Agg Kat":       { "main": [[{ "node": "Res Kat List",  "type": "main", "index": 0 }]] },
-    "WH Kat Save":   { "main": [[{ "node": "PG Kat Save",   "type": "main", "index": 0 }]] },
-    "PG Kat Save":   { "main": [[{ "node": "Res Kat Save",  "type": "main", "index": 0 }]] },
-    "WH Kat Delete": { "main": [[{ "node": "PG Kat Delete", "type": "main", "index": 0 }]] },
-    "PG Kat Delete": { "main": [[{ "node": "Res Kat Delete", "type": "main", "index": 0 }]] }
+    "WH Kat List": {
+      "main": [
+        [
+          {
+            "node": "PG Kat List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Kat List": {
+      "main": [
+        [
+          {
+            "node": "Agg Kat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agg Kat": {
+      "main": [
+        [
+          {
+            "node": "Res Kat List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WH Kat Save": {
+      "main": [
+        [
+          {
+            "node": "PG Kat Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Kat Save": {
+      "main": [
+        [
+          {
+            "node": "Res Kat Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WH Kat Delete": {
+      "main": [
+        [
+          {
+            "node": "PG Kat Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PG Kat Delete": {
+      "main": [
+        [
+          {
+            "node": "Res Kat Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
   "pinData": {},
-  "meta": { "templateCredsSetupCompleted": true, "instanceId": "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67" }
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67"
+  }
 }

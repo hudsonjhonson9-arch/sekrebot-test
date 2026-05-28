@@ -20,7 +20,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.judul) throw new Error('Judul tiket kosong');\nreturn [{ json: { \n  userid: nip, \n  judul: b.judul, \n  deskripsi: b.deskripsi, \n  lokasi: b.lokasi || '', \n  nomortiket: 'TKT-' + Date.now(),\n  status: 'MENUNGGU_PENGECEKAN'\n} }];"
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.judul) throw new Error('Judul tiket kosong');\nreturn [{ json: { \n  userid: nip, \n  judul: b.judul, \n  deskripsi: b.deskripsi, \n  lokasi: b.lokasi || '', \n  nomortiket: 'TKT-' + Date.now(),\n  status: 'MENUNGGU_PENGECEKAN',\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -34,7 +34,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".tiket_kerusakan (id, nomortiket, userid, judul, deskripsi, lokasi, status, createdat, updatedat) VALUES (gen_random_uuid(), '{{ $json.nomortiket }}', '{{ $json.userid }}', '{{ $json.judul }}', '{{ $json.deskripsi }}', '{{ $json.lokasi }}', '{{ $json.status }}', NOW(), NOW()) RETURNING id, status;",
+        "query": "INSERT INTO \"SIMAPO\".tiket_kerusakan (id, nomortiket, userid, judul, deskripsi, lokasi, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomortiket).toString().replace(/'/g, '' '') }}', '{{ ($json.userid).toString().replace(/'/g, '' '') }}', '{{ ($json.judul).toString().replace(/'/g, '' '') }}', '{{ ($json.deskripsi).toString().replace(/'/g, '' '') }}', '{{ ($json.lokasi).toString().replace(/'/g, '' '') }}', '{{ ($json.status).toString().replace(/'/g, '' '') }}', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, '' '') }}') RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100;",
+        "query": "SELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid WHERE t.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -153,7 +153,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".tiket_kerusakan SET status = '{{ $json.body.status }}', updatedat = NOW() WHERE id = '{{ $json.body.id }}' RETURNING id, status;",
+        "query": "UPDATE \"SIMAPO\".tiket_kerusakan SET status = '{{ ($json.body.status).toString().replace(/'/g, '' '') }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, '' '') }}' RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

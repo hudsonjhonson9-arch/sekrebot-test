@@ -120,6 +120,14 @@
     if ($('tugasTanggal')) $('tugasTanggal').value = today; 
     if ($('lemburDari')) $('lemburDari').value = today;
     if ($('lemburSampai')) $('lemburSampai').value = today;
+
+    // Load archives if manager
+    const p = window.userProfile || {};
+    const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
+    const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
+    if (isManager) {
+      loadLemburArchive();
+    }
   }
   window.initTugasLembur = initTugasLembur;
 
@@ -1321,11 +1329,15 @@
       });
     }
 
-    const dalamRangka = ($('lemburDalamRangka')?.value || '').trim();
+    const dalamRangka = cfg.judul !== undefined ? cfg.judul : (range.judul || ($('lemburDalamRangka')?.value || '').trim());
+    const nomorSurat = cfg.nomor_surat !== undefined ? cfg.nomor_surat : (range.nomor_surat || '');
+
     const finalDividerY = Math.max(currentAddressY + 1.5, 37);
     const docTitleY   = finalDividerY + 9;
-    const docPeriodeY = docTitleY + 5.5;
-    const docRangkaY  = dalamRangka ? docPeriodeY + 5 : docPeriodeY;
+    const hasNomor    = !!nomorSurat;
+    const docNomorY   = docTitleY + 5.5;
+    const docPeriodeY = hasNomor ? docNomorY + 5.5 : docTitleY + 5.5;
+    const docRangkaY  = dalamRangka ? docPeriodeY + 5.5 : docPeriodeY;
     const calculatedStartY = docRangkaY + 7;
 
     // 5. Build Overtime Matrix Table — 2-row header (matches paper format)
@@ -1595,6 +1607,11 @@
           doc.setFontSize(11);
           doc.setFont('times', 'bold');
           doc.text('REKAPITULASI KERJA LEMBUR PEGAWAI', pageWidth / 2, docTitleY, { align: 'center' });
+          if (nomorSurat) {
+            doc.setFontSize(9.5);
+            doc.setFont('times', 'bold');
+            doc.text(`Nomor: ${nomorSurat}`, pageWidth / 2, docNomorY, { align: 'center' });
+          }
           doc.setFont('times', 'normal');
           doc.setFontSize(9);
           doc.text(`Periode: ${range.dari} s/d ${range.sampai}`, pageWidth / 2, docPeriodeY, { align: 'center' });
@@ -1728,6 +1745,37 @@
       return;
     }
 
+    const isArchiveMode = !!window._currentLemburArchiveId;
+
+    const actionButtons = isArchiveMode ? `
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sm-admin" onclick="exitLemburArchivePreview()" style="background:#6b7280; color:white; border:none; padding:6px 12px; border-radius:8px; font-size:10px; font-weight:700; cursor:pointer;">
+           ✕ Tutup Preview
+        </button>
+        <button class="btn-sm-admin" onclick="handleExportLemburPDF()" style="background:var(--success); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:10px; font-weight:700; cursor:pointer;">
+           📄 Cetak Rekap PDF
+        </button>
+      </div>
+    ` : `
+      <div style="display:flex; gap:8px;">
+        <button class="btn-sm-admin" onclick="handleExportLemburPDF()" style="background:var(--success); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:10px; font-weight:700; cursor:pointer;">
+           📄 Cetak Rekap PDF
+        </button>
+        <button id="btnSaveLemburRekap" class="btn-sm-admin" onclick="handleSaveLemburRekap()" style="background:var(--gold); border:none; color:black; padding:6px 12px; border-radius:8px; font-size:10px; font-weight:700; cursor:pointer;">
+           💾 Simpan Rekap
+        </button>
+      </div>
+    `;
+
+    const header = `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; margin-top:20px">
+        <div style="font-size:12px; font-weight:800; color:var(--white)">
+          ${isArchiveMode ? '📂 PREVIEW ARSIP' : '📋 HASIL PENCARIAN'} (${data.length})
+        </div>
+        ${actionButtons}
+      </div>
+    `;
+
     // Color palette per status
     const KET_STYLE = {
       'SAKIT':  { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '🤒', border: '#ef4444' },
@@ -1736,15 +1784,6 @@
       'CUTI':   { color: '#a855f7', bg: 'rgba(168,85,247,0.12)',  icon: '🏖️', border: '#a855f7' },
       'TUBEL':  { color: '#ec4899', bg: 'rgba(236,72,153,0.12)',  icon: '🎓', border: '#ec4899' },
     };
-
-    const header = `
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; margin-top:20px">
-        <div style="font-size:12px; font-weight:800; color:var(--white)">📋 HASIL PENCARIAN (${data.length})</div>
-        <button class="btn-sm-admin" onclick="handleExportLemburPDF()" style="background:var(--success); border:none; color:white; padding:6px 12px; border-radius:8px; font-size:10px; font-weight:700">
-           📄 Cetak Rekap PDF
-        </button>
-      </div>
-    `;
 
     const items = data.map(r => {
       const minutes = calculateOvertime(r.jam_pulang);
@@ -2071,6 +2110,29 @@
     if (rekapSelect) rekapSelect.value = val;
     const lemburSelect = $('lemburInstansiSelect');
     if (lemburSelect) lemburSelect.value = val;
+    const pegawaiSelect = $('pegawaiInstansiSelect');
+    if (pegawaiSelect) pegawaiSelect.value = val;
+    const adminKetSelect = $('adminKetInstansiSelect');
+    if (adminKetSelect) adminKetSelect.value = val;
+
+    // Clear SIMAPO Cache
+    if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
+      window._simapoCache.clear();
+    }
+
+    // Trigger reloading of all active admin sections!
+    if (typeof loadAdminMgmt === 'function') loadAdminMgmt();
+    if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+    if (typeof loadPegawaiMgmt === 'function') loadPegawaiMgmt();
+    if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
+    if (typeof loadLiburAdmin === 'function') loadLiburAdmin();
+    if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
+    if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
+
+    // Trigger reloading of SIMAPO components if active
+    if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
+    if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket();
+    if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
     
     // Reload dynamic employee list for tugas
     loadTugasPegawai();
@@ -2143,6 +2205,29 @@
     if (rekapSelect) rekapSelect.value = val;
     const tugasSelect = $('tugasInstansiSelect');
     if (tugasSelect) tugasSelect.value = val;
+    const pegawaiSelect = $('pegawaiInstansiSelect');
+    if (pegawaiSelect) pegawaiSelect.value = val;
+    const adminKetSelect = $('adminKetInstansiSelect');
+    if (adminKetSelect) adminKetSelect.value = val;
+
+    // Clear SIMAPO Cache
+    if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
+      window._simapoCache.clear();
+    }
+
+    // Trigger reloading of all active admin sections!
+    if (typeof loadAdminMgmt === 'function') loadAdminMgmt();
+    if (typeof loadKonfirmasiAdmin === 'function') loadKonfirmasiAdmin();
+    if (typeof loadPegawaiMgmt === 'function') loadPegawaiMgmt();
+    if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
+    if (typeof loadLiburAdmin === 'function') loadLiburAdmin();
+    if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
+    if (typeof loadFaceStatusAdmin === 'function') loadFaceStatusAdmin();
+
+    // Trigger reloading of SIMAPO components if active
+    if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
+    if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket();
+    if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
     
     // Invalidate caches & selected employees
     _allPegawaiLembur = [];
@@ -2151,7 +2236,293 @@
     
     // Reload dynamic employee list for Overtime (Lembur)
     loadLemburPegawai();
+    loadLemburArchive();
   }
+
+  /* ════ FITUR ARSIP REKAP LEMBUR ════ */
+  
+  async function loadLemburArchive() {
+    const sectionEl = $('lemburArchiveSection');
+    if (!sectionEl) return;
+
+    sectionEl.innerHTML = `
+      <div style="font-size:12px; font-weight:800; color:var(--white); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+        📂 ARSIP REKAP LEMBUR
+      </div>
+      <div class="shimmer-wrapper">
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
+      </div>
+    `;
+
+    try {
+      const instansiId = getScopedInstansiId() || '';
+      const res = await apiGet(`${P.lemburArchiveList}?instansi_id=${instansiId}`);
+      if (!res.ok) {
+        throw new Error(getApiErrorMsg(res.data, 'Gagal memuat arsip.'));
+      }
+      const list = parseApiResponse(res.data) || [];
+      renderLemburArchive(list);
+    } catch (e) {
+      console.error('[LemburArchive] load error:', e);
+      sectionEl.innerHTML = `
+        <div style="font-size:12px; font-weight:800; color:var(--white); margin-bottom:10px;">
+          📂 ARSIP REKAP LEMBUR
+        </div>
+        <div class="empty-state" style="padding:15px; text-align:center; font-size:11px; color:var(--muted)">
+          ⚠️ Gagal memuat arsip dari server.<br>
+          <span style="font-size:9px">Pastikan webhook lembur-archive-list aktif.</span>
+        </div>
+      `;
+    }
+  }
+
+  function renderLemburArchive(list) {
+    const sectionEl = $('lemburArchiveSection');
+    if (!sectionEl) return;
+
+    if (list.length === 0) {
+      sectionEl.innerHTML = `
+        <div style="font-size:12px; font-weight:800; color:var(--white); margin-bottom:10px;">
+          📂 ARSIP REKAP LEMBUR
+        </div>
+        <div class="card glass-card" style="padding:20px; text-align:center; color:var(--muted); font-size:12px">
+          📭 Belum ada rekap lembur yang diarsipkan.
+        </div>
+      `;
+      return;
+    }
+
+    const header = `
+      <div style="font-size:12px; font-weight:800; color:var(--white); margin-bottom:12px;">
+        📂 ARSIP REKAP LEMBUR (${list.length})
+      </div>
+    `;
+
+    const items = list.map(item => {
+      let dateStr = '—';
+      if (item.created_at) {
+        try {
+          const d = new Date(item.created_at);
+          dateStr = d.toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {}
+      }
+
+      const title = item.judul || `Rekap Lembur: ${item.tanggal_dari} s/d ${item.tanggal_sampai}`;
+      const nomorSurat = item.nomor_surat ? `No. Surat: ${item.nomor_surat}` : 'Tanpa Nomor Surat';
+      const countPegawai = (item.pegawai_names || '').split(',').filter(Boolean).length;
+      const pegawaiSnippet = (item.pegawai_names || '').split(',').slice(0, 3).join(', ') + 
+        (countPegawai > 3 ? ` dan ${countPegawai - 3} lainnya` : '');
+
+      return `
+        <div class="card glass-card" style="margin-bottom:12px; padding:15px; border-left:4px solid var(--gold); display:flex; justify-content:space-between; align-items:center;">
+          <div style="flex:1; min-width:0; padding-right:12px; cursor:pointer;" onclick="viewLemburArchive(${item.id})">
+            <div style="font-size:13px; font-weight:800; color:var(--white); margin-bottom:2px;">
+              📂 ${title}
+            </div>
+            <div style="font-size:11px; color:var(--gold); font-weight:700; margin-bottom:4px;">
+              ${nomorSurat}
+            </div>
+            <div style="font-size:10px; color:var(--muted); margin-bottom:4px;">
+              Pegawai: ${pegawaiSnippet}
+            </div>
+            <div style="font-size:9px; color:var(--muted);">
+              Periode: ${item.tanggal_dari} s/d ${item.tanggal_sampai} | Diarsipkan: ${dateStr} oleh ${item.saved_by_nama || 'Admin'}
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-sm-admin" onclick="viewLemburArchive(${item.id})" style="background:var(--primary); color:white; border:none; padding:6px 10px; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700;">
+              👁️ Lihat
+            </button>
+            <button class="btn-sm-admin" onclick="deleteLemburArchive(${item.id}, '${title.replace(/'/g, "\\'")}')" style="background:#ef4444; color:white; border:none; padding:6px 10px; border-radius:6px; font-size:10px; cursor:pointer; font-weight:700;">
+              🗑️ Hapus
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    sectionEl.innerHTML = header + items;
+  }
+
+  window.handleSaveLemburRekap = async function() {
+    const data = window._currentLemburData;
+    const range = window._currentLemburRange;
+    if (!data || data.length === 0) {
+      Swal.fire('⚠️ Peringatan', 'Tidak ada data lembur untuk disimpan.', 'warning');
+      return;
+    }
+
+    // Ask user for Nomor Surat
+    const { value: nomorSurat } = await Swal.fire({
+      title: 'Simpan Rekap Lembur',
+      input: 'text',
+      inputLabel: 'Masukkan Nomor Surat Lembur',
+      inputPlaceholder: 'Contoh: 800/123/BAP-SB/2026...',
+      showCancelButton: true,
+      confirmButtonText: '💾 Simpan',
+      cancelButtonText: 'Batal',
+      inputValidator: (value) => {
+        if (!value.trim()) {
+          return 'Nomor surat harus diisi!';
+        }
+      }
+    });
+
+    if (!nomorSurat) return; // User cancelled
+
+    // Show loading
+    Swal.fire({
+      title: 'Menyimpan...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const p = window.userProfile || {};
+      const myNip = p.nip || localStorage.getItem('MY_NIP') || '';
+      const myNama = p.nama || localStorage.getItem('MY_NAME') || 'Admin';
+      const instansiId = getScopedInstansiId() || '';
+      const dalamRangka = ($('lemburDalamRangka')?.value || '').trim();
+
+      const payload = {
+        judul: dalamRangka || `Dalam Rangka Lembur ${range.dari} s/d ${range.sampai}`,
+        nomor_surat: nomorSurat.trim(),
+        tanggal_dari: range.dari,
+        tanggal_sampai: range.sampai,
+        tanggal_list: range.dates || [],
+        pegawai_nips: [...new Set(data.map(r => r.nip))].join(','),
+        pegawai_names: [...new Set(data.map(r => r.nama))].join(','),
+        data_json: data,
+        instansi_id: instansiId,
+        saved_by_nip: myNip,
+        saved_by_nama: myNama
+      };
+
+      const res = await apiPost(P.lemburSave, payload);
+      if (!res.ok) {
+        throw new Error(getApiErrorMsg(res.data, 'Gagal menyimpan ke database.'));
+      }
+
+      Swal.fire('✅ Berhasil', 'Rekap lembur berhasil diarsipkan!', 'success');
+      
+      // Reload archive list
+      loadLemburArchive();
+    } catch (e) {
+      console.error('[LemburSave] error:', e);
+      Swal.fire('❌ Gagal', e.message || 'Gagal menghubungi server.', 'error');
+    }
+  };
+
+  window.viewLemburArchive = async function(id) {
+    Swal.fire({
+      title: 'Memuat data...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const res = await apiGet(`${P.lemburArchiveList}?id=${id}`);
+      if (!res.ok) {
+        throw new Error(getApiErrorMsg(res.data, 'Gagal memuat detail arsip.'));
+      }
+
+      const rows = parseApiResponse(res.data) || [];
+      if (rows.length === 0) {
+        throw new Error('Arsip tidak ditemukan.');
+      }
+
+      const archive = rows[0];
+      
+      // Store globally for PDF generation
+      window._currentLemburData = archive.data_json;
+      window._currentLemburRange = {
+        dari: archive.tanggal_dari,
+        sampai: archive.tanggal_sampai,
+        dates: archive.tanggal_list || [],
+        judul: archive.judul,
+        nomor_surat: archive.nomor_surat
+      };
+      
+      // Set the viewing archive state
+      window._currentLemburArchiveId = archive.id;
+
+      // Close loading dialog
+      Swal.close();
+
+      // Render the results into the UI
+      renderLemburResults(archive.data_json);
+
+      // Scroll to result section
+      const listEl = $('lemburResultList');
+      if (listEl) {
+        listEl.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (e) {
+      console.error('[LemburArchiveView] error:', e);
+      Swal.fire('❌ Gagal', e.message || 'Gagal memuat detail arsip.', 'error');
+    }
+  };
+
+  window.exitLemburArchivePreview = function() {
+    window._currentLemburArchiveId = null;
+    window._currentLemburData = null;
+    window._currentLemburRange = null;
+    const listEl = $('lemburResultList');
+    if (listEl) listEl.innerHTML = '';
+  };
+
+  window.deleteLemburArchive = async function(id, title) {
+    const confirm = await Swal.fire({
+      title: 'Hapus Arsip?',
+      text: `Apakah Anda yakin ingin menghapus arsip "${title}"? Tindakan ini tidak dapat dibatalkan.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ Hapus',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    Swal.fire({
+      title: 'Menghapus...',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    try {
+      const res = await apiPost(P.lemburArchiveDelete, { id });
+      if (!res.ok) {
+        throw new Error(getApiErrorMsg(res.data, 'Gagal menghapus arsip.'));
+      }
+
+      Swal.fire('✅ Terhapus', 'Arsip rekap lembur berhasil dihapus.', 'success');
+      
+      // If we are currently previewing the deleted archive, exit preview
+      if (window._currentLemburArchiveId === id) {
+        exitLemburArchivePreview();
+      }
+      
+      // Reload archive list
+      loadLemburArchive();
+    } catch (e) {
+      console.error('[LemburArchiveDelete] error:', e);
+      Swal.fire('❌ Gagal', e.message || 'Gagal menghubungi server.', 'error');
+    }
+  };
 
   window.initSuperadminTugasScoping = initSuperadminTugasScoping;
   window.onTugasInstansiChange = onTugasInstansiChange;
@@ -2159,4 +2530,7 @@
   window.onLemburInstansiChange = onLemburInstansiChange;
   window.checkTugasLemburAccess = checkTugasLemburAccess;
   window.loadMonitoringTasks = loadMonitoringTasks;
+  window.loadLemburArchive = loadLemburArchive;
+  window.renderLemburArchive = renderLemburArchive;
+  window.exitLemburArchivePreview = exitLemburArchivePreview;
 })();

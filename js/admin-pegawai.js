@@ -328,3 +328,101 @@
       } catch (e) { alert('Server error'); }
     }
 
+    function initSuperadminPegawaiScoping() {
+      const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+      const sec = $('pegawaiInstansiSection');
+      if (!sec) return;
+
+      if (isSA) {
+        sec.style.display = 'block';
+        const el = $('pegawaiInstansiSelect');
+        if (el) {
+          if (el.options.length <= 1) { // Not populated yet
+            try {
+              const cached = localStorage.getItem('absen_instansi_map');
+              if (cached) {
+                const map = JSON.parse(cached);
+                const keys = Object.keys(map);
+                el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+                  keys.map(k => {
+                    const inst = map[k];
+                    const id = inst.id || inst.ID || k;
+                    const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                    return `<option value="${id}">${name}</option>`;
+                  }).join('');
+              }
+            } catch (e) {
+              console.error('[Pegawai Superadmin] populate error:', e);
+            }
+          }
+          // Pre-select current instansi ALWAYS
+          const scoped = getScopedInstansiId();
+          if (scoped) {
+            el.value = scoped;
+          }
+        }
+      } else {
+        sec.style.display = 'none';
+      }
+    }
+
+    function onPegawaiInstansiChange() {
+      const el = $('pegawaiInstansiSelect');
+      if (!el) return;
+      let val = el.value;
+      if (!val) {
+        try {
+          const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
+          val = u.instansi_id || u.Instansi_Id || 'bapperida';
+        } catch (e) {
+          val = 'bapperida';
+        }
+      }
+      localStorage.setItem('MY_INSTANSI', val);
+      document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+      if (window.userProfile) {
+        window.userProfile.instansi_id = val;
+      }
+      
+      // Invalidate userListOrder cache so it fetches new employees
+      if (window.userListOrder) {
+        window.userListOrder = [];
+      }
+      
+      // Clear SIMAPO Cache
+      if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
+        window._simapoCache.clear();
+      }
+
+      // Reload dynamic Bidang list for this instansi
+      if (typeof loadBidangList === 'function') {
+        loadBidangList(val);
+      }
+      
+      // Sync other superadmin dropdowns to match
+      const adminSelect = $('adminInstansiSelect');
+      if (adminSelect) adminSelect.value = val;
+      const rekapSelect = $('rekapInstansiSelect');
+      if (rekapSelect) rekapSelect.value = val;
+      const tugasSelect = $('tugasInstansiSelect');
+      if (tugasSelect) tugasSelect.value = val;
+      const lemburSelect = $('lemburInstansiSelect');
+      if (lemburSelect) lemburSelect.value = val;
+      const adminKetSelect = $('adminKetInstansiSelect');
+      if (adminKetSelect) adminKetSelect.value = val;
+      
+      // Trigger reloading of all active sections/lists
+      loadPegawaiMgmt();
+      if (typeof adminLoadKetPegawai === 'function') {
+        adminLoadKetPegawai(); // Clear logs / reload employee search logs
+      }
+      
+      // Trigger reloading of SIMAPO components if active
+      if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
+      if (typeof loadAdminSimapoTiket === 'function') loadAdminSimapoTiket();
+      if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
+    }
+
+    window.initSuperadminPegawaiScoping = initSuperadminPegawaiScoping;
+    window.onPegawaiInstansiChange = onPegawaiInstansiChange;
+

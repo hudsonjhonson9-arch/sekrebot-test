@@ -172,6 +172,9 @@ const P = {
   simapoKategoriList: isTest ? '/webhook-test/simapo-kategori-list' : '/webhook/simapo-kategori-list',
   simapoKategoriSave: isTest ? '/webhook-test/simapo-kategori-save' : '/webhook/simapo-kategori-save',
   simapoKategoriDel: isTest ? '/webhook-test/simapo-kategori-delete' : '/webhook/simapo-kategori-delete',
+  lemburSave: isTest ? '/webhook-test/lembur-save' : '/webhook/lembur-save',
+  lemburArchiveList: isTest ? '/webhook-test/lembur-archive-list' : '/webhook/lembur-archive-list',
+  lemburArchiveDelete: isTest ? '/webhook-test/lembur-archive-delete' : '/webhook/lembur-archive-delete',
 };
 
 function getScopedInstansiId() {
@@ -194,7 +197,19 @@ function getScopedInstansiId() {
         return rekapSelect.value;
       }
     } else if (currentTab === 'admin') {
-      const adminSelect = document.getElementById('inEditInstansiSelect');
+      const activeAdminSect = localStorage.getItem('absen_last_admin_section') || 'ops';
+      if (activeAdminSect === 'user') {
+        const pegawaiSelect = document.getElementById('pegawaiInstansiSelect');
+        if (pegawaiSelect && pegawaiSelect.value) {
+          return pegawaiSelect.value;
+        }
+      } else if (activeAdminSect === 'ops') {
+        const adminKetSelect = document.getElementById('adminKetInstansiSelect');
+        if (adminKetSelect && adminKetSelect.value) {
+          return adminKetSelect.value;
+        }
+      }
+      const adminSelect = document.getElementById('inEditInstansiSelect') || document.getElementById('adminInstansiSelect');
       if (adminSelect && adminSelect.value) {
         return adminSelect.value;
       }

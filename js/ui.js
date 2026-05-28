@@ -39,10 +39,14 @@
 
       // Special handling for specific sections
       if (sectionId === 'ops') {
+        if (typeof initSuperadminAdminKetScoping === 'function') initSuperadminAdminKetScoping();
         loadKonfirmasiAdmin();
         if (typeof adminLoadKetPegawai === 'function') adminLoadKetPegawai();
       }
-      if (sectionId === 'user') loadAdminFaceReg();
+      if (sectionId === 'user') {
+        if (typeof initSuperadminPegawaiScoping === 'function') initSuperadminPegawaiScoping();
+        loadAdminFaceReg();
+      }
       if (sectionId === 'simapo-admin') {
         // Staggered loading to prevent connection bottleneck
         if (typeof loadAdminSimapoPinjam === 'function') loadAdminSimapoPinjam();
@@ -245,6 +249,8 @@
       }
       if (tab === 'admin' && IS_ADMIN) {
         if (typeof initSuperadminAdminScoping === 'function') initSuperadminAdminScoping();
+        if (typeof initSuperadminPegawaiScoping === 'function') initSuperadminPegawaiScoping();
+        if (typeof initSuperadminAdminKetScoping === 'function') initSuperadminAdminKetScoping();
         // Remove forced section reset to 'ops' to preserve user context
         initAdminMap(); initJamAdminUI(); _initPeriodeListeners();
         if (!adminLoaded) {
@@ -474,4 +480,52 @@
         if (typeof loadTodayHistory === 'function') loadTodayHistory();
       }
     }, 30000); // cek tiap 30 detik
+
+    /* ════ LIGHT/DARK THEME SYSTEM ════ */
+    function toggleTheme() {
+      const isLight = document.documentElement.classList.toggle('light-theme');
+      localStorage.setItem('app-theme', isLight ? 'light' : 'dark');
+      updateThemeIcon();
+      
+      // Force Leaflet map redraw if active
+      if (typeof adminMap !== 'undefined' && adminMap) {
+        setTimeout(() => adminMap.invalidateSize(), 100);
+      }
+    }
+    window.toggleTheme = toggleTheme;
+
+    function updateThemeIcon() {
+      const isLight = document.documentElement.classList.contains('light-theme');
+      
+      // Update mobile icon
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        if (isLight) {
+          icon.className = 'fas fa-moon';
+          icon.style.color = '#475569'; // Dark gray icon
+        } else {
+          icon.className = 'fas fa-sun';
+          icon.style.color = '#c9a84c'; // Gold icon
+        }
+      }
+
+      // Update desktop sidebar button
+      const deskIcon = document.getElementById('themeIconDesk');
+      const deskText = document.getElementById('themeTextDesk');
+      if (deskIcon) {
+        if (isLight) {
+          deskIcon.className = 'fas fa-moon';
+          deskIcon.style.color = '#64748b'; // Muted dark color for light theme
+        } else {
+          deskIcon.className = 'fas fa-sun';
+          deskIcon.style.color = '#c9a84c'; // Gold color for dark theme
+        }
+      }
+      if (deskText) {
+        deskText.textContent = isLight ? 'Tema Gelap' : 'Tema Terang';
+      }
+    }
+    window.updateThemeIcon = updateThemeIcon;
+
+    document.addEventListener('DOMContentLoaded', updateThemeIcon);
 

@@ -123,7 +123,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "={{ (`DELETE FROM rekap_lembur WHERE id = ${parseInt($json.body.id)} RETURNING id;`).toString().replace(/'/g, '' '') }}",
+        "query": "={{ (`DELETE FROM rekap_lembur WHERE id = ${parseInt($json.body.id)} RETURNING id;`).toString().replace(/'/g, "''") }}",
         "options": {}
       },
       "name": "Postgres: Delete Rekap Lembur",

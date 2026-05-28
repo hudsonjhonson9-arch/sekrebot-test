@@ -34,7 +34,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".tiket_kerusakan (id, nomortiket, userid, judul, deskripsi, lokasi, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomortiket).toString().replace(/'/g, '' '') }}', '{{ ($json.userid).toString().replace(/'/g, '' '') }}', '{{ ($json.judul).toString().replace(/'/g, '' '') }}', '{{ ($json.deskripsi).toString().replace(/'/g, '' '') }}', '{{ ($json.lokasi).toString().replace(/'/g, '' '') }}', '{{ ($json.status).toString().replace(/'/g, '' '') }}', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, '' '') }}') RETURNING id, status;",
+        "query": "INSERT INTO \"SIMAPO\".tiket_kerusakan (id, nomortiket, userid, judul, deskripsi, lokasi, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomortiket).toString().replace(/'/g, "''") }}', '{{ ($json.userid).toString().replace(/'/g, "''") }}', '{{ ($json.judul).toString().replace(/'/g, "''") }}', '{{ ($json.deskripsi).toString().replace(/'/g, "''") }}', '{{ ($json.lokasi).toString().replace(/'/g, "''") }}', '{{ ($json.status).toString().replace(/'/g, "''") }}', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, "''") }}') RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -153,7 +153,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".tiket_kerusakan SET status = '{{ ($json.body.status).toString().replace(/'/g, '' '') }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, '' '') }}' RETURNING id, status;",
+        "query": "UPDATE \"SIMAPO\".tiket_kerusakan SET status = '{{ ($json.body.status).toString().replace(/'/g, "''") }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, "''") }}' RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

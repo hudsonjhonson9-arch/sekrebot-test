@@ -166,7 +166,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".barang (id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive, createdat, updatedat, instansi_id)\nVALUES (COALESCE('{{ ($json.id).toString().replace(/'/g, '' '') }}'::uuid, gen_random_uuid()), '{{ ($json.kodebarang).toString().replace(/'/g, '' '') }}', '{{ ($json.nama).toString().replace(/'/g, '' '') }}', '{{ ($json.satuan).toString().replace(/'/g, '' '') }}', '{{ ($json.spesifikasi).toString().replace(/'/g, '' '') }}', '{{ ($json.foto).toString().replace(/'/g, '' '') }}', {{ ($json.stok_saat_ini).toString().replace(/'/g, '' '') }}, 0, {{ ($json.hargasatuan).toString().replace(/'/g, '' '') }}, {{ ($json.kategoriid ? \"'\" + $json.kategoriid + \"'\" : 'NULL').toString().replace(/'/g, '' '') }}, true, NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, '' '') }}')\nON CONFLICT (id) DO UPDATE SET nama=EXCLUDED.nama, kodebarang=EXCLUDED.kodebarang, satuan=EXCLUDED.satuan, spesifikasi=EXCLUDED.spesifikasi, foto=EXCLUDED.foto, hargasatuan=EXCLUDED.hargasatuan, kategoriid=EXCLUDED.kategoriid, updatedat=NOW(), instansi_id=EXCLUDED.instansi_id\nRETURNING id, nama;",
+        "query": "INSERT INTO \"SIMAPO\".barang (id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive, createdat, updatedat, instansi_id)\nVALUES (COALESCE('{{ ($json.id).toString().replace(/'/g, "''") }}'::uuid, gen_random_uuid()), '{{ ($json.kodebarang).toString().replace(/'/g, "''") }}', '{{ ($json.nama).toString().replace(/'/g, "''") }}', '{{ ($json.satuan).toString().replace(/'/g, "''") }}', '{{ ($json.spesifikasi).toString().replace(/'/g, "''") }}', '{{ ($json.foto).toString().replace(/'/g, "''") }}', {{ ($json.stok_saat_ini).toString().replace(/'/g, "''") }}, 0, {{ ($json.hargasatuan).toString().replace(/'/g, "''") }}, {{ ($json.kategoriid ? \"'\" + $json.kategoriid + \"'\" : 'NULL').toString().replace(/'/g, "''") }}, true, NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, "''") }}')\nON CONFLICT (id) DO UPDATE SET nama=EXCLUDED.nama, kodebarang=EXCLUDED.kodebarang, satuan=EXCLUDED.satuan, spesifikasi=EXCLUDED.spesifikasi, foto=EXCLUDED.foto, hargasatuan=EXCLUDED.hargasatuan, kategoriid=EXCLUDED.kategoriid, updatedat=NOW(), instansi_id=EXCLUDED.instansi_id\nRETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -219,7 +219,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".barang SET isactive = false, updatedat = NOW() WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, '' '') }}' RETURNING id, nama;",
+        "query": "UPDATE \"SIMAPO\".barang SET isactive = false, updatedat = NOW() WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, "''") }}' RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

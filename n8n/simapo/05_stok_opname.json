@@ -55,7 +55,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".detail_opname (id, opnameid, barangid, stoksistem, stokfisik, selisih) VALUES (gen_random_uuid(), '{{ ($json.opnameid).toString().replace(/'/g, '' '') }}', '{{ ($json.barangid).toString().replace(/'/g, '' '') }}', {{ ($json.stoksistem).toString().replace(/'/g, '' '') }}, {{ ($json.stokfisik).toString().replace(/'/g, '' '') }}, {{ ($json.selisih).toString().replace(/'/g, '' '') }}); UPDATE \"SIMAPO\".barang SET stok_saat_ini = {{ ($json.stokfisik).toString().replace(/'/g, '' '') }}, updatedat = NOW() WHERE id = '{{ ($json.barangid).toString().replace(/'/g, '' '') }}';",
+        "query": "INSERT INTO \"SIMAPO\".detail_opname (id, opnameid, barangid, stoksistem, stokfisik, selisih) VALUES (gen_random_uuid(), '{{ ($json.opnameid).toString().replace(/'/g, "''") }}', '{{ ($json.barangid).toString().replace(/'/g, "''") }}', {{ ($json.stoksistem).toString().replace(/'/g, "''") }}, {{ ($json.stokfisik).toString().replace(/'/g, "''") }}, {{ ($json.selisih).toString().replace(/'/g, "''") }}); UPDATE \"SIMAPO\".barang SET stok_saat_ini = {{ ($json.stokfisik).toString().replace(/'/g, "''") }}, updatedat = NOW() WHERE id = '{{ ($json.barangid).toString().replace(/'/g, "''") }}';",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

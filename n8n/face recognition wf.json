@@ -31,7 +31,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"pengaturan\" SET \"value\" = '{{ ($json.value).toString().replace(/'/g, '' '') }}' WHERE \"key\" = '{{ ($json.key).toString().replace(/'/g, '' '') }}' RETURNING *",
+        "query": "UPDATE \"pengaturan\" SET \"value\" = '{{ ($json.value).toString().replace(/'/g, "''") }}' WHERE \"key\" = '{{ ($json.key).toString().replace(/'/g, "''") }}' RETURNING *",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -331,7 +331,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"user_list\" SET \"face_histogram\" = '{{ ($json.histogram_str).toString().replace(/'/g, '' '') }}', \"face_photo\" = '{{ ($json.foto_base64).toString().replace(/'/g, '' '') }}', \"face_saved_at\" = '{{ ($json.saved_at).toString().replace(/'/g, '' '') }}', \"face_model\" = '{{ ($json.face_model).toString().replace(/'/g, '' '') }}' WHERE \"id\" = '{{ ($json.user_id).toString().replace(/'/g, '' '') }}' RETURNING *",
+        "query": "UPDATE \"user_list\" SET \"face_histogram\" = '{{ ($json.histogram_str).toString().replace(/'/g, "''") }}', \"face_photo\" = '{{ ($json.foto_base64).toString().replace(/'/g, "''") }}', \"face_saved_at\" = '{{ ($json.saved_at).toString().replace(/'/g, "''") }}', \"face_model\" = '{{ ($json.face_model).toString().replace(/'/g, "''") }}' WHERE \"id\" = '{{ ($json.user_id).toString().replace(/'/g, "''") }}' RETURNING *",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

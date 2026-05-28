@@ -115,7 +115,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "ALTER TABLE instansi_list ADD COLUMN IF NOT EXISTS header TEXT;\nUPDATE instansi_list \nSET header = '{{ ($json.body.header).toString().replace(/'/g, '' '') }}', \n    nama_instansi = '{{ ($json.body.nama_instansi).toString().replace(/'/g, '' '') }}', \n    logo_url = '{{ ($json.body.logo_url).toString().replace(/'/g, '' '') }}', \n    alamat = '{{ ($json.body.alamat).toString().replace(/'/g, '' '') }}'\nWHERE id = '{{ ($json.body.id).toString().replace(/'/g, '' '') }}'\nRETURNING *;",
+        "query": "ALTER TABLE instansi_list ADD COLUMN IF NOT EXISTS header TEXT;\nUPDATE instansi_list \nSET header = '{{ ($json.body.header).toString().replace(/'/g, "''") }}', \n    nama_instansi = '{{ ($json.body.nama_instansi).toString().replace(/'/g, "''") }}', \n    logo_url = '{{ ($json.body.logo_url).toString().replace(/'/g, "''") }}', \n    alamat = '{{ ($json.body.alamat).toString().replace(/'/g, "''") }}'\nWHERE id = '{{ ($json.body.id).toString().replace(/'/g, "''") }}'\nRETURNING *;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

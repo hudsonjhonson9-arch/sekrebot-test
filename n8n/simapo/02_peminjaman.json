@@ -34,7 +34,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, "''") }}', '{{ ($json.userid).toString().replace(/'/g, "''") }}', '{{ ($json.unitasetid).toString().replace(/'/g, "''") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, "''") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, "''") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, "''") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, "''") }}') RETURNING id, status;",
+        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT p.id, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid WHERE p.userid = '{{ ($json.query.nip).toString().replace(/'/g, "''") }}' ORDER BY p.createdat DESC LIMIT 30;",
+        "query": "SELECT p.id, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid WHERE p.userid = '{{ ($json.query.nip).toString().replace(/'/g, \"''\") }}' ORDER BY p.createdat DESC LIMIT 30;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -219,7 +219,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".peminjaman SET status = '{{ ($json.body.status).toString().replace(/'/g, "''") }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, "''") }}' RETURNING id, status;",
+        "query": "UPDATE \"SIMAPO\".peminjaman SET status = '{{ ($json.body.status).toString().replace(/'/g, \"''\") }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, \"''\") }}' RETURNING id, status;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

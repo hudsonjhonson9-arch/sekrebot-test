@@ -87,7 +87,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, isactive, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, "''") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, "''") }}', true, NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, "''") }}') RETURNING id, nama;",
+        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, isactive, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, \"''\") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, \"''\") }}', true, NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -140,7 +140,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".kategori_barang SET isactive = false WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, "''") }}' RETURNING id, nama;",
+        "query": "UPDATE \"SIMAPO\".kategori_barang SET isactive = false WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, \"''\") }}' RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

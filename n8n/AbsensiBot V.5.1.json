@@ -190,7 +190,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"tanda_tangan\" WHERE \"telegram_id\" = {{ ($input.first().json.query.telegram_id).toString().replace(/'/g, "''") }}",
+        "query": "SELECT * FROM \"tanda_tangan\" WHERE \"telegram_id\" = {{ ($input.first().json.query.telegram_id).toString().replace(/'/g, \"''\") }}",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -271,7 +271,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"tanda_tangan\" (\"telegram_id\", \"signature\", \"saved_at\", \"saved_by\") VALUES ({{ ($json.telegram_id).toString().replace(/'/g, "''") }}, {{ ($json.signature).toString().replace(/'/g, "''") }}, {{ ($json.saved_at).toString().replace(/'/g, "''") }}, {{ ($json.saved_by).toString().replace(/'/g, "''") }}) RETURNING *",
+        "query": "INSERT INTO \"tanda_tangan\" (\"telegram_id\", \"signature\", \"saved_at\", \"saved_by\") VALUES ({{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}, {{ ($json.signature).toString().replace(/'/g, \"''\") }}, {{ ($json.saved_at).toString().replace(/'/g, \"''\") }}, {{ ($json.saved_by).toString().replace(/'/g, \"''\") }}) RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -682,7 +682,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "DELETE FROM \"lokasiabsen\" WHERE \"id\" = '{{ ($json.query.id).toString().replace(/'/g, "''") }}' RETURNING *",
+        "query": "DELETE FROM \"lokasiabsen\" WHERE \"id\" = '{{ ($json.query.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -703,7 +703,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"lokasiabsen\" SET \"hari\" = '{{ ($json.hari).toString().replace(/'/g, "''") }}', \"radius\" = '{{ ($json.radius).toString().replace(/'/g, "''") }}', \"ip_range\" = '{{ ($json.ip_range).toString().replace(/'/g, "''") }}' WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, "''") }}' RETURNING *",
+        "query": "UPDATE \"lokasiabsen\" SET \"hari\" = '{{ ($json.hari).toString().replace(/'/g, \"''\") }}', \"radius\" = '{{ ($json.radius).toString().replace(/'/g, \"''\") }}', \"ip_range\" = '{{ ($json.ip_range).toString().replace(/'/g, \"''\") }}' WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -724,7 +724,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"lokasiabsen\" (\"Nama_Lokasi\", \"latitude\", \"longitude\", \"hari\", \"radius\", \"ip_range\") VALUES ('{{ ($('Lokasi-Add').item.json.body.nama_lokasi).toString().replace(/'/g, "''") }}','{{ ($('Lokasi-Add').item.json.body.latitude).toString().replace(/'/g, "''") }}','{{ ($('Lokasi-Add').item.json.body.longitude).toString().replace(/'/g, "''") }}','{{ ($('Lokasi-Add').item.json.body.hari).toString().replace(/'/g, "''") }}','{{ ($('Lokasi-Add').item.json.body.radius).toString().replace(/'/g, "''") }}','{{ ($('Lokasi-Add').item.json.body.ip_range).toString().replace(/'/g, "''") }}') RETURNING *",
+        "query": "INSERT INTO \"lokasiabsen\" (\"Nama_Lokasi\", \"latitude\", \"longitude\", \"hari\", \"radius\", \"ip_range\") VALUES ('{{ ($('Lokasi-Add').item.json.body.nama_lokasi).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.latitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.longitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.hari).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.radius).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.ip_range).toString().replace(/'/g, \"''\") }}') RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -747,7 +747,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"lokasiabsen\" WHERE '{{ ($json.query.instansi_id).toString().replace(/'/g, "''") }}' = '' OR instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, "''") }}' OR instansi_id = 'all'",
+        "query": "SELECT * FROM \"lokasiabsen\" WHERE '{{ ($json.query.instansi_id).toString().replace(/'/g, \"''\") }}' = '' OR instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, \"''\") }}' OR instansi_id = 'all'",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -768,7 +768,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, username, \"NIP\", \"Jabatan\", pangkat, \"Status\", \"no\", bidang, instansi_id FROM public.user_list WHERE instansi_id = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, "''") }}' ORDER BY \"no\" ASC",
+        "query": "SELECT id, username, \"NIP\", \"Jabatan\", pangkat, \"Status\", \"no\", bidang, instansi_id FROM public.user_list WHERE instansi_id = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}' ORDER BY \"no\" ASC",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -790,7 +790,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"statistik_pegawai\" WHERE \"instansi_id\" = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, "''") }}'",
+        "query": "SELECT * FROM \"statistik_pegawai\" WHERE \"instansi_id\" = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}'",
         "options": {}
       },
       "id": "db428fda-5781-48a2-bec3-7f8e04def578",
@@ -812,7 +812,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"Log_Absen\" WHERE \"Tanggal\" >= '{{ ($node[\"Rekap\"].json[\"query\"][\"dari\"]).toString().replace(/'/g, "''") }}' AND \"Tanggal\" <= '{{ ($node[\"Rekap\"].json[\"query\"][\"sampai\"]).toString().replace(/'/g, "''") }}' AND \"instansi_id\" = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, "''") }}' ORDER BY \"Tanggal\" ASC, \"Jam\" ASC",
+        "query": "SELECT * FROM \"Log_Absen\" WHERE \"Tanggal\" >= '{{ ($node[\"Rekap\"].json[\"query\"][\"dari\"]).toString().replace(/'/g, \"''\") }}' AND \"Tanggal\" <= '{{ ($node[\"Rekap\"].json[\"query\"][\"sampai\"]).toString().replace(/'/g, \"''\") }}' AND \"instansi_id\" = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}' ORDER BY \"Tanggal\" ASC, \"Jam\" ASC",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -834,7 +834,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"Log_Absen\" WHERE 1=1 {{ ($node[\"Riwayat\"].json[\"query\"][\"nip\"] ? \"AND \\\"NIP\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"nip\"] + \"'\" : \"\").toString().replace(/'/g, "''") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"user_id\"] ? \"AND \\\"ID\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"user_id\"] + \"'\" : \"\").toString().replace(/'/g, "''") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"tanggal\"] ? \"AND \\\"Tanggal\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"tanggal\"].substring(0, 10) + \"'\" : \"\").toString().replace(/'/g, "''") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"dari\"] && $node[\"Riwayat\"].json[\"query\"][\"sampai\"] ? \"AND \\\"Tanggal\\\" >= '\" + $node[\"Riwayat\"].json[\"query\"][\"dari\"].substring(0, 10) + \"' AND \\\"Tanggal\\\" <= '\" + $node[\"Riwayat\"].json[\"query\"][\"sampai\"].substring(0, 10) + \"'\" : \"\").toString().replace(/'/g, "''") }} {{ (!$node[\"Riwayat\"].json[\"query\"][\"nip\"] && !$node[\"Riwayat\"].json[\"query\"][\"user_id\"] && !$node[\"Riwayat\"].json[\"query\"][\"tanggal\"] && !($node[\"Riwayat\"].json[\"query\"][\"dari\"] && $node[\"Riwayat\"].json[\"query\"][\"sampai\"]) ? \"AND \\\"Tanggal\\\" = (NOW() AT TIME ZONE 'Asia/Makassar')::date\" : \"\").toString().replace(/'/g, "''") }} ORDER BY \"Tanggal\" DESC, \"Jam\" DESC",
+        "query": "SELECT * FROM \"Log_Absen\" WHERE 1=1 {{ ($node[\"Riwayat\"].json[\"query\"][\"nip\"] ? \"AND \\\"NIP\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"nip\"] + \"'\" : \"\").toString().replace(/'/g, \"''\") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"user_id\"] ? \"AND \\\"ID\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"user_id\"] + \"'\" : \"\").toString().replace(/'/g, \"''\") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"tanggal\"] ? \"AND \\\"Tanggal\\\" = '\" + $node[\"Riwayat\"].json[\"query\"][\"tanggal\"].substring(0, 10) + \"'\" : \"\").toString().replace(/'/g, \"''\") }} {{ ($node[\"Riwayat\"].json[\"query\"][\"dari\"] && $node[\"Riwayat\"].json[\"query\"][\"sampai\"] ? \"AND \\\"Tanggal\\\" >= '\" + $node[\"Riwayat\"].json[\"query\"][\"dari\"].substring(0, 10) + \"' AND \\\"Tanggal\\\" <= '\" + $node[\"Riwayat\"].json[\"query\"][\"sampai\"].substring(0, 10) + \"'\" : \"\").toString().replace(/'/g, \"''\") }} {{ (!$node[\"Riwayat\"].json[\"query\"][\"nip\"] && !$node[\"Riwayat\"].json[\"query\"][\"user_id\"] && !$node[\"Riwayat\"].json[\"query\"][\"tanggal\"] && !($node[\"Riwayat\"].json[\"query\"][\"dari\"] && $node[\"Riwayat\"].json[\"query\"][\"sampai\"]) ? \"AND \\\"Tanggal\\\" = (NOW() AT TIME ZONE 'Asia/Makassar')::date\" : \"\").toString().replace(/'/g, \"''\") }} ORDER BY \"Tanggal\" DESC, \"Jam\" DESC",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -855,7 +855,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM public.view_user_mgmt \nWHERE \n  (instansi_id = '{{ ($node[\"User-List\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, "''") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, "''") }}' != '')\n  OR (\"NIP\" = '{{ ($node[\"User-List\"].json[\"query\"][\"nip\"]).toString().replace(/'/g, "''") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"nip\"]).toString().replace(/'/g, "''") }}' != '')\n  OR (\"id\"::text = '{{ ($node[\"User-List\"].json[\"query\"][\"id\"] || $node[\"User-List\"].json[\"query\"][\"user_id\"]).toString().replace(/'/g, "''") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"id\"] || $node[\"User-List\"].json[\"query\"][\"user_id\"] || \"\").toString().replace(/'/g, "''") }}' != '')\nORDER BY \"no\" ASC NULLS LAST",
+        "query": "SELECT * FROM public.view_user_mgmt \nWHERE \n  (instansi_id = '{{ ($node[\"User-List\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}' != '')\n  OR (\"NIP\" = '{{ ($node[\"User-List\"].json[\"query\"][\"nip\"]).toString().replace(/'/g, \"''\") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"nip\"]).toString().replace(/'/g, \"''\") }}' != '')\n  OR (\"id\"::text = '{{ ($node[\"User-List\"].json[\"query\"][\"id\"] || $node[\"User-List\"].json[\"query\"][\"user_id\"]).toString().replace(/'/g, \"''\") }}' AND '{{ ($node[\"User-List\"].json[\"query\"][\"id\"] || $node[\"User-List\"].json[\"query\"][\"user_id\"] || \"\").toString().replace(/'/g, \"''\") }}' != '')\nORDER BY \"no\" ASC NULLS LAST",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -1123,7 +1123,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"admin_list\" (\"telegram_id\", \"nama\", \"role\") VALUES ({{ ($json.telegram_id).toString().replace(/'/g, "''") }},{{ ($json.nama).toString().replace(/'/g, "''") }},{{ ($json.role).toString().replace(/'/g, "''") }}) RETURNING *",
+        "query": "INSERT INTO \"admin_list\" (\"telegram_id\", \"nama\", \"role\") VALUES ({{ ($json.telegram_id).toString().replace(/'/g, \"''\") }},{{ ($json.nama).toString().replace(/'/g, \"''\") }},{{ ($json.role).toString().replace(/'/g, \"''\") }}) RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -2827,7 +2827,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Lokasi\", \"Ket\", \"koordinat\", \"request_id\", \"instansi_id\") VALUES ('{{ ($json.pegawai.id).toString().replace(/'/g, "''") }}', '{{ ($json.pegawai.nama).toString().replace(/'/g, "''") }}','{{ ($json.pegawai.nip).toString().replace(/'/g, "''") }}','{{ ($json.log.tanggal).toString().replace(/'/g, "''") }}','{{ ($json.log.jam.slice(0, 5)).toString().replace(/'/g, "''") }}','{{ ($json.jenis_absen).toString().replace(/'/g, "''") }}','{{ ($json.nama_lokasi).toString().replace(/'/g, "''") }}','{{ ($json.keterangan_log).toString().replace(/'/g, "''") }}','{{ ($json.log.koordinat).toString().replace(/'/g, "''") }}', '{{ ($('Absen').first().json.body.request_id).toString().replace(/'/g, "''") }}', '{{ ($json.pegawai.instansi_id).toString().replace(/'/g, "''") }}') RETURNING *",
+        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Lokasi\", \"Ket\", \"koordinat\", \"request_id\", \"instansi_id\") VALUES ('{{ ($json.pegawai.id).toString().replace(/'/g, \"''\") }}', '{{ ($json.pegawai.nama).toString().replace(/'/g, \"''\") }}','{{ ($json.pegawai.nip).toString().replace(/'/g, \"''\") }}','{{ ($json.log.tanggal).toString().replace(/'/g, \"''\") }}','{{ ($json.log.jam.slice(0, 5)).toString().replace(/'/g, \"''\") }}','{{ ($json.jenis_absen).toString().replace(/'/g, \"''\") }}','{{ ($json.nama_lokasi).toString().replace(/'/g, \"''\") }}','{{ ($json.keterangan_log).toString().replace(/'/g, \"''\") }}','{{ ($json.log.koordinat).toString().replace(/'/g, \"''\") }}', '{{ ($('Absen').first().json.body.request_id).toString().replace(/'/g, \"''\") }}', '{{ ($json.pegawai.instansi_id).toString().replace(/'/g, \"''\") }}') RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -2942,7 +2942,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"Log_Absen\" WHERE \"NIP\" = '{{ ($('Get Pegawai Absen').item.json.NIP || $('Get Pegawai Absen').item.json.nip).toString().replace(/'/g, "''") }}' AND \"Tanggal\" = '{{ ($('Absen').first().json.body.tanggal_iso).toString().replace(/'/g, "''") }}'",
+        "query": "SELECT * FROM \"Log_Absen\" WHERE \"NIP\" = '{{ ($('Get Pegawai Absen').item.json.NIP || $('Get Pegawai Absen').item.json.nip).toString().replace(/'/g, \"''\") }}' AND \"Tanggal\" = '{{ ($('Absen').first().json.body.tanggal_iso).toString().replace(/'/g, \"''\") }}'",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -2965,7 +2965,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"lokasiabsen\" WHERE instansi_id = '{{ ($('Get Pegawai Absen').first()?.json?.instansi_id || '').toString().replace(/'/g, "''") }}' OR instansi_id = 'all'",
+        "query": "SELECT * FROM \"lokasiabsen\" WHERE instansi_id = '{{ ($('Get Pegawai Absen').first()?.json?.instansi_id || '').toString().replace(/'/g, \"''\") }}' OR instansi_id = 'all'",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -2987,7 +2987,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"user_list\" WHERE \"NIP\" = '{{ ($('Absen').item.json.body.nip).toString().replace(/'/g, "''") }}' OR \"id\" = '{{ ($('Absen').item.json.body.user?.id || $('Absen').item.json.body.telegram_id).toString().replace(/'/g, "''") }}' LIMIT 1",
+        "query": "SELECT * FROM \"user_list\" WHERE \"NIP\" = '{{ ($('Absen').item.json.body.nip).toString().replace(/'/g, \"''\") }}' OR \"id\" = '{{ ($('Absen').item.json.body.user?.id || $('Absen').item.json.body.telegram_id).toString().replace(/'/g, \"''\") }}' LIMIT 1",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -3009,7 +3009,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"Log_Absen\" WHERE \"request_id\" = '{{ ($json.body.request_id).toString().replace(/'/g, "''") }}' LIMIT 1",
+        "query": "SELECT * FROM \"Log_Absen\" WHERE \"request_id\" = '{{ ($json.body.request_id).toString().replace(/'/g, \"''\") }}' LIMIT 1",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -3399,7 +3399,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "DELETE FROM \"user_list\" WHERE \"id\" = {{ ($json.id).toString().replace(/'/g, "''") }} RETURNING *",
+        "query": "DELETE FROM \"user_list\" WHERE \"id\" = {{ ($json.id).toString().replace(/'/g, \"''\") }} RETURNING *",
         "options": {}
       },
       "id": "cff44ab4-1a2a-49c8-9d5a-75391ac10a04",
@@ -3489,7 +3489,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"user_list\" (\"id\", \"username\", \"NIP\", \"Jabatan\", \"bidang\", \"Status\", \"no\", \"pangkat\", \"nomorhp\", \"role\", \"instansi_id\") VALUES ('{{ ($json.id).toString().replace(/'/g, "''") }}','{{ ($json.nama).toString().replace(/'/g, "''") }}','{{ ($json.nip).toString().replace(/'/g, "''") }}','{{ ($json.jabatan).toString().replace(/'/g, "''") }}','{{ ($json.bidang).toString().replace(/'/g, "''") }}','{{ ($json.status).toString().replace(/'/g, "''") }}','{{ ($json.no).toString().replace(/'/g, "''") }}','{{ ($json.pangkat).toString().replace(/'/g, "''") }}','{{ ($json.nomorhp).toString().replace(/'/g, "''") }}','{{ ($json.role).toString().replace(/'/g, "''") }}','{{ ($json.instansi_id).toString().replace(/'/g, "''") }}') RETURNING *",
+        "query": "INSERT INTO \"user_list\" (\"id\", \"username\", \"NIP\", \"Jabatan\", \"bidang\", \"Status\", \"no\", \"pangkat\", \"nomorhp\", \"role\", \"instansi_id\") VALUES ('{{ ($json.id).toString().replace(/'/g, \"''\") }}','{{ ($json.nama).toString().replace(/'/g, \"''\") }}','{{ ($json.nip).toString().replace(/'/g, \"''\") }}','{{ ($json.jabatan).toString().replace(/'/g, \"''\") }}','{{ ($json.bidang).toString().replace(/'/g, \"''\") }}','{{ ($json.status).toString().replace(/'/g, \"''\") }}','{{ ($json.no).toString().replace(/'/g, \"''\") }}','{{ ($json.pangkat).toString().replace(/'/g, \"''\") }}','{{ ($json.nomorhp).toString().replace(/'/g, \"''\") }}','{{ ($json.role).toString().replace(/'/g, \"''\") }}','{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}') RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -3536,7 +3536,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"user_list\" WHERE instansi_id = '{{ ($json.instansi_id).toString().replace(/'/g, "''") }}' ORDER BY \"no\" ASC",
+        "query": "SELECT * FROM \"user_list\" WHERE instansi_id = '{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}' ORDER BY \"no\" ASC",
         "options": {}
       },
       "id": "f0814398-ab91-45a0-b711-28f27888b660",
@@ -3615,7 +3615,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"user_list\" SET \"username\" = COALESCE(NULLIF('{{ ($json.nama).toString().replace(/'/g, "''") }}', ''), \"username\"), \"NIP\" = COALESCE(NULLIF('{{ ($json.nip).toString().replace(/'/g, "''") }}', ''), \"NIP\"), \"no\" = COALESCE(NULLIF(NULLIF('{{ ($json.no).toString().replace(/'/g, "''") }}', ''), 'null')::numeric, \"no\"), \"Jabatan\" = COALESCE(NULLIF('{{ ($json.jabatan).toString().replace(/'/g, "''") }}', ''), \"Jabatan\"), \"bidang\" = COALESCE(NULLIF('{{ ($json.bidang).toString().replace(/'/g, "''") }}', ''), \"bidang\"), \"Status\" = COALESCE(NULLIF('{{ ($json.status).toString().replace(/'/g, "''") }}', ''), \"Status\"), \"pangkat\" = COALESCE(NULLIF('{{ ($json.pangkat).toString().replace(/'/g, "''") }}', ''), \"pangkat\"), \"nomorhp\" = COALESCE(NULLIF('{{ ($json.nomorhp).toString().replace(/'/g, "''") }}', ''), \"nomorhp\"), \"role\" = COALESCE(NULLIF('{{ ($json.role).toString().replace(/'/g, "''") }}', ''), \"role\"), \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, "''") }}', ''), \"instansi_id\") WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, "''") }}' OR \"telegram_id\" = '{{ ($json.id).toString().replace(/'/g, "''") }}' RETURNING *",
+        "query": "UPDATE \"user_list\" SET \"username\" = COALESCE(NULLIF('{{ ($json.nama).toString().replace(/'/g, \"''\") }}', ''), \"username\"), \"NIP\" = COALESCE(NULLIF('{{ ($json.nip).toString().replace(/'/g, \"''\") }}', ''), \"NIP\"), \"no\" = COALESCE(NULLIF(NULLIF('{{ ($json.no).toString().replace(/'/g, \"''\") }}', ''), 'null')::numeric, \"no\"), \"Jabatan\" = COALESCE(NULLIF('{{ ($json.jabatan).toString().replace(/'/g, \"''\") }}', ''), \"Jabatan\"), \"bidang\" = COALESCE(NULLIF('{{ ($json.bidang).toString().replace(/'/g, \"''\") }}', ''), \"bidang\"), \"Status\" = COALESCE(NULLIF('{{ ($json.status).toString().replace(/'/g, \"''\") }}', ''), \"Status\"), \"pangkat\" = COALESCE(NULLIF('{{ ($json.pangkat).toString().replace(/'/g, \"''\") }}', ''), \"pangkat\"), \"nomorhp\" = COALESCE(NULLIF('{{ ($json.nomorhp).toString().replace(/'/g, \"''\") }}', ''), \"nomorhp\"), \"role\" = COALESCE(NULLIF('{{ ($json.role).toString().replace(/'/g, \"''\") }}', ''), \"role\"), \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}', ''), \"instansi_id\") WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' OR \"telegram_id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "id": "fd27aff3-bd0f-40ac-9d28-cf803a601a26",
@@ -3660,7 +3660,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"user_list\" SET \"no\" = '{{ ($json.no).toString().replace(/'/g, "''") }}' WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, "''") }}' RETURNING *",
+        "query": "UPDATE \"user_list\" SET \"no\" = '{{ ($json.no).toString().replace(/'/g, \"''\") }}' WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "id": "aa17d4a3-1fdc-425b-b595-9b8fe445ec50",
@@ -3714,7 +3714,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Lokasi\", \"Ket\", \"koordinat\", \"instansi_id\") VALUES ('{{ ($json.id).toString().replace(/'/g, "''") }}','{{ ($json.username).toString().replace(/'/g, "''") }}','{{ ($json.NIP).toString().replace(/'/g, "''") }}','{{ ($json.tanggal_input).toString().replace(/'/g, "''") }}','{{ ($json.jam_input).toString().replace(/'/g, "''") }}','{{ ($json.JenisAbsen).toString().replace(/'/g, "''") }}','{{ ($json.lok).toString().replace(/'/g, "''") }}','{{ ($json.ket).toString().replace(/'/g, "''") }}','{{ ($json.koordinat).toString().replace(/'/g, "''") }}', COALESCE((SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.NIP).toString().replace(/'/g, "''") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.id).toString().replace(/'/g, "''") }}' LIMIT 1), 'bapperida')) RETURNING *",
+        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Lokasi\", \"Ket\", \"koordinat\", \"instansi_id\") VALUES ('{{ ($json.id).toString().replace(/'/g, \"''\") }}','{{ ($json.username).toString().replace(/'/g, \"''\") }}','{{ ($json.NIP).toString().replace(/'/g, \"''\") }}','{{ ($json.tanggal_input).toString().replace(/'/g, \"''\") }}','{{ ($json.jam_input).toString().replace(/'/g, \"''\") }}','{{ ($json.JenisAbsen).toString().replace(/'/g, \"''\") }}','{{ ($json.lok).toString().replace(/'/g, \"''\") }}','{{ ($json.ket).toString().replace(/'/g, \"''\") }}','{{ ($json.koordinat).toString().replace(/'/g, \"''\") }}', COALESCE((SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.NIP).toString().replace(/'/g, \"''\") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' LIMIT 1), 'bapperida')) RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -3834,7 +3834,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"Log_Absen\" SET \"ID\" = '{{ ($json.telegram_id).toString().replace(/'/g, "''") }}', \"Nama\" = '{{ ($json.nama).toString().replace(/'/g, "''") }}', \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, "''") }}', \"Tanggal\" = '{{ ($json.tanggal).toString().replace(/'/g, "''") }}', \"Jam\" = '{{ ($json.jam).toString().replace(/'/g, "''") }}', \"Jenis Absen\" = '{{ ($json.jenis_absen).toString().replace(/'/g, "''") }}', \"Ket\" = '{{ ($json.keterangan).toString().replace(/'/g, "''") }}', \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, "''") }}', ''), (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, "''") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.telegram_id).toString().replace(/'/g, "''") }}' LIMIT 1), \"Log_Absen\".instansi_id, 'bapperida') WHERE \"ID_Log\" = '{{ ($json.ID_Log).toString().replace(/'/g, "''") }}' RETURNING *",
+        "query": "UPDATE \"Log_Absen\" SET \"ID\" = '{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}', \"Nama\" = '{{ ($json.nama).toString().replace(/'/g, \"''\") }}', \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, \"''\") }}', \"Tanggal\" = '{{ ($json.tanggal).toString().replace(/'/g, \"''\") }}', \"Jam\" = '{{ ($json.jam).toString().replace(/'/g, \"''\") }}', \"Jenis Absen\" = '{{ ($json.jenis_absen).toString().replace(/'/g, \"''\") }}', \"Ket\" = '{{ ($json.keterangan).toString().replace(/'/g, \"''\") }}', \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}', ''), (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, \"''\") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}' LIMIT 1), \"Log_Absen\".instansi_id, 'bapperida') WHERE \"ID_Log\" = '{{ ($json.ID_Log).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "id": "6606f2ac-2ee3-4fda-8ac8-f69b3cbbd616",
@@ -3855,7 +3855,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Ket\", \"instansi_id\", \"request_id\") VALUES ('{{ ($json.telegram_id).toString().replace(/'/g, "''") }}','{{ ($json.nama).toString().replace(/'/g, "''") }}','{{ ($json.nip).toString().replace(/'/g, "''") }}','{{ ($json.tanggal).toString().replace(/'/g, "''") }}','{{ ($json.jam).toString().replace(/'/g, "''") }}','{{ ($json.jenis_absen).toString().replace(/'/g, "''") }}','{{ ($json.keterangan).toString().replace(/'/g, "''") }}', COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, "''") }}', ''), (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, "''") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.telegram_id).toString().replace(/'/g, "''") }}' LIMIT 1), 'bapperida'), '{{ ($json.request_id).toString().replace(/'/g, "''") }}') RETURNING *",
+        "query": "INSERT INTO \"Log_Absen\" (\"ID\", \"Nama\", \"NIP\", \"Tanggal\", \"Jam\", \"Jenis Absen\", \"Ket\", \"instansi_id\", \"request_id\") VALUES ('{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}','{{ ($json.nama).toString().replace(/'/g, \"''\") }}','{{ ($json.nip).toString().replace(/'/g, \"''\") }}','{{ ($json.tanggal).toString().replace(/'/g, \"''\") }}','{{ ($json.jam).toString().replace(/'/g, \"''\") }}','{{ ($json.jenis_absen).toString().replace(/'/g, \"''\") }}','{{ ($json.keterangan).toString().replace(/'/g, \"''\") }}', COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}', ''), (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, \"''\") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}' LIMIT 1), 'bapperida'), '{{ ($json.request_id).toString().replace(/'/g, \"''\") }}') RETURNING *",
         "options": {
           "queryBatching": "independently"
         }
@@ -3902,7 +3902,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE public.user_list SET \"Status\" = 'AKTIF' WHERE \"NIP\" = '{{ ($json.pegawai.nip).toString().replace(/'/g, "''") }}' AND \"Status\" IS DISTINCT FROM 'AKTIF';",
+        "query": "UPDATE public.user_list SET \"Status\" = 'AKTIF' WHERE \"NIP\" = '{{ ($json.pegawai.nip).toString().replace(/'/g, \"''\") }}' AND \"Status\" IS DISTINCT FROM 'AKTIF';",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4011,7 +4011,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM bidang_list WHERE instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, "''") }}' ORDER BY id ASC",
+        "query": "SELECT * FROM bidang_list WHERE instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, \"''\") }}' ORDER BY id ASC",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4103,7 +4103,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"id\", \"username\", \"NIP\", \"Jabatan\", \"Status\", \"no\", \"bidang\", \"pangkat\", \"nomorhp\", \"role\", \"is_admin\", \"instansi_id\"\nFROM \"user_list\"\nWHERE (UPPER(\"role\") NOT IN ('USER') \n   OR \"is_admin\" = true \n   OR UPPER(\"Jabatan\") LIKE '%KEPALA%' \n   OR UPPER(\"Jabatan\") LIKE '%SEKRETARIS%' \n   OR UPPER(\"Jabatan\") LIKE '%KABID%' \n   OR UPPER(\"Jabatan\") LIKE '%IRBAN%'\n   OR UPPER(\"Jabatan\") LIKE '%INSPEKTUR%')\n   AND instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, "''") }}'\nORDER BY \"no\" ASC NULLS LAST;\n",
+        "query": "SELECT \"id\", \"username\", \"NIP\", \"Jabatan\", \"Status\", \"no\", \"bidang\", \"pangkat\", \"nomorhp\", \"role\", \"is_admin\", \"instansi_id\"\nFROM \"user_list\"\nWHERE (UPPER(\"role\") NOT IN ('USER') \n   OR \"is_admin\" = true \n   OR UPPER(\"Jabatan\") LIKE '%KEPALA%' \n   OR UPPER(\"Jabatan\") LIKE '%SEKRETARIS%' \n   OR UPPER(\"Jabatan\") LIKE '%KABID%' \n   OR UPPER(\"Jabatan\") LIKE '%IRBAN%'\n   OR UPPER(\"Jabatan\") LIKE '%INSPEKTUR%')\n   AND instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, \"''\") }}'\nORDER BY \"no\" ASC NULLS LAST;\n",
         "options": {}
       },
       "id": "8468834b-1bd5-4dfd-aadd-b3b135cd6fa9",
@@ -4165,7 +4165,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO statistik_pegawai (\n    nip, \n    instansi_id, \n    total_masuk, \n    total_pulang, \n    total_terlambat, \n    total_lebih_awal,\n    akum_menit_terlambat,\n    akum_menit_lebih_awal,\n    total_izin, \n    total_sakit, \n    total_tugas,\n    total_tubel,\n    total_cuti,\n    total_alpa,\n    updated_at\n)\nSELECT \n    '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, "''") }}',\n    COALESCE(\n        (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, "''") }}' LIMIT 1),\n        (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.payload.ID || $json.payload.id || $json.payload.pegawai_id).toString().replace(/'/g, "''") }}' LIMIT 1),\n        'bapperida'\n    ),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('MASUK', 'DI LUAR JAM MASUK')),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR')),\n    \n    -- total_terlambat: Menghitung keterlambatan reguler + TANPA BERITA\n    COUNT(*) FILTER (\n        WHERE \"Jenis Absen\" = 'DI LUAR JAM MASUK' \n        OR (\"Jenis Absen\" = 'MASUK' AND \"Jam\"::time > '07:15:00')\n        OR \"Jenis Absen\" = 'TANPA BERITA'\n    ),\n    \n    COUNT(*) FILTER (\n        WHERE \"Jenis Absen\" = 'DI LUAR JAM PULANG' \n        OR (\"Jenis Absen\" = 'PULANG' AND \"Jam\"::time < '14:30:00')\n    ),\n    \n    -- akum_menit_terlambat: Menit reguler + 450 menit (7.5 jam) per hari TANPA BERITA\n    COALESCE(SUM(\n        CASE \n            WHEN \"Jenis Absen\" = 'TANPA BERITA' THEN 450\n            \n            WHEN \"Jenis Absen\" IN ('MASUK', 'DI LUAR JAM MASUK') AND \"Jam\"::time > '07:15:00'\n            THEN EXTRACT(EPOCH FROM (\"Jam\"::time - '07:15:00')) / 60\n            ELSE 0 \n        END\n    ), 0)::integer,\n\n    COALESCE(SUM(\n        CASE \n            WHEN \"Jenis Absen\" IN ('PULANG', 'DI LUAR JAM PULANG') AND \"Jam\"::time < '14:30:00'\n            THEN EXTRACT(EPOCH FROM ('14:30:00'::time - \"Jam\"::time)) / 60\n            ELSE 0 \n        END\n    ), 0)::integer,\n\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'IZIN'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'SAKIT'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('TUGAS', 'DL')),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'TUBEL'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'CUTI'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'TANPA BERITA'),\n    NOW()\nFROM \"Log_Absen\"\nWHERE \"NIP\" = '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, "''") }}'\nON CONFLICT (nip) \nDO UPDATE SET \n    total_masuk = EXCLUDED.total_masuk,\n    total_pulang = EXCLUDED.total_pulang,\n    total_terlambat = EXCLUDED.total_terlambat,\n    total_lebih_awal = EXCLUDED.total_lebih_awal,\n    akum_menit_terlambat = EXCLUDED.akum_menit_terlambat,\n    akum_menit_lebih_awal = EXCLUDED.akum_menit_lebih_awal,\n    total_izin = EXCLUDED.total_izin,\n    total_sakit = EXCLUDED.total_sakit,\n    total_tugas = EXCLUDED.total_tugas,\n    total_tubel = EXCLUDED.total_tubel,\n    total_cuti = EXCLUDED.total_cuti,\n    total_alpa = EXCLUDED.total_alpa,\n    updated_at = NOW();",
+        "query": "INSERT INTO statistik_pegawai (\n    nip, \n    instansi_id, \n    total_masuk, \n    total_pulang, \n    total_terlambat, \n    total_lebih_awal,\n    akum_menit_terlambat,\n    akum_menit_lebih_awal,\n    total_izin, \n    total_sakit, \n    total_tugas,\n    total_tubel,\n    total_cuti,\n    total_alpa,\n    updated_at\n)\nSELECT \n    '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, \"''\") }}',\n    COALESCE(\n        (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, \"''\") }}' LIMIT 1),\n        (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.payload.ID || $json.payload.id || $json.payload.pegawai_id).toString().replace(/'/g, \"''\") }}' LIMIT 1),\n        'bapperida'\n    ),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('MASUK', 'DI LUAR JAM MASUK')),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('PULANG', 'DI LUAR JAM PULANG', 'PULANG LUAR')),\n    \n    -- total_terlambat: Menghitung keterlambatan reguler + TANPA BERITA\n    COUNT(*) FILTER (\n        WHERE \"Jenis Absen\" = 'DI LUAR JAM MASUK' \n        OR (\"Jenis Absen\" = 'MASUK' AND \"Jam\"::time > '07:15:00')\n        OR \"Jenis Absen\" = 'TANPA BERITA'\n    ),\n    \n    COUNT(*) FILTER (\n        WHERE \"Jenis Absen\" = 'DI LUAR JAM PULANG' \n        OR (\"Jenis Absen\" = 'PULANG' AND \"Jam\"::time < '14:30:00')\n    ),\n    \n    -- akum_menit_terlambat: Menit reguler + 450 menit (7.5 jam) per hari TANPA BERITA\n    COALESCE(SUM(\n        CASE \n            WHEN \"Jenis Absen\" = 'TANPA BERITA' THEN 450\n            \n            WHEN \"Jenis Absen\" IN ('MASUK', 'DI LUAR JAM MASUK') AND \"Jam\"::time > '07:15:00'\n            THEN EXTRACT(EPOCH FROM (\"Jam\"::time - '07:15:00')) / 60\n            ELSE 0 \n        END\n    ), 0)::integer,\n\n    COALESCE(SUM(\n        CASE \n            WHEN \"Jenis Absen\" IN ('PULANG', 'DI LUAR JAM PULANG') AND \"Jam\"::time < '14:30:00'\n            THEN EXTRACT(EPOCH FROM ('14:30:00'::time - \"Jam\"::time)) / 60\n            ELSE 0 \n        END\n    ), 0)::integer,\n\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'IZIN'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'SAKIT'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" IN ('TUGAS', 'DL')),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'TUBEL'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'CUTI'),\n    COUNT(*) FILTER (WHERE \"Jenis Absen\" = 'TANPA BERITA'),\n    NOW()\nFROM \"Log_Absen\"\nWHERE \"NIP\" = '{{ ($json.payload.NIP || $json.payload.nip).toString().replace(/'/g, \"''\") }}'\nON CONFLICT (nip) \nDO UPDATE SET \n    total_masuk = EXCLUDED.total_masuk,\n    total_pulang = EXCLUDED.total_pulang,\n    total_terlambat = EXCLUDED.total_terlambat,\n    total_lebih_awal = EXCLUDED.total_lebih_awal,\n    akum_menit_terlambat = EXCLUDED.akum_menit_terlambat,\n    akum_menit_lebih_awal = EXCLUDED.akum_menit_lebih_awal,\n    total_izin = EXCLUDED.total_izin,\n    total_sakit = EXCLUDED.total_sakit,\n    total_tugas = EXCLUDED.total_tugas,\n    total_tubel = EXCLUDED.total_tubel,\n    total_cuti = EXCLUDED.total_cuti,\n    total_alpa = EXCLUDED.total_alpa,\n    updated_at = NOW();",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

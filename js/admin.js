@@ -38,6 +38,12 @@
           });
           localStorage.setItem('absen_instansi_map', JSON.stringify(instMap));
           window.INSTANSI_LIST = Object.keys(instMap).map(k => instMap[k]);
+          if (!window.INSTANSI_LIST || window.INSTANSI_LIST.length === 0) {
+              window.INSTANSI_LIST = [
+                  { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+                  { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+              ];
+          }
           console.log('[Instansi] Cached full mapping to localStorage:', instMap);
           
           if (typeof populateSuperadminInstansiSelect === 'function') {

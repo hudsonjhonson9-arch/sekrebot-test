@@ -1,18 +1,22 @@
 // Sync window.INSTANSI_LIST with localStorage
 function syncInstansiList() {
+    const fallback = [
+        { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+        { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+    ];
     try {
         const cached = localStorage.getItem('absen_instansi_map');
         if (cached) {
             const map = JSON.parse(cached);
             window.INSTANSI_LIST = Object.keys(map).map(k => map[k]).filter(i => i.id || i.ID || i.instansi_id);
+            if (!window.INSTANSI_LIST || window.INSTANSI_LIST.length === 0) {
+                window.INSTANSI_LIST = fallback;
+            }
         } else {
-            window.INSTANSI_LIST = [
-                { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
-                { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-            ];
+            window.INSTANSI_LIST = fallback;
         }
     } catch(e) {
-        window.INSTANSI_LIST = [];
+        window.INSTANSI_LIST = fallback;
     }
 }
 syncInstansiList();

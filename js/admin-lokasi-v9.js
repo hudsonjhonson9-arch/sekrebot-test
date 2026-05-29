@@ -69,13 +69,13 @@
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       
-      let instansi_id = 'bapperida';
+      let instansi_id = 'all';
       if (isSuperAdminUser() && $('instansiLokasiContainer') && $('instansiLokasiContainer').style.display !== 'none') {
         const checked = Array.from($('instansiCheckGrid').querySelectorAll('input:checked')).map(cb => cb.value);
         if (checked.length) instansi_id = checked.join(',');
         else instansi_id = 'all'; // fallback to all if empty
       } else {
-        instansi_id = localStorage.getItem('MY_INSTANSI') || 'bapperida';
+        instansi_id = localStorage.getItem('MY_INSTANSI') || 'all';
       }
       
       try {
@@ -151,11 +151,23 @@
                   <span class="selected-text" id="text-instansi-tambah" style="font-size:11px; color:var(--white); font-weight:700;">Semua Instansi</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:var(--navy); border:1px solid var(--border); border-radius:8px; margin-top:4px; z-index:100; padding:8px; flex-direction:column; gap:4px;">
-                  <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="all" checked onchange="toggleInstansiCheck(this, 'text-instansi-tambah')"> Semua Instansi</label>
+                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                  <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; background:rgba(212,175,55,0.1); border-left:3px solid var(--gold);">
+                    <div class="checkbox-box" style="width:16px;height:16px;border:1px solid var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:rgba(212,175,55,0.1);">
+                      <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);opacity:1;transform:scale(1);transition:all 0.2s;"></i>
+                    </div>
+                    <input type="checkbox" value="all" checked onchange="toggleInstansiCheck(this, 'text-instansi-tambah')" style="display:none;"> 
+                    <span style="font-weight:600;">Semua Instansi</span>
+                  </label>
             `;
             instList.forEach(function(ins) {
-              gridHtml += `<label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="${ins.id}" onchange="toggleInstansiCheck(this, 'text-instansi-tambah')"> ${ins.nama_instansi}</label>`;
+              gridHtml += `<label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; background:transparent; border-left:3px solid transparent;">
+                    <div class="checkbox-box" style="width:16px;height:16px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:transparent;">
+                      <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);opacity:0;transform:scale(0);transition:all 0.2s;"></i>
+                    </div>
+                    <input type="checkbox" value="${ins.id}" onchange="toggleInstansiCheck(this, 'text-instansi-tambah')" style="display:none;"> 
+                    <span>${ins.nama_instansi}</span>
+                  </label>`;
             });
             gridHtml += `</div></div>`;
             $('instansiCheckGrid').innerHTML = gridHtml;
@@ -195,7 +207,7 @@
             const id = l.id || l.ID || '';
             const radius = l.radius || 100;
             const ipVal = (l.ip_range || l.IP_Range || '');
-            const instansiVal = l.instansi_id || 'bapperida';
+            const instansiVal = l.instansi_id || 'all';
             const instansiArr = instansiVal.split(',').map(i=>i.trim()).filter(Boolean);
             const namaEsc = (l.nama_lokasi || l.nama || '').replace(/'/g, '&apos;');
             const hariAktif = (l.hari || '').toLowerCase().split(',').map(h => h.trim()).filter(Boolean);
@@ -207,7 +219,7 @@
             const badgeStyle = hariCount > 0
               ? 'background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,.3)'
               : 'background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)';
-            return `<div id="lokasi-item-${id}" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:13px;margin-bottom:8px;overflow:hidden">
+            return `<div id="lokasi-item-${id}" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:13px;margin-bottom:8px;">
           <div style="display:flex;align-items:center;gap:9px;padding:10px 12px 9px">
             <div style="width:30px;height:30px;border-radius:8px;background:var(--gold-dim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📍</div>
             <div style="flex:1;min-width:0">
@@ -247,12 +259,27 @@
                   <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : (instansiArr.length === 1 ? ((window.INSTANSI_LIST || []).find(i => i.id === instansiArr[0])?.nama_instansi || '1 Instansi Terpilih') : instansiArr.length + ' Instansi Terpilih')}</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:var(--navy); border:1px solid var(--border); border-radius:8px; margin-top:4px; z-index:100; padding:8px; flex-direction:column; gap:4px;">
-                  <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')"> Semua Instansi</label>
+                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                  <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${instansiArr.includes('all')?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
+                    <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${instansiArr.includes('all')?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${instansiArr.includes('all')?'rgba(212,175,55,0.1)':'transparent'};">
+                      <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);transition:all 0.2s;${instansiArr.includes('all')?'opacity:1;transform:scale(1);':'opacity:0;transform:scale(0);'}"></i>
+                    </div>
+                    <input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
+                    <span style="${instansiArr.includes('all')?'font-weight:600;':''}">Semua Instansi</span>
+                  </label>
                   ${(window.INSTANSI_LIST || [
                     { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
                     { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-                  ]).map(ins => `<label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')"> ${ins.nama_instansi}</label>`).join('')}
+                  ]).map(ins => {
+                    const isChecked = instansiArr.includes(ins.id);
+                    return `<label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${isChecked?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
+                      <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${isChecked?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${isChecked?'rgba(212,175,55,0.1)':'transparent'};">
+                        <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);transition:all 0.2s;${isChecked?'opacity:1;transform:scale(1);':'opacity:0;transform:scale(0);'}"></i>
+                      </div>
+                      <input type="checkbox" value="${ins.id}" ${isChecked?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
+                      <span style="${isChecked?'font-weight:600;':''}">${ins.nama_instansi}</span>
+                    </label>`;
+                  }).join('')}
                 </div>
               </div>
             </div>
@@ -302,13 +329,13 @@
       const radius = parseInt(radiusInp?.value || 100);
       const ip_range = (ipInp?.value || '').trim();
       
-      let instansi_id = 'bapperida';
+      let instansi_id = 'all';
       if (isSuperAdminUser() && $(`instansi-grid-${id}`)) {
         const checked = Array.from($(`instansi-grid-${id}`).querySelectorAll('input:checked')).map(cb => cb.value);
         if (checked.length) instansi_id = checked.join(',');
         else instansi_id = 'all'; // fallback
       } else {
-        instansi_id = $(`instansi-input-${id}`)?.value || 'bapperida';
+        instansi_id = $(`instansi-input-${id}`)?.value || 'all';
       }
       
       if (isNaN(radius) || radius < 10 || radius > 5000) {

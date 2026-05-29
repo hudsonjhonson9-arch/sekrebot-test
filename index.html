@@ -2715,15 +2715,29 @@
   <script src="js/rekap.js?v=20260509p"></script>
 
   <!-- 5. Admin modules (split by section) -->
-  <!-- 5. Admin modules (split by section) -->
   <script src="js/admin-libur.js"></script>
-  <script src="js/admin-lokasi.js?v=20260529_2"></script>
+  <script src="js/admin-lokasi.js?v=20260529_3"></script>
   <script src="js/admin-pegawai.js"></script>
   <script src="js/admin-log.js"></script>
   <script src="js/admin-mgmt.js"></script>
   <script src="js/weather.js"></script>
   <script src="js/admin-face.js"></script>
   <script src="js/simapo-admin.js"></script>
+  
+  <script>
+    // OVERRIDE: Force SuperAdmin detection to bypass aggressive file:/// caching
+    window.isSuperAdminUser = function() {
+      var role = String(window.MY_ROLE || localStorage.getItem('MY_ROLE') || '').toUpperCase().trim();
+      if (role === 'SUPERADMIN' || role === 'SUPER ADMIN' || role.indexOf('SUPER') >= 0) return true;
+      var myNip = String(localStorage.getItem('MY_NIP') || '').trim();
+      if (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.length > 0 && String(ADMIN_NIPS[0]) === myNip) return true;
+      if (window.userProfile && window.userProfile.role) {
+        var profileRole = String(window.userProfile.role).toUpperCase().trim();
+        if (profileRole === 'SUPERADMIN' || profileRole === 'SUPER ADMIN' || profileRole.indexOf('SUPER') >= 0) return true;
+      }
+      return false;
+    };
+  </script>
   <script src="js/simapo-ext.js?v=999"></script>
 
   <!-- 6. Supplementary features -->

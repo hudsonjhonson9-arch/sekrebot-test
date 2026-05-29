@@ -83,7 +83,7 @@
             });
             list.forEach(l => { const lat = parseFloat(l.latitude || l.lat || 0), lng = parseFloat(l.longitude || l.lng || 0); if (!lat || !lng) return; L.circle([lat, lng], { radius: l.radius || 100, color: '#c9a84c', fillColor: 'rgba(201,168,76,.1)', fillOpacity: 1, weight: 1 }).addTo(adminMap).bindTooltip(l.nama_lokasi || l.nama || 'Lokasi'); });
           }
-          if (window.MY_ROLE === 'superadmin' && $('instansiLokasi')) {
+          if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasi')) {
             $('instansiLokasi').style.display = 'block';
             let opts = `<option value="all">🌐 Semua Instansi (All)</option>`;
             (window.INSTANSI_LIST || []).forEach(ins => { opts += `<option value="${ins.id}">${ins.nama_instansi}</option>`; });
@@ -167,7 +167,7 @@
                 style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s"
                 onfocus="this.style.borderColor='rgba(34,197,94,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
             </div>
-            ${window.MY_ROLE === 'superadmin' ? `
+            ${window.MY_ROLE === 'SUPERADMIN' ? `
             <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;width:48px;flex-shrink:0">🏢 Instansi</span>
               <select id="instansi-input-${id}" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s">

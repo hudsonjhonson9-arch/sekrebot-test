@@ -1,3 +1,11 @@
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.custom-search-dropdown')) {
+    document.querySelectorAll('.dropdown-list-wrap').forEach(el => {
+      if (el.id.startsWith('instansi')) el.style.display = 'none';
+    });
+  }
+});
+
 /* ════ ADMIN LOKASI ════ */
     /* ════ ADMIN ════ */
     // UI Utils
@@ -13,6 +21,31 @@
       const allCb = grid.querySelector('input[value="all"]');
       if (allCb && allCb.checked) { allCb.checked = false; }
     }
+    
+    // Update custom UI classes
+    grid.querySelectorAll('.custom-checkbox-lbl').forEach(lbl => {
+      const input = lbl.querySelector('input');
+      const box = lbl.querySelector('.checkbox-box');
+      const mark = lbl.querySelector('.check-mark');
+      const span = lbl.querySelector('span');
+      if (input.checked) {
+        lbl.style.background = 'rgba(212,175,55,0.1)';
+        lbl.style.borderLeft = '3px solid var(--gold)';
+        box.style.borderColor = 'var(--gold)';
+        box.style.background = 'rgba(212,175,55,0.1)';
+        mark.style.opacity = '1';
+        mark.style.transform = 'scale(1)';
+        span.style.fontWeight = '600';
+      } else {
+        lbl.style.background = 'transparent';
+        lbl.style.borderLeft = '3px solid transparent';
+        box.style.borderColor = 'rgba(255,255,255,0.3)';
+        box.style.background = 'transparent';
+        mark.style.opacity = '0';
+        mark.style.transform = 'scale(0)';
+        span.style.fontWeight = 'normal';
+      }
+    });
     
     // Update text
     const textEl = document.getElementById(textId);
@@ -147,11 +180,11 @@
             ];
             var gridHtml = `
               <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
-                <div class="dropdown-trigger" onclick="this.parentElement.classList.toggle('open')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
+                <div class="dropdown-trigger" onclick="const list = this.nextElementSibling; document.querySelectorAll('#instansiCheckGrid-list, [id^=instansi-grid-]').forEach(el => { if (el !== list) el.style.display = 'none'; }); list.style.display = (list.style.display === 'none' || !list.style.display) ? 'flex' : 'none';" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
                   <span class="selected-text" id="text-instansi-tambah" style="font-size:11px; color:var(--white); font-weight:700;">Semua Instansi</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:4px;">
+                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; gap:4px;">
                   <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; background:rgba(212,175,55,0.1); border-left:3px solid var(--gold);">
                     <div class="checkbox-box" style="width:16px;height:16px;border:1px solid var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:rgba(212,175,55,0.1);">
                       <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);opacity:1;transform:scale(1);transition:all 0.2s;"></i>
@@ -255,11 +288,11 @@
             <div style="margin-top:7px">
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
               <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
-                <div class="dropdown-trigger" onclick="this.parentElement.classList.toggle('open')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
+                <div class="dropdown-trigger" onclick="const list = this.nextElementSibling; document.querySelectorAll('#instansiCheckGrid-list, [id^=instansi-grid-]').forEach(el => { if (el !== list) el.style.display = 'none'; }); list.style.display = (list.style.display === 'none' || !list.style.display) ? 'flex' : 'none';" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
                   <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : (instansiArr.length === 1 ? ((window.INSTANSI_LIST || []).find(i => i.id === instansiArr[0])?.nama_instansi || '1 Instansi Terpilih') : instansiArr.length + ' Instansi Terpilih')}</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:4px;">
+                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; gap:4px;">
                   <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${instansiArr.includes('all')?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
                     <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${instansiArr.includes('all')?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${instansiArr.includes('all')?'rgba(212,175,55,0.1)':'transparent'};">
                       <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);transition:all 0.2s;${instansiArr.includes('all')?'opacity:1;transform:scale(1);':'opacity:0;transform:scale(0);'}"></i>

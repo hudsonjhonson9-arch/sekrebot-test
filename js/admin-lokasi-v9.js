@@ -111,7 +111,7 @@
         $('adminLokasiInstansiSection').style.display = 'block';
         const sel = $('adminLokasiInstansiSelect');
         const currentVal = sel.value;
-        let opts = '<option value="all">- Semua Instansi -</option>';
+        let opts = '<option value="">- Semua Instansi -</option>';
         if (window.INSTANSI_LIST) {
           window.INSTANSI_LIST.forEach(i => {
             opts += `<option value="${i.id}">${i.nama_instansi}</option>`;
@@ -151,7 +151,7 @@
                   <span class="selected-text" id="text-instansi-tambah" style="font-size:11px; color:var(--white); font-weight:700;">Semua Instansi</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:4px;">
                   <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; background:rgba(212,175,55,0.1); border-left:3px solid var(--gold);">
                     <div class="checkbox-box" style="width:16px;height:16px;border:1px solid var(--gold);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:rgba(212,175,55,0.1);">
                       <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);opacity:1;transform:scale(1);transition:all 0.2s;"></i>
@@ -259,7 +259,7 @@
                   <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : (instansiArr.length === 1 ? ((window.INSTANSI_LIST || []).find(i => i.id === instansiArr[0])?.nama_instansi || '1 Instansi Terpilih') : instansiArr.length + ' Instansi Terpilih')}</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
-                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:4px;">
                   <label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${instansiArr.includes('all')?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
                     <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${instansiArr.includes('all')?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${instansiArr.includes('all')?'rgba(212,175,55,0.1)':'transparent'};">
                       <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);transition:all 0.2s;${instansiArr.includes('all')?'opacity:1;transform:scale(1);':'opacity:0;transform:scale(0);'}"></i>

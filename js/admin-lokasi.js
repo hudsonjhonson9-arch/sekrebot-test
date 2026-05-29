@@ -55,7 +55,7 @@
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       
       let instansi_id = 'bapperida';
-      if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasiContainer') && $('instansiLokasiContainer').style.display !== 'none') {
+      if ((window.MY_ROLE || '').replace(/\\s/g, '') === 'SUPERADMIN' && $('instansiLokasiContainer') && $('instansiLokasiContainer').style.display !== 'none') {
         const checked = Array.from($('instansiCheckGrid').querySelectorAll('input:checked')).map(cb => cb.value);
         if (checked.length) instansi_id = checked.join(',');
         else instansi_id = 'all'; // fallback to all if empty
@@ -110,7 +110,7 @@
             });
             list.forEach(l => { const lat = parseFloat(l.latitude || l.lat || 0), lng = parseFloat(l.longitude || l.lng || 0); if (!lat || !lng) return; L.circle([lat, lng], { radius: l.radius || 100, color: '#c9a84c', fillColor: 'rgba(201,168,76,.1)', fillOpacity: 1, weight: 1 }).addTo(adminMap).bindTooltip(l.nama_lokasi || l.nama || 'Lokasi'); });
           }
-          if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasiContainer')) {
+          if ((window.MY_ROLE || '').replace(/\\s/g, '') === 'SUPERADMIN' && $('instansiLokasiContainer')) {
             $('instansiLokasiContainer').style.display = 'block';
             let gridHtml = `<label class="hari-check-label checked" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" checked style="display:none">Semua</label>`;
             (window.INSTANSI_LIST || []).forEach(ins => {
@@ -199,7 +199,7 @@
                 style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s"
                 onfocus="this.style.borderColor='rgba(34,197,94,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
             </div>
-            ${window.MY_ROLE === 'SUPERADMIN' ? `
+            ${(window.MY_ROLE || '').replace(/\\s/g, '') === 'SUPERADMIN' ? `
             <div style="margin-top:7px">
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
               <div id="instansi-grid-${id}" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
@@ -255,7 +255,7 @@
       const ip_range = (ipInp?.value || '').trim();
       
       let instansi_id = 'bapperida';
-      if (window.MY_ROLE === 'SUPERADMIN' && $(`instansi-grid-${id}`)) {
+      if ((window.MY_ROLE || '').replace(/\s/g, '') === 'SUPERADMIN' && $(`instansi-grid-${id}`)) {
         const checked = Array.from($(`instansi-grid-${id}`).querySelectorAll('input:checked')).map(cb => cb.value);
         if (checked.length) instansi_id = checked.join(',');
         else instansi_id = 'all'; // fallback

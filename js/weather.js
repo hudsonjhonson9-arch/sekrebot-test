@@ -174,6 +174,9 @@
         if (typeof initSuperadminTugasScoping === 'function') {
           initSuperadminTugasScoping();
         }
+        if (typeof loadLokasiAdmin === 'function') {
+          loadLokasiAdmin();
+        }
         if (typeof initSuperadminLemburScoping === 'function') {
           initSuperadminLemburScoping();
         }

@@ -300,11 +300,13 @@
         const newLOK = {};
         list.forEach(l => {
           const nama = l.nama_lokasi || l.nama || '';
-          const hariRaw = (l.hari || 'senin,selasa,rabu,kamis,jumat').toLowerCase();
-          hariRaw.split(',').map(h => h.trim()).filter(Boolean).forEach(h => {
-            if (!newLOK[h]) newLOK[h] = [];
-            if (!newLOK[h].includes(nama)) newLOK[h].push(nama);
-          });
+          const hariRaw = (l.hari || '').toLowerCase();
+          if (hariRaw) {
+            hariRaw.split(',').map(h => h.trim()).filter(Boolean).forEach(h => {
+              if (!newLOK[h]) newLOK[h] = [];
+              if (!newLOK[h].includes(nama)) newLOK[h].push(nama);
+            });
+          }
         });
         Object.keys(LOK_DEF).forEach(k => delete LOK_DEF[k]);
         Object.assign(LOK_DEF, newLOK);

@@ -105,6 +105,20 @@
      * @returns {Promise<void>}
      */
         async function loadLokasiAdmin() {
+      if (isSuperAdminUser() && $('adminLokasiInstansiSection') && $('adminLokasiInstansiSelect')) {
+        $('adminLokasiInstansiSection').style.display = 'block';
+        const sel = $('adminLokasiInstansiSelect');
+        const currentVal = sel.value;
+        let opts = '<option value="">- Semua Instansi -</option>';
+        if (window.INSTANSI_LIST) {
+          window.INSTANSI_LIST.forEach(i => {
+            opts += `<option value="${i.id}">${i.nama_instansi}</option>`;
+          });
+        }
+        sel.innerHTML = opts;
+        if (currentVal && opts.includes(`value="${currentVal}"`)) sel.value = currentVal;
+      }
+
       const el = $('lokasiMgmtList');
       dom.shimmer(el.id, 2);
       let list = [];

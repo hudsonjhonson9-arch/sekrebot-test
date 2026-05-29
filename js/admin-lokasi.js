@@ -1,5 +1,23 @@
-    /* ════ ADMIN LOKASI ════ */
+/* ════ ADMIN LOKASI ════ */
     /* ════ ADMIN ════ */
+    // UI Utils
+    window.toggleInstansiCheck = function(lbl) {
+      const cb = lbl.querySelector('input');
+      cb.checked = !cb.checked;
+      if (cb.checked) lbl.classList.add('checked');
+      else lbl.classList.remove('checked');
+      
+      const grid = lbl.parentElement;
+      if (cb.value === 'all' && cb.checked) {
+        grid.querySelectorAll('input').forEach(i => {
+          if (i !== cb) { i.checked = false; i.parentElement.classList.remove('checked'); }
+        });
+      } else if (cb.checked) {
+        const allCb = grid.querySelector('input[value="all"]');
+        if (allCb && allCb.checked) { allCb.checked = false; allCb.parentElement.classList.remove('checked'); }
+      }
+    };
+
     function toggleHariCheck(label) {
       const cb = label.querySelector('input');
       cb.checked = !cb.checked;
@@ -35,7 +53,16 @@
       if (!hariChecked.length) { showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'warning', '⚠️', 'Pilih Hari', 'Pilih minimal satu hari aktif.'); return; }
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
-      const instansi_id = $('instansiLokasi')?.style.display !== 'none' ? $('instansiLokasi').value : (localStorage.getItem('MY_INSTANSI') || 'bapperida');
+      
+      let instansi_id = 'bapperida';
+      if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasiContainer') && $('instansiLokasiContainer').style.display !== 'none') {
+        const checked = Array.from($('instansiCheckGrid').querySelectorAll('input:checked')).map(cb => cb.value);
+        if (checked.length) instansi_id = checked.join(',');
+        else instansi_id = 'all'; // fallback to all if empty
+      } else {
+        instansi_id = localStorage.getItem('MY_INSTANSI') || 'bapperida';
+      }
+      
       try {
         await apiPost(P.lokasiAdd, { 
           nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, 
@@ -83,12 +110,16 @@
             });
             list.forEach(l => { const lat = parseFloat(l.latitude || l.lat || 0), lng = parseFloat(l.longitude || l.lng || 0); if (!lat || !lng) return; L.circle([lat, lng], { radius: l.radius || 100, color: '#c9a84c', fillColor: 'rgba(201,168,76,.1)', fillOpacity: 1, weight: 1 }).addTo(adminMap).bindTooltip(l.nama_lokasi || l.nama || 'Lokasi'); });
           }
-          if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasi')) {
-            $('instansiLokasi').style.display = 'block';
-            let opts = `<option value="all">🌐 Semua Instansi (All)</option>`;
-            (window.INSTANSI_LIST || []).forEach(ins => { opts += `<option value="${ins.id}">${ins.nama_instansi}</option>`; });
-            if (!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida')) opts += `<option value="bapperida">Bapperida</option>`;
-            $('instansiLokasi').innerHTML = opts;
+          if (window.MY_ROLE === 'SUPERADMIN' && $('instansiLokasiContainer')) {
+            $('instansiLokasiContainer').style.display = 'block';
+            let gridHtml = `<label class="hari-check-label checked" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" checked style="display:none">Semua</label>`;
+            (window.INSTANSI_LIST || []).forEach(ins => {
+              gridHtml += `<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" style="display:none">${ins.nama_instansi}</label>`;
+            });
+            if (!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida')) {
+              gridHtml += `<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="bapperida" style="display:none">Bapperida</label>`;
+            }
+            $('instansiCheckGrid').innerHTML = gridHtml;
           }
 
           // ── Rebuild LOK_DEF dari datatable pakai kolom hari ──
@@ -125,6 +156,7 @@
             const radius = l.radius || 100;
             const ipVal = (l.ip_range || l.IP_Range || '');
             const instansiVal = l.instansi_id || 'bapperida';
+            const instansiArr = instansiVal.split(',').map(i=>i.trim()).filter(Boolean);
             const namaEsc = (l.nama_lokasi || l.nama || '').replace(/'/g, '&apos;');
             const hariAktif = (l.hari || '').toLowerCase().split(',').map(h => h.trim()).filter(Boolean);
             const hariCount = hariAktif.length;
@@ -168,13 +200,13 @@
                 onfocus="this.style.borderColor='rgba(34,197,94,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
             </div>
             ${window.MY_ROLE === 'SUPERADMIN' ? `
-            <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
-              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;width:48px;flex-shrink:0">🏢 Instansi</span>
-              <select id="instansi-input-${id}" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s">
-                <option value="all" ${instansiVal==='all'?'selected':''}>Semua (All)</option>
-                ${(window.INSTANSI_LIST || []).map(ins => `<option value="${ins.id}" ${instansiVal===ins.id?'selected':''}>${ins.nama_instansi}</option>`).join('')}
-                ${!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida') ? `<option value="bapperida" ${instansiVal==='bapperida'?'selected':''}>Bapperida</option>` : ''}
-              </select>
+            <div style="margin-top:7px">
+              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
+              <div id="instansi-grid-${id}" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
+                <label class="hari-check-label ${instansiArr.includes('all') ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} style="display:none">Semua</label>
+                ${(window.INSTANSI_LIST || []).map(ins => `<label class="hari-check-label ${instansiArr.includes(ins.id) ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} style="display:none">${ins.nama_instansi}</label>`).join('')}
+                ${!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida') ? `<label class="hari-check-label ${instansiArr.includes('bapperida') ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="bapperida" ${instansiArr.includes('bapperida')?'checked':''} style="display:none">Bapperida</label>` : ''}
+              </div>
             </div>
             ` : `<input type="hidden" id="instansi-input-${id}" value="${instansiVal}" />`}
           </div>
@@ -221,7 +253,16 @@
       const ipInp = $(`ip-input-${id}`);
       const radius = parseInt(radiusInp?.value || 100);
       const ip_range = (ipInp?.value || '').trim();
-      const instansi_id = $(`instansi-input-${id}`)?.value || 'bapperida';
+      
+      let instansi_id = 'bapperida';
+      if (window.MY_ROLE === 'SUPERADMIN' && $(`instansi-grid-${id}`)) {
+        const checked = Array.from($(`instansi-grid-${id}`).querySelectorAll('input:checked')).map(cb => cb.value);
+        if (checked.length) instansi_id = checked.join(',');
+        else instansi_id = 'all'; // fallback
+      } else {
+        instansi_id = $(`instansi-input-${id}`)?.value || 'bapperida';
+      }
+      
       if (isNaN(radius) || radius < 10 || radius > 5000) {
         if (radiusInp) { radiusInp.style.borderColor = 'var(--danger)'; setTimeout(() => { radiusInp.style.borderColor = 'rgba(255,255,255,.12)'; }, 1500); }
         if (btn) { btn.disabled = false; if (txtEl) txtEl.textContent = 'Simpan Perubahan'; }

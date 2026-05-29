@@ -2209,7 +2209,12 @@
           </div>
           <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..." style="margin-bottom:10px" />
           
-          <select class="form-input" id="instansiLokasi" style="margin-bottom:10px; display:none;"></select>
+          <div id="instansiLokasiContainer" style="margin-bottom:12px; display:none;">
+            <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🏢 Instansi Akses</div>
+            <div id="instansiCheckGrid" style="display:flex; flex-wrap:wrap; gap:6px;">
+              <!-- Checkboxes will be populated by JS -->
+            </div>
+          </div>
           
           <div style="margin-bottom:12px">
             <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📅 Hari Aktif</div>

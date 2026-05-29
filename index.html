@@ -2201,12 +2201,6 @@
           <div
             style="font-size:11px;font-weight:800;color:var(--white);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
             🗺️ LOKASI PRESENSI</div>
-          <div id="adminInstansiSection" style="display: none; margin-bottom: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; box-sizing: border-box;">
-            <div style="font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🏢 Pilih Instansi (Superadmin)</div>
-            <select id="adminInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: var(--white); border-radius: 8px; padding: 0 10px;" onchange="if(typeof loadLokasiAdmin === 'function') loadLokasiAdmin()">
-              <option value="">- Semua Instansi -</option>
-            </select>
-          </div>
           <div id="adminMap" style="height:180px;border-radius:12px;margin-bottom:10px;border:1px solid var(--border)">
           </div>
           <div class="map-coords" style="margin-bottom:12px">
@@ -2215,7 +2209,12 @@
           </div>
           <input type="text" class="form-input" id="namaLokasi" placeholder="Nama Lokasi..." style="margin-bottom:10px" />
           
-          
+          <div id="instansiLokasiContainer" style="margin-bottom:12px; display:none;">
+            <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🏢 Instansi Akses</div>
+            <div id="instansiCheckGrid" style="display:flex; flex-wrap:wrap; gap:6px;">
+              <!-- Checkboxes will be populated by JS -->
+            </div>
+          </div>
           
           <div style="margin-bottom:12px">
             <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">📅 Hari Aktif</div>
@@ -2717,7 +2716,7 @@
 
   <!-- 5. Admin modules (split by section) -->
   <script src="js/admin-libur.js"></script>
-  <script src="js/admin-lokasi.js?v=20260529_4"></script>
+  <script src="js/admin-lokasi.js?v=20260529_5"></script>
   <script src="js/admin-pegawai.js"></script>
   <script src="js/admin-log.js"></script>
   <script src="js/admin-mgmt.js"></script>

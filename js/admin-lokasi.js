@@ -19,10 +19,12 @@
     };
 
     function isSuperAdminUser() {
-      const role = (window.MY_ROLE || localStorage.getItem('MY_ROLE') || '').replace(/\\s/g, '').toUpperCase();
+      var role = String(window.MY_ROLE || localStorage.getItem('MY_ROLE') || '').replace(/\s/g, '').toUpperCase();
       if (role === 'SUPERADMIN') return true;
-      const myNip = String(localStorage.getItem('MY_NIP') || '').trim();
+      if (role.indexOf('SUPER') >= 0) return true;
+      var myNip = String(localStorage.getItem('MY_NIP') || '').trim();
       if (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.length > 0 && String(ADMIN_NIPS[0]) === myNip) return true;
+      if (window.userProfile && String(window.userProfile.role || '').replace(/\s/g, '').toUpperCase() === 'SUPERADMIN') return true;
       return false;
     }
 
@@ -120,13 +122,14 @@
           }
           if (isSuperAdminUser() && $('instansiLokasiContainer')) {
             $('instansiLokasiContainer').style.display = 'block';
-            let gridHtml = `<label class="hari-check-label checked" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" checked style="display:none">Semua</label>`;
-            (window.INSTANSI_LIST || []).forEach(ins => {
-              gridHtml += `<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" style="display:none">${ins.nama_instansi}</label>`;
+            var instList = window.INSTANSI_LIST || [
+              { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+              { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+            ];
+            var gridHtml = '<label class="hari-check-label checked" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" checked style="display:none">Semua</label>';
+            instList.forEach(function(ins) {
+              gridHtml += '<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="' + ins.id + '" style="display:none">' + ins.nama_instansi + '</label>';
             });
-            if (!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida')) {
-              gridHtml += `<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="bapperida" style="display:none">Bapperida</label>`;
-            }
             $('instansiCheckGrid').innerHTML = gridHtml;
           }
 
@@ -212,8 +215,10 @@
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
               <div id="instansi-grid-${id}" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
                 <label class="hari-check-label ${instansiArr.includes('all') ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} style="display:none">Semua</label>
-                ${(window.INSTANSI_LIST || []).map(ins => `<label class="hari-check-label ${instansiArr.includes(ins.id) ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} style="display:none">${ins.nama_instansi}</label>`).join('')}
-                ${!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida') ? `<label class="hari-check-label ${instansiArr.includes('bapperida') ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="bapperida" ${instansiArr.includes('bapperida')?'checked':''} style="display:none">Bapperida</label>` : ''}
+                ${(window.INSTANSI_LIST || [
+                  { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+                  { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+                ]).map(ins => `<label class="hari-check-label ${instansiArr.includes(ins.id) ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} style="display:none">${ins.nama_instansi}</label>`).join('')}
               </div>
             </div>
             ` : `<input type="hidden" id="instansi-input-${id}" value="${instansiVal}" />`}

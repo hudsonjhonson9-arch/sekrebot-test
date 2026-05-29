@@ -35,10 +35,12 @@
       if (!hariChecked.length) { showResult('adminResult', 'adminRIcon', 'adminRTitle', 'adminRMsg', 'warning', '⚠️', 'Pilih Hari', 'Pilih minimal satu hari aktif.'); return; }
       const hariStr = hariChecked.join(',');
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
+      const instansi_id = $('instansiLokasi')?.style.display !== 'none' ? $('instansiLokasi').value : (localStorage.getItem('MY_INSTANSI') || 'bapperida');
       try {
         await apiPost(P.lokasiAdd, { 
           nama_lokasi: nama, latitude: selectedPin.lat, longitude: selectedPin.lng, 
           radius, hari: hariStr, ip_range: ipRange, 
+          instansi_id,
           ditambahkan_oleh: MY_ID,
           nip: localStorage.getItem('MY_NIP') || '',
           timestamp: Math.floor(Date.now() / 1000) 
@@ -81,15 +83,25 @@
             });
             list.forEach(l => { const lat = parseFloat(l.latitude || l.lat || 0), lng = parseFloat(l.longitude || l.lng || 0); if (!lat || !lng) return; L.circle([lat, lng], { radius: l.radius || 100, color: '#c9a84c', fillColor: 'rgba(201,168,76,.1)', fillOpacity: 1, weight: 1 }).addTo(adminMap).bindTooltip(l.nama_lokasi || l.nama || 'Lokasi'); });
           }
+          if (window.MY_ROLE === 'superadmin' && $('instansiLokasi')) {
+            $('instansiLokasi').style.display = 'block';
+            let opts = `<option value="all">🌐 Semua Instansi (All)</option>`;
+            (window.INSTANSI_LIST || []).forEach(ins => { opts += `<option value="${ins.id}">${ins.nama_instansi}</option>`; });
+            if (!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida')) opts += `<option value="bapperida">Bapperida</option>`;
+            $('instansiLokasi').innerHTML = opts;
+          }
+
           // ── Rebuild LOK_DEF dari datatable pakai kolom hari ──
           const newLOK = {};
           list.forEach(l => {
             const nama = l.nama_lokasi || l.nama || '';
-            const hariRaw = (l.hari || 'senin,selasa,rabu,kamis,jumat').toLowerCase();
-            hariRaw.split(',').map(h => h.trim()).filter(Boolean).forEach(h => {
-              if (!newLOK[h]) newLOK[h] = [];
-              if (!newLOK[h].includes(nama)) newLOK[h].push(nama);
-            });
+            const hariRaw = (l.hari || '').toLowerCase();
+            if (hariRaw) {
+              hariRaw.split(',').map(h => h.trim()).filter(Boolean).forEach(h => {
+                if (!newLOK[h]) newLOK[h] = [];
+                if (!newLOK[h].includes(nama)) newLOK[h].push(nama);
+              });
+            }
           });
           // Hapus semua key lama lalu assign baru
           Object.keys(LOK_DEF).forEach(k => delete LOK_DEF[k]);
@@ -112,6 +124,7 @@
             const id = l.id || l.ID || '';
             const radius = l.radius || 100;
             const ipVal = (l.ip_range || l.IP_Range || '');
+            const instansiVal = l.instansi_id || 'bapperida';
             const namaEsc = (l.nama_lokasi || l.nama || '').replace(/'/g, '&apos;');
             const hariAktif = (l.hari || '').toLowerCase().split(',').map(h => h.trim()).filter(Boolean);
             const hariCount = hariAktif.length;
@@ -154,6 +167,16 @@
                 style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s"
                 onfocus="this.style.borderColor='rgba(34,197,94,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"/>
             </div>
+            ${window.MY_ROLE === 'superadmin' ? `
+            <div style="display:flex;align-items:center;gap:8px;margin-top:7px">
+              <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;width:48px;flex-shrink:0">🏢 Instansi</span>
+              <select id="instansi-input-${id}" style="flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:4px 8px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:10px;outline:none;transition:border-color .2s">
+                <option value="all" ${instansiVal==='all'?'selected':''}>Semua (All)</option>
+                ${(window.INSTANSI_LIST || []).map(ins => `<option value="${ins.id}" ${instansiVal===ins.id?'selected':''}>${ins.nama_instansi}</option>`).join('')}
+                ${!(window.INSTANSI_LIST || []).some(i=>i.id==='bapperida') ? `<option value="bapperida" ${instansiVal==='bapperida'?'selected':''}>Bapperida</option>` : ''}
+              </select>
+            </div>
+            ` : `<input type="hidden" id="instansi-input-${id}" value="${instansiVal}" />`}
           </div>
           <div style="height:1px;background:rgba(255,255,255,.05);margin:0 12px"></div>
           <div style="padding:8px 12px 10px">
@@ -198,6 +221,7 @@
       const ipInp = $(`ip-input-${id}`);
       const radius = parseInt(radiusInp?.value || 100);
       const ip_range = (ipInp?.value || '').trim();
+      const instansi_id = $(`instansi-input-${id}`)?.value || 'bapperida';
       if (isNaN(radius) || radius < 10 || radius > 5000) {
         if (radiusInp) { radiusInp.style.borderColor = 'var(--danger)'; setTimeout(() => { radiusInp.style.borderColor = 'rgba(255,255,255,.12)'; }, 1500); }
         if (btn) { btn.disabled = false; if (txtEl) txtEl.textContent = 'Simpan Perubahan'; }
@@ -207,7 +231,7 @@
       const hariStr = lok ? (lok.hari || []).join(',') : '';
       try {
         await apiPost(P.lokasiUpdate, { 
-          id, nama_lokasi: nama, radius, hari: hariStr, ip_range,
+          id, nama_lokasi: nama, radius, hari: hariStr, ip_range, instansi_id,
           diubah_oleh: MY_ID,
           nip: localStorage.getItem('MY_NIP') || ''
         });

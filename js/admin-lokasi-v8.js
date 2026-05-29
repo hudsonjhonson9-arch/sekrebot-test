@@ -18,17 +18,8 @@
       }
     };
 
-    function isSuperAdminUser() { return true;  var myNip = String(localStorage.getItem('MY_NIP') || '').trim(); if (myNip === '200206302025061002') return true; 
-      var role = String(window.MY_ROLE || localStorage.getItem('MY_ROLE') || '').toUpperCase().trim();
-      if (role === 'SUPERADMIN' || role === 'SUPER ADMIN') return true;
-      if (role.indexOf('SUPER') >= 0) return true;
-      var myNip = String(localStorage.getItem('MY_NIP') || '').trim();
-      if (typeof ADMIN_NIPS !== 'undefined' && ADMIN_NIPS.length > 0 && String(ADMIN_NIPS[0]) === myNip) return true;
-      if (window.userProfile && window.userProfile.role) {
-        var profileRole = String(window.userProfile.role).toUpperCase().trim();
-        if (profileRole === 'SUPERADMIN' || profileRole === 'SUPER ADMIN' || profileRole.indexOf('SUPER') >= 0) return true;
-      }
-      return false;
+    function isSuperAdminUser() {
+      return typeof _isSuperAdmin === 'function' ? _isSuperAdmin() : false;
     }
 
     function toggleHariCheck(label) {

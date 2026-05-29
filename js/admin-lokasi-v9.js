@@ -1,9 +1,6 @@
 // Sync window.INSTANSI_LIST with localStorage
 function syncInstansiList() {
-    const fallback = [
-        { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
-        { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-    ];
+    const fallback = [];
     try {
         const cached = localStorage.getItem('absen_instansi_map');
         if (cached) {
@@ -209,10 +206,7 @@ document.addEventListener('click', function(e) {
           }
           if (isSuperAdminUser() && $('instansiLokasiContainer')) {
             $('instansiLokasiContainer').style.display = 'block';
-            var instList = window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : [
-              { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
-              { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-            ];
+            var instList = window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : [];
             var gridHtml = `
               <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
                 <div class="dropdown-trigger" onclick="const list = this.nextElementSibling; document.querySelectorAll('#instansiCheckGrid-list, [id^=instansi-grid-]').forEach(el => { if (el !== list) el.style.display = 'none'; }); list.style.display = (list.style.display === 'none' || !list.style.display) ? 'flex' : 'none';" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
@@ -335,10 +329,7 @@ document.addEventListener('click', function(e) {
                     <input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
                     <span style="${instansiArr.includes('all')?'font-weight:600;':''}">Semua Instansi</span>
                   </label>
-                  ${(window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : [
-                    { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
-                    { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-                  ]).map(ins => {
+                  ${(window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : []).map(ins => {
                     const insId = (ins.id || ins.ID || ins.instansi_id || "").toLowerCase(); const isChecked = instansiArr.some(a => a.toLowerCase() === insId);
                     return `<label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${isChecked?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
                       <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${isChecked?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${isChecked?'rgba(212,175,55,0.1)':'transparent'};">

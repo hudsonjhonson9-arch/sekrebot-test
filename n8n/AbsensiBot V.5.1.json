@@ -1337,7 +1337,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || {};\n\nif (!body.nama_lokasi || !body.latitude || !body.longitude) {\n  throw new Error('Field nama_lokasi, latitude, longitude wajib diisi');\n}\n\nreturn [{ json: {\n  row_data: {\n    // id dihapus — sudah auto-increment dari sequence\n    Nama_Lokasi: body.nama_lokasi,\n    latitude:    parseFloat(body.latitude),\n    longitude:   parseFloat(body.longitude),\n    radius:      parseInt(body.radius) || 100,\n    hari:        body.hari || 'senin,selasa,rabu,kamis,jumat',\n    ip_range:    body.ip_range || null\n  }\n}}];"
+        "jsCode": "const body = $input.first().json.body || {};\n\nif (!body.nama_lokasi || !body.latitude || !body.longitude) {\n  throw new Error('Field nama_lokasi, latitude, longitude wajib diisi');\n}\n\nreturn [{ json: {\n  row_data: {\n    // id dihapus — sudah auto-increment dari sequence\n    Nama_Lokasi: body.nama_lokasi,\n    latitude:    parseFloat(body.latitude),\n    longitude:   parseFloat(body.longitude),\n    radius:      parseInt(body.radius) || 100,\n    hari:        body.hari || '',\n    ip_range:    body.ip_range || null\n  }\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1433,7 +1433,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all();\n\nconst data = rows.map(r => ({\n  id:          r.json.id          || r.json.ID          || '',\n  nama_lokasi: r.json.Nama_Lokasi || r.json.nama_lokasi || r.json.Nama || '',\n  latitude:    parseFloat(r.json.Latitude  || r.json.latitude  || 0),\n  longitude:   parseFloat(r.json.Longitude || r.json.longitude || 0),\n  radius:      parseFloat(r.json.Radius    || r.json.radius    || 100),\n  hari:        r.json.hari     || r.json.Hari     || 'senin,selasa,rabu,kamis,jumat',\n  ip_range:    r.json.ip_range || r.json.IP_Range || '',\n})).filter(r => (r.latitude && r.longitude) || (r.nama_lokasi || '').toUpperCase().includes('WFH'));\n\nreturn data.map(item => ({ json: item }));"
+        "jsCode": "const rows = $input.all();\n\nconst data = rows.map(r => ({\n  id:          r.json.id          || r.json.ID          || '',\n  nama_lokasi: r.json.Nama_Lokasi || r.json.nama_lokasi || r.json.Nama || '',\n  latitude:    parseFloat(r.json.Latitude  || r.json.latitude  || 0),\n  longitude:   parseFloat(r.json.Longitude || r.json.longitude || 0),\n  radius:      parseFloat(r.json.Radius    || r.json.radius    || 100),\n  hari:        r.json.hari     || r.json.Hari     || '',\n  ip_range:    r.json.ip_range || r.json.IP_Range || '',\n})).filter(r => (r.latitude && r.longitude) || (r.nama_lokasi || '').toUpperCase().includes('WFH'));\n\nreturn data.map(item => ({ json: item }));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

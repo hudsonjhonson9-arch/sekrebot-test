@@ -109,7 +109,7 @@
       dom.shimmer(el.id, 2);
       let list = [];
       try {
-        const res = await apiGet(P.lokasiList); if (!res.ok) throw 0;
+        const params = {}; if (isSuperAdminUser() && $('adminInstansiSelect') && $('adminInstansiSelect').value) params.instansi_id = $('adminInstansiSelect').value; const res = await apiGet(P.lokasiList, params); if (!res.ok) throw 0;
         const json = res?.data ?? {}; list = parseApiResponse(json);
         if (!list.length) {
           el.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;

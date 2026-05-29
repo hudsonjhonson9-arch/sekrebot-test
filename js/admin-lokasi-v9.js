@@ -1,23 +1,30 @@
 /* ════ ADMIN LOKASI ════ */
     /* ════ ADMIN ════ */
     // UI Utils
-    window.toggleInstansiCheck = function(lbl) {
-      const cb = lbl.querySelector('input');
-      cb.checked = !cb.checked;
-      if (cb.checked) lbl.classList.add('checked');
-      else lbl.classList.remove('checked');
-      
-      const grid = lbl.parentElement;
-      if (cb.value === 'all' && cb.checked) {
-        grid.querySelectorAll('input').forEach(i => {
-          if (i !== cb) { i.checked = false; i.parentElement.classList.remove('checked'); }
-        });
-      } else if (cb.checked) {
-        const allCb = grid.querySelector('input[value="all"]');
-        if (allCb && allCb.checked) { allCb.checked = false; allCb.parentElement.classList.remove('checked'); }
+    window.toggleInstansiCheck = function(cb, textId) {
+    const grid = cb.closest('.dropdown-list-wrap');
+    if (!grid) return;
+    
+    if (cb.value === 'all' && cb.checked) {
+      grid.querySelectorAll('input').forEach(i => {
+        if (i !== cb) { i.checked = false; }
+      });
+    } else if (cb.checked) {
+      const allCb = grid.querySelector('input[value="all"]');
+      if (allCb && allCb.checked) { allCb.checked = false; }
+    }
+    
+    // Update text
+    const textEl = document.getElementById(textId);
+    if (textEl) {
+      const checked = Array.from(grid.querySelectorAll('input:checked'));
+      if (checked.length === 0 || (checked.length === 1 && checked[0].value === 'all')) {
+        textEl.textContent = 'Semua Instansi';
+      } else {
+        textEl.textContent = checked.length + ' Instansi Terpilih';
       }
-    };
-
+    }
+  };
     function isSuperAdminUser() {
       return typeof _isSuperAdmin === 'function' ? _isSuperAdmin() : false;
     }
@@ -100,7 +107,7 @@
         $('adminLokasiInstansiSection').style.display = 'block';
         const sel = $('adminLokasiInstansiSelect');
         const currentVal = sel.value;
-        let opts = '<option value="">- Semua Instansi -</option>';
+        let opts = '<option value="all">- Semua Instansi -</option>';
         if (window.INSTANSI_LIST) {
           window.INSTANSI_LIST.forEach(i => {
             opts += `<option value="${i.id}">${i.nama_instansi}</option>`;

@@ -283,6 +283,23 @@
       font-family: 'Courier New', Courier, monospace;
     }
   </style>
+
+<style>
+/* Fix overlapping dropdowns by establishing higher z-index for the Lokasi card */
+#admin-section-config > .card:nth-child(1) {
+    position: relative;
+    z-index: 50;
+    overflow: visible !important;
+}
+#admin-section-config > .card:nth-child(2) {
+    position: relative;
+    z-index: 10;
+}
+/* Ensure the location item parent does not clip */
+#lokasiMgmtList {
+    overflow: visible !important;
+}
+</style>
 </head>
 
 <body>

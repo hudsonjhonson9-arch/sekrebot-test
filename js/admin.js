@@ -37,6 +37,7 @@
             if (id) instMap[id.toLowerCase()] = i;
           });
           localStorage.setItem('absen_instansi_map', JSON.stringify(instMap));
+          window.INSTANSI_LIST = Object.keys(instMap).map(k => instMap[k]);
           console.log('[Instansi] Cached full mapping to localStorage:', instMap);
           
           if (typeof populateSuperadminInstansiSelect === 'function') {
@@ -47,6 +48,7 @@
           if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
           if (typeof initSuperadminTugasScoping === 'function') initSuperadminTugasScoping();
           if (typeof initSuperadminLemburScoping === 'function') initSuperadminLemburScoping();
+          if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
         } catch(e) {
           console.error('[Instansi] Cache error:', e);
         }

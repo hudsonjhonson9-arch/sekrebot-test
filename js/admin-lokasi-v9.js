@@ -141,11 +141,21 @@
               { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
               { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
             ];
-            var gridHtml = '<label class="hari-check-label checked" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" checked style="display:none">Semua</label>';
+            var gridHtml = `
+              <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
+                <div class="dropdown-trigger" onclick="this.parentElement.classList.toggle('open')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
+                  <span class="selected-text" id="text-instansi-tambah" style="font-size:11px; color:var(--white); font-weight:700;">Semua Instansi</span>
+                  <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
+                </div>
+                <div class="dropdown-list-wrap" id="instansiCheckGrid-list" style="display:none; position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:var(--navy); border:1px solid var(--border); border-radius:8px; margin-top:4px; z-index:100; padding:8px; flex-direction:column; gap:4px;">
+                  <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="all" checked onchange="toggleInstansiCheck(this, 'text-instansi-tambah')"> Semua Instansi</label>
+            `;
             instList.forEach(function(ins) {
-              gridHtml += '<label class="hari-check-label" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="' + ins.id + '" style="display:none">' + ins.nama_instansi + '</label>';
+              gridHtml += `<label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="${ins.id}" onchange="toggleInstansiCheck(this, 'text-instansi-tambah')"> ${ins.nama_instansi}</label>`;
             });
+            gridHtml += `</div></div>`;
             $('instansiCheckGrid').innerHTML = gridHtml;
+            $('instansiCheckGrid').style.display = 'block';
           }
 
           // ── Rebuild LOK_DEF dari datatable pakai kolom hari ──
@@ -228,12 +238,18 @@
             ${isSuperAdminUser() ? `
             <div style="margin-top:7px">
               <span style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">🏢 Instansi Akses</span>
-              <div id="instansi-grid-${id}" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;">
-                <label class="hari-check-label ${instansiArr.includes('all') ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} style="display:none">Semua</label>
-                ${(window.INSTANSI_LIST || [
-                  { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
-                  { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
-                ]).map(ins => `<label class="hari-check-label ${instansiArr.includes(ins.id) ? 'checked' : ''}" onclick="toggleInstansiCheck(this)"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} style="display:none">${ins.nama_instansi}</label>`).join('')}
+              <div class="custom-search-dropdown" style="width:100%; margin-top:4px;">
+                <div class="dropdown-trigger" onclick="this.parentElement.classList.toggle('open')" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; cursor:pointer;">
+                  <span class="selected-text" id="text-instansi-${id}" style="font-size:11px; color:var(--white); font-weight:700;">${instansiArr.includes('all') || instansiArr.length === 0 ? 'Semua Instansi' : instansiArr.length + ' Instansi Terpilih'}</span>
+                  <i class="fas fa-chevron-down arrow-icon" style="color:var(--muted); font-size:10px;"></i>
+                </div>
+                <div class="dropdown-list-wrap" id="instansi-grid-${id}" style="display:none; position:absolute; top:100%; left:0; width:100%; max-height:200px; overflow-y:auto; background:var(--navy); border:1px solid var(--border); border-radius:8px; margin-top:4px; z-index:100; padding:8px; flex-direction:column; gap:4px;">
+                  <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="all" ${instansiArr.includes('all')?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')"> Semua Instansi</label>
+                  ${(window.INSTANSI_LIST || [
+                    { id: 'bapperida', nama_instansi: 'BAPPERIDA' },
+                    { id: 'inspektorat', nama_instansi: 'INSPEKTORAT' }
+                  ]).map(ins => `<label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:11px; color:var(--white);"><input type="checkbox" value="${ins.id}" ${instansiArr.includes(ins.id)?'checked':''} onchange="toggleInstansiCheck(this, 'text-instansi-${id}')"> ${ins.nama_instansi}</label>`).join('')}
+                </div>
               </div>
             </div>
             ` : `<input type="hidden" id="instansi-input-${id}" value="${instansiVal}" />`}

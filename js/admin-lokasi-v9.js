@@ -1,4 +1,23 @@
 // Sync window.INSTANSI_LIST with localStorage
+
+window.populateAdminLokasiInstansiSelect = function() {
+    if (typeof isSuperAdminUser === 'function' && isSuperAdminUser() && document.getElementById('adminLokasiInstansiSection') && document.getElementById('adminLokasiInstansiSelect')) {
+        document.getElementById('adminLokasiInstansiSection').style.display = 'block';
+        const sel = document.getElementById('adminLokasiInstansiSelect');
+        const currentVal = sel.value;
+        let opts = '<option value="all">- Semua Instansi -</option>';
+        if (window.INSTANSI_LIST) {
+            window.INSTANSI_LIST.forEach(i => {
+                const id = i.id || i.ID || i.instansi_id || '';
+                const name = i.nama_instansi || i.header || i.nama || i.Nama_Instansi || "Instansi";
+                if (id) opts += `<option value="${id}">${name}</option>`;
+            });
+        }
+        sel.innerHTML = opts;
+        if (currentVal && opts.includes(`value="${currentVal}"`)) sel.value = currentVal;
+    }
+};
+
 function syncInstansiList() {
     const fallback = [];
     try {
@@ -17,6 +36,7 @@ function syncInstansiList() {
     }
 }
 syncInstansiList();
+if(typeof window.populateAdminLokasiInstansiSelect === "function") window.populateAdminLokasiInstansiSelect();
 
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.custom-search-dropdown')) {
@@ -172,19 +192,7 @@ document.addEventListener('click', function(e) {
      * @returns {Promise<void>}
      */
         async function loadLokasiAdmin() {
-      if (isSuperAdminUser() && $('adminLokasiInstansiSection') && $('adminLokasiInstansiSelect')) {
-        $('adminLokasiInstansiSection').style.display = 'block';
-        const sel = $('adminLokasiInstansiSelect');
-        const currentVal = sel.value;
-        let opts = '<option value="">- Semua Instansi -</option>';
-        if (window.INSTANSI_LIST) {
-          window.INSTANSI_LIST.forEach(i => {
-            opts += `<option value="${i.id || i.ID || i.instansi_id || ''}">${i.nama_instansi || i.header || i.nama || i.Nama_Instansi || "Instansi"}</option>`;
-          });
-        }
-        sel.innerHTML = opts;
-        if (currentVal && opts.includes(`value="${currentVal}"`)) sel.value = currentVal;
-      }
+      if(typeof window.populateAdminLokasiInstansiSelect === "function") window.populateAdminLokasiInstansiSelect();
 
       const el = $('lokasiMgmtList');
       dom.shimmer(el.id, 2);

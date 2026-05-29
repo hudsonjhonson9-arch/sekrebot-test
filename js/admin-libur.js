@@ -40,7 +40,8 @@
           if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
           if (typeof initSuperadminTugasScoping === 'function') initSuperadminTugasScoping();
           if (typeof initSuperadminLemburScoping === 'function') initSuperadminLemburScoping();
-          if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
+          if (typeof window.populateAdminLokasiInstansiSelect === 'function') window.populateAdminLokasiInstansiSelect();
+            if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
         } catch(e) {
           console.error('[Instansi] Cache error:', e);
         }

@@ -246,15 +246,30 @@ window.filterSAMaster = function(val) {
   window.renderAdminSimapoMaster(filtered);
 };
 
-window.showSimapoMasterForm = function(id = null) {
+window.showSimapoMasterForm = async function(id = null) {
   window._simapoMasterEditId = id;
   const modal = document.getElementById('modalSimapoMaster');
   if (!modal) return;
+
+  // Pastikan data kategori dimuat
+  const katData = await window._simapoCache.getOrFetch('simapo_kategori', async () => {
+    try {
+      const res = await apiFetch(P.simapoKategoriList);
+      return parseApiResponse(await res.json());
+    } catch { return null; }
+  }, false);
+
+  const selKat = document.getElementById('smfKategori');
+  if (selKat && katData) {
+    selKat.innerHTML = '<option value="">-- Pilih Kategori --</option>' + 
+      katData.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+  }
 
   // Reset Form
   document.getElementById('smfNama').value = '';
   document.getElementById('smfKode').value = '';
   document.getElementById('smfSatuan').value = 'Unit';
+  if (selKat) selKat.value = '';
   document.getElementById('smfStok').value = '0';
   document.getElementById('smfHarga').value = '0';
   document.getElementById('smfSpesifikasi').value = '';
@@ -267,6 +282,7 @@ window.showSimapoMasterForm = function(id = null) {
       document.getElementById('smfNama').value = item.nama || '';
       document.getElementById('smfKode').value = item.kodebarang || '';
       document.getElementById('smfSatuan').value = item.satuan || 'Unit';
+      if (selKat) selKat.value = item.kategoriid || '';
       document.getElementById('smfStok').value = item.stok_saat_ini || 0;
       document.getElementById('smfHarga').value = item.hargasatuan || 0;
       document.getElementById('smfSpesifikasi').value = item.spesifikasi || '';
@@ -303,12 +319,23 @@ window.adminSimapoTiketAction = async function(id, status) {
   } catch { showToast('Tiket diperbarui (Demo)', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
 };
 
+window.deleteSimapoMaster = async function(id) {
+  if (!confirm('Hapus aset ini?')) return;
+  showToast('Menghapus...', 'info');
+  try {
+    const res = await apiFetch(P.simapoAdminMasterDel, { method:'POST', body: JSON.stringify({ id }) });
+    if (res.ok) { showToast('Aset dihapus', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+    else throw 1;
+  } catch { showToast('Dihapus (Demo)', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+};
+
 window.saveSimapoMaster = async function() {
   const payload = {
     id: window._simapoMasterEditId,
     nama: document.getElementById('smfNama')?.value.trim(),
     kodebarang: document.getElementById('smfKode')?.value.trim(),
     satuan: document.getElementById('smfSatuan')?.value.trim(),
+    kategoriid: document.getElementById('smfKategori')?.value || null,
     stok_saat_ini: parseInt(document.getElementById('smfStok')?.value) || 0,
     hargasatuan: parseFloat(document.getElementById('smfHarga')?.value) || 0,
     spesifikasi: document.getElementById('smfSpesifikasi')?.value.trim(),

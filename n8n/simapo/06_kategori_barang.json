@@ -113,7 +113,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, \"''\") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, \"''\") }}', NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, nama;",
+        "query": "ALTER TABLE \"SIMAPO\".kategori_barang ADD COLUMN IF NOT EXISTS instansi_id VARCHAR(100) DEFAULT 'bapperida';\nINSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, \"''\") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, \"''\") }}', NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

@@ -131,7 +131,7 @@ window.renderAdminSimapoPinjam = function(data) {
       <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div>
-            <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || 'Tanpa Nama'}</div>
+            <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || 'Tanpa Nama'} <span style="font-size:11px; color:var(--gold); font-weight:700;">(x${item.jumlah || 1})</span></div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">👤 ${item.nama_peminjam || 'Pegawai'} &nbsp;·&nbsp; NIP ${item.userid || item.nip_peminjam || '—'}</div>
           </div>
           <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;">${badge}</div>

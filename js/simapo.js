@@ -277,9 +277,10 @@ async function simapoSubmitPinjam() {
   const tujuan = document.getElementById('simapoTujuanPinjam')?.value;
   const mulai = document.getElementById('simapoPinjamMulai')?.value;
   const selesai = document.getElementById('simapoPinjamSelesai')?.value;
+  const jumlah = parseInt(document.getElementById('simapoPinjamJumlah')?.value) || 1;
 
-  if (!id || !tujuan || !mulai || !selesai) {
-    showToast('Harap isi semua kolom!', 'error');
+  if (!id || !tujuan || !mulai || !selesai || jumlah < 1) {
+    showToast('Harap isi semua kolom dengan benar!', 'error');
     return;
   }
 
@@ -291,13 +292,19 @@ async function simapoSubmitPinjam() {
         unitasetid: id,
         tujuanpeminjaman: tujuan,
         tanggalmulai: mulai,
-        tanggalselesai: selesai
+        tanggalselesai: selesai,
+        jumlah: jumlah
       })
     });
     
     if (res.ok) {
       showToast('Pengajuan berhasil dikirim!', 'success');
       // Reset
+      document.getElementById('simapoSelectPinjam').value = '';
+      const inputEl = document.getElementById('simapoSelectPinjamInput');
+      if (inputEl) inputEl.value = '';
+      document.getElementById('simapoTujuanPinjam').value = '';
+      document.getElementById('simapoPinjamJumlah').value = '1';
       document.getElementById('simapoTujuanPinjam').value = '';
       if (window._simapoCache) {
         window._simapoCache.clear('admin_pinjam');
@@ -353,7 +360,10 @@ function renderSimapoRiwayatPinjam(data) {
     return `
       <div class="card glass-card" style="margin-bottom:10px; padding:16px; border-left: 4px solid ${color}; transition: transform 0.2s; cursor:default;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
         <div style="display:flex; justify-content:space-between; align-items:flex-start">
-          <div style="font-weight:800; font-size:14px; color:var(--white); line-height:1.2;">${item.nama_barang}</div>
+          <div>
+            <div style="font-weight:800; font-size:14px; color:var(--white); line-height:1.2;">${item.nama_barang}</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:4px;">Jumlah: <strong style="color:var(--gold)">${item.jumlah || 1}</strong></div>
+          </div>
           <div style="font-size:10px; font-weight:800; color:${color}; background:rgba(255,255,255,0.08); padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
             <span>${icon}</span> <span>${item.status}</span>
           </div>

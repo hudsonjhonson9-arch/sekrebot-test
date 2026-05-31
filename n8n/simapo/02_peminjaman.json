@@ -7,7 +7,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -90,7 +90,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -174,7 +174,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -196,7 +196,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT p.id, p.userid, COALESCE(u.\"Nama\", p.userid) AS nama_peminjam, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid WHERE p.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE p.status WHEN 'MENUNGGU' THEN 0 WHEN 'DIPINJAM' THEN 1 ELSE 2 END, p.createdat DESC LIMIT 100\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT p.id, p.userid, COALESCE(u.\"username\", p.userid) AS nama_peminjam, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid WHERE p.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE p.status WHEN 'MENUNGGU' THEN 0 WHEN 'DIPINJAM' THEN 1 ELSE 2 END, p.createdat DESC LIMIT 100\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -259,7 +259,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",

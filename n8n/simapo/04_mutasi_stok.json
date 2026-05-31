@@ -7,7 +7,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -90,7 +90,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -112,7 +112,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT m.id, b.nama AS nama_barang, b.kodebarang, m.jumlah, m.keterangan, m.createdbyid, COALESCE(u.\"Nama\", m.createdbyid) AS nama_petugas, TO_CHAR(m.tanggal,'YYYY-MM-DD HH24:MI') AS createdat, CASE WHEN m.barangmasukid IS NOT NULL THEN 'MASUK' ELSE 'KELUAR' END as jenis FROM \"SIMAPO\".mutasi_barang m LEFT JOIN \"SIMAPO\".barang b ON b.id = COALESCE(m.barangmasukid, m.barangkeluarid) LEFT JOIN public.user_list u ON u.\"NIP\" = m.createdbyid WHERE m.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY m.tanggal DESC LIMIT 50\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT m.id, b.nama AS nama_barang, b.kodebarang, m.jumlah, m.keterangan, m.createdbyid, COALESCE(u.\"username\", m.createdbyid) AS nama_petugas, TO_CHAR(m.tanggal,'YYYY-MM-DD HH24:MI') AS createdat, CASE WHEN m.barangmasukid IS NOT NULL THEN 'MASUK' ELSE 'KELUAR' END as jenis FROM \"SIMAPO\".mutasi_barang m LEFT JOIN \"SIMAPO\".barang b ON b.id = COALESCE(m.barangmasukid, m.barangkeluarid) LEFT JOIN public.user_list u ON u.\"NIP\" = m.createdbyid WHERE m.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY m.tanggal DESC LIMIT 50\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

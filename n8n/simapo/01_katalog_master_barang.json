@@ -6,7 +6,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -90,7 +90,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -175,7 +175,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -259,7 +259,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",

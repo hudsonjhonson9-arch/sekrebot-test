@@ -6,7 +6,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -28,7 +28,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' WHERE k.isactive = true AND k.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' WHERE k.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -91,7 +91,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -113,7 +113,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, isactive, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, \"''\") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, \"''\") }}', true, NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, nama;",
+        "query": "INSERT INTO \"SIMAPO\".kategori_barang (id, nama, deskripsi, createdat, instansi_id) VALUES (gen_random_uuid(), '{{ (($input.item.json.body || $input.item.json).nama).toString().replace(/'/g, \"''\") }}', '{{ (($input.item.json.body || $input.item.json).deskripsi || \"\").toString().replace(/'/g, \"''\") }}', NOW(), '{{ (($input.item.json.query || $input.item.json).instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -162,7 +162,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -184,7 +184,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".kategori_barang SET isactive = false WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, \"''\") }}' RETURNING id, nama;",
+        "query": "DELETE FROM \"SIMAPO\".kategori_barang WHERE id = '{{ (($input.item.json.body || $input.item.json).id).toString().replace(/'/g, \"''\") }}' RETURNING id, nama;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

@@ -7,7 +7,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -90,7 +90,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",
@@ -112,7 +112,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid WHERE t.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"username\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid WHERE t.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -175,7 +175,7 @@
         "authentication": "headerAuth",
         "responseMode": "responseNode",
         "options": {
-          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+          "allowedOrigins": "*"
         }
       },
       "type": "n8n-nodes-base.webhook",

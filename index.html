@@ -1314,6 +1314,15 @@
         <div class="rekap-title">📦 Sistem Inventaris (SIMAPO)</div>
       </div>
       
+      <!-- Filter Instansi SIMAPO (Only visible to Superadmin) -->
+      <div id="simapoInstansiSection" style="display: none; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-label" style="margin-bottom: 4px; font-weight:800; color:var(--gold);">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="simapoInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: var(--card); color: var(--white); border: 1px solid var(--border); border-radius: 12px;"
+          onchange="onSimapoInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
+      </div>
+      
       <!-- Sub-Navigation SIMAPO (Segmented Control) -->
       <div style="margin-bottom: 18px; display:flex; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); gap: 4px; overflow-x: auto; scrollbar-width: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
         <button class="simapo-tab-btn active" id="btn-simapo-katalog" onclick="switchSimapoSection('katalog')">

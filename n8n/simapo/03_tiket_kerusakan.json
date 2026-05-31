@@ -1,12 +1,14 @@
 {
-  "name": "SIMAPO - Tiket Kerusakan (User & Admin)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-tiket",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -14,9 +16,15 @@
         0,
         0
       ],
-      "id": "wh-tiket-create",
+      "id": "56a83db6-fc6f-4dbe-a95d-9698aaa3a3d3",
       "name": "WH Lapor Kerusakan",
-      "webhookId": "simapo-tiket"
+      "webhookId": "simapo-tiket",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -28,7 +36,7 @@
         240,
         0
       ],
-      "id": "code-tiket-create",
+      "id": "c7ac3999-035a-4876-86e8-b1f1f1895254",
       "name": "Validate Tiket"
     },
     {
@@ -43,7 +51,7 @@
         480,
         0
       ],
-      "id": "pg-tiket-create",
+      "id": "7fee2cde-0abd-4952-9c5c-a1389d2ff327",
       "name": "PG Insert Tiket",
       "credentials": {
         "postgres": {
@@ -54,9 +62,18 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Tiket berhasil dibuat\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -64,40 +81,49 @@
         720,
         0
       ],
-      "id": "res-tiket-create",
+      "id": "a83d2327-7826-4cff-81dc-76c20c58bf46",
       "name": "Res Lapor Kerusakan"
     },
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-admin-tiket-list",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
-        300
+        304
       ],
-      "id": "wh-admin-tiket-list",
+      "id": "621775b4-64be-468f-a604-81924f0db2fc",
       "name": "WH Admin Tiket List",
-      "webhookId": "simapo-admin-tiket-list"
+      "webhookId": "simapo-admin-tiket-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid WHERE t.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT t.id, t.nomortiket, t.judul, t.deskripsi, t.lokasi, t.status, t.userid, COALESCE(u.\"Nama\", t.userid) AS nama_pelapor, TO_CHAR(t.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".tiket_kerusakan t LEFT JOIN public.user_list u ON u.\"NIP\" = t.userid WHERE t.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE t.status WHEN 'MENUNGGU_PENGECEKAN' THEN 0 ELSE 1 END, t.createdat DESC LIMIT 100\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
         240,
-        300
+        304
       ],
-      "id": "pg-admin-tiket-list",
+      "id": "a9da2099-5d25-4f75-8b95-cc9355d3af4d",
       "name": "PG Admin Tiket List",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -107,48 +133,66 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         480,
-        300
+        304
       ],
-      "id": "code-agg-admin-tiket",
+      "id": "a7d56987-1bbf-411e-93fb-983da05b3281",
       "name": "Agg Admin Tiket"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
         720,
-        300
+        304
       ],
-      "id": "res-admin-tiket-list",
+      "id": "b18978ad-e535-4569-ab3c-d8a1da04fb00",
       "name": "Res Admin Tiket List"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-tiket-action",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
-        600
+        608
       ],
-      "id": "wh-admin-tiket-action",
+      "id": "13280d37-d63a-45d8-817a-094dbe349dd4",
       "name": "WH Admin Tiket Action",
-      "webhookId": "simapo-admin-tiket-action"
+      "webhookId": "simapo-admin-tiket-action",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -160,9 +204,9 @@
       "typeVersion": 2.6,
       "position": [
         240,
-        600
+        608
       ],
-      "id": "pg-admin-tiket-action",
+      "id": "85faf5bc-1f05-46de-bf1c-bc4e6f1ba79d",
       "name": "PG Admin Tiket Action",
       "credentials": {
         "postgres": {
@@ -173,17 +217,26 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Status tiket diperbarui\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
         480,
-        600
+        608
       ],
-      "id": "res-admin-tiket-action",
+      "id": "2a78a02b-aa0a-488d-ad98-6fa5fad0fa18",
       "name": "Res Admin Tiket Action"
     }
   ],

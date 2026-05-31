@@ -75,13 +75,9 @@ async function loadSimapoKatalog(force = false) {
     }
   } catch (e) {
     console.error('[SIMAPO] Katalog Load failed:', e);
-    // Fallback Dummy Data agar tidak stuck
-    simapoKatalogData = [
-      { id: '1', nama: 'Laptop Asus ROG', kodebarang: 'IT-001', stok_saat_ini: 2, satuan: 'Unit', spesifikasi: 'Core i7, 16GB RAM', foto: '' },
-      { id: '2', nama: 'Proyektor Epson', kodebarang: 'IT-002', stok_saat_ini: 1, satuan: 'Unit', spesifikasi: '1080p, 3000 Lumens', foto: '' },
-      { id: '3', nama: 'Kamera DSLR Canon', kodebarang: 'IT-003', stok_saat_ini: 0, satuan: 'Unit', spesifikasi: 'EOS 90D', foto: '' }
-    ];
-    renderSimapoKatalog(simapoKatalogData);
+    // Jangan gunakan dummy data agar tidak dikira data instansi lain bocor
+    simapoKatalogData = [];
+    document.getElementById('simapoKatalogList').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; opacity:0.6; font-size:13px; color:var(--danger)">Gagal memuat data katalog. Pastikan server N8n aktif.</div>';
   }
 }
 
@@ -250,11 +246,8 @@ async function loadSimapoRiwayatPinjam(force = false) {
   if (data) {
     renderSimapoRiwayatPinjam(data);
   } else {
-    // Mock Data
-    const mockData = [
-      { id: '1', nama_barang: 'Kamera DSLR Canon', status: 'MENUNGGU', tanggalmulai: '2026-05-15', tanggalselesai: '2026-05-16', tujuanpeminjaman: 'Dokumentasi Rapat' },
-    ];
-    renderSimapoRiwayatPinjam(mockData);
+    // Kosongkan riwayat jika gagal / tidak ada
+    renderSimapoRiwayatPinjam([]);
   }
 }
 

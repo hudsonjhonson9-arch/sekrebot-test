@@ -1,12 +1,13 @@
 {
-  "name": "SIMAPO - Katalog & Master Barang",
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-katalog",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -14,14 +15,20 @@
         0,
         0
       ],
-      "id": "wh-katalog",
+      "id": "18eef865-66bf-4d47-92ec-228134a72c62",
       "name": "WH Katalog",
-      "webhookId": "simapo-katalog"
+      "webhookId": "simapo-katalog",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive FROM \"SIMAPO\".barang WHERE isactive = true AND instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY nama ASC;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive FROM \"SIMAPO\".barang WHERE isactive = true AND instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY nama ASC\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -30,8 +37,9 @@
         240,
         0
       ],
-      "id": "pg-katalog",
+      "id": "c342896c-0b48-4fe0-b8eb-4f345d7815a8",
       "name": "PG Katalog",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -41,7 +49,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -49,14 +57,23 @@
         480,
         0
       ],
-      "id": "code-agg-katalog",
+      "id": "86121e61-ea0a-4a0b-a8fb-0edfc2816ecb",
       "name": "Agg Katalog"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
@@ -64,40 +81,49 @@
         720,
         0
       ],
-      "id": "res-katalog",
+      "id": "273a6fd6-bbc7-4db7-929a-1730610bb4b1",
       "name": "Res Katalog"
     },
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-admin-master-list",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
-        300
+        304
       ],
-      "id": "wh-master-list",
+      "id": "77467f8d-4233-45b5-b15b-8e030161cf44",
       "name": "WH Master List",
-      "webhookId": "simapo-admin-master-list"
+      "webhookId": "simapo-admin-master-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT b.id, b.kodebarang, b.nama, b.satuan, b.spesifikasi, b.foto, b.stok_saat_ini, b.minimumstok, b.hargasatuan, b.kategoriid, k.nama AS nama_kategori, b.isactive, TO_CHAR(b.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".barang b LEFT JOIN \"SIMAPO\".kategori_barang k ON k.id = b.kategoriid WHERE b.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY b.isactive DESC, b.nama ASC;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT b.id, b.kodebarang, b.nama, b.satuan, b.spesifikasi, b.foto, b.stok_saat_ini, b.minimumstok, b.hargasatuan, b.kategoriid, k.nama AS nama_kategori, b.isactive, TO_CHAR(b.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".barang b LEFT JOIN \"SIMAPO\".kategori_barang k ON k.id = b.kategoriid WHERE b.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY b.isactive DESC, b.nama ASC\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
         240,
-        300
+        304
       ],
-      "id": "pg-master-list",
+      "id": "db49bacc-82a1-401b-ad3b-2735822d5a84",
       "name": "PG Master List",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -107,48 +133,66 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         480,
-        300
+        304
       ],
-      "id": "code-agg-master",
+      "id": "4a8f500b-cb27-409e-874a-ce5c269e2aac",
       "name": "Agg Master"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
         720,
-        300
+        304
       ],
-      "id": "res-master-list",
+      "id": "aed20b9c-a688-44e3-9022-5916806a0598",
       "name": "Res Master List"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-master-save",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
-        600
+        608
       ],
-      "id": "wh-master-save",
+      "id": "43597cd1-1916-4377-b8b1-28230b89c149",
       "name": "WH Master Save",
-      "webhookId": "simapo-admin-master-save"
+      "webhookId": "simapo-admin-master-save",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -158,9 +202,9 @@
       "typeVersion": 2,
       "position": [
         240,
-        600
+        608
       ],
-      "id": "code-master-save",
+      "id": "07db7281-234a-4069-b0e6-2b3b86b40bed",
       "name": "Validate Barang"
     },
     {
@@ -173,9 +217,9 @@
       "typeVersion": 2.6,
       "position": [
         480,
-        600
+        608
       ],
-      "id": "pg-master-save",
+      "id": "a8c9a1bf-ef48-4648-ac3a-fdf399f5bb16",
       "name": "PG UPSERT Barang",
       "credentials": {
         "postgres": {
@@ -186,35 +230,53 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Data aset berhasil disimpan\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
         720,
-        600
+        608
       ],
-      "id": "res-master-save",
+      "id": "0768dca2-b2eb-4f45-a4e7-aa660f35004c",
       "name": "Res Master Save"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-master-delete",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
         0,
-        900
+        912
       ],
-      "id": "wh-master-del",
+      "id": "832a107b-35c7-48bb-906f-b68654ab2308",
       "name": "WH Master Delete",
-      "webhookId": "simapo-admin-master-delete"
+      "webhookId": "simapo-admin-master-delete",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -226,9 +288,9 @@
       "typeVersion": 2.6,
       "position": [
         240,
-        900
+        912
       ],
-      "id": "pg-master-del",
+      "id": "774dff4d-64d8-4428-b455-6310c93d7769",
       "name": "PG Soft Delete",
       "credentials": {
         "postgres": {
@@ -239,17 +301,26 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Aset dinonaktifkan\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
         480,
-        900
+        912
       ],
-      "id": "res-master-del",
+      "id": "5b70cf6a-2f15-4feb-9dd3-c86b4815efaf",
       "name": "Res Master Delete"
     }
   ],

@@ -10,6 +10,9 @@ const S_HDR = {
   'Prefer': 'return=representation'
 };
 
+/* ════ N8N WEBHOOK AUTHENTICATION ════ */
+const SIMAPO_TOKEN = "SIMAPO_SECURE_TOKEN_2026";
+
 /* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
 const DB_NAME = 'AbsensiOfflineDB';
 const DB_VERSION = 1;
@@ -296,7 +299,18 @@ async function apiFetch(path, opts = {}) {
     try {
       console.log(`[Fetch] -> ${base}${path}`);
       const fetchOpts = { ...opts };
-      fetchOpts.headers = { ...HDR, ...(opts.headers || {}) };
+      
+      // Inject Authorization Bearer Token untuk Webhook N8n
+      let finalHeaders = { ...HDR };
+      if (path.includes('simapo')) {
+        // Hapus custom headers yang diblokir oleh CORS N8n bawaan
+        delete finalHeaders['x-app-token'];
+        delete finalHeaders['X-App-Token'];
+        delete finalHeaders['ngrok-skip-browser-warning'];
+        finalHeaders['Authorization'] = 'Bearer ' + SIMAPO_TOKEN;
+      }
+      
+      fetchOpts.headers = { ...finalHeaders, ...(opts.headers || {}) };
       
       if (opts.method === 'GET' || !opts.body) {
         delete fetchOpts.headers['Content-Type'];
@@ -312,6 +326,16 @@ async function apiFetch(path, opts = {}) {
         
         if (r.ok || (r.status >= 400 && r.status < 500)) {
           console.log(`[Fetch] Success: ${base}${path}`);
+          
+          // N8n Webhook kadang mereturn 0 bytes jika execution stop di awal (misal 0 baris PG).
+          // Intercept r.json() agar tidak terjadi SyntaxError.
+          const originalJson = r.json.bind(r);
+          r.json = async () => {
+            const text = await r.text();
+            if (!text || text.trim() === '') return { data: [], message: 'Empty N8n Response' };
+            try { return JSON.parse(text); } catch(e) { return { data: [], message: text }; }
+          };
+          
           return r;
         }
         throw new Error(`HTTP ${r.status}`);

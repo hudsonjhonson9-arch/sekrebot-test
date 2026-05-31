@@ -1,37 +1,45 @@
 {
-  "name": "SIMAPO - Kategori Barang",
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-kategori-list",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        0
+        80,
+        672
       ],
-      "id": "wh-kat-list",
+      "id": "0e056777-823d-4215-9499-b0a4fea309dc",
       "name": "WH Kat List",
-      "webhookId": "simapo-kategori-list"
+      "webhookId": "simapo-kategori-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' WHERE k.isactive = true AND k.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT k.id, k.nama, k.deskripsi, COUNT(b.id) AS jumlah_aset FROM \"SIMAPO\".kategori_barang k LEFT JOIN \"SIMAPO\".barang b ON b.kategoriid = k.id AND b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' WHERE k.isactive = true AND k.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' GROUP BY k.id, k.nama, k.deskripsi ORDER BY k.nama ASC\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        0
+        320,
+        672
       ],
-      "id": "pg-kat-list",
+      "id": "cf82bcb3-3d73-4756-b838-08edba778309",
       "name": "PG Kat List",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -41,48 +49,66 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        0
+        560,
+        672
       ],
-      "id": "code-agg-kat",
+      "id": "54d311bb-47c3-4ca0-8647-827220942b3c",
       "name": "Agg Kat"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        720,
-        0
+        800,
+        672
       ],
-      "id": "res-kat-list",
+      "id": "b8fe2494-ca0f-4e2a-a601-81b1e97efe43",
       "name": "Res Kat List"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-kategori-save",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        300
+        80,
+        976
       ],
-      "id": "wh-kat-save",
+      "id": "4c400894-ac93-4eb4-9bdb-f37b403aee45",
       "name": "WH Kat Save",
-      "webhookId": "simapo-kategori-save"
+      "webhookId": "simapo-kategori-save",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -93,10 +119,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        300
+        320,
+        976
       ],
-      "id": "pg-kat-save",
+      "id": "c421a7b3-ffcf-4db9-920b-9242197e6b38",
       "name": "PG Kat Save",
       "credentials": {
         "postgres": {
@@ -107,35 +133,53 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Kategori disimpan\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        480,
-        300
+        560,
+        976
       ],
-      "id": "res-kat-save",
+      "id": "61990aaa-d943-4973-be85-a7b1d859c571",
       "name": "Res Kat Save"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-kategori-delete",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        600
+        80,
+        1280
       ],
-      "id": "wh-kat-del",
+      "id": "ab6112aa-5d9c-42b6-8670-86277b59f249",
       "name": "WH Kat Delete",
-      "webhookId": "simapo-kategori-delete"
+      "webhookId": "simapo-kategori-delete",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -146,10 +190,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        600
+        320,
+        1280
       ],
-      "id": "pg-kat-del",
+      "id": "5247f1ed-e012-444c-a4b0-2d4479c1a719",
       "name": "PG Kat Delete",
       "credentials": {
         "postgres": {
@@ -160,17 +204,26 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Kategori dihapus\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        480,
-        600
+        560,
+        1280
       ],
-      "id": "res-kat-del",
+      "id": "faef8938-83f9-4f12-84dc-2797e20f720a",
       "name": "Res Kat Delete"
     }
   ],

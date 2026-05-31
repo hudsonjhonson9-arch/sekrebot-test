@@ -152,7 +152,8 @@ async function loadRekap() {
       const nipQuery = '&format=full'; // Show all employees to everyone
       const instansiId = getScopedInstansiId();
       const instansiParam = instansiId ? `&instansi_id=${encodeURIComponent(instansiId)}` : '';
-      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}${nipQuery}${adminParam}${instansiParam}`, { method: 'GET' });
+      const jamPeriodeParam = encodeURIComponent(JSON.stringify(typeof jamPeriodeList !== 'undefined' ? jamPeriodeList : []));
+      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&jam_periode=${jamPeriodeParam}${nipQuery}${adminParam}${instansiParam}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
           const d = Array.isArray(json) ? json[0] : json;
@@ -328,19 +329,9 @@ function sortByUserList(pegawai, order) {
  * @returns {Object[]} Array data rekap per pegawai
  */
 function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, sampai = null) {
-  // Jam batas GLOBAL (default)
   const JAM_MASUK_BATAS = JAM_MASUK_MENIT;
   const JAM_PULANG_BATAS = JAM_PULANG_MENIT;
-  // Helper: jam batas per pegawai + per tanggal (periode khusus mengalahkan per-pegawai yg mengalahkan global)
-  function getMasukBatas(id, tgl) {
-    if (tgl) { const p = getJamForTanggal(tgl); if (p.nama) return toMenit(p.masuk) ?? JAM_MASUK_BATAS; }
-    return jamPegawaiMap[id]?.masukMenit ?? JAM_MASUK_BATAS;
-  }
-  function getPulangBatas(id, tgl) {
-    if (tgl) { const p = getJamForTanggal(tgl); if (p.nama) return toMenit(p.pulang) ?? JAM_PULANG_BATAS; }
-    return jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS;
-  }
-
+  
   function toMenit(jamStr) {
     const s = String(jamStr || '').replace(/\s.*/, '').split(':');
     if (s.length < 2) return null;
@@ -348,7 +339,17 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
     return (isNaN(h) || isNaN(m)) ? null : h * 60 + m;
   }
 
-  // Calculate HK Periode (Working Days)
+  function getJamForTanggalBatas(id, tglStr) {
+    if (tglStr) {
+      const p = getJamForTanggal(tglStr); 
+      if (p && p.nama) return { masuk: toMenit(p.masuk), pulang: toMenit(p.pulang) };
+    }
+    return { 
+      masuk: jamPegawaiMap[id]?.masukMenit ?? JAM_MASUK_BATAS,
+      pulang: jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS
+    };
+  }
+
   const rangeDates = [];
   if (dari && sampai) {
     let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
@@ -362,187 +363,177 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
 
   const map = {};
 
-  // Pre-populate dari userSeed agar semua pegawai tampil meski tidak absen
   (userSeed || []).forEach((u, idx) => {
     const id = String(u.id || '').trim();
     if (!id) return;
     map[id] = {
       id,
       nama: u.nama || '—', nip: u.nip || '—', jabatan: u.jabatan || '', pangkat: u.pangkat || '', urutan: u.urutan ?? idx,
-      masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-      izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
-      menit_terlambat: 0, menit_lebih_awal: 0,
+      masuk: 0, pulang: 0, di_luar_masuk_periode: 0, di_luar_pulang_periode: 0,
+      izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0, alpa: 0,
+      menit_terlambat_periode: 0, menit_lebih_awal_periode: 0,
+      hadir_dates: new Set(), excused_dates: new Set(),
       jamMasuk: '-', jamPulang: '-',
       _rawMasukLog: null, _rawPulangLog: null,
-      all_menit_terlambat: 0, all_menit_lebih_awal: 0,
-      all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
-      all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
+      logByDate: {},
+      // global stats from allRows
+      all_menit_terlambat: 0, all_menit_lebih_awal: 0, all_masuk: 0, all_di_luar_masuk: 0,
+      all_di_luar_pulang: 0, all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
     };
   });
 
-  // Process periode (filtered rows)
   rows.forEach(r => {
     const id = String(getField(r, 'ID', 'id') || '').trim();
     if (!id) return;
     const nama = getField(r, 'Nama', 'nama') || '—';
     const nip = getField(r, 'NIP', 'nip') || '—';
-    const tgl = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
-    const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
+    let jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
+    const tglStr = getField(r, 'Tanggal', 'tanggal') || '';
+    const tgl = normToISO(tglStr);
     const jamStr = getField(r, 'Jam', 'jam') || '';
-    const id_log = r.ID_Log || r.id_log || r.id || ''; // Capture the primary key
+    const id_log = r.ID_Log || r.id_log || r.id || ''; 
+    const jamMenit = toMenit(jamStr);
+
     if (!map[id]) map[id] = {
       id, nama, nip, jabatan: '', pangkat: '', urutan: 9999,
-      masuk: 0, pulang: 0, pulang_luar: 0, di_luar_masuk: 0, di_luar_pulang: 0,
-      izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0,
-      menit_terlambat: 0, menit_lebih_awal: 0,
+      masuk: 0, pulang: 0, di_luar_masuk_periode: 0, di_luar_pulang_periode: 0,
+      izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0, alpa: 0,
+      menit_terlambat_periode: 0, menit_lebih_awal_periode: 0,
+      hadir_dates: new Set(), excused_dates: new Set(),
       jamMasuk: '-', jamPulang: '-',
-      _rawMasukLog: null, _rawPulangLog: null,
-      all_menit_terlambat: 0, all_menit_lebih_awal: 0,
-      all_di_luar_masuk: 0, all_di_luar_pulang: 0, all_masuk: 0,
-      all_izin: 0, all_sakit: 0, all_tugas: 0, all_tubel: 0, all_cuti: 0, all_alpa: 0
+      _rawMasukLog: null, _rawPulangLog: null, logByDate: {}
     };
-    const curNama = getField(r, 'Nama', 'nama') || '';
-    if (curNama.length > map[id].nama.length) map[id].nama = curNama;
-    if (nip && map[id].nip === '—') map[id].nip = nip;
-    const jam = toMenit(jamStr);
-    if (jenis === 'MASUK') {
-      map[id].masuk++;
-      if (jamStr) {
-        map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
-        map[id]._rawMasukLog = { ...r, ID_Log: id_log }; // Store row with PK
+
+    if (!tgl || jamMenit === null) return;
+    const p = map[id];
+    if (!p.logByDate[tgl]) p.logByDate[tgl] = {};
+    
+    if (nip && p.nip === '—') p.nip = nip;
+    
+    const batas = getJamForTanggalBatas(id, tgl);
+    const rawRecord = { ...r, ID_Log: id_log };
+
+    if (jenis === 'MASUK' || jenis === 'DI LUAR JAM MASUK') {
+      jenis = (jamMenit > batas.masuk) ? 'DI LUAR JAM MASUK' : 'MASUK';
+      p._rawMasukLog = rawRecord;
+      p.jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
+      p.logByDate[tgl].masuk = jamMenit;
+      
+      if (jenis === 'DI LUAR JAM MASUK') {
+        p.di_luar_masuk_periode++;
+        p.menit_terlambat_periode += (jamMenit - batas.masuk);
+      } else {
+        p.masuk++;
+      }
+      p.hadir_dates.add(tgl);
+    } 
+    else if (jenis === 'PULANG' || jenis === 'DI LUAR JAM PULANG' || jenis === 'PULANG LUAR') {
+      if (jenis !== 'PULANG LUAR') jenis = (jamMenit < batas.pulang) ? 'DI LUAR JAM PULANG' : 'PULANG';
+      p._rawPulangLog = rawRecord;
+      p.jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
+      p.logByDate[tgl].pulang = jamMenit;
+      
+      if (jenis === 'DI LUAR JAM PULANG') {
+        p.di_luar_pulang_periode++;
+        p.menit_lebih_awal_periode += (batas.pulang - jamMenit);
+      } else {
+        p.pulang++;
       }
     }
-    else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
-      map[id].di_luar_masuk++;
-      if (jamStr) {
-        map[id].jamMasuk = jamStr.replace(/\s*WITA\s*/i, '').trim();
-        map[id]._rawMasukLog = { ...r, ID_Log: id_log };
-      }
-      if (jam !== null && jam > getMasukBatas(id, tgl)) map[id].menit_terlambat += (jam - getMasukBatas(id, tgl));
+    else if (['IZIN', 'SAKIT', 'TUGAS', 'DL', 'TUBEL', 'CUTI'].includes(jenis)) {
+      p._rawKetLog = rawRecord;
+      if (jenis === 'IZIN') p.izin++; 
+      else if (jenis === 'SAKIT') p.sakit++; 
+      else if (jenis === 'TUBEL') p.tubel++;
+      else if (jenis === 'CUTI') p.cuti++;
+      else p.tugas++;
+      p.excused_dates.add(tgl);
     }
-    else if (jenis === 'PULANG') {
-      map[id].pulang++;
-      if (jamStr) {
-        map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-        map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-      }
-    }
-    else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
-      map[id].di_luar_pulang++;
-      if (jamStr) {
-        map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-        map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-      }
-      if (jam !== null && jam < getPulangBatas(id, tgl)) map[id].menit_lebih_awal += (getPulangBatas(id, tgl) - jam);
-    }
-    else if (jenis === 'PULANG LUAR') {
-      map[id].pulang_luar++;
-      if (jamStr) {
-        map[id].jamPulang = jamStr.replace(/\s*WITA\s*/i, '').trim();
-        map[id]._rawPulangLog = { ...r, ID_Log: id_log };
-      }
-    }
-    else if (jenis.includes('LUAR')) { map[id].di_luar_masuk++; }
-    else if (jenis === 'IZIN') { map[id].izin++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-    else if (jenis === 'SAKIT') { map[id].sakit++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-    else if (jenis === 'TUGAS') { map[id].tugas++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-    else if (jenis === 'TUBEL') { map[id].tubel++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
-    else if (jenis === 'CUTI') { map[id].cuti++; map[id]._rawKetLog = { ...r, ID_Log: id_log }; }
   });
 
-  // Process ALL-TIME rows (if provided)
-  const allRows = allRowsParam || rows; // fallback to same rows if no allRows
+  const allRows = allRowsParam || rows;
   allRows.forEach(r => {
     const id = String(getField(r, 'ID', 'id') || '').trim();
-    if (!id || !map[id]) return; // only process existing employees
+    if (!id || !map[id]) return;
     const tglA = normToISO(getField(r, 'Tanggal', 'tanggal') || '');
     const jenis = (getField(r, 'Jenis Absen', 'jenis', 'Jenis', 'JenisAbsen', 'jenis_absen') || '').toUpperCase().trim();
-    const jamStr = getField(r, 'Jam', 'jam') || '';
-    const jam = toMenit(jamStr);
+    const jamMenit = toMenit(getField(r, 'Jam', 'jam'));
+    const batas = getJamForTanggalBatas(id, tglA);
     if (jenis === 'MASUK') { map[id].all_masuk++; }
     else if (jenis.includes('LUAR') && (jenis.includes('MASUK') || !jenis.includes('PULANG'))) {
       map[id].all_di_luar_masuk++;
-      if (jam !== null && jam > getMasukBatas(id, tglA)) map[id].all_menit_terlambat += (jam - getMasukBatas(id, tglA));
+      if (jamMenit !== null && jamMenit > batas.masuk) map[id].all_menit_terlambat += (jamMenit - batas.masuk);
     }
     else if (jenis.includes('LUAR') && jenis.includes('PULANG')) {
       map[id].all_di_luar_pulang++;
-      if (jam !== null && jam < getPulangBatas(id, tglA)) map[id].all_menit_lebih_awal += (getPulangBatas(id, tglA) - jam);
+      if (jamMenit !== null && jamMenit < batas.pulang) map[id].all_menit_lebih_awal += (batas.pulang - jamMenit);
     }
     else if (jenis === 'IZIN') { map[id].all_izin++; }
     else if (jenis === 'SAKIT') { map[id].all_sakit++; }
-    else if (jenis === 'TUGAS') { map[id].all_tugas++; }
+    else if (jenis === 'TUGAS' || jenis === 'DL') { map[id].all_tugas++; }
     else if (jenis === 'TUBEL') { map[id].all_tubel++; }
     else if (jenis === 'CUTI') { map[id].all_cuti++; }
     else if (jenis === 'TANPA BERITA') { map[id].all_alpa++; }
   });
 
-  // Special handling: Calculate "Periode Alpa" counts for each employee
-  // if not provided by n8n.
-  if (rows.length > 0 && rangeDates.length > 0) {
-    // Check presence per employee per date
-    const rowSet = new Set(rows.map(r => String(getField(r, 'ID', 'id')) + '|' + normToISO(getField(r, 'Tanggal', 'tanggal'))));
-    Object.keys(map).forEach(uid => {
-      let c = 0;
-      rangeDates.forEach(tgl => { if (!rowSet.has(uid + '|' + tgl)) c++; });
-      map[uid].alpa = c; // count for this period
-    });
-  }
-
   const pegawai = Object.values(map).map(p => {
-    // Discipline calculation
-    const totalEntries = p.masuk + p.di_luar_masuk;
-    const disiplinPct = totalEntries > 0 ? Math.round((p.masuk / totalEntries) * 100) : null;
-    let disiplinLabel = '', disiplinLevel = 0;
-    if (disiplinPct !== null) {
-      if (disiplinPct >= 95) { disiplinLabel = 'Sangat Disiplin'; disiplinLevel = 4; }
-      else if (disiplinPct >= 80) { disiplinLabel = 'Disiplin'; disiplinLevel = 3; }
-      else if (disiplinPct >= 60) { disiplinLabel = 'Cukup'; disiplinLevel = 2; }
-      else { disiplinLabel = 'Kurang'; disiplinLevel = 1; }
+    let jamHadirMenit = 0;
+    for (const t of rangeDates) {
+      if (p.logByDate[t] && p.logByDate[t].masuk !== undefined && p.logByDate[t].pulang !== undefined) {
+        const durasi = p.logByDate[t].pulang - p.logByDate[t].masuk;
+        if (durasi > 0) jamHadirMenit += durasi;
+      }
     }
-    // All-time discipline
-    const totalAll = p.all_masuk + p.all_di_luar_masuk;
-    const disiplinAllPct = totalAll > 0 ? Math.round((p.all_masuk / totalAll) * 100) : null;
+    const jamHadir = jamHadirMenit / 60;
+    
+    let alpaPeriod = 0;
+    for (const t of rangeDates) {
+      if (!p.hadir_dates.has(t) && !p.excused_dates.has(t)) alpaPeriod++;
+    }
+    
+    const totalMasukEntries = p.masuk + p.di_luar_masuk_periode;
+    let disiplinPct = 100;
+    if (totalMasukEntries > 0) {
+      disiplinPct = Math.max(0, Math.round(((totalMasukEntries - p.di_luar_masuk_periode) / totalMasukEntries) * 100));
+    }
+    
+    let disiplinLabel = '', disiplinLevel = 0;
+    if (disiplinPct >= 95) { disiplinLabel = 'Sangat Disiplin'; disiplinLevel = 4; }
+    else if (disiplinPct >= 80) { disiplinLabel = 'Disiplin'; disiplinLevel = 3; }
+    else if (disiplinPct >= 60) { disiplinLabel = 'Cukup'; disiplinLevel = 2; }
+    else { disiplinLabel = 'Kurang'; disiplinLevel = 1; }
+
+    const totalKehadiranSah = p.hadir_dates.size + p.tugas + p.sakit + p.tubel + p.cuti;
+    let kehadiranPct = Math.round((totalKehadiranSah / HK_PERIODE) * 100);
+    if (kehadiranPct > 100) kehadiranPct = 100;
+
     return {
       ...p,
-      lambat: p.di_luar_masuk,
-      pulangCepat: p.di_luar_pulang,
-      pulang_luar: p.pulang_luar || 0,
-      luar: p.di_luar_masuk + p.di_luar_pulang,
-      // Period HH:MM
-      akkLambatHHMM: toHHMM(p.menit_terlambat),
-      akkCepatHHMM: toHHMM(p.menit_lebih_awal),
-      akkAlpaHHMM: toHHMM((p.alpa || 0) * 450),
-      totalAkkHHMM: toHHMM(p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450)),
-      totalAkkMenit: p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450),
-      // Estimated jamHadir for fallback (Work hours minus penalties)
-      jamHadir: Math.max(0, ((HK_PERIODE * 450) - (p.menit_terlambat + p.menit_lebih_awal + ((p.alpa || 0) * 450))) / 60),
-      // Discipline period
-      disiplinPct, disiplinLabel, disiplinLevel,
-      // All-time HH:MM
-      totalLambatAllHHMM: toHHMM(p.all_menit_terlambat),
-      totalCepatAllHHMM: toHHMM(p.all_menit_lebih_awal),
-      totalAlpaAllHHMM: toHHMM((p.all_alpa || 0) * 450),
-      totalAkkAllHHMM: toHHMM(p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450)),
-      totalAkkAllMenit: p.all_menit_terlambat + p.all_menit_lebih_awal + ((p.all_alpa || 0) * 450),
-      disiplinAllPct,
-      // Legacy
-      akumulasi_terlambat: p.menit_terlambat > 0 ? toHHMM(p.menit_terlambat) + ' terlambat' : '',
-      akumulasi_lebih_awal: p.menit_lebih_awal > 0 ? toHHMM(p.menit_lebih_awal) + ' lebih awal' : ''
+      alpa: alpaPeriod,
+      lambat_count: p.di_luar_masuk_periode, 
+      pulang_cepat_count: p.di_luar_pulang_periode,
+      di_luar_masuk: p.all_menit_terlambat, 
+      di_luar_pulang: p.all_menit_lebih_awal,
+      menit_terlambat: p.all_menit_terlambat,
+      menit_lebih_awal: p.all_menit_lebih_awal,
+      menit_terlambat_periode: p.menit_terlambat_periode,
+      menit_lebih_awal_periode: p.menit_lebih_awal_periode,
+      jamHadir: jamHadir.toFixed(1),
+      disiplinPct, disiplinLabel, disiplinLevel, kehadiranPct,
+      totalAkkHHMM: toHHMM(p.menit_terlambat_periode + p.menit_lebih_awal_periode),
+      hadir_dates: Array.from(p.hadir_dates),
+      excused_dates: Array.from(p.excused_dates)
     };
   });
+
   const sum = k => pegawai.reduce((s, p) => s + (p[k] || 0), 0);
   return {
     pegawai,
     ringkasan: {
       masuk: sum('masuk'),
       pulang: sum('pulang'),
-      pulang_luar: sum('pulang_luar'),
-      luar: sum('di_luar_masuk') + sum('di_luar_pulang'),
-      izin: sum('izin'),
-      sakit: sum('sakit'),
-      tugas: sum('tugas'),
-      tubel: sum('tubel'),
-      cuti: sum('cuti')
+      luar: sum('lambat_count') + sum('pulang_cepat_count'),
+      izin: sum('izin'), sakit: sum('sakit'), tugas: sum('tugas'), tubel: sum('tubel'), cuti: sum('cuti'), alpa: sum('alpa')
     }
   };
 }
@@ -606,8 +597,8 @@ function renderRekap(pg) {
     const masuk = p.masuk || 0;
     const pulang = p.pulang || 0;
     const pulangLuar = p.pulang_luar || 0;
-    const luarMasuk = p.di_luar_masuk ?? 0; // Minutes
-    const luarPulang = p.di_luar_pulang ?? 0; // Minutes
+    const luarMasuk = p.menit_terlambat_periode ?? 0; // Minutes period
+    const luarPulang = p.menit_lebih_awal_periode ?? 0; // Minutes period
     const lambatCount = p.lambat_count ?? 0; // Count from server
     const cepatCount = p.pulang_cepat_count ?? 0; // Count from server
     const izin = p.izin || 0;
@@ -938,8 +929,11 @@ function renderRekap(pg) {
     const dColor = dLevel === 4 ? 'var(--success)' : dLevel === 3 ? 'var(--info)' : dLevel === 2 ? 'var(--warning)' : 'var(--danger)';
 
     // ── Kehadiran vs hari kerja ──
-    const hariHadir = (p.masuk || 0) + (lambatCount || 0) + (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0) + (p.tubel || 0) + (p.cuti || 0);
-    const hadirPct = hariKerjaPeriode > 0 ? Math.min(100, Math.round(hariHadir / hariKerjaPeriode * 100)) : 0;
+    let hadirPct = p.kehadiranPct;
+    if (hadirPct === undefined || hadirPct === null) {
+      const totalKehadiranSah = (masuk || 0) + (lambatCount || 0) + (sakit || 0) + (tugas || 0) + (p.tubel || 0) + (p.cuti || 0);
+      hadirPct = hariKerjaPeriode > 0 ? Math.min(100, Math.round(totalKehadiranSah / hariKerjaPeriode * 100)) : 0;
+    }
     const hadirColor = hadirPct >= 90 ? 'var(--success)' : hadirPct >= 75 ? 'var(--info)' : hadirPct >= 60 ? 'var(--warning)' : 'var(--danger)';
 
     const totalEntries = masuk + pulang + pulangLuar + lambatCount + cepatCount + izin + sakit + tugas + (p.tubel || 0) + (p.cuti || 0);
@@ -986,22 +980,28 @@ function renderRekap(pg) {
             </div>
           </div>
 
-          <!-- HIGHLIGHT: Akumulasi Waktu (Periode) -->
-          <div class="rekap-akk-highlight" style="background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); border:1px solid rgba(245,158,11,0.3)">
-            <div class="akk-h-time" style="color:var(--warning)">${toHHMM(mT + mC)}</div>
-            <div class="akk-h-lbl">Total Akumulasi Pelanggaran (Seluruh Waktu)</div>
+          <!-- HIGHLIGHT: Akumulasi Waktu -->
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div class="rekap-akk-highlight" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05)); border:1px solid rgba(59,130,246,0.3); border-radius:12px; text-align:center;">
+              <div class="akk-h-time" style="color:#60a5fa; font-size:16px; font-weight:800;">${toHHMM((p.menit_terlambat_periode || 0) + (p.menit_lebih_awal_periode || 0))}</div>
+              <div class="akk-h-lbl" style="font-size:9px; color:rgba(255,255,255,0.7);">Akumulasi Waktu<br><strong style="color:var(--text)">Rentang Tanggal Ini</strong></div>
+            </div>
+            <div class="rekap-akk-highlight" style="flex:1; padding:10px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05)); border:1px solid rgba(245,158,11,0.3); border-radius:12px; text-align:center;">
+              <div class="akk-h-time" style="color:var(--warning); font-size:16px; font-weight:800;">${toHHMM(mT + mC)}</div>
+              <div class="akk-h-lbl" style="font-size:9px; color:rgba(255,255,255,0.7);">Akumulasi Waktu<br><strong style="color:var(--text)">Seluruh Waktu (All-Time)</strong></div>
+            </div>
           </div>
 
           <!-- GRID: Statistik Periode -->
           <div class="rekap-stats-grid">
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--success)">${masuk}</span><span class="stat-box-lbl">Masuk</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--info)">${pulang}</span><span class="stat-box-lbl">Pulang</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--warning)">${luarMasuk}</span><span class="stat-box-lbl">Lambat</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:#f59e0b">${luarPulang}</span><span class="stat-box-lbl">Cepat</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--warning)">${izin}</span><span class="stat-box-lbl">Izin</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--danger)">${sakit}</span><span class="stat-box-lbl">Sakit</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:#a78bfa">${tugas}</span><span class="stat-box-lbl">Tugas</span></div>
-            <div class="stat-box-small"><span class="stat-box-val" style="color:var(--danger)">${p.alpa || 0}</span><span class="stat-box-lbl">TB/Alpa</span></div>
+            <div class="stat-box-small" title="Total Absen Masuk"><span class="stat-box-val" style="color:var(--success)">${masuk}</span><span class="stat-box-lbl">Masuk</span></div>
+            <div class="stat-box-small" title="Total Absen Pulang"><span class="stat-box-val" style="color:var(--info)">${pulang}</span><span class="stat-box-lbl">Pulang</span></div>
+            <div class="stat-box-small" title="Berapa kali terlambat"><span class="stat-box-val" style="color:var(--warning)">${lambatCount}</span><span class="stat-box-lbl">Sering Lambat</span></div>
+            <div class="stat-box-small" title="Berapa kali pulang lebih awal"><span class="stat-box-val" style="color:#f59e0b">${cepatCount}</span><span class="stat-box-lbl">Sering Cepat</span></div>
+            <div class="stat-box-small" title="Total Izin"><span class="stat-box-val" style="color:var(--warning)">${izin}</span><span class="stat-box-lbl">Izin</span></div>
+            <div class="stat-box-small" title="Total Sakit"><span class="stat-box-val" style="color:var(--danger)">${sakit}</span><span class="stat-box-lbl">Sakit</span></div>
+            <div class="stat-box-small" title="Total Tugas Luar"><span class="stat-box-val" style="color:#a78bfa">${tugas}</span><span class="stat-box-lbl">Tugas</span></div>
+            <div class="stat-box-small" title="Total Tanpa Berita / Alpa"><span class="stat-box-val" style="color:${(p.alpa || 0) > 0 ? 'var(--danger)' : 'rgba(255,255,255,0.4)'}">${p.alpa || 0}</span><span class="stat-box-lbl">TB/Alpa</span></div>
           </div>
 
           <!-- FOOTER: All Time -->

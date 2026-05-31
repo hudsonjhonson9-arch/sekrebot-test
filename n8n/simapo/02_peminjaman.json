@@ -1,22 +1,30 @@
 {
-  "name": "SIMAPO - Peminjaman (User & Admin)",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-pinjam",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        0
+        -816,
+        -416
       ],
-      "id": "wh-pinjam-create",
+      "id": "421f9576-02f3-4a6d-b36f-059293c5c0ea",
       "name": "WH Ajukan Pinjam",
-      "webhookId": "simapo-pinjam"
+      "webhookId": "simapo-pinjam",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -25,10 +33,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        240,
-        0
+        -576,
+        -416
       ],
-      "id": "code-pinjam-create",
+      "id": "bb68baf9-fb09-4e82-856b-42ff3c9a4de7",
       "name": "Validate Pinjam"
     },
     {
@@ -40,10 +48,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        480,
-        0
+        -336,
+        -416
       ],
-      "id": "pg-pinjam-create",
+      "id": "4d8988a5-4595-4138-875c-c3d439af9671",
       "name": "PG Insert Pinjaman",
       "credentials": {
         "postgres": {
@@ -54,50 +62,68 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Pengajuan berhasil\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        720,
-        0
+        -96,
+        -416
       ],
-      "id": "res-pinjam-create",
+      "id": "e6fda683-15b7-4453-b2d1-fb916da09f15",
       "name": "Res Ajukan Pinjam"
     },
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-pinjam-list",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        300
+        -816,
+        -112
       ],
-      "id": "wh-pinjam-list",
+      "id": "f9d5adfb-47cc-4f47-bca2-a22318d69f11",
       "name": "WH Riwayat Pinjam",
-      "webhookId": "simapo-pinjam-list"
+      "webhookId": "simapo-pinjam-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT p.id, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid WHERE p.userid = '{{ ($json.query.nip).toString().replace(/'/g, \"''\") }}' ORDER BY p.createdat DESC LIMIT 30;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT p.id, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid WHERE p.userid = '{{ ($json.query.nip).toString().replace(/'/g, \"''\") }}' ORDER BY p.createdat DESC LIMIT 30\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        300
+        -576,
+        -112
       ],
-      "id": "pg-pinjam-list",
+      "id": "18e06d32-cf02-4691-8051-8c710fbb0b27",
       "name": "PG Riwayat Pinjam",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -107,63 +133,81 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        300
+        -336,
+        -112
       ],
-      "id": "code-agg-pinjam",
+      "id": "2a6701f4-d76b-4d72-8505-7a6c4a9bd969",
       "name": "Agg Pinjam"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        720,
-        300
+        -96,
+        -112
       ],
-      "id": "res-pinjam-list",
+      "id": "820a2016-f873-4d49-a753-0aebb23ef7f6",
       "name": "Res Riwayat Pinjam"
     },
     {
       "parameters": {
-        "httpMethod": "GET",
         "path": "simapo-admin-pinjam-list",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        600
+        -816,
+        192
       ],
-      "id": "wh-admin-pinjam-list",
+      "id": "0b6012a1-3053-4a66-9ae6-804fea2c68e4",
       "name": "WH Admin Pinjam List",
-      "webhookId": "simapo-admin-pinjam-list"
+      "webhookId": "simapo-admin-pinjam-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT p.id, p.userid, COALESCE(u.\"Nama\", p.userid) AS nama_peminjam, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid WHERE p.instansi_id = '{{ ($json.query.instansi_id || ''bapperida'').toString().replace(/'/g, '''') }}' ORDER BY CASE p.status WHEN 'MENUNGGU' THEN 0 WHEN 'DIPINJAM' THEN 1 ELSE 2 END, p.createdat DESC LIMIT 100;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT p.id, p.userid, COALESCE(u.\"Nama\", p.userid) AS nama_peminjam, b.nama AS nama_barang, b.kodebarang, p.tujuanpeminjaman, TO_CHAR(p.tanggalmulai,'YYYY-MM-DD') as tanggalmulai, TO_CHAR(p.tanggalselesai,'YYYY-MM-DD') as tanggalselesai, p.status, TO_CHAR(p.createdat,'YYYY-MM-DD') AS createdat FROM \"SIMAPO\".peminjaman p JOIN \"SIMAPO\".barang b ON b.id = p.unitasetid LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid WHERE p.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY CASE p.status WHEN 'MENUNGGU' THEN 0 WHEN 'DIPINJAM' THEN 1 ELSE 2 END, p.createdat DESC LIMIT 100\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        600
+        -576,
+        192
       ],
-      "id": "pg-admin-pinjam-list",
+      "id": "423887cf-bab5-4367-b0b2-155fba469c29",
       "name": "PG Admin Pinjam List",
+      "alwaysOutputData": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -173,48 +217,66 @@
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { data: $input.all().map(i => i.json) } }];"
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        600
+        -336,
+        192
       ],
-      "id": "code-agg-admin-pinjam",
+      "id": "f9521cda-3410-4c3e-86d3-05ce4c85efcf",
       "name": "Agg Admin Pinjam"
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ $json }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        720,
-        600
+        -96,
+        192
       ],
-      "id": "res-admin-pinjam-list",
+      "id": "0e1fd17c-141d-4723-9cb7-03cbc9619ead",
       "name": "Res Admin Pinjam List"
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-pinjam-action",
+        "authentication": "headerAuth",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "allowedOrigins": "https://absensi.mindcloud.my.id,https://sekrebot.vercel.app"
+        }
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
-        900
+        -816,
+        496
       ],
-      "id": "wh-admin-pinjam-action",
+      "id": "f28e47e9-d48f-4d10-95ba-96f8ef83aea0",
       "name": "WH Admin Pinjam Action",
-      "webhookId": "simapo-admin-pinjam-action"
+      "webhookId": "simapo-admin-pinjam-action",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -225,10 +287,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        240,
-        900
+        -576,
+        496
       ],
-      "id": "pg-admin-pinjam-action",
+      "id": "2b78a580-81cf-40a0-bb1f-f4a4a6f1ab09",
       "name": "PG Admin Pinjam Action",
       "credentials": {
         "postgres": {
@@ -239,17 +301,26 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { \"success\": true, \"message\": \"Status peminjaman diperbarui\", \"id\": $json.id } }}",
-        "options": {}
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        480,
-        900
+        -336,
+        496
       ],
-      "id": "res-admin-pinjam-action",
+      "id": "88eeb2eb-db9d-4c32-8225-53c96e1a0f9e",
       "name": "Res Admin Pinjam Action"
     }
   ],

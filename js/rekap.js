@@ -996,8 +996,8 @@ function renderRekap(pg) {
           <div class="rekap-stats-grid">
             <div class="stat-box-small" title="Total Absen Masuk"><span class="stat-box-val" style="color:var(--success)">${masuk}</span><span class="stat-box-lbl">Masuk</span></div>
             <div class="stat-box-small" title="Total Absen Pulang"><span class="stat-box-val" style="color:var(--info)">${pulang}</span><span class="stat-box-lbl">Pulang</span></div>
-            <div class="stat-box-small" title="Berapa kali terlambat"><span class="stat-box-val" style="color:var(--warning)">${lambatCount}</span><span class="stat-box-lbl">Sering Lambat</span></div>
-            <div class="stat-box-small" title="Berapa kali pulang lebih awal"><span class="stat-box-val" style="color:#f59e0b">${cepatCount}</span><span class="stat-box-lbl">Sering Cepat</span></div>
+            <div class="stat-box-small" title="Berapa kali terlambat"><span class="stat-box-val" style="color:var(--warning)">${lambatCount}</span><span class="stat-box-lbl">Lambat</span></div>
+            <div class="stat-box-small" title="Berapa kali pulang lebih awal"><span class="stat-box-val" style="color:#f59e0b">${cepatCount}</span><span class="stat-box-lbl">Cepat</span></div>
             <div class="stat-box-small" title="Total Izin"><span class="stat-box-val" style="color:var(--warning)">${izin}</span><span class="stat-box-lbl">Izin</span></div>
             <div class="stat-box-small" title="Total Sakit"><span class="stat-box-val" style="color:var(--danger)">${sakit}</span><span class="stat-box-lbl">Sakit</span></div>
             <div class="stat-box-small" title="Total Tugas Luar"><span class="stat-box-val" style="color:#a78bfa">${tugas}</span><span class="stat-box-lbl">Tugas</span></div>

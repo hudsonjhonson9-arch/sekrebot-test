@@ -89,7 +89,7 @@ function filterSimapoPinjamDropdown(filterText = '') {
     <div style="padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; color:var(--white); display:flex; justify-content:space-between; align-items:center;" 
          onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
          onmouseout="this.style.background='transparent'"
-         onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}', ${b.stok_saat_ini || 0})">
+         onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}', ${b.stok_saat_ini || 0}, '${b.jenisbarang || 'Aset Tetap'}')">
       <div>
         <div style="font-weight:600; margin-bottom:2px;">${b.nama}</div>
         <div style="font-size:10px; color:var(--muted);">${b.kodebarang || '-'}</div>
@@ -101,21 +101,37 @@ function filterSimapoPinjamDropdown(filterText = '') {
   `).join('');
 }
 
-function selectSimapoPinjamItem(id, nama, stok = 0) {
+function selectSimapoPinjamItem(id, nama, stok = 0, jenis = 'Aset Tetap') {
   const inputEl = document.getElementById('simapoSelectPinjamInput');
   const hiddenEl = document.getElementById('simapoSelectPinjam');
   const jumlahEl = document.getElementById('simapoPinjamJumlah');
+  
+  const tglMulaiCol = document.getElementById('simapoColMulai');
+  const tglSelesaiCol = document.getElementById('simapoColSelesai');
+  const btnPinjam = document.getElementById('btnSimapoSubmitPinjam');
 
   if (inputEl) inputEl.value = nama;
   if (hiddenEl) {
     hiddenEl.value = id;
-    hiddenEl.dataset.stok = stok; // Simpan stok untuk divalidasi saat submit
+    hiddenEl.dataset.stok = stok;
+    hiddenEl.dataset.jenis = jenis;
   }
   if (jumlahEl) {
     jumlahEl.max = stok;
     if (parseInt(jumlahEl.value) > stok) {
       jumlahEl.value = stok > 0 ? 1 : 0;
     }
+  }
+
+  // Toggle based on jenisbarang
+  if (jenis === 'Habis Pakai') {
+    if (tglSelesaiCol) tglSelesaiCol.style.display = 'none';
+    if (tglMulaiCol) tglMulaiCol.querySelector('label').textContent = 'Tgl Permintaan';
+    if (btnPinjam) btnPinjam.innerHTML = '<div class="btn-inner"><span>🚀</span> Ajukan Permintaan</div>';
+  } else {
+    if (tglSelesaiCol) tglSelesaiCol.style.display = 'block';
+    if (tglMulaiCol) tglMulaiCol.querySelector('label').textContent = 'Tgl Mulai';
+    if (btnPinjam) btnPinjam.innerHTML = '<div class="btn-inner"><span>📤</span> Ajukan Pinjaman</div>';
   }
   
   const listEl = document.getElementById('simapoPinjamList');
@@ -291,14 +307,20 @@ async function simapoSubmitPinjam() {
   const selesai = document.getElementById('simapoPinjamSelesai')?.value;
   const jumlah = parseInt(document.getElementById('simapoPinjamJumlah')?.value) || 1;
   const stokMaks = parseInt(hiddenEl?.dataset.stok) || 0;
+  const jenis = hiddenEl?.dataset.jenis || 'Aset Tetap';
 
-  if (!id || !tujuan || !mulai || !selesai || jumlah < 1) {
+  if (!id || !tujuan || !mulai || jumlah < 1) {
     showToast('Harap isi semua kolom dengan benar!', 'error');
+    return;
+  }
+  
+  if (jenis === 'Aset Tetap' && !selesai) {
+    showToast('Harap isi tanggal selesai untuk Aset Tetap!', 'error');
     return;
   }
 
   if (jumlah > stokMaks) {
-    showToast(`Gagal! Jumlah yang dipinjam (${jumlah}) melebihi stok yang tersedia (${stokMaks}).`, 'error');
+    showToast(`Gagal! Jumlah yang diminta (${jumlah}) melebihi stok (${stokMaks}).`, 'error');
     return;
   }
 
@@ -310,8 +332,9 @@ async function simapoSubmitPinjam() {
         unitasetid: id,
         tujuanpeminjaman: tujuan,
         tanggalmulai: mulai,
-        tanggalselesai: selesai,
-        jumlah: jumlah
+        tanggalselesai: jenis === 'Habis Pakai' ? mulai : selesai,
+        jumlah: jumlah,
+        jenisbarang: jenis
       })
     });
     
@@ -388,9 +411,9 @@ function renderSimapoRiwayatPinjam(data) {
         </div>
         <div style="display:flex; gap: 15px; margin-top:12px;">
           <div>
-            <div style="font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">Jadwal Pinjam</div>
-            <div style="font-size:12px; color:var(--white); margin-top:2px;">
-              <i class="fas fa-calendar-alt" style="color:var(--gold); margin-right:4px;"></i> ${item.tanggalmulai} s/d ${item.tanggalselesai}
+            <div style="font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; font-weight:700;">${item.jenisbarang === 'Habis Pakai' ? 'Tgl Permintaan' : 'Jadwal Pinjam'}</div>
+            <div style="font-size:11px; font-weight:700; color:var(--white); margin-top:2px;">
+              ${item.jenisbarang === 'Habis Pakai' ? item.tanggalmulai : `${item.tanggalmulai} <span style="color:var(--muted);font-weight:400;margin:0 4px;">s/d</span> ${item.tanggalselesai}`}
             </div>
           </div>
         </div>

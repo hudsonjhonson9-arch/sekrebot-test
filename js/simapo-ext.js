@@ -137,12 +137,12 @@ window.renderAdminSimapoPinjam = function(data) {
           <div style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;">${badge}</div>
         </div>
         <div style="font-size:12px;color:var(--gold);margin:10px 0 4px;font-style:italic;">"${item.tujuanpeminjaman || item.tujuan || '—'}"</div>
-        <div style="font-size:11px;color:var(--muted);">📅 ${item.tanggalmulai} s/d ${item.tanggalselesai}</div>
+        <div style="font-size:11px;color:var(--muted);">${item.jenisbarang === 'Habis Pakai' ? `📅 Diminta pd ${item.tanggalmulai}` : `📅 ${item.tanggalmulai} s/d ${item.tanggalselesai}`}</div>
         ${isPending ? `
         <div style="display:flex;gap:8px;margin-top:12px;">
-          <button onclick="window.adminSimapoPinjamAction('${item.id}','DISETUJUI')" style="flex:1;padding:8px;background:var(--success);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">✅ Setujui</button>
+          <button onclick="window.adminSimapoPinjamAction('${item.id}','${item.jenisbarang === 'Habis Pakai' ? 'SELESAI' : 'DIPINJAM'}')" style="flex:1;padding:8px;background:var(--success);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">✅ Setujui</button>
           <button onclick="window.adminSimapoPinjamAction('${item.id}','DITOLAK')" style="flex:1;padding:8px;background:var(--danger);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">❌ Tolak</button>
-        </div>` : (st === 'DISETUJUI' || st === 'DIPINJAM' ? `
+        </div>` : ( (st === 'DISETUJUI' || st === 'DIPINJAM') && item.jenisbarang !== 'Habis Pakai' ? `
         <button onclick="window.adminSimapoPinjamAction('${item.id}','DIKEMBALIKAN')" style="width:100%;padding:8px;background:rgba(100,180,255,0.2);color:#64b4ff;border:1px solid rgba(100,180,255,0.3);border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;margin-top:12px;">📦 Tandai Kembali</button>
         ` : '')}
       </div>`;
@@ -269,6 +269,7 @@ window.showSimapoMasterForm = async function(id = null) {
   document.getElementById('smfNama').value = '';
   document.getElementById('smfKode').value = '';
   document.getElementById('smfSatuan').value = 'Unit';
+  document.getElementById('smfJenis').value = 'Aset Tetap';
   if (selKat) selKat.value = '';
   document.getElementById('smfStok').value = '0';
   document.getElementById('smfHarga').value = '0';
@@ -282,6 +283,7 @@ window.showSimapoMasterForm = async function(id = null) {
       document.getElementById('smfNama').value = item.nama || '';
       document.getElementById('smfKode').value = item.kodebarang || '';
       document.getElementById('smfSatuan').value = item.satuan || 'Unit';
+      document.getElementById('smfJenis').value = item.jenisbarang || 'Aset Tetap';
       if (selKat) selKat.value = item.kategoriid || '';
       document.getElementById('smfStok').value = item.stok_saat_ini || 0;
       document.getElementById('smfHarga').value = item.hargasatuan || 0;
@@ -316,7 +318,7 @@ window.adminSimapoTiketAction = async function(id, status) {
     const res = await apiFetch(P.simapoAdminTiketAction, { method:'POST', body: JSON.stringify({ id, status }) });
     if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
     else throw 1;
-  } catch { showToast('Tiket diperbarui (Demo)', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
+  } catch { showToast('Status diubah (Demo)', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
 };
 
 window.deleteSimapoMaster = async function(id) {
@@ -335,6 +337,7 @@ window.saveSimapoMaster = async function() {
     nama: document.getElementById('smfNama')?.value.trim(),
     kodebarang: document.getElementById('smfKode')?.value.trim(),
     satuan: document.getElementById('smfSatuan')?.value.trim(),
+    jenisbarang: document.getElementById('smfJenis')?.value.trim(),
     kategoriid: document.getElementById('smfKategori')?.value || null,
     stok_saat_ini: parseInt(document.getElementById('smfStok')?.value) || 0,
     hargasatuan: parseFloat(document.getElementById('smfHarga')?.value) || 0,

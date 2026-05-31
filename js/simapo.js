@@ -32,12 +32,30 @@ function switchSimapoSection(section, force = false) {
     if (window.loadSimapoKategori) window.loadSimapoKategori(false, force);
   }
   else if (section === 'pinjam') {
+    if (typeof populateSimapoPinjamSelect === 'function') populateSimapoPinjamSelect();
     if (typeof loadSimapoRiwayatPinjam === 'function') loadSimapoRiwayatPinjam(force);
     else if (window._simapoCache && typeof window.loadAdminSimapoPinjam === 'function') {
       window._simapoCache.clear('user_pinjam_riwayat');
       const el = document.getElementById('btn-simapo-pinjam');
       el.click();
     }
+  }
+}
+
+async function populateSimapoPinjamSelect() {
+  const sel = document.getElementById('simapoSelectPinjam');
+  if (!sel) return;
+
+  if (typeof simapoKatalogData === 'undefined' || simapoKatalogData.length === 0) {
+    if (typeof loadSimapoKatalog === 'function') await loadSimapoKatalog();
+  }
+
+  if (typeof simapoKatalogData !== 'undefined' && simapoKatalogData.length > 0) {
+    const currentVal = sel.value;
+    sel.innerHTML = '<option value="">-- Pilih Barang --</option>' + 
+      simapoKatalogData.map(b => `<option value="${b.id}" ${currentVal === b.id ? 'selected' : ''}>${b.nama} (Sisa: ${b.stok_saat_ini || 0})</option>`).join('');
+  } else {
+    sel.innerHTML = '<option value="">-- Tidak ada barang tersedia --</option>';
   }
 }
 
@@ -188,13 +206,16 @@ function showSimapoDetail(id) {
   });
 }
 
-function openSimapoPinjamForm(id, nama) {
-  // Switch ke tab pinjam
+async function openSimapoPinjamForm(id, nama) {
+  // Switch ke tab pinjam (ini otomatis memanggil populateSimapoPinjamSelect)
   switchSimapoSection('pinjam');
-  // Isi select
+  
+  // Tunggu sebentar untuk memastikan populateSimapoPinjamSelect selesai jika async
+  await new Promise(r => setTimeout(r, 50));
+  
+  // Pilih barang di select
   const sel = document.getElementById('simapoSelectPinjam');
   if (sel) {
-    sel.innerHTML = `<option value="${id}">${nama}</option>`;
     sel.value = id;
   }
 }

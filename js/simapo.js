@@ -8,7 +8,7 @@ let simapoKatalogData = [];
 /**
  * Switch sub-tabs di dalam panel SIMAPO
  */
-function switchSimapoSection(section) {
+function switchSimapoSection(section, force = false) {
   // Update Buttons
   const btns = document.querySelectorAll('.simapo-tab-btn');
   btns.forEach(b => {
@@ -25,10 +25,17 @@ function switchSimapoSection(section) {
 
   // Load Data based on section
   if (section === 'katalog') {
-    loadSimapoKatalog();
-    if (window.loadSimapoKategori) window.loadSimapoKategori(false);
+    loadSimapoKatalog(force);
+    if (window.loadSimapoKategori) window.loadSimapoKategori(false, force);
   }
-  else if (section === 'pinjam') loadSimapoRiwayatPinjam();
+  else if (section === 'pinjam') {
+    if (typeof loadSimapoRiwayatPinjam === 'function') loadSimapoRiwayatPinjam(force);
+    else if (window._simapoCache && typeof window.loadAdminSimapoPinjam === 'function') {
+      window._simapoCache.clear('user_pinjam_riwayat');
+      const el = document.getElementById('btn-simapo-pinjam');
+      el.click();
+    }
+  }
 }
 
 /**
@@ -321,5 +328,66 @@ async function simapoSubmitTiket() {
   } catch (e) {
     showToast('(Demo) Laporan terkirim!', 'success');
     switchSimapoSection('katalog');
+  }
+}
+
+/* --- SUPERADMIN INSTANSI SELECTOR --- */
+function populateSimapoInstansiSelect() {
+  const sec = document.getElementById('simapoInstansiSection');
+  if (!sec) return;
+
+  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
+  const isSA = storedRole.includes('super') || 
+               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
+               (window.IS_ADMIN && storedRole.includes('super'));
+
+  if (isSA) {
+    sec.style.display = 'block';
+    const el = document.getElementById('simapoInstansiSelect');
+    if (el) {
+      if (el.options.length <= 1) { // Not populated yet
+        try {
+          const cached = localStorage.getItem('absen_instansi_map');
+          if (cached) {
+            const map = JSON.parse(cached);
+            const keys = Object.keys(map);
+            el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+              keys.map(k => {
+                const inst = map[k];
+                const id = inst.id || inst.ID || k;
+                const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                return `<option value="${id}">${name}</option>`;
+              }).join('');
+          }
+        } catch (e) {
+          console.warn('[SIMAPO] Gagal load instansi map', e);
+        }
+      }
+      // Set to currently selected instansi if available
+      const savedInst = localStorage.getItem('MY_INSTANSI');
+      if (savedInst && el.value === '') {
+        el.value = savedInst;
+      }
+    }
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function onSimapoInstansiChange() {
+  // Clear caches for the new instansi context
+  if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
+    window._simapoCache.clear();
+  }
+  simapoKatalogData = [];
+  
+  // Reload current section
+  const activeBtn = document.querySelector('.simapo-tab-btn.active');
+  if (activeBtn) {
+    const id = activeBtn.id; // e.g. btn-simapo-katalog
+    const section = id.replace('btn-simapo-', '');
+    switchSimapoSection(section, true); // force reload
+  } else {
+    switchSimapoSection('katalog', true);
   }
 }

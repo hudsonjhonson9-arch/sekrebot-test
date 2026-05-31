@@ -298,6 +298,7 @@
       }
 
       if (tab === 'simapo') {
+        if (typeof populateSimapoInstansiSelect === 'function') populateSimapoInstansiSelect();
         if (typeof switchSimapoSection === 'function') switchSimapoSection('katalog');
       }
 

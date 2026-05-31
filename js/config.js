@@ -221,6 +221,11 @@ function getScopedInstansiId() {
       if (tugasSelect && tugasSelect.value) {
         return tugasSelect.value;
       }
+    } else if (currentTab === 'simapo') {
+      const simapoSelect = document.getElementById('simapoInstansiSelect');
+      if (simapoSelect && simapoSelect.value) {
+        return simapoSelect.value;
+      }
     }
   }
 

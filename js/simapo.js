@@ -89,7 +89,7 @@ function filterSimapoPinjamDropdown(filterText = '') {
     <div style="padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; color:var(--white); display:flex; justify-content:space-between; align-items:center;" 
          onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
          onmouseout="this.style.background='transparent'"
-         onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}')">
+         onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}', ${b.stok_saat_ini || 0})">
       <div>
         <div style="font-weight:600; margin-bottom:2px;">${b.nama}</div>
         <div style="font-size:10px; color:var(--muted);">${b.kodebarang || '-'}</div>
@@ -101,11 +101,22 @@ function filterSimapoPinjamDropdown(filterText = '') {
   `).join('');
 }
 
-function selectSimapoPinjamItem(id, nama) {
+function selectSimapoPinjamItem(id, nama, stok = 0) {
   const inputEl = document.getElementById('simapoSelectPinjamInput');
   const hiddenEl = document.getElementById('simapoSelectPinjam');
+  const jumlahEl = document.getElementById('simapoPinjamJumlah');
+
   if (inputEl) inputEl.value = nama;
-  if (hiddenEl) hiddenEl.value = id;
+  if (hiddenEl) {
+    hiddenEl.value = id;
+    hiddenEl.dataset.stok = stok; // Simpan stok untuk divalidasi saat submit
+  }
+  if (jumlahEl) {
+    jumlahEl.max = stok;
+    if (parseInt(jumlahEl.value) > stok) {
+      jumlahEl.value = stok > 0 ? 1 : 0;
+    }
+  }
   
   const listEl = document.getElementById('simapoPinjamList');
   if (listEl) listEl.style.display = 'none';
@@ -273,14 +284,21 @@ async function openSimapoPinjamForm(id, nama) {
 }
 
 async function simapoSubmitPinjam() {
-  const id = document.getElementById('simapoSelectPinjam')?.value;
+  const hiddenEl = document.getElementById('simapoSelectPinjam');
+  const id = hiddenEl?.value;
   const tujuan = document.getElementById('simapoTujuanPinjam')?.value;
   const mulai = document.getElementById('simapoPinjamMulai')?.value;
   const selesai = document.getElementById('simapoPinjamSelesai')?.value;
   const jumlah = parseInt(document.getElementById('simapoPinjamJumlah')?.value) || 1;
+  const stokMaks = parseInt(hiddenEl?.dataset.stok) || 0;
 
   if (!id || !tujuan || !mulai || !selesai || jumlah < 1) {
     showToast('Harap isi semua kolom dengan benar!', 'error');
+    return;
+  }
+
+  if (jumlah > stokMaks) {
+    showToast(`Gagal! Jumlah yang dipinjam (${jumlah}) melebihi stok yang tersedia (${stokMaks}).`, 'error');
     return;
   }
 

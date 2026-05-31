@@ -1404,11 +1404,12 @@
       <div id="simapo-section-pinjam" class="simapo-section" style="display:none;">
         <div class="card glass-card">
           <div class="card-title">Ajukan Peminjaman Baru</div>
-          <div class="form-group" style="margin-bottom:10px;">
+          <div class="form-group" style="margin-bottom:10px; position:relative;" id="simapoPinjamWrapper">
             <label class="form-label">Pilih Aset/Barang</label>
-            <select class="form-input" id="simapoSelectPinjam">
-               <option value="">-- Pilih Barang --</option>
-            </select>
+            <input type="text" class="form-input" id="simapoSelectPinjamInput" placeholder="-- Ketik untuk mencari barang --" autocomplete="off" onfocus="this.select()">
+            <input type="hidden" id="simapoSelectPinjam">
+            <div id="simapoPinjamList" style="display:none; position:absolute; top:100%; left:0; width:100%; max-height:220px; overflow-y:auto; background:#1e2329; border:1px solid rgba(255,255,255,0.15); border-radius:8px; z-index:1000; box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+            </div>
           </div>
           <div class="form-group" style="margin-bottom:10px;">
             <label class="form-label">Tujuan Peminjaman</label>

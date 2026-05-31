@@ -43,20 +43,72 @@ function switchSimapoSection(section, force = false) {
 }
 
 async function populateSimapoPinjamSelect() {
-  const sel = document.getElementById('simapoSelectPinjam');
-  if (!sel) return;
+  const listEl = document.getElementById('simapoPinjamList');
+  const inputEl = document.getElementById('simapoSelectPinjamInput');
+  if (!listEl || !inputEl) return;
 
   if (typeof simapoKatalogData === 'undefined' || simapoKatalogData.length === 0) {
     if (typeof loadSimapoKatalog === 'function') await loadSimapoKatalog();
   }
 
-  if (typeof simapoKatalogData !== 'undefined' && simapoKatalogData.length > 0) {
-    const currentVal = sel.value;
-    sel.innerHTML = '<option value="">-- Pilih Barang --</option>' + 
-      simapoKatalogData.map(b => `<option value="${b.id}" ${currentVal === b.id ? 'selected' : ''}>${b.nama} (Sisa: ${b.stok_saat_ini || 0})</option>`).join('');
-  } else {
-    sel.innerHTML = '<option value="">-- Tidak ada barang tersedia --</option>';
+  // Event listener untuk input search
+  if (!inputEl.hasAttribute('data-bound')) {
+    inputEl.setAttribute('data-bound', 'true');
+    inputEl.addEventListener('input', (e) => filterSimapoPinjamDropdown(e.target.value));
+    inputEl.addEventListener('focus', () => { 
+      filterSimapoPinjamDropdown(inputEl.value);
+      listEl.style.display = 'block'; 
+    });
+    // Tutup dropdown jika klik di luar
+    document.addEventListener('click', (e) => {
+      const wrapper = document.getElementById('simapoPinjamWrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        listEl.style.display = 'none';
+      }
+    });
   }
+
+  filterSimapoPinjamDropdown('');
+}
+
+function filterSimapoPinjamDropdown(filterText = '') {
+  const listEl = document.getElementById('simapoPinjamList');
+  if (!listEl) return;
+
+  const data = (typeof simapoKatalogData !== 'undefined' ? simapoKatalogData : []).filter(b => {
+    const q = filterText.toLowerCase();
+    return (b.nama && b.nama.toLowerCase().includes(q)) || (b.kodebarang && b.kodebarang.toLowerCase().includes(q));
+  });
+  
+  if (data.length === 0) {
+    listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--muted); text-align:center;">Tidak ada barang ditemukan</div>';
+    return;
+  }
+
+  listEl.innerHTML = data.map(b => `
+    <div style="padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; color:var(--white); display:flex; justify-content:space-between; align-items:center;" 
+         onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+         onmouseout="this.style.background='transparent'"
+         onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}')">
+      <div>
+        <div style="font-weight:600; margin-bottom:2px;">${b.nama}</div>
+        <div style="font-size:10px; color:var(--muted);">${b.kodebarang || '-'}</div>
+      </div>
+      <div style="font-size:11px; font-weight:700; color:${b.stok_saat_ini > 0 ? 'var(--gold)' : '#ef4444'};">
+        Sisa: ${b.stok_saat_ini || 0}
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectSimapoPinjamItem(id, nama) {
+  const inputEl = document.getElementById('simapoSelectPinjamInput');
+  const hiddenEl = document.getElementById('simapoSelectPinjam');
+  if (inputEl) inputEl.value = nama;
+  if (hiddenEl) hiddenEl.value = id;
+  
+  const listEl = document.getElementById('simapoPinjamList');
+  if (listEl) listEl.style.display = 'none';
 }
 
 /**

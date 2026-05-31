@@ -1630,7 +1630,7 @@
               <button class="btn-sm-admin" onclick="loadSimapoKategori(true)" style="background:var(--primary)">🔄</button>
             </div>
             <div style="display:flex;gap:8px;margin:10px 0;">
-              <input class="form-input" type="text" id="katNamaInput" placeholder="Nama kategori baru..." style="flex:1;">
+              <input class="form-input" type="text" id="katNamaInput" placeholder="Nama kategori baru..." style="flex:1;" onkeyup="if(event.key === 'Enter') addSimapoKategori()">
               <button class="btn-primary" onclick="addSimapoKategori()" style="padding:0 16px;width:auto;">
                 <div class="btn-inner"><span>➕</span></div>
               </button>

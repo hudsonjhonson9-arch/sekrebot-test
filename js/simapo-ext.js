@@ -433,7 +433,11 @@ window.renderAdminSimapoKat = function(data) {
 window.addSimapoKategori = async function() {
   const input = document.getElementById('katNamaInput');
   const nama = input?.value.trim();
-  if (!nama) return;
+  if (!nama) {
+    showToast('Silakan ketik nama kategori terlebih dahulu!', 'error');
+    if (input) input.focus();
+    return;
+  }
 
   showToast('Menyimpan...', 'info');
   try {

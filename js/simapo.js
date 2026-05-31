@@ -9,6 +9,9 @@ let simapoKatalogData = [];
  * Switch sub-tabs di dalam panel SIMAPO
  */
 function switchSimapoSection(section, force = false) {
+  // Populate Superadmin Dropdown
+  if (typeof populateSimapoInstansiSelect === 'function') populateSimapoInstansiSelect();
+
   // Update Buttons
   const btns = document.querySelectorAll('.simapo-tab-btn');
   btns.forEach(b => {

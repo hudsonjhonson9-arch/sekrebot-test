@@ -14,10 +14,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        368,
-        544
+        -752,
+        -336
       ],
-      "id": "1f8bda58-0bab-49fb-90f4-0b1119cc2219",
+      "id": "3e7e460d-e633-4cf1-9239-e0e9ccdbe4dc",
       "name": "Cek Akumulasi Waktu Pegawai"
     },
     {
@@ -31,10 +31,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1488,
-        544
+        368,
+        -336
       ],
-      "id": "9af70a38-b3fd-448c-84ad-ec432995a826",
+      "id": "512b463f-6f51-4ea3-9062-6e9da0148abc",
       "name": "Send a text message",
       "webhookId": "3285fffe-7730-43fb-942d-8751af44114a",
       "credentials": {
@@ -53,10 +53,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        592,
-        544
+        -528,
+        -336
       ],
-      "id": "9fcda1da-e764-4083-bc68-e9269d55e09c",
+      "id": "fa567601-6f7e-476e-a19a-f6565a5f00c6",
       "name": "Get row(s) in sheet6",
       "credentials": {
         "postgres": {
@@ -72,10 +72,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1216,
-        544
+        96,
+        -336
       ],
-      "id": "4486028c-8ccd-4196-a5dc-2db43d684e5f",
+      "id": "fa1af567-ff7a-4301-afe7-286ca8920a8a",
       "name": "Code in JavaScript10"
     },
     {
@@ -87,10 +87,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1040,
-        544
+        -80,
+        -336
       ],
-      "id": "7fc8fc64-bc6b-4331-b01a-3c97167e6832",
+      "id": "a983854e-6264-4ed5-a67c-77414c1dfa4a",
       "name": "Get row(s) in sheet7",
       "alwaysOutputData": true,
       "credentials": {
@@ -118,10 +118,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        368,
-        880
+        -752,
+        0
       ],
-      "id": "692cf0d4-2711-4939-ae88-e610cbe6235d",
+      "id": "b4d38dd7-71ef-47b8-90c0-5dabaf992420",
       "name": "Notif Waktu Absen Masuk"
     },
     {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        368,
-        1296
+        -752,
+        416
       ],
-      "id": "cbba54cd-fd45-4852-a0c2-301ddd44a10d",
+      "id": "0e8625ea-a792-4cc2-953e-860ada71ec6f",
       "name": "Notif Waktu Absen Pulang"
     },
     {
@@ -155,10 +155,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        880
+        -528,
+        0
       ],
-      "id": "f25ca032-c073-4ddf-8519-6d3004ac00a3",
+      "id": "0523516a-cf4a-4912-bd26-1584ede7fef2",
       "name": "Read Tanggal Masuk"
     },
     {
@@ -168,10 +168,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1264,
-        880
+        144,
+        0
       ],
-      "id": "89eb5aef-d0bc-40ff-b47b-8e3c2f6efc40",
+      "id": "e94913eb-fc32-46d7-a616-9c6ebe909586",
       "name": "Cek Pegawai yang Belum Absen"
     },
     {
@@ -181,10 +181,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        1296
+        -528,
+        416
       ],
-      "id": "bbf45a01-aa82-4b1c-9c90-0d36729c4df9",
+      "id": "e3e6bf17-c7c5-4366-b058-c6e65546cabc",
       "name": "Read Tanggal Pulang"
     },
     {
@@ -194,10 +194,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1264,
-        1296
+        144,
+        416
       ],
-      "id": "9984419e-79a3-444e-b4ea-a39305c2c893",
+      "id": "2f1f0fd9-815d-4644-af97-6e17b718cf6d",
       "name": "Cek yang belum absen Pulang"
     },
     {
@@ -211,10 +211,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1488,
-        784
+        368,
+        -96
       ],
-      "id": "6eb39017-ab17-4f46-9af9-a2d97d4cd3df",
+      "id": "e9ef4751-320f-4d6f-9d80-66d5a6c98aab",
       "name": "Notif Absen Masuk",
       "webhookId": "5ee6eac4-4523-4686-99ff-b5319c9f3e38",
       "retryOnFail": false,
@@ -237,10 +237,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1488,
-        1200
+        368,
+        320
       ],
-      "id": "81461ce3-eb5c-4841-be69-2d060e23da01",
+      "id": "9bd30514-087c-48a2-92e2-442908394ce1",
       "name": "Notif Absen Pulang",
       "webhookId": "cacfbd02-3239-494b-99bf-957d98611ee2",
       "credentials": {
@@ -258,10 +258,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        816,
-        544
+        -304,
+        -336
       ],
-      "id": "fa909d03-a2d6-44a0-abeb-9cfeef02d1f7",
+      "id": "eaf4b7d1-6a8c-4846-984d-dcb695ae2ca7",
       "name": "Code in JavaScript"
     },
     {
@@ -273,10 +273,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        1296
+        -304,
+        416
       ],
-      "id": "0516a0d7-4337-4238-8981-b5cdfc6a2b0c",
+      "id": "cbf56ec1-a93e-4007-a33c-b046d862050b",
       "name": "Cek Log Pulang",
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -296,10 +296,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1024,
-        1296
+        -96,
+        416
       ],
-      "id": "4b3be883-53b2-4a42-9069-c6ddab50b85f",
+      "id": "7535c3c1-e64e-4392-b870-476706a977c8",
       "name": "Cek Pegawai Pulang",
       "executeOnce": true,
       "credentials": {
@@ -318,10 +318,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1040,
-        880
+        -80,
+        0
       ],
-      "id": "83ac10c0-6acd-4f94-9e00-54dd9068b131",
+      "id": "e7493dc1-f672-4fe9-be43-ed49371ff6bd",
       "name": "Get Pegawai Masuk",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -341,10 +341,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        880
+        -304,
+        0
       ],
-      "id": "76ecc92a-91da-4bfc-a439-b0dc8f702b45",
+      "id": "aa5a7fde-f4a2-43a1-ac8f-93c4c4525696",
       "name": "Get Log Masuk",
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -368,10 +368,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        1488,
-        976
+        368,
+        96
       ],
-      "id": "ca6ae488-190d-4b58-9f4d-738aa8dfb677",
+      "id": "621224d1-adf3-4928-b52b-b601ecffada6",
       "name": "Send a text message2",
       "credentials": {
         "wahaApi": {
@@ -393,10 +393,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        1488,
-        1392
+        368,
+        512
       ],
-      "id": "5489b854-2db6-484d-bf33-b4cfbb9312fc",
+      "id": "34319b02-2069-4bb8-8afd-5733e3bc9598",
       "name": "Send a text message3",
       "credentials": {
         "wahaApi": {
@@ -417,10 +417,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2160,
-        1600
+        1040,
+        720
       ],
-      "id": "16d320af-c521-4d34-b2c0-aefcc096e8c2",
+      "id": "6bfb58be-b780-422b-ab3a-e2da6a4fd305",
       "name": "Kirim Notif TANPA BERITA",
       "webhookId": "tb-notif-0001",
       "credentials": {
@@ -438,10 +438,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1936,
-        1600
+        816,
+        720
       ],
-      "id": "386f5438-3a8f-4614-8ae2-96ad273adc87",
+      "id": "46ab83c7-c2c5-4fca-8b31-0aed58fffb6a",
       "name": "Format Notif TB"
     },
     {
@@ -455,10 +455,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1696,
-        1600
+        576,
+        720
       ],
-      "id": "08fb0628-1fc1-4fff-aa25-34549d642ef1",
+      "id": "c1e93da6-0e55-45bb-a6bc-6c24cfbc7590",
       "name": "Simpan Log TANPA BERITA",
       "credentials": {
         "postgres": {
@@ -474,10 +474,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1488,
-        1600
+        368,
+        720
       ],
-      "id": "42aba0a0-b8c2-43ef-a16a-ce6420f4ee7c",
+      "id": "7aa47fc8-2892-48a9-9296-2af3d5e93d5d",
       "name": "Proses Filter TANPA BERITA",
       "alwaysOutputData": true
     },
@@ -490,10 +490,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1232,
-        1600
+        112,
+        720
       ],
-      "id": "46c92536-171b-4442-bdcb-2d4b2700731b",
+      "id": "0893ec94-f1c2-4c8e-8918-673ae0611f10",
       "name": "Get Pegawai Aktif TB",
       "executeOnce": true,
       "credentials": {
@@ -512,10 +512,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1040,
-        1600
+        -80,
+        720
       ],
-      "id": "d5dfc0bf-5acb-4b58-b7c4-8441c60752a6",
+      "id": "7ca1cd07-8dbd-4641-80b9-24eebec5f3b1",
       "name": "Get Log Hari Ini TB",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -535,10 +535,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        1600
+        -304,
+        720
       ],
-      "id": "764f010a-e139-413d-9d65-3fdf46146efc",
+      "id": "43d6eb32-d7f1-4f5d-8490-12c45afb0be8",
       "name": "Get Libur Hari Ini TB",
       "alwaysOutputData": true,
       "credentials": {
@@ -555,10 +555,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        592,
-        1600
+        -528,
+        720
       ],
-      "id": "a43da65a-605b-436d-b01b-5f67f4b1b773",
+      "id": "f7c1db0b-eb3e-4b46-bcec-ce1186752df3",
       "name": "Read Tanggal TB"
     },
     {
@@ -575,10 +575,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        368,
-        1600
+        -752,
+        720
       ],
-      "id": "5f3a60ea-4303-4de8-bf82-0cbf64aa8c8c",
+      "id": "64abc2f9-8421-4070-89b3-ab0137cba700",
       "name": "Trigger Auto TANPA BERITA"
     },
     {
@@ -590,10 +590,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        2128,
-        1840
+        1008,
+        960
       ],
-      "id": "1f2fbe3d-ba99-4563-a385-4bc5fdd05d52",
+      "id": "84818e7e-a819-4a15-8ba3-fc30c3a6e338",
       "name": "Send a text message1",
       "credentials": {
         "wahaApi": {
@@ -616,26 +616,88 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        368,
-        200
+        -752,
+        -688
       ],
-      "id": "trigger-sync-status-harian",
+      "id": "2c09655b-c36a-4c60-a7d6-5e68c54a8b83",
       "name": "Trigger Sync Status Harian"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"user_list\" u SET \"Status\" = 'AKTIF', \"status\" = 'AKTIF' FROM \"ket_temp\" k WHERE (u.\"id\"::text = k.\"ID_Pegawai\"::text OR (u.\"NIP\" = k.\"NIP\" AND k.\"NIP\" != '')) AND k.\"Status\" = 'DISETUJUI' AND k.\"tgl_selesai\" = TO_CHAR((NOW() AT TIME ZONE 'Asia/Makassar') - INTERVAL '1 day', 'YYYY-MM-DD') AND u.id NOT IN (SELECT \"ID_Pegawai\"::bigint FROM \"ket_temp\" WHERE \"Status\" = 'DISETUJUI' AND \"tgl_mulai\" != '' AND \"tgl_selesai\" != '' AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') >= \"tgl_mulai\" AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') <= \"tgl_selesai\")",
+        "query": "SELECT * FROM \"user_list\" WHERE \"Status\" IN ('SAKIT', 'IZIN', 'CUTI', 'TUGAS', 'TUBEL')",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        592,
-        200
+        -528,
+        -688
       ],
-      "id": "pg-reset-status-harian",
-      "name": "Reset Status ke AKTIF",
+      "id": "pg-get-pegawai-ket",
+      "name": "Get Pegawai Berketerangan",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM \"ket_temp\" WHERE \"Status\" = 'DISETUJUI' AND \"tgl_mulai\" != '' AND \"tgl_selesai\" != '' AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') >= \"tgl_mulai\" AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') <= \"tgl_selesai\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -304,
+        -688
+      ],
+      "id": "pg-get-ket-aktif",
+      "name": "Get ket_temp Aktif Hari Ini",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tarik data pegawai yang statusnya keterangan\nconst pegawai = $('Get Pegawai Berketerangan').all().map(i => i.json);\n// Tarik ket_temp yang aktif hari ini\nconst ketAktif = $('Get ket_temp Aktif Hari Ini').all().map(i => i.json);\n\n// Buat set ID dan NIP pegawai yang masih aktif keterangannya\nconst activeIdSet = new Set();\nconst activeNipSet = new Set();\nketAktif.forEach(k => {\n  if (k.ID_Pegawai) activeIdSet.add(String(k.ID_Pegawai).trim());\n  if (k.NIP && String(k.NIP).trim() !== '') activeNipSet.add(String(k.NIP).trim());\n});\n\n// Filter: pegawai yang statusnya keterangan TAPI tidak ada ket_temp aktif hari ini\nconst expired = pegawai.filter(p => {\n  const id = String(p.id || '').trim();\n  const nip = String(p.NIP || '').trim();\n  return !activeIdSet.has(id) && !(nip && activeNipSet.has(nip));\n});\n\nif (!expired.length) {\n  console.log('[Sync] Semua status keterangan masih aktif hari ini.');\n  return [];\n}\n\nconsole.log(`[Sync] ${expired.length} pegawai statusnya di-reset ke AKTIF.`);\nreturn expired.map(p => ({\n  json: { id: String(p.id), nama: p.username || p.Nama || '' }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -688
+      ],
+      "id": "code-cek-expired",
+      "name": "Proses Cek Expired",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"user_list\" SET \"Status\" = 'AKTIF', \"status\" = 'AKTIF' WHERE \"id\"::text = '{{ $json.id }}'",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        -688
+      ],
+      "id": "pg-reset-expired",
+      "name": "Reset Expired ke AKTIF",
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -652,11 +714,12 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        200
+        368,
+        -688
       ],
       "id": "pg-update-status-ket-temp",
       "name": "Update Status dari ket_temp",
+      "executeOnce": true,
       "credentials": {
         "postgres": {
           "id": "vYOiyrTftLtD3zzd",
@@ -686,11 +749,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Code in JavaScript10": {
-      "main": [
-        []
       ]
     },
     "Get row(s) in sheet7": {
@@ -802,16 +860,6 @@
         ]
       ]
     },
-    "Cek Pegawai Pulang": {
-      "main": [
-        []
-      ]
-    },
-    "Get Pegawai Masuk": {
-      "main": [
-        []
-      ]
-    },
     "Get Log Masuk": {
       "main": [
         [
@@ -837,11 +885,6 @@
             "index": 0
           }
         ]
-      ]
-    },
-    "Simpan Log TANPA BERITA": {
-      "main": [
-        []
       ]
     },
     "Proses Filter TANPA BERITA": {
@@ -914,14 +957,47 @@
       "main": [
         [
           {
-            "node": "Reset Status ke AKTIF",
+            "node": "Get Pegawai Berketerangan",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Reset Status ke AKTIF": {
+    "Get Pegawai Berketerangan": {
+      "main": [
+        [
+          {
+            "node": "Get ket_temp Aktif Hari Ini",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get ket_temp Aktif Hari Ini": {
+      "main": [
+        [
+          {
+            "node": "Proses Cek Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proses Cek Expired": {
+      "main": [
+        [
+          {
+            "node": "Reset Expired ke AKTIF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reset Expired ke AKTIF": {
       "main": [
         [
           {

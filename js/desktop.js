@@ -582,17 +582,14 @@
           mode: 'range',
           dateFormat: 'Y-m-d',
           defaultDate: [today, today],
+          locale: { rangeSeparator: ' s/d ' },
           disableMobile: true,
-          allowInput: false,
-          onChange: function(selectedDates, dateStr, instance) {
-            if (selectedDates.length > 0) {
-              const start = flatpickr.formatDate(selectedDates[0], 'Y-m-d');
-              const end = selectedDates.length > 1 ? flatpickr.formatDate(selectedDates[1], 'Y-m-d') : start;
-              if ($('adminKetTglMulai')) $('adminKetTglMulai').value = start;
-              if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = end;
-            } else {
-              if ($('adminKetTglMulai')) $('adminKetTglMulai').value = '';
-              if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = '';
+          onChange: function(dates) {
+            if (dates.length >= 1) {
+              const dari = flatpickr.formatDate(dates[0], 'Y-m-d');
+              const sampai = flatpickr.formatDate(dates[dates.length - 1], 'Y-m-d');
+              if ($('adminKetTglMulai')) $('adminKetTglMulai').value = dari;
+              if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = sampai;
             }
           }
         });

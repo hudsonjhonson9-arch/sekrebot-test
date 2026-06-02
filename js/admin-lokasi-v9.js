@@ -382,15 +382,19 @@ document.addEventListener('click', function(e) {
     /**
      * Simpan perubahan radius/nama pada lokasi yang sudah ada.
      * @param {string} id - ID lokasi
-     * @param {string} nama - Nama lokasi
+     * @param {string} _namaLama - Nama lokasi sebelum diedit
      * @param {number} idx - Index pada array lokasiData
      * @returns {Promise<void>}
      */
-        async function simpanLokasiItem(id, nama, idx) {
+        async function simpanLokasiItem(id, _namaLama, idx) {
       const btn = $(`btnSimpanLokasi-${id}`);
       const txtEl = $(`btnSimpanLokasiTxt-${id}`);
       const resEl = $(`simpanLokasiResult-${id}`);
       if (btn) { btn.disabled = true; if (txtEl) txtEl.textContent = 'Menyimpan...'; }
+      
+      const namaInp = $(`nama-input-${id}`);
+      const namaBaru = namaInp ? namaInp.value.trim() : _namaLama;
+      
       const radiusInp = $(`radius-input-${id}`);
       const ipInp = $(`ip-input-${id}`);
       const radius = parseInt(radiusInp?.value || 100);
@@ -410,15 +414,24 @@ document.addEventListener('click', function(e) {
         if (btn) { btn.disabled = false; if (txtEl) txtEl.textContent = 'Simpan Perubahan'; }
         return;
       }
+      if (!namaBaru) {
+        if (namaInp) { namaInp.style.borderBottomColor = 'var(--danger)'; setTimeout(() => { namaInp.style.borderBottomColor = 'rgba(255,255,255,.2)'; }, 1500); }
+        if (btn) { btn.disabled = false; if (txtEl) txtEl.textContent = 'Simpan Perubahan'; }
+        return;
+      }
+
       const lok = jadwalLokData[idx];
       const hariStr = lok ? (lok.hari || []).join(',') : '';
       try {
         await apiPost(P.lokasiUpdate, { 
-          id, nama_lokasi: nama, radius, hari: hariStr, ip_range, instansi_id,
+          id, nama_lokasi: namaBaru, radius, hari: hariStr, ip_range, instansi_id,
           diubah_oleh: MY_ID,
           nip: localStorage.getItem('MY_NIP') || ''
         });
-        if (lok) lok.radius = radius;
+        if (lok) {
+          lok.radius = radius;
+          lok.nama = namaBaru;
+        }
         Object.keys(LOK_DEF).forEach(k => delete LOK_DEF[k]);
         jadwalLokData.forEach(l => { (l.hari || []).forEach(h => { if (!LOK_DEF[h]) LOK_DEF[h] = []; if (!LOK_DEF[h].includes(l.nama)) LOK_DEF[h].push(l.nama); }); });
         updateClock();

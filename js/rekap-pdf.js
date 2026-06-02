@@ -512,12 +512,12 @@
           <body>
             <div class="alert-mobile">ℹ️ <b>Pratinjau HTML</b><br>Tampilan di bawah adalah ringkasan dokumen. Silakan unduh PDF untuk melihat format resmi (A4/F4).</div>
             <div class="kop">
-              ${logoUrl ? \`<img src="\${logoUrl}" />\` : ''}
+              ${logoUrl ? `<img src="${logoUrl}" />` : ''}
               <div class="kop-text">
                 <h2>PEMERINTAH KABUPATEN SUMBA BARAT</h2>
-                <h1>\${headerName}</h1>
-                <p>\${headerAlamat.replace(/\\n/g, '<br>')}</p>
-                \${headerKontak ? \`<p>\${headerKontak}</p>\` : ''}
+                <h1>${headerName}</h1>
+                <p>${headerAlamat.replace(/\n/g, '<br>')}</p>
+                ${headerKontak ? `<p>${headerKontak}</p>` : ''}
               </div>
             </div>
             <div class="kop-divider"></div>
@@ -528,22 +528,22 @@
         const sampai = $('rekapSampai')?.value || '';
         const isMagang = $('rekapRoleFilter')?.value === 'magang';
         
-        html += \`
+        html += `
             <div class="title-area">
-              <h3>\${isMagang ? 'DAFTAR HADIR MAGANG / LAINNYA' : 'DAFTAR HADIR PEGAWAI'}</h3>
-              <p>Periode: \${dari === sampai ? dari : dari + ' s.d. ' + sampai}</p>
+              <h3>${isMagang ? 'DAFTAR HADIR MAGANG / LAINNYA' : 'DAFTAR HADIR PEGAWAI'}</h3>
+              <p>Periode: ${dari === sampai ? dari : dari + ' s.d. ' + sampai}</p>
             </div>
             <table>
               <thead>
                 <tr>
                   <th style="width:5%">No</th>
-                  <th style="width:40%">Nama / \${isMagang ? 'ID' : 'NIP'}</th>
+                  <th style="width:40%">Nama / ${isMagang ? 'ID' : 'NIP'}</th>
                   <th style="width:25%">Jam</th>
                   <th style="width:30%">Ket</th>
                 </tr>
               </thead>
               <tbody>
-        \`;
+        `;
         
         const data = window.lastRekapPegawai || [];
         data.filter(p => p.nama && p.nama.trim() !== "").forEach((p, i) => {
@@ -559,26 +559,26 @@
           
           const ket = [ketStatus, p.logKet || ''].filter(Boolean).join(': ');
           
-          html += \`
+          html += `
             <tr>
-              <td>\${i+1}</td>
-              <td class="text-left"><b>\${p.nama}</b><br><span style="font-size:9px; color:#555">\${p.nip||'—'}</span></td>
-              <td><span style="font-size:9px">In: \${jamM}</span><br><span style="font-size:9px">Out: \${jamP}</span></td>
-              <td>\${ket || '—'}</td>
+              <td>${i+1}</td>
+              <td class="text-left"><b>${p.nama}</b><br><span style="font-size:9px; color:#555">${p.nip||'—'}</span></td>
+              <td><span style="font-size:9px">In: ${jamM}</span><br><span style="font-size:9px">Out: ${jamP}</span></td>
+              <td>${ket || '—'}</td>
             </tr>
-          \`;
+          `;
         });
         
-        html += \`</tbody></table>\`;
+        html += `</tbody></table>`;
         
       } else if (context === 'lembur') {
         const range = window._currentLemburRange || {};
         const dalamRangka = range.judul || ($('lemburDalamRangka')?.value || '').trim();
-        html += \`
+        html += `
             <div class="title-area">
               <h3>REKAPITULASI KERJA LEMBUR PEGAWAI</h3>
-              <p>Periode: \${range.dari || ''} s.d. \${range.sampai || ''}</p>
-              \${dalamRangka ? \`<p style="font-style:italic">Dalam Rangka: \${dalamRangka}</p>\` : ''}
+              <p>Periode: ${range.dari || ''} s.d. ${range.sampai || ''}</p>
+              ${dalamRangka ? `<p style="font-style:italic">Dalam Rangka: ${dalamRangka}</p>` : ''}
             </div>
             <table>
               <thead>
@@ -589,7 +589,7 @@
                 </tr>
               </thead>
               <tbody>
-        \`;
+        `;
         
         const data = window._currentLemburData || [];
         const groups = {};
@@ -598,29 +598,29 @@
             groups[r.nip] = { nama: r.nama, nip: r.nip, list: [] };
           }
           if (r.keterangan_status) {
-            groups[r.nip].list.push(\`<span style="color:#d97706">\${r.tanggal.slice(8,10)}</span>: \${r.keterangan_status}\`);
+            groups[r.nip].list.push(`<span style="color:#d97706">${r.tanggal.slice(8,10)}</span>: ${r.keterangan_status}`);
           } else {
-            groups[r.nip].list.push(\`<span style="color:#2563eb">\${r.tanggal.slice(8,10)}</span>: \${r.jam_pulang || '—'}\`);
+            groups[r.nip].list.push(`<span style="color:#2563eb">${r.tanggal.slice(8,10)}</span>: ${r.jam_pulang || '—'}`);
           }
         });
         
         Object.values(groups).forEach((g, i) => {
-          html += \`
+          html += `
             <tr>
-              <td>\${i+1}</td>
-              <td class="text-left"><b>\${g.nama}</b><br><span style="font-size:9px; color:#555">\${g.nip||'—'}</span></td>
-              <td class="text-left" style="font-size:9px; line-height:1.4;">\${g.list.join('<br>')}</td>
+              <td>${i+1}</td>
+              <td class="text-left"><b>${g.nama}</b><br><span style="font-size:9px; color:#555">${g.nip||'—'}</span></td>
+              <td class="text-left" style="font-size:9px; line-height:1.4;">${g.list.join('<br>')}</td>
             </tr>
-          \`;
+          `;
         });
         
-        html += \`</tbody></table>\`;
+        html += `</tbody></table>`;
       }
       
-      html += \`
+      html += `
             <div class="footer">
               <div class="footer-box">
-                <p>Waikabubak, \${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                <p>Waikabubak, ${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
                 <p>Mengetahui,</p>
                 <p>Pimpinan</p>
                 <div class="name">TTD</div>
@@ -628,7 +628,7 @@
             </div>
           </body>
         </html>
-      \`;
+      `;
       
       return html;
     };

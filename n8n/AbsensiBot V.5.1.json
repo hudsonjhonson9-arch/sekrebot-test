@@ -2,7 +2,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  $execution.respond({ statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: false, message: 'Unauthorized' }) });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  throw new Error('Unauthorized');\n  return [];\n}\nreturn $input.all();"
       },
       "name": "Security Gate Absen",
       "type": "n8n-nodes-base.code",
@@ -15,7 +15,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  $execution.respond({ statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: false, message: 'Unauthorized' }) });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  throw new Error('Unauthorized');\n  return [];\n}\nreturn $input.all();"
       },
       "name": "Security Gate User-List",
       "type": "n8n-nodes-base.code",
@@ -28,7 +28,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  $execution.respond({ statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: false, message: 'Unauthorized' }) });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  throw new Error('Unauthorized');\n  return [];\n}\nreturn $input.all();"
       },
       "name": "Security Gate User-Edit",
       "type": "n8n-nodes-base.code",
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  $execution.respond({ statusCode: 401, headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: false, message: 'Unauthorized' }) });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst method = $input.first().json.method || '';\nif (method === 'OPTIONS') return $input.all();\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nif (token !== 'BAPPERIDA_SECURE_TOKEN_2025') {\n  throw new Error('Unauthorized');\n  return [];\n}\nreturn $input.all();"
       },
       "name": "Security Gate Rekap",
       "type": "n8n-nodes-base.code",
@@ -117,7 +117,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -211,7 +211,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -365,7 +365,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -475,7 +475,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -505,7 +505,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "c2b78639-ad9a-4f9a-bcbe-223f896ea624",
       "name": "CORS GET Jam",
@@ -651,7 +651,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "931c4520-1184-4f6b-858a-d372cbd6cd4f",
       "name": "CORS POST Jam",
@@ -1190,7 +1190,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "3b46a215-03df-4032-b611-eba71890b54f",
       "name": "CORS Admin Add",
@@ -1237,7 +1237,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1301,7 +1301,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1365,7 +1365,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1416,7 +1416,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1513,7 +1513,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1566,7 +1566,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1596,7 +1596,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1668,7 +1668,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1774,7 +1774,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "f9c0a10e-67f9-42bc-9d2c-0ab614ce3dcc",
       "name": "CORS Periode Delete",
@@ -1820,7 +1820,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -1852,7 +1852,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2044,7 +2044,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "31c98882-c13e-47c1-bf91-5d046f53b7a3",
       "name": "CORS Periode Add",
@@ -2089,7 +2089,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2119,7 +2119,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "ec27319a-31c7-4ec6-b244-5c1c5a5b3b7f",
       "name": "CORS Periode List",
@@ -2197,7 +2197,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2308,7 +2308,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2338,7 +2338,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2385,7 +2385,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2437,7 +2437,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2481,7 +2481,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Handle CORS preflight\nconst method = $input.first().json.headers?.['x-forwarded-method'] \n            || $input.first().json.method \n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
+        "jsCode": "// Handle CORS preflight\nconst method = $input.first().json.headers?.['x-forwarded-method'] \n            || $input.first().json.method \n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2525,7 +2525,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2542,7 +2542,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Handle CORS preflight\nconst method = $input.first().json.headers?.['x-forwarded-method']\n            || $input.first().json.method\n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
+        "jsCode": "// Handle CORS preflight\nconst method = $input.first().json.headers?.['x-forwarded-method']\n            || $input.first().json.method\n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2570,7 +2570,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               },
               {
                 "name": "Cache-Control",
@@ -2645,7 +2645,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               },
               {
                 "name": "Content-Type",
@@ -2691,7 +2691,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method']\n            || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method']\n            || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "a1332c42-8dfb-4819-b4ff-7338b6220a8e",
       "name": "CORS User-List",
@@ -2737,7 +2737,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -2769,7 +2769,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token"
               }
             ]
           }
@@ -3088,7 +3088,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] \n            || $input.first().json.method \n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] \n            || $input.first().json.method \n            || '';\n\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin':  '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\n\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -3372,7 +3372,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "1a380567-e3d9-4685-9a8a-582dc827c970",
       "name": "CORS User-Delete",
@@ -3462,7 +3462,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "401910c4-ba8e-4a16-8115-b601e84605ce",
       "name": "CORS User-Add",
@@ -3588,7 +3588,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, x-app-token, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "id": "d8de5b74-31f4-4bbd-aa60-706141259819",
       "name": "CORS User-Edit",

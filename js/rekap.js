@@ -228,6 +228,35 @@ async function loadRekap() {
     if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
     $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
+    // ── Khusus Harian: Hitung ulang ringkasan agar TB (Belum Absen) sesuai dengan card ──
+    if (isHarianLoad && pegawai.length > 0) {
+      let rM = 0, rP = 0, rPL = 0, rL = 0, rI = 0, rS = 0, rT = 0, rTu = 0, rC = 0, rA = 0;
+      pegawai.forEach(p => {
+        const isHadir = (p.masuk || 0) > 0 || (p.lambat_count || 0) > 0 || !!p._rawMasukLog || !!p._rawPulangLog;
+        const isKet = (p.izin || 0) > 0 || (p.sakit || 0) > 0 || (p.tugas || 0) > 0 || (p.tubel || 0) > 0 || (p.cuti || 0) > 0;
+        if (!isHadir && !isKet) rA++;
+        if (p.masuk > 0 || p._rawMasukLog) rM++;
+        if (p.pulang > 0 || p._rawPulangLog) rP++;
+        if (p.pulang_luar > 0) rPL++;
+        if ((p.lambat_count || 0) > 0 || (p.pulang_cepat_count || 0) > 0) rL++;
+        if (p.izin > 0) rI++;
+        if (p.sakit > 0) rS++;
+        if (p.tugas > 0) rT++;
+        if (p.tubel > 0) rTu++;
+        if (p.cuti > 0) rC++;
+      });
+      $('rsMasuk').textContent = rM;
+      $('rsPulang').textContent = rP;
+      $('rsPulangLuar').textContent = rPL;
+      $('rsLuar').textContent = rL;
+      $('rsIzin').textContent = rI;
+      $('rsSakit').textContent = rS;
+      $('rsTugas').textContent = rT;
+      if ($('rsTubel')) $('rsTubel').textContent = rTu;
+      if ($('rsCuti')) $('rsCuti').textContent = rC;
+      $('rsAlpa').textContent = rA;
+    }
+
     // ── Enrichment (Hanya jika metadata kurang/fallback) ──
     // n8n v18.2+ sudah menyertakan jabatan/pangkat/order, jadi ini biasanya diskip
     const hasMissingMeta = pegawai.some(p => !p.jabatan || p.jabatan === '—' || !p.pangkat || p.pangkat === '—');

@@ -248,15 +248,14 @@
         // Set default tanggal hari ini
         const tglMulaiEl = $('adminKetTglMulai');
         const tglSelesaiEl = $('adminKetTglSelesai');
+        const rangeEl = $('adminKetDateRange');
         const today = new Date().toLocaleDateString('sv-SE', { timeZone: (typeof TZ !== 'undefined' ? TZ : undefined) });
         
-        if (tglMulaiEl) {
-          if (tglMulaiEl._flatpickr) tglMulaiEl._flatpickr.setDate(today);
-          else tglMulaiEl.value = today;
-        }
-        if (tglSelesaiEl) {
-          if (tglSelesaiEl._flatpickr) tglSelesaiEl._flatpickr.setDate(today);
-          else tglSelesaiEl.value = today;
+        if (tglMulaiEl) tglMulaiEl.value = today;
+        if (tglSelesaiEl) tglSelesaiEl.value = today;
+        
+        if (rangeEl && rangeEl._flatpickr) {
+          rangeEl._flatpickr.setDate([today, today]);
         }
 
       } catch (e) {
@@ -579,17 +578,23 @@
     document.addEventListener('DOMContentLoaded', () => {
       if (window.flatpickr) {
         const today = new Date().toLocaleDateString('sv-SE', { timeZone: (typeof TZ !== 'undefined' ? TZ : undefined) });
-        flatpickr('#adminKetTglMulai', {
+        flatpickr('#adminKetDateRange', {
+          mode: 'range',
           dateFormat: 'Y-m-d',
-          defaultDate: today,
+          defaultDate: [today, today],
           disableMobile: true,
-          allowInput: false
-        });
-        flatpickr('#adminKetTglSelesai', {
-          dateFormat: 'Y-m-d',
-          defaultDate: today,
-          disableMobile: true,
-          allowInput: false
+          allowInput: false,
+          onChange: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length > 0) {
+              const start = flatpickr.formatDate(selectedDates[0], 'Y-m-d');
+              const end = selectedDates.length > 1 ? flatpickr.formatDate(selectedDates[1], 'Y-m-d') : start;
+              if ($('adminKetTglMulai')) $('adminKetTglMulai').value = start;
+              if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = end;
+            } else {
+              if ($('adminKetTglMulai')) $('adminKetTglMulai').value = '';
+              if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = '';
+            }
+          }
         });
       }
     });

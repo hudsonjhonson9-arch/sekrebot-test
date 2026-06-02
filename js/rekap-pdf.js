@@ -473,6 +473,166 @@
       }
     }
 
+    // ══ HTML PREVIEW GENERATOR (FOR MOBILE) ══
+    window.buildHtmlPreview = function() {
+      const context = window.pdfPreviewContext;
+      const headerName = $('pdfOptHeaderName')?.value || 'PEMERINTAH KABUPATEN SUMBA BARAT';
+      const headerAlamat = $('pdfOptHeaderAlamat')?.value || '';
+      const headerKontak = $('pdfOptHeaderKontak')?.value || '';
+      const logoUrl = $('pdfOptHeaderLogo')?.value || '';
+
+      let html = `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+              body { font-family: 'Times New Roman', Times, serif; padding: 15px 10px; margin: 0; background: #fff; color: #000; font-size: 11px; line-height: 1.3; }
+              .kop { display: flex; align-items: center; justify-content: center; position: relative; padding-bottom: 8px; margin-bottom: 2px; }
+              .kop img { width: 45px; position: absolute; left: 0; top: 0; }
+              .kop-text { text-align: center; margin-left: 45px; }
+              .kop h2 { margin: 0; font-size: 13px; font-weight: bold; }
+              .kop h1 { margin: 2px 0; font-size: 15px; font-weight: bold; }
+              .kop p { margin: 0; font-size: 9px; line-height: 1.2; }
+              .kop-divider { border-bottom: 2.5px solid #000; position: relative; margin-bottom: 15px; }
+              .kop-divider::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; border-bottom: 1px solid #000; }
+              .title-area { text-align: center; margin-bottom: 15px; }
+              .title-area h3 { margin: 0; font-size: 13px; font-weight: bold; text-decoration: underline; }
+              .title-area p { margin: 3px 0 0 0; font-size: 11px; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
+              th, td { border: 1px solid #333; padding: 5px; text-align: center; vertical-align: middle; word-wrap: break-word; }
+              th { background: #f9f9f9; font-weight: bold; }
+              .text-left { text-align: left; }
+              .footer { margin-top: 25px; display: flex; justify-content: flex-end; font-size: 11px; }
+              .footer-box { width: 160px; text-align: center; }
+              .footer-box p { margin: 2px 0; }
+              .footer-box .name { margin-top: 40px; font-weight: bold; text-decoration: underline; }
+              .alert-mobile { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px; margin-bottom: 15px; font-family: sans-serif; font-size: 11.5px; text-align: center; color: #166534; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+            </style>
+          </head>
+          <body>
+            <div class="alert-mobile">ℹ️ <b>Pratinjau HTML</b><br>Tampilan di bawah adalah ringkasan dokumen. Silakan unduh PDF untuk melihat format resmi (A4/F4).</div>
+            <div class="kop">
+              ${logoUrl ? \`<img src="\${logoUrl}" />\` : ''}
+              <div class="kop-text">
+                <h2>PEMERINTAH KABUPATEN SUMBA BARAT</h2>
+                <h1>\${headerName}</h1>
+                <p>\${headerAlamat.replace(/\\n/g, '<br>')}</p>
+                \${headerKontak ? \`<p>\${headerKontak}</p>\` : ''}
+              </div>
+            </div>
+            <div class="kop-divider"></div>
+      `;
+
+      if (context === 'rekap') {
+        const dari = $('rekapDari')?.value || '';
+        const sampai = $('rekapSampai')?.value || '';
+        const isMagang = $('rekapRoleFilter')?.value === 'magang';
+        
+        html += \`
+            <div class="title-area">
+              <h3>\${isMagang ? 'DAFTAR HADIR MAGANG / LAINNYA' : 'DAFTAR HADIR PEGAWAI'}</h3>
+              <p>Periode: \${dari === sampai ? dari : dari + ' s.d. ' + sampai}</p>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:5%">No</th>
+                  <th style="width:40%">Nama / \${isMagang ? 'ID' : 'NIP'}</th>
+                  <th style="width:25%">Jam</th>
+                  <th style="width:30%">Ket</th>
+                </tr>
+              </thead>
+              <tbody>
+        \`;
+        
+        const data = window.lastRekapPegawai || [];
+        data.filter(p => p.nama && p.nama.trim() !== "").forEach((p, i) => {
+          const jamM = p.dataExcelRow?.['Jam Masuk'] || p.jamMasuk || '—';
+          const jamP = p.dataExcelRow?.['Jam Pulang'] || p.jamPulang || '—';
+          let ketStatus = '';
+          if (p.tubel > 0) ketStatus = 'TUBEL';
+          else if (p.cuti > 0) ketStatus = 'CUTI';
+          else if (p.sakit > 0) ketStatus = 'SAKIT';
+          else if (p.izin > 0) ketStatus = 'IZIN';
+          else if (p.tugas > 0) ketStatus = 'TUGAS/DL';
+          else if (jamM === '—' || jamM === '-') ketStatus = 'TB';
+          
+          const ket = [ketStatus, p.logKet || ''].filter(Boolean).join(': ');
+          
+          html += \`
+            <tr>
+              <td>\${i+1}</td>
+              <td class="text-left"><b>\${p.nama}</b><br><span style="font-size:9px; color:#555">\${p.nip||'—'}</span></td>
+              <td><span style="font-size:9px">In: \${jamM}</span><br><span style="font-size:9px">Out: \${jamP}</span></td>
+              <td>\${ket || '—'}</td>
+            </tr>
+          \`;
+        });
+        
+        html += \`</tbody></table>\`;
+        
+      } else if (context === 'lembur') {
+        const range = window._currentLemburRange || {};
+        const dalamRangka = range.judul || ($('lemburDalamRangka')?.value || '').trim();
+        html += \`
+            <div class="title-area">
+              <h3>REKAPITULASI KERJA LEMBUR PEGAWAI</h3>
+              <p>Periode: \${range.dari || ''} s.d. \${range.sampai || ''}</p>
+              \${dalamRangka ? \`<p style="font-style:italic">Dalam Rangka: \${dalamRangka}</p>\` : ''}
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:5%">No</th>
+                  <th style="width:45%">Nama Pegawai</th>
+                  <th style="width:50%">Rincian Lembur</th>
+                </tr>
+              </thead>
+              <tbody>
+        \`;
+        
+        const data = window._currentLemburData || [];
+        const groups = {};
+        data.forEach(r => {
+          if (!groups[r.nip]) {
+            groups[r.nip] = { nama: r.nama, nip: r.nip, list: [] };
+          }
+          if (r.keterangan_status) {
+            groups[r.nip].list.push(\`<span style="color:#d97706">\${r.tanggal.slice(8,10)}</span>: \${r.keterangan_status}\`);
+          } else {
+            groups[r.nip].list.push(\`<span style="color:#2563eb">\${r.tanggal.slice(8,10)}</span>: \${r.jam_pulang || '—'}\`);
+          }
+        });
+        
+        Object.values(groups).forEach((g, i) => {
+          html += \`
+            <tr>
+              <td>\${i+1}</td>
+              <td class="text-left"><b>\${g.nama}</b><br><span style="font-size:9px; color:#555">\${g.nip||'—'}</span></td>
+              <td class="text-left" style="font-size:9px; line-height:1.4;">\${g.list.join('<br>')}</td>
+            </tr>
+          \`;
+        });
+        
+        html += \`</tbody></table>\`;
+      }
+      
+      html += \`
+            <div class="footer">
+              <div class="footer-box">
+                <p>Waikabubak, \${new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'})}</p>
+                <p>Mengetahui,</p>
+                <p>Pimpinan</p>
+                <div class="name">TTD</div>
+              </div>
+            </div>
+          </body>
+        </html>
+      \`;
+      
+      return html;
+    };
+
     // ══ MODAL INTERFACE CONTROLLERS & EXPOSURE ══
     window.openPdfPreviewModal = function() {
       const modal = $('pdfPreviewModal');
@@ -614,7 +774,9 @@
               const blobUrl = window.lastGeneratedDoc.output('bloburl');
               iframe.src = blobUrl;
             } else {
-              iframe.src = 'about:blank'; // Skip preview rendering on mobile
+              // Mobile fallback: Render as HTML Page
+              const htmlStr = window.buildHtmlPreview ? window.buildHtmlPreview() : '<div style="padding:20px;">Memuat pratinjau...</div>';
+              iframe.srcdoc = htmlStr;
             }
           } catch (err) {
             console.warn("Pratinjau PDF gagal dirender di browser ini.");

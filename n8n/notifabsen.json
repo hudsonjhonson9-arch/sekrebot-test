@@ -14,10 +14,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
-        -528
+        368,
+        544
       ],
-      "id": "529b4b83-3dfa-4b9a-a31d-e829aa4c6dfb",
+      "id": "1f8bda58-0bab-49fb-90f4-0b1119cc2219",
       "name": "Cek Akumulasi Waktu Pegawai"
     },
     {
@@ -31,10 +31,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        768,
-        -528
+        1488,
+        544
       ],
-      "id": "02d7576b-1940-41d3-87a6-cc21b2450e5a",
+      "id": "9af70a38-b3fd-448c-84ad-ec432995a826",
       "name": "Send a text message",
       "webhookId": "3285fffe-7730-43fb-942d-8751af44114a",
       "credentials": {
@@ -53,10 +53,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -128,
-        -528
+        592,
+        544
       ],
-      "id": "9b032601-0dd1-4e68-ab6f-87254c17a339",
+      "id": "9fcda1da-e764-4083-bc68-e9269d55e09c",
       "name": "Get row(s) in sheet6",
       "credentials": {
         "postgres": {
@@ -72,10 +72,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        496,
-        -528
+        1216,
+        544
       ],
-      "id": "a53fdfb7-dba5-44b7-8ea1-9a9b9b09ed0c",
+      "id": "4486028c-8ccd-4196-a5dc-2db43d684e5f",
       "name": "Code in JavaScript10"
     },
     {
@@ -87,10 +87,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        320,
-        -528
+        1040,
+        544
       ],
-      "id": "ffcdab4c-7bd4-4fdc-9d7e-3b3080819dc8",
+      "id": "7fc8fc64-bc6b-4331-b01a-3c97167e6832",
       "name": "Get row(s) in sheet7",
       "alwaysOutputData": true,
       "credentials": {
@@ -118,10 +118,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
-        -192
+        368,
+        880
       ],
-      "id": "ad82a3df-904f-46a9-88d7-6df5811cf103",
+      "id": "692cf0d4-2711-4939-ae88-e610cbe6235d",
       "name": "Notif Waktu Absen Masuk"
     },
     {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
-        224
+        368,
+        1296
       ],
-      "id": "9d930e80-07b7-43d3-b6b7-582b9197e03d",
+      "id": "cbba54cd-fd45-4852-a0c2-301ddd44a10d",
       "name": "Notif Waktu Absen Pulang"
     },
     {
@@ -155,10 +155,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
-        -192
+        592,
+        880
       ],
-      "id": "1042c215-f9c4-421f-aca9-b121cfc2d4f9",
+      "id": "f25ca032-c073-4ddf-8519-6d3004ac00a3",
       "name": "Read Tanggal Masuk"
     },
     {
@@ -168,10 +168,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        544,
-        -192
+        1264,
+        880
       ],
-      "id": "f6c23228-552b-40d7-b82a-b09cd33ef269",
+      "id": "89eb5aef-d0bc-40ff-b47b-8e3c2f6efc40",
       "name": "Cek Pegawai yang Belum Absen"
     },
     {
@@ -181,10 +181,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
-        224
+        592,
+        1296
       ],
-      "id": "65c63d65-c9b0-4b86-89ee-3a8c06b46580",
+      "id": "bbf45a01-aa82-4b1c-9c90-0d36729c4df9",
       "name": "Read Tanggal Pulang"
     },
     {
@@ -194,10 +194,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        544,
-        224
+        1264,
+        1296
       ],
-      "id": "a61f28cd-bbf1-4db6-bee1-b4ec0add0857",
+      "id": "9984419e-79a3-444e-b4ea-a39305c2c893",
       "name": "Cek yang belum absen Pulang"
     },
     {
@@ -211,10 +211,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        768,
-        -288
+        1488,
+        784
       ],
-      "id": "53fd56e7-9a9e-41d7-a374-1d06a75ef846",
+      "id": "6eb39017-ab17-4f46-9af9-a2d97d4cd3df",
       "name": "Notif Absen Masuk",
       "webhookId": "5ee6eac4-4523-4686-99ff-b5319c9f3e38",
       "retryOnFail": false,
@@ -237,10 +237,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        768,
-        128
+        1488,
+        1200
       ],
-      "id": "cd8f7e49-89c2-4886-b715-d2aa5e1a2342",
+      "id": "81461ce3-eb5c-4841-be69-2d060e23da01",
       "name": "Notif Absen Pulang",
       "webhookId": "cacfbd02-3239-494b-99bf-957d98611ee2",
       "credentials": {
@@ -258,10 +258,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        96,
-        -528
+        816,
+        544
       ],
-      "id": "3aa85e35-e999-41f0-abc8-2876cbd2fd6d",
+      "id": "fa909d03-a2d6-44a0-abeb-9cfeef02d1f7",
       "name": "Code in JavaScript"
     },
     {
@@ -273,10 +273,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        96,
-        224
+        816,
+        1296
       ],
-      "id": "752e5a98-eade-42e5-88e6-b83cbf46f4a2",
+      "id": "0516a0d7-4337-4238-8981-b5cdfc6a2b0c",
       "name": "Cek Log Pulang",
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -296,10 +296,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        304,
-        224
+        1024,
+        1296
       ],
-      "id": "75856f16-3c36-4b74-8e32-f72869ec84d1",
+      "id": "4b3be883-53b2-4a42-9069-c6ddab50b85f",
       "name": "Cek Pegawai Pulang",
       "executeOnce": true,
       "credentials": {
@@ -318,10 +318,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        320,
-        -192
+        1040,
+        880
       ],
-      "id": "cf9944df-25e0-464e-93ab-669112addfdc",
+      "id": "83ac10c0-6acd-4f94-9e00-54dd9068b131",
       "name": "Get Pegawai Masuk",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -341,10 +341,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        96,
-        -192
+        816,
+        880
       ],
-      "id": "6283ef0e-1f60-42f0-955e-bf0507bddec1",
+      "id": "76ecc92a-91da-4bfc-a439-b0dc8f702b45",
       "name": "Get Log Masuk",
       "executeOnce": true,
       "alwaysOutputData": true,
@@ -368,10 +368,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        768,
-        -96
+        1488,
+        976
       ],
-      "id": "23bc7173-64d2-40c3-9e3e-6d52b0398dc4",
+      "id": "ca6ae488-190d-4b58-9f4d-738aa8dfb677",
       "name": "Send a text message2",
       "credentials": {
         "wahaApi": {
@@ -393,10 +393,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        768,
-        320
+        1488,
+        1392
       ],
-      "id": "c859f24a-553c-4f2a-8113-9144e683fb2d",
+      "id": "5489b854-2db6-484d-bf33-b4cfbb9312fc",
       "name": "Send a text message3",
       "credentials": {
         "wahaApi": {
@@ -417,10 +417,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1440,
-        528
+        2160,
+        1600
       ],
-      "id": "4374bdf9-7653-44b5-802f-3d462369ccfe",
+      "id": "16d320af-c521-4d34-b2c0-aefcc096e8c2",
       "name": "Kirim Notif TANPA BERITA",
       "webhookId": "tb-notif-0001",
       "credentials": {
@@ -438,10 +438,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1216,
-        528
+        1936,
+        1600
       ],
-      "id": "563c7648-acde-4112-a54c-13f7ed79620d",
+      "id": "386f5438-3a8f-4614-8ae2-96ad273adc87",
       "name": "Format Notif TB"
     },
     {
@@ -455,10 +455,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        976,
-        528
+        1696,
+        1600
       ],
-      "id": "1150f638-9e12-4a7d-b181-4e13776253cf",
+      "id": "08fb0628-1fc1-4fff-aa25-34549d642ef1",
       "name": "Simpan Log TANPA BERITA",
       "credentials": {
         "postgres": {
@@ -474,10 +474,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        528
+        1488,
+        1600
       ],
-      "id": "4019114e-871c-4033-879c-1d6246bfe9a1",
+      "id": "42aba0a0-b8c2-43ef-a16a-ce6420f4ee7c",
       "name": "Proses Filter TANPA BERITA",
       "alwaysOutputData": true
     },
@@ -490,10 +490,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        512,
-        528
+        1232,
+        1600
       ],
-      "id": "bdf361de-d7e1-4a2f-85f8-aa4d5f2cac64",
+      "id": "46c92536-171b-4442-bdcb-2d4b2700731b",
       "name": "Get Pegawai Aktif TB",
       "executeOnce": true,
       "credentials": {
@@ -512,10 +512,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        320,
-        528
+        1040,
+        1600
       ],
-      "id": "9e4b7566-82aa-4bec-bffe-f190e16dfffc",
+      "id": "d5dfc0bf-5acb-4b58-b7c4-8441c60752a6",
       "name": "Get Log Hari Ini TB",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -535,10 +535,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        96,
-        528
+        816,
+        1600
       ],
-      "id": "85e443b2-2c57-43b2-92a1-d927f86bfd68",
+      "id": "764f010a-e139-413d-9d65-3fdf46146efc",
       "name": "Get Libur Hari Ini TB",
       "alwaysOutputData": true,
       "credentials": {
@@ -555,10 +555,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -128,
-        528
+        592,
+        1600
       ],
-      "id": "45a9b75b-abd3-4903-8892-7b61cecc4c0a",
+      "id": "a43da65a-605b-436d-b01b-5f67f4b1b773",
       "name": "Read Tanggal TB"
     },
     {
@@ -575,10 +575,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -352,
-        528
+        368,
+        1600
       ],
-      "id": "902f26d4-7d2c-4ce5-9856-4e852ddc122f",
+      "id": "5f3a60ea-4303-4de8-bf82-0cbf64aa8c8c",
       "name": "Trigger Auto TANPA BERITA"
     },
     {
@@ -590,10 +590,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        1408,
-        768
+        2128,
+        1840
       ],
-      "id": "38e0e6c5-d1d3-433c-807a-a25905a7cae5",
+      "id": "1f2fbe3d-ba99-4563-a385-4bc5fdd05d52",
       "name": "Send a text message1",
       "credentials": {
         "wahaApi": {
@@ -628,13 +628,7 @@
     },
     "Code in JavaScript10": {
       "main": [
-        [
-          {
-            "node": "Send a text message",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Get row(s) in sheet7": {
@@ -748,24 +742,12 @@
     },
     "Cek Pegawai Pulang": {
       "main": [
-        [
-          {
-            "node": "Cek yang belum absen Pulang",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Get Pegawai Masuk": {
       "main": [
-        [
-          {
-            "node": "Cek Pegawai yang Belum Absen",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Get Log Masuk": {
@@ -797,13 +779,7 @@
     },
     "Simpan Log TANPA BERITA": {
       "main": [
-        [
-          {
-            "node": "Format Notif TB",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Proses Filter TANPA BERITA": {

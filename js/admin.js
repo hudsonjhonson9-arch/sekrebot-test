@@ -1054,7 +1054,10 @@
               ${isAktif ? '👤' : '💤'}
             </div>
             <div style="flex:1; min-width:0; margin-left:2px">
-              <div class="face-adm-name" style="font-size:12px; margin-bottom:1px; color:#fff">${nama}</div>
+              <div class="face-adm-name" style="font-size:12px; margin-bottom:1px; color:#fff; display:flex; align-items:center; gap:6px;">
+                ${nama}
+                ${!isAktif ? `<span style="font-size:8px; padding:2px 6px; border-radius:4px; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.4)">${status}</span>` : ''}
+              </div>
               <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab} &nbsp;·&nbsp; ${bid}</div>
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
@@ -1125,7 +1128,7 @@
         $('inPegawaiPangkat').value = p.pangkat || '';
 
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
-        $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
+        $('inPegawaiStatus').value = (p.real_status || p.status || p.Status || 'AKTIF').toUpperCase();
 
         f.style.display = 'block';
         f.scrollIntoView({ behavior: 'smooth', block: 'center' });

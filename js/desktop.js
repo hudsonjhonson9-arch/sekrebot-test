@@ -245,10 +245,15 @@
 
         renderAdminKetPegawaiList(_allAdminPegawai);
 
-        // Set default tanggal hari ini
-        const today = new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
-        if ($('adminKetTglMulai')) $('adminKetTglMulai').value = today;
-        if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = today;
+        // Set default tanggal hari ini & init flatpickr
+        if (window.flatpickr) {
+          if ($('adminKetTglMulai')) flatpickr('#adminKetTglMulai', { dateFormat: 'Y-m-d', defaultDate: 'today' });
+          if ($('adminKetTglSelesai')) flatpickr('#adminKetTglSelesai', { dateFormat: 'Y-m-d', defaultDate: 'today' });
+        } else {
+          const today = new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
+          if ($('adminKetTglMulai')) $('adminKetTglMulai').value = today;
+          if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = today;
+        }
 
       } catch (e) {
         el.innerHTML = '<div style="padding:15px; text-align:center; font-size:11px; color:var(--danger)">❌ Gagal memuat data</div>';

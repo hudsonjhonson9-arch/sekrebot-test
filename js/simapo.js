@@ -54,7 +54,11 @@ async function populateSimapoPinjamSelect() {
   // Event listener untuk input search
   if (!inputEl.hasAttribute('data-bound')) {
     inputEl.setAttribute('data-bound', 'true');
-    inputEl.addEventListener('input', (e) => filterSimapoPinjamDropdown(e.target.value));
+    inputEl.addEventListener('input', (e) => {
+      filterSimapoPinjamDropdown(e.target.value);
+      const resetBtn = document.getElementById('simapoPinjamResetBtn');
+      if (resetBtn) resetBtn.style.display = e.target.value ? 'block' : 'none';
+    });
     inputEl.addEventListener('focus', () => { 
       filterSimapoPinjamDropdown(inputEl.value);
       listEl.style.display = 'block'; 
@@ -116,6 +120,9 @@ function selectSimapoPinjamItem(id, nama, stok = 0, jenis = 'Aset Tetap') {
     hiddenEl.dataset.stok = stok;
     hiddenEl.dataset.jenis = jenis;
   }
+  // Show reset button
+  const resetBtn = document.getElementById('simapoPinjamResetBtn');
+  if (resetBtn) resetBtn.style.display = 'block';
   if (jumlahEl) {
     jumlahEl.max = stok;
     if (parseInt(jumlahEl.value) > stok) {
@@ -136,6 +143,31 @@ function selectSimapoPinjamItem(id, nama, stok = 0, jenis = 'Aset Tetap') {
   
   const listEl = document.getElementById('simapoPinjamList');
   if (listEl) listEl.style.display = 'none';
+}
+
+function resetSimapoPinjamSelection() {
+  const inputEl = document.getElementById('simapoSelectPinjamInput');
+  const hiddenEl = document.getElementById('simapoSelectPinjam');
+  const jumlahEl = document.getElementById('simapoPinjamJumlah');
+  const resetBtn = document.getElementById('simapoPinjamResetBtn');
+  const listEl = document.getElementById('simapoPinjamList');
+  const tglSelesaiCol = document.getElementById('simapoColSelesai');
+  const tglMulaiCol = document.getElementById('simapoColMulai');
+  const btnPinjam = document.getElementById('btnSimapoSubmitPinjam');
+
+  // Clear input & hidden values
+  if (inputEl) { inputEl.value = ''; inputEl.focus(); }
+  if (hiddenEl) { hiddenEl.value = ''; delete hiddenEl.dataset.stok; delete hiddenEl.dataset.jenis; }
+  if (jumlahEl) { jumlahEl.value = '1'; jumlahEl.max = ''; }
+  // Hide reset button
+  if (resetBtn) resetBtn.style.display = 'none';
+  // Reset form labels
+  if (tglSelesaiCol) tglSelesaiCol.style.display = 'block';
+  if (tglMulaiCol) tglMulaiCol.querySelector('label').textContent = 'Tgl Mulai';
+  if (btnPinjam) btnPinjam.innerHTML = '<div class="btn-inner"><span>📤</span> Ajukan Pinjaman</div>';
+  // Re-show dropdown with all items
+  filterSimapoPinjamDropdown('');
+  if (listEl) listEl.style.display = 'block';
 }
 
 /**

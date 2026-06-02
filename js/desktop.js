@@ -245,14 +245,18 @@
 
         renderAdminKetPegawaiList(_allAdminPegawai);
 
-        // Set default tanggal hari ini & init flatpickr
-        if (window.flatpickr) {
-          if ($('adminKetTglMulai')) flatpickr('#adminKetTglMulai', { dateFormat: 'Y-m-d', defaultDate: 'today' });
-          if ($('adminKetTglSelesai')) flatpickr('#adminKetTglSelesai', { dateFormat: 'Y-m-d', defaultDate: 'today' });
-        } else {
-          const today = new Date().toLocaleDateString('sv-SE', { timeZone: TZ });
-          if ($('adminKetTglMulai')) $('adminKetTglMulai').value = today;
-          if ($('adminKetTglSelesai')) $('adminKetTglSelesai').value = today;
+        // Set default tanggal hari ini
+        const tglMulaiEl = $('adminKetTglMulai');
+        const tglSelesaiEl = $('adminKetTglSelesai');
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: (typeof TZ !== 'undefined' ? TZ : undefined) });
+        
+        if (tglMulaiEl) {
+          if (tglMulaiEl._flatpickr) tglMulaiEl._flatpickr.setDate(today);
+          else tglMulaiEl.value = today;
+        }
+        if (tglSelesaiEl) {
+          if (tglSelesaiEl._flatpickr) tglSelesaiEl._flatpickr.setDate(today);
+          else tglSelesaiEl.value = today;
         }
 
       } catch (e) {
@@ -571,3 +575,21 @@
     window.initSuperadminAdminKetScoping = initSuperadminAdminKetScoping;
     window.onAdminKetInstansiChange = onAdminKetInstansiChange;
 
+    // Initialize Flatpickr for Admin Keterangan inputs
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.flatpickr) {
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: (typeof TZ !== 'undefined' ? TZ : undefined) });
+        flatpickr('#adminKetTglMulai', {
+          dateFormat: 'Y-m-d',
+          defaultDate: today,
+          disableMobile: true,
+          allowInput: false
+        });
+        flatpickr('#adminKetTglSelesai', {
+          dateFormat: 'Y-m-d',
+          defaultDate: today,
+          disableMobile: true,
+          allowInput: false
+        });
+      }
+    });

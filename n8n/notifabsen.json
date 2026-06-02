@@ -625,7 +625,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"user_list\" SET \"Status\" = 'AKTIF', \"status\" = 'AKTIF' WHERE \"Status\" IN ('SAKIT', 'IZIN', 'CUTI', 'TUGAS', 'TUBEL', 'ALPA', 'TANPA BERITA') OR \"status\" IN ('SAKIT', 'IZIN', 'CUTI', 'TUGAS', 'TUBEL', 'ALPA', 'TANPA BERITA')",
+        "query": "UPDATE \"user_list\" u SET \"Status\" = 'AKTIF', \"status\" = 'AKTIF' FROM \"ket_temp\" k WHERE (u.\"id\"::text = k.\"ID_Pegawai\"::text OR (u.\"NIP\" = k.\"NIP\" AND k.\"NIP\" != '')) AND k.\"Status\" = 'DISETUJUI' AND k.\"tgl_selesai\" = TO_CHAR((NOW() AT TIME ZONE 'Asia/Makassar') - INTERVAL '1 day', 'YYYY-MM-DD') AND u.id NOT IN (SELECT \"ID_Pegawai\"::bigint FROM \"ket_temp\" WHERE \"Status\" = 'DISETUJUI' AND \"tgl_mulai\" != '' AND \"tgl_selesai\" != '' AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') >= \"tgl_mulai\" AND TO_CHAR(NOW() AT TIME ZONE 'Asia/Makassar', 'YYYY-MM-DD') <= \"tgl_selesai\")",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

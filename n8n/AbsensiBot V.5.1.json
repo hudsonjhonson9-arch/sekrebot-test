@@ -724,7 +724,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"lokasiabsen\" (\"Nama_Lokasi\", \"latitude\", \"longitude\", \"hari\", \"radius\", \"ip_range\", \"instansi_id\") VALUES ('{{ ($('Lokasi-Add').item.json.body.nama_lokasi).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.latitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.longitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.hari).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.radius).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.ip_range).toString().replace(/'/g, \"''\") }}', '{{ ($('Lokasi-Add').item.json.body.instansi_id || \"bapperida\").toString().replace(/'/g, \\\"''\\\") }}') RETURNING *",
+        "query": "INSERT INTO \"lokasiabsen\" (\"Nama_Lokasi\", \"latitude\", \"longitude\", \"hari\", \"radius\", \"ip_range\", \"instansi_id\") VALUES ('{{ ($('Lokasi-Add').item.json.body.nama_lokasi).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.latitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.longitude).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.hari).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.radius).toString().replace(/'/g, \"''\") }}','{{ ($('Lokasi-Add').item.json.body.ip_range).toString().replace(/'/g, \"''\") }}', '{{ ($('Lokasi-Add').item.json.body.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING *",
         "options": {
           "queryBatching": "independently"
         }

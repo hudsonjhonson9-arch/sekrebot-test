@@ -155,10 +155,11 @@ document.addEventListener('click', function(e) {
       setBtnL('btnTambahLokasi', true, 'Menyimpan...');
       
       let instansi_id = 'all';
-      if (isSuperAdminUser() && $('instansiLokasiContainer') && $('instansiLokasiContainer').style.display !== 'none') {
-        const checked = Array.from($('instansiCheckGrid').querySelectorAll('input:checked')).map(cb => cb.value);
-        if (checked.length) instansi_id = checked.join(',');
-        else instansi_id = 'all'; // fallback to all if empty
+      if (isSuperAdminUser()) {
+        const selectEl = $('adminLokasiInstansiSelect');
+        if (selectEl && selectEl.value) {
+          instansi_id = selectEl.value;
+        }
       } else {
         instansi_id = localStorage.getItem('MY_INSTANSI') || 'all';
       }

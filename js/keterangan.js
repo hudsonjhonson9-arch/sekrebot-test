@@ -223,7 +223,8 @@
         request_id: `ket_${userProfile?.nip}_${Date.now()}`, // Idempotency Key
         user: {
           id: MY_ID, first_name: tgUser.first_name || '', last_name: tgUser.last_name || '', username: tgUser.username || '',
-          nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || ''
+          nama_lengkap: userProfile?.nama || '', jabatan: userProfile?.jabatan || '', nip: userProfile?.nip || '',
+          instansi_id: userProfile?.instansi_id || localStorage.getItem('MY_INSTANSI') || ''
         },
         jenis: selectedJenis, tgl_mulai: tm, tgl_selesai: ts, keterangan: k,
         jam_mulai: $('checkIzinJam').checked ? $('inJamMulai').value : '',
@@ -420,6 +421,8 @@
       try {
         const res = await apiPost(P.ketEdit, {
             user_id: MY_ID, id_ket: idKet, orig_tanggal: origTgl,
+            nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
+            instansi_id: userProfile?.instansi_id || localStorage.getItem('MY_INSTANSI') || '',
             jenis: editSelectedJenis, tgl_mulai: tm, tgl_selesai: ts, keterangan: k,
             timestamp: Math.floor(Date.now() / 1000)
           });
@@ -450,6 +453,8 @@
       try {
         const res = await apiPost(P.ketDelete, {
             user_id: MY_ID, id_ket: idKet,
+            nip: userProfile?.nip || localStorage.getItem('MY_NIP') || '',
+            instansi_id: userProfile?.instansi_id || localStorage.getItem('MY_INSTANSI') || '',
             tgl_mulai: tgl, tgl_selesai: tgl, tanggal: tgl,
             timestamp: Math.floor(Date.now() / 1000)
           });

@@ -47,7 +47,7 @@
           fetchLogData(MY_ID),
           fetchJamPeriode(),
           loadJamAbsen(),
-          liburLoaded ? Promise.resolve() : fetchLiburForRekap()
+          window.AbsenApp.rekap.liburLoaded ? Promise.resolve() : fetchLiburForRekap()
         ]);
         allLogs = rows;
         logLoaded = true;
@@ -112,7 +112,7 @@
         const isWeekend = _dayIdx === 0 || _dayIdx === 6;
         const isLiburNasional = window.AbsenApp.rekap.hariLiburSet.has(tgl);
         const isLibur = isWeekend || isLiburNasional;
-        const namaLibur = isLiburNasional ? (hariLiburMap[tgl] || 'Hari Libur')
+        const namaLibur = isLiburNasional ? (window.AbsenApp.rekap.hariLiburMap[tgl] || 'Hari Libur')
           : isWeekend ? (_dayIdx === 0 ? 'Minggu' : 'Sabtu')
             : null;
 

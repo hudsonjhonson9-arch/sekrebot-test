@@ -1,13 +1,7 @@
 /* ════ REKAP ════ */
 /* ════ REKAP ════ */
 
-// Global state: hari libur & jam per pegawai
-window.AbsenApp.rekap.window.AbsenApp.rekap.hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
-window.AbsenApp.rekap.window.AbsenApp.rekap.jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
-window.AbsenApp.rekap.window.AbsenApp.rekap.liburLoaded = false;
-window.AbsenApp.rekap.window.AbsenApp.rekap.userListOrder = [];
-
-
+// Global state: hari libur & jam per pegawai diinisialisasi di state.js
 // Flatpickr instance for rekap range picker
 window.AbsenApp.rekap.fp = null;
 

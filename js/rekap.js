@@ -221,6 +221,7 @@ async function loadRekap() {
     if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
     $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
+    let isAlpa = false, terlambatMnt = 0, cepatMnt = 0;
     // ── Khusus Harian: Hitung ulang ringkasan agar TB (Belum Absen) sesuai dengan card ──
     if (isHarianLoad && pegawai.length > 0) {
       let rM = 0, rP = 0, rPL = 0, rL = 0, rI = 0, rS = 0, rT = 0, rTu = 0, rC = 0, rA = 0;
@@ -633,6 +634,8 @@ function renderRekap(pg) {
       ? `<div class="rekap-jabatan">${jabatan}</div>`
       : '';
 
+    let isAlpa = false, terlambatMnt = 0, cepatMnt = 0;
+
     /* ─────────────────────────────────────────
        TAMPILAN HARIAN — CARD JAM PER PEGAWAI
        ───────────────────────────────────────── */
@@ -660,9 +663,9 @@ function renderRekap(pg) {
       const mPulang = toMenitLocal(rawPulang);
 
       // Status masuk
-      const terlambatMnt = (mMasuk !== null && mMasukBatas !== null && mMasuk > mMasukBatas)
+      terlambatMnt = (mMasuk !== null && mMasukBatas !== null && mMasuk > mMasukBatas)
         ? mMasuk - mMasukBatas : 0;
-      const cepatMnt = (mPulang !== null && mPulangBatas !== null && mPulang < mPulangBatas)
+      cepatMnt = (mPulang !== null && mPulangBatas !== null && mPulang < mPulangBatas)
         ? mPulangBatas - mPulang : 0;
 
       // Label & warna jam masuk
@@ -688,7 +691,7 @@ function renderRekap(pg) {
       // Kehadiran overall status untuk warna border card
       const isHadir = (masuk + lambatCount) > 0 || !!p._rawMasukLog || !!p._rawPulangLog;
       const isKet = izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0;
-      const isAlpa = !isHadir && !isKet;
+      isAlpa = !isHadir && !isKet;
       const cardBorderColor = isKet ? (p.tubel > 0 ? 'rgba(99,102,241,.25)' : p.cuti > 0 ? 'rgba(20,184,166,.25)' : 'rgba(139,92,246,.25)')
         : isAlpa ? 'rgba(239,68,68,.2)'
           : terlambatMnt > 0 || cepatMnt > 0 ? 'rgba(245,158,11,.3)'

@@ -122,13 +122,13 @@
         if (!res.ok) return;
         const rawRows = (res.rows && res.rows.length) ? res.rows : parseApiResponse(res.data);
         const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || []);
-        hariLiburMap = {};
+        window.AbsenApp.rekap.hariLiburMap = {};
         rows.forEach(r => {
           const tgl = String(r.tanggal || r.Tanggal || '').trim();
-          if (tgl) hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
+          if (tgl) window.AbsenApp.rekap.hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
         });
-        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(hariLiburMap));
-        liburLoaded = true;
+        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(window.AbsenApp.rekap.hariLiburMap));
+        window.AbsenApp.rekap.liburLoaded = true;
       } catch (e) { console.warn('[admin-libur.js] Operasi gagal:', e.message); }
     }
 
@@ -139,14 +139,14 @@
         if (!res.ok) return;
         const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = Array.isArray(d) ? d : (d.data || d.rows || []);
-        jamPegawaiMap = {};
+        window.AbsenApp.rekap.jamPegawaiMap = {};
         rows.forEach(r => {
           const id = String(r.id || r.ID || '').trim();
           const jm = (r.jam_masuk || r['Jam Masuk'] || '').trim();
           const jp = (r.jam_pulang || r['Jam Pulang'] || '').trim();
           if (id && (jm || jp)) {
             const toM = s => { const [h, m] = (s || '').split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; };
-            jamPegawaiMap[id] = {
+            window.AbsenApp.rekap.jamPegawaiMap[id] = {
               masuk: jm || null, pulang: jp || null,
               masukMenit: toM(jm), pulangMenit: toM(jp)
             };
@@ -216,7 +216,7 @@
         showResult('liburResult', 'liburRIcon', 'liburRTitle', 'liburRMsg', 'success', '✅', 'Berhasil', msg);
         $('inputTglLiburMulai').value = ''; $('inputTglLiburSelesai').value = ''; $('inputNamaLibur').value = '';
         if ($('liburDurasiInfo')) dom.hide('liburDurasiInfo');
-        liburLoaded = true; loadLiburAdmin();
+        window.AbsenApp.rekap.liburLoaded = true; loadLiburAdmin();
       } else {
         showResult('liburResult', 'liburRIcon', 'liburRTitle', 'liburRMsg', 'fail', '❌', 'Gagal', 'Semua tanggal gagal disimpan. Coba lagi.');
       }
@@ -240,10 +240,10 @@
         const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || [])
           .filter(r => String(r.tanggal || r.Tanggal || '').trim())
           .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
-        hariLiburMap = {};
-        rows.forEach(r => { const t = String(r.tanggal || r.Tanggal || '').trim(); if (t) hariLiburMap[t] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur'; });
-        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(hariLiburMap));
-        liburLoaded = true;
+        window.AbsenApp.rekap.hariLiburMap = {};
+        rows.forEach(r => { const t = String(r.tanggal || r.Tanggal || '').trim(); if (t) window.AbsenApp.rekap.hariLiburMap[t] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur'; });
+        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(window.AbsenApp.rekap.hariLiburMap));
+        window.AbsenApp.rekap.liburLoaded = true;
         const badge = $('liburTotalBadge');
         if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? 'inline-block' : 'none'; }
         if (!rows.length) {

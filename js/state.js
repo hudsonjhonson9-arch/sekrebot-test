@@ -1,10 +1,4 @@
 /* ════ STATE GLOBAL (MUTABLE) ════ */
-window.AbsenApp = window.AbsenApp || { 
-  rekap: { loaded: false, hariLiburSet: new Set(), lastPegawai: [], hariLiburMap: {}, jamPegawaiMap: {}, userListOrder: [], fp: null }, 
-  keterangan: { cache: [], loaded: false },
-  simapo: { katalogData: [], masterEditId: null, allPinjamData: [], allTiketData: [], allMasterData: [], cache: {} },
-  tugasLembur: { allPegawaiTugas: [], allPegawaiLembur: [], selectedLemburPegawai: [], selectedTugasPegawai: [], tugasMap: null, tugasMarker: null, activeTugasData: null, activeMonitoringTasks: [], activeMyTasks: [] }
-};
     /* ════ MODEL LOADING STATE ════ */
     let _modelsReady = false, _modelLoadPct = 0, _modelLoadStep = -1;
     let _isStreamStable = false; // Flag untuk mencegah deteksi instan saat kamera baru terbuka
@@ -149,7 +143,7 @@ window.AbsenApp = window.AbsenApp || {
        Penggunaan baru:
          State.user.id     → sama dengan MY_ID
          State.ai.engine   → sama dengan window._aiEngine
-         State.rekap.data  → sama dengan window.AbsenApp.rekap.lastPegawai
+         State.rekap.data  → sama dengan lastRekapPegawai
 
        Catatan: update State tidak otomatis update variabel asli.
        Selalu update variabel asli (MY_ID = x) dan State akan sinkron via getter.
@@ -193,9 +187,9 @@ window.AbsenApp = window.AbsenApp || {
       /* ─── Rekap ─── */
       get rekap() {
         return {
-          lastPegawai:   typeof window.AbsenApp.rekap.lastPegawai !== 'undefined' ? window.AbsenApp.rekap.lastPegawai : [],
-          loaded:        typeof window.AbsenApp.rekap.loaded !== 'undefined' ? window.AbsenApp.rekap.loaded : false,
-          hariLiburSet:  typeof window.AbsenApp.rekap.hariLiburSet !== 'undefined' ? window.AbsenApp.rekap.hariLiburSet : new Set(),
+          lastPegawai:   typeof lastRekapPegawai !== 'undefined' ? lastRekapPegawai : [],
+          loaded:        typeof rekapLoaded !== 'undefined' ? rekapLoaded : false,
+          hariLiburSet:  typeof hariLiburSet !== 'undefined' ? hariLiburSet : new Set(),
         };
       },
 

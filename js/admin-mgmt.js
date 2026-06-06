@@ -296,7 +296,7 @@ async function loadJamAbsen() {
     _applyAdminUI();
     if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
 
-    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (e) { console.warn('[admin-mgmt.js] Operasi gagal:', e.message); }
+    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
     updateClock();
     initJamAdminUI();
 
@@ -379,7 +379,7 @@ async function simpanJamAbsen() {
     _jamAbsenCache = null; _jamAbsenPromise = null;
     JAM_MASUK_MENIT = mMasuk;
     JAM_PULANG_MENIT = mPulang;
-    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (e) { console.warn('[admin-mgmt.js] Operasi gagal:', e.message); }
+    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (_) { }
     updateClock();
     updateJamPreview();
     showResult('jamResult', 'jamRIcon', 'jamRTitle', 'jamRMsg', 'success', '✅', 'Jam Tersimpan!',
@@ -389,7 +389,7 @@ async function simpanJamAbsen() {
       'Simpan lokal berhasil, tapi gagal ke server. Pastikan webhook jam-absen aktif di n8n.');
     JAM_MASUK_MENIT = mMasuk;
     JAM_PULANG_MENIT = mPulang;
-    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (e) { console.warn('[admin-mgmt.js] Operasi gagal:', e.message); }
+    try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (_) { }
     updateClock(); updateJamPreview();
   } finally {
     if (btn) { setTimeout(() => { btn.disabled = false; dom.setText('btnJamText', 'Simpan Pengaturan Jam'); }, 2500); }

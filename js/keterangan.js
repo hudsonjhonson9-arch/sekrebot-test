@@ -248,14 +248,14 @@
           `Pengajuan ${selectedJenis} Anda tersimpan di perangkat. Sistem akan mengirim otomatis saat koneksi internet kembali.`);
         setBtnL('btnKet', false, '✅ Tersimpan Offline');
         dom.setDisabled('btnKet', true);
-        window.AbsenApp.keterangan.loaded = false;
+        ketStatusLoaded = false;
         setTimeout(() => resetKetForm(), 3200);
         return;
       }
 
       try {
         const { ok: ketOk, data: res } = await apiPost(P.ket, payload);
-        let d = {}; try { d = res } catch (e) { if(typeof logError === 'function') logError('Keterangan', 'parseRes', e); }
+        let d = {}; try { d = res } catch (_) { }
         // Tampilkan pesan sesuai jenis & status dari server
         if (d.ok === false) {
           showResult('ketResult', 'ketRIcon', 'ketRTitle', 'ketRMsg', 'warning', '⚠️', 'Gagal Mengajukan', d.message || 'Terjadi kesalahan.');
@@ -275,7 +275,7 @@
         }
         dom.setDisabled('btnKet', true);
         logLoaded = false;
-        window.AbsenApp.keterangan.loaded = false;
+        ketStatusLoaded = false;
         setTimeout(() => loadKetStatus(), 800);
         setTimeout(() => resetKetForm(), 3200);
       } catch {
@@ -311,7 +311,7 @@
     }
 
     /* ════ KET STATUS LIST ════ */
-    
+    let ketStatusCache = [], ketStatusLoaded = false;
 
     /**
      * Muat daftar keterangan yang pernah diajukan oleh user.
@@ -325,8 +325,8 @@
         const res = await apiGet(P.ketList, { user_id: MY_ID || '' });
         if (!res.ok) throw 0;
         const rows = res.rows.length ? res.rows : parseApiResponse(res.data);
-        window.AbsenApp.keterangan.cache = rows;
-        window.AbsenApp.keterangan.loaded = true;
+        ketStatusCache = rows;
+        ketStatusLoaded = true;
         renderKetStatusList(rows);
       } catch {
         el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px">Gagal memuat. Tekan 🔄 untuk coba lagi.</div>';
@@ -377,7 +377,7 @@
      * @param {number} idx - Index pada array allKetRows
      */
         function openKetEdit(idx) {
-      const r = window.AbsenApp.keterangan.cache[idx];
+      const r = ketStatusCache[idx];
       if (!r) return;
       // Schema baru: jenis (bukan 'Jenis Absen'), id_ket (bukan row_number)
       const raw = (r.jenis || r['Jenis Absen'] || '').toUpperCase()
@@ -443,7 +443,7 @@
     }
 
     async function confirmKetDelete(idx) {
-      const r = window.AbsenApp.keterangan.cache[idx];
+      const r = ketStatusCache[idx];
       if (!r) return;
       // Schema baru: id_ket, tanggal (satu field), jenis, keterangan
       const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
@@ -458,13 +458,10 @@
             tgl_mulai: tgl, tgl_selesai: tgl, tanggal: tgl,
             timestamp: Math.floor(Date.now() / 1000)
           });
-        let d = {}; try { d = res } catch (e) { if(typeof logError === 'function') logError('Keterangan', 'parseResDelete', e); }
+        let d = {}; try { d = res } catch (_) { }
         if (d.ok === false) { alert('Gagal: ' + (d.message || 'Terjadi kesalahan.')); return; }
         loadKetStatus();
-      } catch (e) {
-        if(typeof logError === 'function') logError('Keterangan', 'delete', e);
-        alert('Gagal menghapus. Coba lagi.');
-      }
+      } catch { alert('Gagal menghapus. Coba lagi.'); }
     }
 
     /* ════ ADMIN KONFIRMASI PANEL ════ */

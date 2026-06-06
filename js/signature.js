@@ -291,7 +291,7 @@
         if (sigOk) {
           // Cache lokal
           _sigCache[String(_sigTargetId)] = dataUrl;
-          try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch (e) { console.warn('[signature.js] Operasi gagal:', e.message); }
+          try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch (_) { }
 
           _showSigMsg('✅ Tanda tangan berhasil disimpan!', 'ok');
           // Update UI profil
@@ -306,7 +306,7 @@
       } catch (e) {
         // Fallback: simpan lokal saja
         _sigCache[String(_sigTargetId)] = dataUrl;
-        try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch (e) { console.warn('[signature.js] Operasi gagal:', e.message); }
+        try { localStorage.setItem(`sig_${_sigTargetId}`, dataUrl); } catch (_) { }
         if (String(_sigTargetId) === String(MY_ID)) updateProfilSigUI(dataUrl);
         _showSigMsg('⚠️ Tersimpan lokal (server tidak merespons)', 'warn');
         setTimeout(() => closeSignaturePad(), 1800);
@@ -358,7 +358,7 @@
       const uid = String(MY_ID);
       // Cek cache lokal dulu
       let cached = null;
-      try { cached = localStorage.getItem(`sig_${uid}`); } catch (e) { console.warn('[signature.js] Operasi gagal:', e.message); }
+      try { cached = localStorage.getItem(`sig_${uid}`); } catch (_) { }
       if (cached) { updateProfilSigUI(cached); _sigCache[uid] = cached; }
 
       // Fetch dari server
@@ -370,11 +370,11 @@
           const sig = d.signature || d.data?.signature || null;
           if (sig) {
             _sigCache[uid] = sig;
-            try { localStorage.setItem(`sig_${uid}`, sig); } catch (e) { console.warn('[signature.js] Operasi gagal:', e.message); }
+            try { localStorage.setItem(`sig_${uid}`, sig); } catch (_) { }
             updateProfilSigUI(sig);
           }
         }
-      } catch (e) { console.warn('[signature.js] Operasi gagal:', e.message); }
+      } catch (_) { }
     }
 
     // ── Admin: Status tanda tangan semua pegawai ──

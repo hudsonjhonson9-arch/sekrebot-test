@@ -113,7 +113,7 @@
 
     /**
      * Fetch daftar hari libur untuk keperluan rekap (bukan admin panel).
-     * Hasilnya disimpan ke window.AbsenApp.rekap.hariLiburSet & hariLiburMap.
+     * Hasilnya disimpan ke hariLiburSet & hariLiburMap.
      * @returns {Promise<void>}
      */
         async function fetchLiburForRekap() {
@@ -122,14 +122,14 @@
         if (!res.ok) return;
         const rawRows = (res.rows && res.rows.length) ? res.rows : parseApiResponse(res.data);
         const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || []);
-        window.AbsenApp.rekap.hariLiburMap = {};
+        hariLiburMap = {};
         rows.forEach(r => {
           const tgl = String(r.tanggal || r.Tanggal || '').trim();
-          if (tgl) window.AbsenApp.rekap.hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
+          if (tgl) hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
         });
-        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(window.AbsenApp.rekap.hariLiburMap));
-        window.AbsenApp.rekap.liburLoaded = true;
-      } catch (e) { console.warn('[admin-libur.js] Operasi gagal:', e.message); }
+        hariLiburSet = new Set(Object.keys(hariLiburMap));
+        liburLoaded = true;
+      } catch (_) { }
     }
 
     // Fetch jam per pegawai dari user_list (kolom jam_masuk, jam_pulang)
@@ -139,20 +139,20 @@
         if (!res.ok) return;
         const d = res.rows.length ? res.rows : parseApiResponse(res.data);
         const rows = Array.isArray(d) ? d : (d.data || d.rows || []);
-        window.AbsenApp.rekap.jamPegawaiMap = {};
+        jamPegawaiMap = {};
         rows.forEach(r => {
           const id = String(r.id || r.ID || '').trim();
           const jm = (r.jam_masuk || r['Jam Masuk'] || '').trim();
           const jp = (r.jam_pulang || r['Jam Pulang'] || '').trim();
           if (id && (jm || jp)) {
             const toM = s => { const [h, m] = (s || '').split(':').map(Number); return (isNaN(h) || isNaN(m)) ? null : h * 60 + m; };
-            window.AbsenApp.rekap.jamPegawaiMap[id] = {
+            jamPegawaiMap[id] = {
               masuk: jm || null, pulang: jp || null,
               masukMenit: toM(jm), pulangMenit: toM(jp)
             };
           }
         });
-      } catch (e) { console.warn('[admin-libur.js] Operasi gagal:', e.message); }
+      } catch (_) { }
     }
 
     // Durasi preview saat range berubah
@@ -208,7 +208,7 @@
             timestamp: Math.floor(Date.now() / 1000) 
           });
           const d = res?.data ?? {};
-          if (d.ok !== false) { ok++; window.AbsenApp.rekap.hariLiburSet.add(tgl); } else fail++;
+          if (d.ok !== false) { ok++; hariLiburSet.add(tgl); } else fail++;
         } catch { fail++; }
       }
       if (ok > 0) {
@@ -216,7 +216,7 @@
         showResult('liburResult', 'liburRIcon', 'liburRTitle', 'liburRMsg', 'success', '✅', 'Berhasil', msg);
         $('inputTglLiburMulai').value = ''; $('inputTglLiburSelesai').value = ''; $('inputNamaLibur').value = '';
         if ($('liburDurasiInfo')) dom.hide('liburDurasiInfo');
-        window.AbsenApp.rekap.liburLoaded = true; loadLiburAdmin();
+        liburLoaded = true; loadLiburAdmin();
       } else {
         showResult('liburResult', 'liburRIcon', 'liburRTitle', 'liburRMsg', 'fail', '❌', 'Gagal', 'Semua tanggal gagal disimpan. Coba lagi.');
       }
@@ -240,10 +240,10 @@
         const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || [])
           .filter(r => String(r.tanggal || r.Tanggal || '').trim())
           .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
-        window.AbsenApp.rekap.hariLiburMap = {};
-        rows.forEach(r => { const t = String(r.tanggal || r.Tanggal || '').trim(); if (t) window.AbsenApp.rekap.hariLiburMap[t] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur'; });
-        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(window.AbsenApp.rekap.hariLiburMap));
-        window.AbsenApp.rekap.liburLoaded = true;
+        hariLiburMap = {};
+        rows.forEach(r => { const t = String(r.tanggal || r.Tanggal || '').trim(); if (t) hariLiburMap[t] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur'; });
+        hariLiburSet = new Set(Object.keys(hariLiburMap));
+        liburLoaded = true;
         const badge = $('liburTotalBadge');
         if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? 'inline-block' : 'none'; }
         if (!rows.length) {
@@ -300,7 +300,7 @@
           nip: localStorage.getItem('MY_NIP') || '',
           timestamp: Math.floor(Date.now() / 1000) 
         });
-        window.AbsenApp.rekap.hariLiburSet.delete(tgl);
+        hariLiburSet.delete(tgl);
         loadLiburAdmin();
       } catch { alert('Gagal menghapus. Coba lagi.'); }
     }

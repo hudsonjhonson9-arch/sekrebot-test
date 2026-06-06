@@ -204,7 +204,7 @@
      * Aktifkan tab panel berdasarkan nama tab.
      * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin' | 'tugas' | 'lembur'
      */
-    async function switchTab(tab, isUserClick = false) {
+    function switchTab(tab, isUserClick = false) {
       // Close more menu when switching tabs
       toggleMoreMenu(false);
       
@@ -222,51 +222,22 @@
       const T = getAllTabs();
       if (!T.includes(tab)) tab = 'absen';
 
-      // ── LAZY LOAD HTML FRAGMENT ──
-      const el = $('panel-' + tab);
-      if (el && !el.dataset.loaded && !el.dataset.loading) {
-        el.dataset.loading = 'true';
-        try {
-          const res = await fetch(`templates/tab-${tab}.html?t=${Date.now()}`);
-          if (res.ok) {
-            el.innerHTML = await res.text();
-            el.dataset.loaded = 'true';
-          } else {
-            el.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center; font-family: sans-serif;">
-              <h2>⚠️ Gagal Memuat Tab</h2>
-              <p>HTTP Error: ${res.status}</p>
-              <p>Path: templates/tab-${tab}.html</p>
-              <button onclick="location.reload()" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; margin-top: 15px; cursor: pointer;">Muat Ulang Aplikasi</button>
-            </div>`;
-          }
-        } catch (e) {
-          console.error(`Failed to load template for tab ${tab}:`, e);
-          el.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center; font-family: sans-serif;">
-              <h2>⚠️ Kesalahan Jaringan</h2>
-              <p>${e.message}</p>
-              <button onclick="location.reload()" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; margin-top: 15px; cursor: pointer;">Muat Ulang Aplikasi</button>
-            </div>`;
-        } finally {
-          delete el.dataset.loading;
-        }
-      }
-
       localStorage.setItem('absen_last_tab', tab);
       window.scrollTo(0, 0);
       document.querySelectorAll('.nav-item').forEach((t) => {
         if (t) t.classList.toggle('active', t.getAttribute('data-tab') === tab);
       });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      if (el) el.classList.add('active');
+      const el = $('panel-' + tab); if (el) el.classList.add('active');
 
       if (tab === 'absen') {
         updateClock(); // refresh notif & batas jam periode segera
         if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
       }
-      if (tab === 'ket' && !window.AbsenApp.keterangan.loaded) loadKetStatus();
+      if (tab === 'ket' && !ketStatusLoaded) loadKetStatus();
       if (tab === 'profil' && !logLoaded) loadLog();
       if (tab === 'profil' && !dokumenLoaded) loadDokumen();
-      if (tab === 'rekap' && !window.AbsenApp.rekap.loaded) loadRekap();
+      if (tab === 'rekap' && !rekapLoaded) loadRekap();
       if (tab === 'rekap') {
         if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
       }
@@ -425,7 +396,7 @@
           if (isNaN(dariMs) || isNaN(sampaiMs) || dariMs > sampaiMs) return false;
           return true;
         });
-      } catch (e) { console.warn('[ui.js] Operasi gagal:', e.message); }
+      } catch (_) { }
       // Debug: log periode yang berhasil dimuat (bisa dilihat di Console browser)
       if (jamPeriodeList.length) {
         console.log('[JamPeriode] Loaded', jamPeriodeList.length, 'periode:', jamPeriodeList.map(p => `${p.nama}: ${p.dari}→${p.sampai} (masuk:${p.masuk}, pulang:${p.pulang})`));
@@ -443,7 +414,7 @@
           if (j.masuk) JAM_MASUK_MENIT = toMenitStr(j.masuk) ?? JAM_MASUK_MENIT;
           if (j.pulang) JAM_PULANG_MENIT = toMenitStr(j.pulang) ?? JAM_PULANG_MENIT;
         }
-      } catch (e) { console.warn('[ui.js] Operasi gagal:', e.message); }
+      } catch (_) { }
     })();
     /**
      * Update tampilan jam dan tanggal di clock card secara real-time.

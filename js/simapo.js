@@ -3,7 +3,7 @@
    Menangani logika Sistem Inventaris dan Manajemen Aset
 ════════════════════════════════════════════════════════════ */
 
-window.AbsenApp.simapo.katalogData = [];
+let simapoKatalogData = [];
 
 /**
  * Switch sub-tabs di dalam panel SIMAPO
@@ -47,7 +47,7 @@ async function populateSimapoPinjamSelect() {
   const inputEl = document.getElementById('simapoSelectPinjamInput');
   if (!listEl || !inputEl) return;
 
-  if (typeof window.AbsenApp.simapo.katalogData === 'undefined' || window.AbsenApp.simapo.katalogData.length === 0) {
+  if (typeof simapoKatalogData === 'undefined' || simapoKatalogData.length === 0) {
     if (typeof loadSimapoKatalog === 'function') await loadSimapoKatalog();
   }
 
@@ -79,26 +79,26 @@ function filterSimapoPinjamDropdown(filterText = '') {
   const listEl = document.getElementById('simapoPinjamList');
   if (!listEl) return;
 
-  const data = (typeof window.AbsenApp.simapo.katalogData !== 'undefined' ? window.AbsenApp.simapo.katalogData : []).filter(b => {
+  const data = (typeof simapoKatalogData !== 'undefined' ? simapoKatalogData : []).filter(b => {
     const q = filterText.toLowerCase();
     return (b.nama && b.nama.toLowerCase().includes(q)) || (b.kodebarang && b.kodebarang.toLowerCase().includes(q));
   });
   
   if (data.length === 0) {
-    listEl.innerHTML = '<div class="simapo-empty-sm">Tidak ada barang ditemukan</div>';
+    listEl.innerHTML = '<div style="padding:12px; font-size:12px; color:var(--muted); text-align:center;">Tidak ada barang ditemukan</div>';
     return;
   }
 
   listEl.innerHTML = data.map(b => `
-    <div class="simapo-list-item" 
+    <div style="padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; font-size:13px; color:var(--white); display:flex; justify-content:space-between; align-items:center;" 
          onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
          onmouseout="this.style.background='transparent'"
          onclick="selectSimapoPinjamItem('${b.id}', '${b.nama.replace(/'/g, "\\'")}', ${b.stok_saat_ini || 0}, '${b.jenisbarang || 'Aset Tetap'}')">
       <div>
-        <div class="simapo-item-title">${b.nama}</div>
-        <div class="simapo-item-code">${b.kodebarang || '-'}</div>
+        <div style="font-weight:600; margin-bottom:2px;">${b.nama}</div>
+        <div style="font-size:10px; color:var(--muted);">${b.kodebarang || '-'}</div>
       </div>
-      <div class="simapo-item-stock" style="color:${b.stok_saat_ini > 0 ? 'var(--gold)' : '#ef4444'}">
+      <div style="font-size:11px; font-weight:700; color:${b.stok_saat_ini > 0 ? 'var(--gold)' : '#ef4444'};">
         Sisa: ${b.stok_saat_ini || 0}
       </div>
     </div>
@@ -178,10 +178,10 @@ async function loadSimapoKatalog(force = false) {
   if (!container) return;
 
   // Tampilkan shimmer jika force atau data kosong
-  if (force || window.AbsenApp.simapo.katalogData.length === 0) {
+  if (force || simapoKatalogData.length === 0) {
     container.innerHTML = `
-      <div class="shimmer-wrapper" class="simapo-shimmer-wrap">
-        <div class="shimmer sh-line" class="simapo-shimmer-box"></div>
+      <div class="shimmer-wrapper" style="width:100%; grid-column: 1 / -1;">
+        <div class="shimmer sh-line" style="height:120px; border-radius:12px"></div>
       </div>
     `;
   }
@@ -207,7 +207,7 @@ async function loadSimapoKatalog(force = false) {
     }
 
     if (data && Array.isArray(data)) {
-      window.AbsenApp.simapo.katalogData = data;
+      simapoKatalogData = data;
       renderSimapoKatalog(data);
     } else {
       throw new Error('Data format invalid or null');
@@ -215,14 +215,14 @@ async function loadSimapoKatalog(force = false) {
   } catch (e) {
     console.error('[SIMAPO] Katalog Load failed:', e);
     // Jangan gunakan dummy data agar tidak dikira data instansi lain bocor
-    window.AbsenApp.simapo.katalogData = [];
-    document.getElementById('simapoKatalogList').innerHTML = '<div class="simapo-empty-danger">Gagal memuat data katalog. Pastikan server N8n aktif.</div>';
+    simapoKatalogData = [];
+    document.getElementById('simapoKatalogList').innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; opacity:0.6; font-size:13px; color:var(--danger)">Gagal memuat data katalog. Pastikan server N8n aktif.</div>';
   }
 }
 
 function filterSimapoKatalog(val) {
   const q = val.toLowerCase();
-  const filtered = window.AbsenApp.simapo.katalogData.filter(b => 
+  const filtered = simapoKatalogData.filter(b => 
     (b.nama && b.nama.toLowerCase().includes(q)) || 
     (b.kodebarang && b.kodebarang.toLowerCase().includes(q))
   );
@@ -234,14 +234,14 @@ function renderSimapoKatalog(data) {
   if (!container) return;
 
   if (data.length === 0) {
-    container.innerHTML = '<div class="simapo-empty-std">Tidak ada barang ditemukan.</div>';
+    container.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:40px; opacity:0.6; font-size:13px;">Tidak ada barang ditemukan.</div>';
     return;
   }
 
   container.innerHTML = data.map(item => {
     const isOut = item.stok_saat_ini <= 0;
     return `
-      <div class="card glass-card" class="card glass-card simapo-card" 
+      <div class="card glass-card" style="padding:10px; cursor:pointer; position:relative; overflow:hidden; border: 1px solid rgba(255,255,255,0.08); transition: transform 0.2s;" 
            onclick="showSimapoDetail('${item.id}')"
            onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
         <div style="height:100px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; overflow:hidden;">
@@ -261,7 +261,7 @@ function renderSimapoKatalog(data) {
 }
 
 function showSimapoDetail(id) {
-  const item = window.AbsenApp.simapo.katalogData.find(b => b.id === id);
+  const item = simapoKatalogData.find(b => b.id === id);
   if (!item) return;
 
   const isOut = item.stok_saat_ini <= 0;
@@ -538,7 +538,7 @@ function onSimapoInstansiChange() {
   if (window._simapoCache && typeof window._simapoCache.clear === 'function') {
     window._simapoCache.clear();
   }
-  window.AbsenApp.simapo.katalogData = [];
+  simapoKatalogData = [];
   
   // Reload current section
   const activeBtn = document.querySelector('.simapo-tab-btn.active');

@@ -1,4 +1,14 @@
-/* ════ KONFIGURASI DIHAPUS (TIDAK PAKAI SUPABASE) ════ */
+/* ════ SUPABASE CONFIGURATION (MIGRASI DARI N8N) ════ */
+// TODO: Ganti placeholder ini dengan kredensial Supabase dari dashboard
+const SUPABASE_URL = 'https://[PROJECT_ID].supabase.co';
+const SUPABASE_KEY = 'ey-ANON-KEY';
+
+const S_HDR = {
+  'Content-Type': 'application/json',
+  'apikey': SUPABASE_KEY,
+  'Authorization': `Bearer ${SUPABASE_KEY}`,
+  'Prefer': 'return=representation'
+};
 
 /* ════ N8N WEBHOOK AUTHENTICATION ════ */
 const SIMAPO_TOKEN = "SIMAPO_SECURE_TOKEN_2026";

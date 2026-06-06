@@ -377,7 +377,7 @@
           const rows = d.data || d || [];
           _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
           _applySeragamTypeRows(rows);
-        } catch (e) { console.warn('[admin-seragam.js] Operasi gagal:', e.message); }
+        } catch (_) { }
       }
 
       // Proses jadwal seragam per hari
@@ -393,7 +393,7 @@
             });
             _applySeragamData(map);
           }
-        } catch (e) { console.warn('[admin-seragam.js] Operasi gagal:', e.message); }
+        } catch (_) { }
       }
     }
 

@@ -240,7 +240,7 @@
         try {
           const v = localStorage.getItem('face_recognition_bapperida');
           if (v !== null) FACE_RECOGNITION_ENABLED = v !== '0';
-        } catch (e) { console.warn('[admin-face.js] Operasi gagal:', e.message); }
+        } catch (_) { }
       }
       _faceTogglePending = FACE_RECOGNITION_ENABLED;
       _applyFaceToggleUI(FACE_RECOGNITION_ENABLED);
@@ -269,7 +269,7 @@
         const instId = getScopedInstansiId();
         await apiPost(P.faceToggle, { enabled, instansi_id: instId, admin_id: MY_ID, admin_nips: ADMIN_NIPS });
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (e) { console.warn('[admin-face.js] Operasi gagal:', e.message); }
+        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
         _applyFaceToggleUI(enabled);
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'success', '✅',
           enabled ? 'Face Recognition Diaktifkan' : 'Face Recognition Dinonaktifkan',
@@ -280,7 +280,7 @@
       } catch {
         // Simpan lokal saja
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (e) { console.warn('[admin-face.js] Operasi gagal:', e.message); }
+        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'warning', '⚠️', 'Tersimpan Lokal',
           'Berhasil disimpan di perangkat ini, tapi gagal ke server. Pastikan webhook face-toggle aktif di n8n.');
       } finally {
@@ -318,7 +318,7 @@
         }));
         updateClock(); // refresh lokasiList di tab Absen
         _updateLocBadgeGPS(); // update badge lokasi setelah koordinat tersedia
-      } catch (e) { console.warn('[admin-face.js] Operasi gagal:', e.message); }
+      } catch (_) { }
     }
     loadLokasiPublik();
     // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
@@ -550,7 +550,7 @@
             const savedAt = p.face_saved_at || null;
             let tgl = '?';
             if (savedAt && savedAt !== '') {
-              try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (e) { console.warn('[admin-face.js] Operasi gagal:', e.message); }
+              try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (_) { }
             }
             const thumb = p.face_photo || null;
 

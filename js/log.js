@@ -47,7 +47,7 @@
           fetchLogData(MY_ID),
           fetchJamPeriode(),
           loadJamAbsen(),
-          window.AbsenApp.rekap.liburLoaded ? Promise.resolve() : fetchLiburForRekap()
+          liburLoaded ? Promise.resolve() : fetchLiburForRekap()
         ]);
         allLogs = rows;
         logLoaded = true;
@@ -108,11 +108,11 @@
 
         // ── Deteksi hari libur & akhir pekan ──
         let _dayIdx = -1;
-        try { _dayIdx = new Date(tgl + 'T00:00:00').getDay(); } catch (e) { console.warn('[log.js] Operasi gagal:', e.message); }
+        try { _dayIdx = new Date(tgl + 'T00:00:00').getDay(); } catch (_) { }
         const isWeekend = _dayIdx === 0 || _dayIdx === 6;
-        const isLiburNasional = window.AbsenApp.rekap.hariLiburSet.has(tgl);
+        const isLiburNasional = hariLiburSet.has(tgl);
         const isLibur = isWeekend || isLiburNasional;
-        const namaLibur = isLiburNasional ? (window.AbsenApp.rekap.hariLiburMap[tgl] || 'Hari Libur')
+        const namaLibur = isLiburNasional ? (hariLiburMap[tgl] || 'Hari Libur')
           : isWeekend ? (_dayIdx === 0 ? 'Minggu' : 'Sabtu')
             : null;
 
@@ -194,7 +194,7 @@
 
         // Format tanggal cantik
         let tglLabel = tgl;
-        try { const d = new Date(tgl + 'T00:00:00'); if (!isNaN(d)) { tglLabel = `${HARI_ID[d.getDay()]}, ${d.getDate()} ${BULAN_ID[d.getMonth()]} ${d.getFullYear()}`; } } catch (e) { console.warn('[log.js] Operasi gagal:', e.message); }
+        try { const d = new Date(tgl + 'T00:00:00'); if (!isNaN(d)) { tglLabel = `${HARI_ID[d.getDay()]}, ${d.getDate()} ${BULAN_ID[d.getMonth()]} ${d.getFullYear()}`; } } catch (_) { }
 
         // Ket teks (izin/sakit/tugas)
         const ketRow = rIzin || rSakit || rTugas;
@@ -419,8 +419,8 @@
         if (f === 'PULANG LUAR' && adaLapangan) filtered.push(...rows);
         if (f === 'TB' && adaAlpa) filtered.push(...rows);
         if (f === 'LIBUR') {
-          let _di = -1; try { _di = new Date(tgl + 'T00:00:00').getDay(); } catch (e) { console.warn('[log.js] Operasi gagal:', e.message); }
-          const adaLibur = window.AbsenApp.rekap.hariLiburSet.has(tgl) || _di === 0 || _di === 6;
+          let _di = -1; try { _di = new Date(tgl + 'T00:00:00').getDay(); } catch (_) { }
+          const adaLibur = hariLiburSet.has(tgl) || _di === 0 || _di === 6;
           if (adaLibur) filtered.push(...rows);
         }
       });

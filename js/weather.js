@@ -136,7 +136,7 @@
       if (!IS_ADMIN) return; // semua admin bisa toggle desktop mode
       const newVal = !_desktopModeOn;
       _applyDesktopMode(newVal);
-      try { localStorage.setItem('bapperida_desktop_mode', newVal ? '1' : '0'); } catch (e) { console.warn('[weather.js] Operasi gagal:', e.message); }
+      try { localStorage.setItem('bapperida_desktop_mode', newVal ? '1' : '0'); } catch (_) { }
     }
 
     function _isSuperAdmin() {

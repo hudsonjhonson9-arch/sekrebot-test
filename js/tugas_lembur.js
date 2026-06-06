@@ -1,14 +1,14 @@
 /* ════ PENUGASAN & LEMBUR ════ */
 (function () {
-  window.AbsenApp.tugasLembur.allPegawaiTugas = [];
-  window.AbsenApp.tugasLembur.allPegawaiLembur = [];
-  window.AbsenApp.tugasLembur.selectedLemburPegawai = []; 
-  window.AbsenApp.tugasLembur.selectedTugasPegawai = []; 
-  window.AbsenApp.tugasLembur.tugasMap = null;
-  window.AbsenApp.tugasLembur.tugasMarker = null;
-  window.AbsenApp.tugasLembur.activeTugasData = null; // Store data of the task being worked on
-  window.AbsenApp.tugasLembur.activeMonitoringTasks = []; // Store data of monitoring tasks
-  window.AbsenApp.tugasLembur.activeMyTasks = []; // Store data of personal assignments
+  let _allPegawaiTugas = [];
+  let _allPegawaiLembur = [];
+  let _selectedLemburPegawai = []; 
+  let _selectedTugasPegawai = []; 
+  let _tugasMap = null;
+  let _tugasMarker = null;
+  let _activeTugasData = null; // Store data of the task being worked on
+  let _activeMonitoringTasks = []; // Store data of monitoring tasks
+  let _activeMyTasks = []; // Store data of personal assignments
 
   /**
    * Helper: Get direct/thumbnail URL for Google Drive links or return original
@@ -200,8 +200,8 @@
 
     listEl.innerHTML = `
       <div class="shimmer-wrapper">
-        <div class="shimmer sh-line" class="sh-box mb-10"></div>
-        <div class="shimmer sh-line" class="sh-box"></div>
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px"></div>
       </div>
     `;
 
@@ -215,22 +215,22 @@
       
       // Handle n8n wrap { data: [...] } or direct array via apiGet's logic
       const data = res.rows || parseApiResponse(res.data) || [];
-      window.AbsenApp.tugasLembur.activeMyTasks = data;
+      _activeMyTasks = data;
       console.log('[TugasLembur] Parsed Data:', data);
 
       if (data.length === 0) {
         listEl.innerHTML = `
-          <div class="empty-state empty-state-wrap">
-            <div class="empty-icon">📋</div>
-            <div class="empty-title">Belum Ada Perjalanan Dinas</div>
-            <div class="empty-subtitle">Perjalanan dinas yang diberikan atasan akan muncul di sini</div>
+          <div class="empty-state" style="padding:40px 20px">
+            <div style="font-size:40px; margin-bottom:15px">📋</div>
+            <div style="font-weight:800; color:var(--white); font-size:14px">Belum Ada Perjalanan Dinas</div>
+            <div style="color:var(--muted); font-size:11px; margin-top:5px">Perjalanan dinas yang diberikan atasan akan muncul di sini</div>
           </div>
         `;
         return;
       }
 
       listEl.innerHTML = `
-        <div class="section-title-sm">
+        <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
           <i class="fas fa-list-ul" style="margin-right:8px"></i> Daftar Perjalanan Dinas Saya
         </div>
         ${data.map(r => renderTugasCard(r)).join('')}
@@ -239,10 +239,10 @@
       console.error('[TugasLembur] Load Error:', e);
       listEl.innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Gagal memuat tugas</div>
+          <div style="font-size:30px; margin-bottom:10px">⚠️</div>
+          <div style="font-weight:700">Gagal memuat tugas</div>
           <div style="font-size:10px; color:var(--muted); margin:5px 0 10px">${e.message}</div>
-          <button onclick="loadMyAssignments()" class="btn-sm" class="btn-retry">🔄 Coba Lagi</button>
+          <button onclick="loadMyAssignments()" class="btn-sm" style="background:rgba(255,255,255,0.1); border-radius:10px; padding:8px 15px; border:1px solid rgba(255,255,255,0.2); color:var(--white); cursor:pointer">🔄 Coba Lagi</button>
         </div>
       `;
     }
@@ -293,7 +293,7 @@
     let mapBtn = '';
     if (lat && lon) {
       mapBtn = `
-        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="btn-sm" class="btn-map">
+        <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" class="btn-sm" style="background:rgba(96,165,250,0.1); color:#60a5fa; border:1px solid rgba(96,165,250,0.2); padding:6px 12px; border-radius:10px; text-decoration:none; font-size:10px; font-weight:700; display:inline-flex; align-items:center; gap:6px; transition:all 0.3s ease">
           <i class="fas fa-map-marked-alt"></i> Lokasi
         </a>
       `;
@@ -302,7 +302,7 @@
     let actionBtn = '';
     if (status === 'AKTIF') {
       actionBtn = `
-        <button onclick='handleKerjakanTugas(${JSON.stringify(r)})' class="btn-sm" class="btn-action">
+        <button onclick='handleKerjakanTugas(${JSON.stringify(r)})' class="btn-sm" style="background:linear-gradient(135deg, var(--gold) 0%, #d4af37 100%); color:#000; border:none; padding:8px 16px; border-radius:10px; font-size:11px; font-weight:800; cursor:pointer; box-shadow: 0 4px 15px rgba(212,175,55,0.3); transition:all 0.3s ease">
           🚀 Kerjakan Tugas
         </button>
       `;
@@ -413,7 +413,7 @@
       Swal.fire('Info', 'Perjalanan dinas ini sudah diselesaikan.', 'info');
       return;
     }
-    window.AbsenApp.tugasLembur.activeTugasData = r;
+    _activeTugasData = r;
     
     // Check if target coordinates are defined
     const hasTargetCoords = (r.lat && String(r.lat).trim() !== '' && r.lon && String(r.lon).trim() !== '');
@@ -460,8 +460,8 @@
           } else {
             // 2. Trigger File Input
             Swal.close();
-            window.AbsenApp.tugasLembur.activeTugasData.actual_lat = myLat;
-            window.AbsenApp.tugasLembur.activeTugasData.actual_lon = myLon;
+            _activeTugasData.actual_lat = myLat;
+            _activeTugasData.actual_lon = myLon;
             $('tugasBuktiInput').click();
           }
         }, (err) => {
@@ -475,7 +475,7 @@
    * Process Proof Upload
    */
   window.processTugasBukti = async function(input) {
-    if (!input.files || !input.files[0] || !window.AbsenApp.tugasLembur.activeTugasData) return;
+    if (!input.files || !input.files[0] || !_activeTugasData) return;
 
     const file = input.files[0];
     
@@ -522,18 +522,18 @@
           endpoint: P.penugasanSave,
           method: 'POST',
           payload: {
-            id: window.AbsenApp.tugasLembur.activeTugasData.id,
+            id: _activeTugasData.id,
             status: 'SELESAI',
             bukti_base64: base64DataUrl,
             bukti_mime: fileMime,
             bukti_nama: fileName,
-            actual_lat: window.AbsenApp.tugasLembur.activeTugasData.actual_lat,
-            actual_lon: window.AbsenApp.tugasLembur.activeTugasData.actual_lon,
+            actual_lat: _activeTugasData.actual_lat,
+            actual_lon: _activeTugasData.actual_lon,
             pengerjaan_timestamp: Date.now()
           },
           timestamp: Date.now(),
           type: 'tugas',
-          nip: window.AbsenApp.tugasLembur.activeTugasData.nip
+          nip: _activeTugasData.nip
         };
         
         await idb.set('offline_queue', offlineData);
@@ -552,13 +552,13 @@
       // If online, send the payload with base64 image data directly
       const base64DataUrl = `data:${fileMime};base64,${b64}`;
       const updateRes = await apiPost(P.penugasanSave, {
-        id: window.AbsenApp.tugasLembur.activeTugasData.id,
+        id: _activeTugasData.id,
         status: 'SELESAI',
         bukti_base64: base64DataUrl,
         bukti_mime: fileMime,
         bukti_nama: fileName,
-        actual_lat: window.AbsenApp.tugasLembur.activeTugasData.actual_lat,
-        actual_lon: window.AbsenApp.tugasLembur.activeTugasData.actual_lon,
+        actual_lat: _activeTugasData.actual_lat,
+        actual_lon: _activeTugasData.actual_lon,
         pengerjaan_timestamp: Date.now()
       });
 
@@ -594,7 +594,7 @@
       const res = await apiGet(P.userList, { format: 'full' });
       const rows = res.rows || parseApiResponse(res.data) || [];
       
-      window.AbsenApp.tugasLembur.allPegawaiTugas = rows.map(u => {
+      _allPegawaiTugas = rows.map(u => {
         const j = String(u.jabatan || u.Jabatan || '').toLowerCase();
         let r = String(u.role || u.Role || 'USER').toLowerCase().trim();
         
@@ -616,11 +616,11 @@
         };
       }).sort((a, b) => a.nama.localeCompare(b.nama));
 
-      renderTugasPegawaiList(window.AbsenApp.tugasLembur.allPegawaiTugas);
+      renderTugasPegawaiList(_allPegawaiTugas);
 
       // Populate Pemberi Tugas dropdown if it exists (for Admins)
       if (pemberiEl) {
-        const managers = window.AbsenApp.tugasLembur.allPegawaiTugas.filter(u => 
+        const managers = _allPegawaiTugas.filter(u => 
           ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(u.role)
         );
         pemberiEl.innerHTML = '<option value="">-- Gunakan Profil Saya --</option>' + 
@@ -639,7 +639,7 @@
       return;
     }
     el.innerHTML = list.map(u => {
-      const isSelected = window.AbsenApp.tugasLembur.selectedTugasPegawai.some(s => s.id == u.id);
+      const isSelected = _selectedTugasPegawai.some(s => s.id == u.id);
       return `
         <div class="dropdown-item ${isSelected ? 'selected' : ''}" onclick="selectTugasPegawai('${u.id}', '${u.nama.replace(/'/g, "\\'")}', '${u.nip}')">
           <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
@@ -662,7 +662,7 @@
     else {
       container.classList.toggle('open');
       if (container.classList.contains('open')) {
-        if (!window.AbsenApp.tugasLembur.allPegawaiTugas.length) loadTugasPegawai();
+        if (!_allPegawaiTugas.length) loadTugasPegawai();
         $('tugasSearchInput').focus();
       }
     }
@@ -670,22 +670,22 @@
 
   window.filterTugasPegawai = function(query) {
     const q = query.toLowerCase().trim();
-    const filtered = window.AbsenApp.tugasLembur.allPegawaiTugas.filter(u => u.nama.toLowerCase().includes(q) || u.nip.toLowerCase().includes(q));
+    const filtered = _allPegawaiTugas.filter(u => u.nama.toLowerCase().includes(q) || u.nip.toLowerCase().includes(q));
     renderTugasPegawaiList(filtered);
     const container = $('tugasPegawaiContainer');
     if (container && !container.classList.contains('open')) container.classList.add('open');
   };
 
   window.selectTugasPegawai = function(id, nama, nip) {
-    const idx = window.AbsenApp.tugasLembur.selectedTugasPegawai.findIndex(p => p.id == id);
+    const idx = _selectedTugasPegawai.findIndex(p => p.id == id);
     if (idx > -1) {
-      window.AbsenApp.tugasLembur.selectedTugasPegawai.splice(idx, 1);
+      _selectedTugasPegawai.splice(idx, 1);
     } else {
-      window.AbsenApp.tugasLembur.selectedTugasPegawai.push({ id, nama, nip });
+      _selectedTugasPegawai.push({ id, nama, nip });
     }
     
     renderTugasPills();
-    renderTugasPegawaiList(window.AbsenApp.tugasLembur.allPegawaiTugas);
+    renderTugasPegawaiList(_allPegawaiTugas);
     
     // Multi-select: keep open and focus search
     $('tugasSearchInput').value = '';
@@ -703,12 +703,12 @@
     }
     
     const el = $('tugasSelectedPills');
-    if (window.AbsenApp.tugasLembur.selectedTugasPegawai.length === 0) {
+    if (_selectedTugasPegawai.length === 0) {
       el.innerHTML = '';
       return;
     }
 
-    el.innerHTML = window.AbsenApp.tugasLembur.selectedTugasPegawai.map(u => `
+    el.innerHTML = _selectedTugasPegawai.map(u => `
       <div class="pegawai-pill">
         <span>${u.nama.split(' ')[0]}</span>
         <i class="fas fa-times-circle" onclick="event.stopPropagation(); selectTugasPegawai('${u.id}')"></i>
@@ -721,18 +721,18 @@
    * Map Initialization
    */
   function initTugasMap() {
-    if (window.AbsenApp.tugasLembur.tugasMap) return;
+    if (_tugasMap) return;
     
     // Default center (Sumba Barat / Kantor Bapperida)
     const defCenter = [-9.6548, 119.4122]; 
-    window.AbsenApp.tugasLembur.tugasMap = L.map('tugasMap').setView(defCenter, 15);
+    _tugasMap = L.map('tugasMap').setView(defCenter, 15);
     
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       attribution: '&copy; Google Maps'
-    }).addTo(window.AbsenApp.tugasLembur.tugasMap);
+    }).addTo(_tugasMap);
 
-    window.AbsenApp.tugasLembur.tugasMap.on('click', function(e) {
+    _tugasMap.on('click', function(e) {
       const { lat, lng } = e.latlng;
       setTugasMarker(lat, lng);
     });
@@ -741,15 +741,15 @@
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => {
         const { latitude, longitude } = pos.coords;
-        window.AbsenApp.tugasLembur.tugasMap.setView([latitude, longitude], 16);
+        _tugasMap.setView([latitude, longitude], 16);
       });
     }
   }
   window.initTugasMap = initTugasMap;
 
   function setTugasMarker(lat, lng) {
-    if (window.AbsenApp.tugasLembur.tugasMarker) window.AbsenApp.tugasLembur.tugasMarker.setLatLng([lat, lng]);
-    else window.AbsenApp.tugasLembur.tugasMarker = L.marker([lat, lng], { draggable: true }).addTo(window.AbsenApp.tugasLembur.tugasMap);
+    if (_tugasMarker) _tugasMarker.setLatLng([lat, lng]);
+    else _tugasMarker = L.marker([lat, lng], { draggable: true }).addTo(_tugasMap);
 
     $('tugasLat').value = lat.toFixed(6);
     $('tugasLon').value = lng.toFixed(6);
@@ -765,7 +765,7 @@
     const ket = $('tugasKet').value.trim();
     const tgl = $('tugasTanggal').value;
 
-    if (window.AbsenApp.tugasLembur.selectedTugasPegawai.length === 0 || !tgl) {
+    if (_selectedTugasPegawai.length === 0 || !tgl) {
       alert('⚠️ Harap pilih minimal satu pegawai dan tanggal tugas.');
       return;
     }
@@ -783,7 +783,7 @@
         creatorNama = pNama;
       }
 
-      const results = await Promise.all(window.AbsenApp.tugasLembur.selectedTugasPegawai.map(async (u) => {
+      const results = await Promise.all(_selectedTugasPegawai.map(async (u) => {
         const payload = {
           user_id: u.id,
           nama: u.nama,
@@ -803,15 +803,15 @@
       const allOk = results.every(r => r.ok && r.data?.ok !== false);
       if (allOk) {
         showResult('tugasResult', 'tugasRIcon', 'tugasRTitle', 'tugasRMsg', 'success', '✅', 'Penugasan Berhasil', 
-          `${window.AbsenApp.tugasLembur.selectedTugasPegawai.length} Pegawai telah ditugaskan pada ${tgl}.`);
+          `${_selectedTugasPegawai.length} Pegawai telah ditugaskan pada ${tgl}.`);
         dom.show('tugasResult', 'flex');
         
         // Reset
         $('tugasKet').value = '';
         if ($('tugasNomorSurat')) $('tugasNomorSurat').value = '';
-        if (window.AbsenApp.tugasLembur.tugasMarker) { window.AbsenApp.tugasLembur.tugasMap.removeLayer(window.AbsenApp.tugasLembur.tugasMarker); window.AbsenApp.tugasLembur.tugasMarker = null; }
+        if (_tugasMarker) { _tugasMap.removeLayer(_tugasMarker); _tugasMarker = null; }
         $('tugasLat').value = ''; $('tugasLon').value = '';
-        window.AbsenApp.tugasLembur.selectedTugasPegawai = [];
+        _selectedTugasPegawai = [];
         renderTugasPills();
       } else {
         showResult('tugasResult', 'tugasRIcon', 'tugasRTitle', 'tugasRMsg', 'fail', '❌', 'Sebagian Gagal', 'Beberapa penugasan gagal disimpan.');
@@ -841,7 +841,7 @@
       const res = await apiGet(P.userList + '?format=full');
       const rows = res.ok ? ((res.rows?.length ?? 0) ? res.rows : parseApiResponse(res.data)) : [];
       
-      window.AbsenApp.tugasLembur.allPegawaiLembur = rows.map(u => ({
+      _allPegawaiLembur = rows.map(u => ({
         id: u.id || u.ID || u.telegram_id || '',
         nama: u.nama || u.Nama || u.username || '',
         nip: u.nip || u.NIP || '',
@@ -849,7 +849,7 @@
         pangkat: u.pangkat || u.Pangkat || ''
       })).sort((a, b) => a.nama.localeCompare(b.nama));
 
-      renderLemburPegawaiList(window.AbsenApp.tugasLembur.allPegawaiLembur);
+      renderLemburPegawaiList(_allPegawaiLembur);
     } catch (e) {
       el.innerHTML = '<div style="padding:10px; text-align:center; color:var(--danger)">❌ Gagal</div>';
     }
@@ -863,7 +863,7 @@
       return;
     }
     el.innerHTML = list.map(u => {
-      const isSelected = window.AbsenApp.tugasLembur.selectedLemburPegawai.some(s => s.id == u.id);
+      const isSelected = _selectedLemburPegawai.some(s => s.id == u.id);
       return `
         <div class="dropdown-item ${isSelected ? 'selected' : ''}" onclick="selectLemburPegawai('${u.id}', '${u.nama.replace(/'/g, "\\'")}', '${u.nip}')">
           <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
@@ -885,7 +885,7 @@
     else {
       container.classList.toggle('open');
       if (container.classList.contains('open')) {
-        if (!window.AbsenApp.tugasLembur.allPegawaiLembur.length) loadLemburPegawai();
+        if (!_allPegawaiLembur.length) loadLemburPegawai();
         $('lemburSearchInput').focus();
       }
     }
@@ -893,22 +893,22 @@
 
   window.filterLemburPegawai = function(query) {
     const q = query.toLowerCase().trim();
-    const filtered = window.AbsenApp.tugasLembur.allPegawaiLembur.filter(u => u.nama.toLowerCase().includes(q) || u.nip.toLowerCase().includes(q));
+    const filtered = _allPegawaiLembur.filter(u => u.nama.toLowerCase().includes(q) || u.nip.toLowerCase().includes(q));
     renderLemburPegawaiList(filtered);
     const container = $('lemburPegawaiContainer');
     if (container && !container.classList.contains('open')) container.classList.add('open');
   };
 
   window.selectLemburPegawai = function(id, nama, nip) {
-    const idx = window.AbsenApp.tugasLembur.selectedLemburPegawai.findIndex(p => p.id == id);
+    const idx = _selectedLemburPegawai.findIndex(p => p.id == id);
     if (idx > -1) {
-      window.AbsenApp.tugasLembur.selectedLemburPegawai.splice(idx, 1);
+      _selectedLemburPegawai.splice(idx, 1);
     } else {
-      window.AbsenApp.tugasLembur.selectedLemburPegawai.push({ id, nama, nip });
+      _selectedLemburPegawai.push({ id, nama, nip });
     }
     
     renderLemburPills();
-    renderLemburPegawaiList(window.AbsenApp.tugasLembur.allPegawaiLembur); // Refresh list for checkmarks
+    renderLemburPegawaiList(_allPegawaiLembur); // Refresh list for checkmarks
     
     // Don't close for multi-select
     $('lemburSearchInput').value = '';
@@ -927,12 +927,12 @@
     }
     
     const el = $('lemburSelectedPills');
-    if (window.AbsenApp.tugasLembur.selectedLemburPegawai.length === 0) {
+    if (_selectedLemburPegawai.length === 0) {
       el.innerHTML = '';
       return;
     }
 
-    el.innerHTML = window.AbsenApp.tugasLembur.selectedLemburPegawai.map(u => `
+    el.innerHTML = _selectedLemburPegawai.map(u => `
       <div class="pegawai-pill">
         <span>${u.nama.split(' ')[0]}</span>
         <i class="fas fa-times-circle" onclick="event.stopPropagation(); selectLemburPegawai('${u.id}')"></i>
@@ -1055,12 +1055,12 @@
    * Fetch Overtime Data
    */
   window.handleFetchLembur = async function() {
-    if (window._selectedLemburDates.size === 0 || window.AbsenApp.tugasLembur.selectedLemburPegawai.length === 0) {
+    if (window._selectedLemburDates.size === 0 || _selectedLemburPegawai.length === 0) {
       alert('⚠️ Harap pilih minimal satu tanggal dan pilih minimal satu pegawai.');
       return;
     }
 
-    const nips = window.AbsenApp.tugasLembur.selectedLemburPegawai.map(p => p.nip).join(',');
+    const nips = _selectedLemburPegawai.map(p => p.nip).join(',');
     const datesArr = Array.from(window._selectedLemburDates).sort();
     const dari = datesArr[0];
     const sampai = datesArr[datesArr.length - 1];
@@ -1097,7 +1097,7 @@
 
       // Build NIP → signature map by cross-referencing pegawai list (id = telegram_id)
       const nipSigMap = {};
-      (window.AbsenApp.tugasLembur.allPegawaiLembur || []).forEach(p => {
+      (_allPegawaiLembur || []).forEach(p => {
         const nip = String(p.nip || '').replace(/\s/g, '');
         if (!nip) return;
         // Try direct NIP lookup first
@@ -1119,7 +1119,7 @@
       // keterangan_status filled and jam_masuk/jam_pulang = null.
       // We just need to ensure all selected employees have rows for all selected dates.
       datesArr.forEach(date => {
-        window.AbsenApp.tugasLembur.selectedLemburPegawai.forEach(pegawai => {
+        _selectedLemburPegawai.forEach(pegawai => {
           const exists = lemburData.find(l =>
             (l.nip || '').toString().trim() === (pegawai.nip || '').toString().trim()
             && l.tanggal === date
@@ -1250,7 +1250,7 @@
       return found;
     };
 
-    const kb = getKepalaSignatureData(window.AbsenApp.tugasLembur.allPegawaiLembur) || {
+    const kb = getKepalaSignatureData(_allPegawaiLembur) || {
       nama: 'TITUS JURI, S.T., M.Si',
       pangkat: 'Pembina Utama Muda (IV/c)',
       nip: '19740523 200212 1 004',
@@ -1527,12 +1527,12 @@
             '| found:', !!nipSigMap[nipClean]);
         }
 
-        // Use NIP-keyed map (built via window.AbsenApp.tugasLembur.allPegawaiLembur cross-ref at fetch time)
+        // Use NIP-keyed map (built via _allPegawaiLembur cross-ref at fetch time)
         let sig = nipSigMap[nipClean] || sigMap[nipClean] || sigMap[g.nip];
 
-        // Fallback: find telegram_id via window.AbsenApp.tugasLembur.selectedLemburPegawai
+        // Fallback: find telegram_id via _selectedLemburPegawai
         if (!sig) {
-          const peg = (window.window.AbsenApp.tugasLembur.selectedLemburPegawai || []).find(p =>
+          const peg = (window._selectedLemburPegawai || []).find(p =>
             String(p.nip || '').replace(/\s/g, '') === nipClean);
           if (peg) {
             const tid = String(peg.id || peg.telegram_id || '');
@@ -1876,7 +1876,7 @@
 
     el.innerHTML = `
       <div class="shimmer-wrapper">
-        <div class="shimmer sh-line" class="sh-box mb-10"></div>
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
       </div>
     `;
 
@@ -1895,7 +1895,7 @@
       if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
       
       const data = res.rows || parseApiResponse(res.data) || [];
-      window.AbsenApp.tugasLembur.activeMonitoringTasks = data; // Store data in module scope for id-based lookup
+      _activeMonitoringTasks = data; // Store data in module scope for id-based lookup
       renderMonitoringTasks(data);
     } catch (e) {
       console.error('[TugasLembur] Monitoring Load Error:', e);
@@ -1976,13 +1976,13 @@
   }
 
   window.viewTugasBuktiById = function(id) {
-    const t = window.AbsenApp.tugasLembur.activeMonitoringTasks.find(x => x.id === id);
+    const t = _activeMonitoringTasks.find(x => x.id === id);
     if (!t || !t.bukti) return;
     viewTugasBukti(t.bukti, t.nama);
   };
 
   window.viewMyTugasBuktiById = function(id) {
-    const t = window.AbsenApp.tugasLembur.activeMyTasks.find(x => x.id === id);
+    const t = _activeMyTasks.find(x => x.id === id);
     if (!t || !t.bukti) return;
     viewTugasBukti(t.bukti, t.nama || (typeof userProfile !== 'undefined' && userProfile ? userProfile.nama : 'bukti'));
   };
@@ -2230,8 +2230,8 @@
     if (typeof loadAdminSimapoMaster === 'function') loadAdminSimapoMaster();
     
     // Invalidate caches & selected employees
-    window.AbsenApp.tugasLembur.allPegawaiLembur = [];
-    window.AbsenApp.tugasLembur.selectedLemburPegawai = [];
+    _allPegawaiLembur = [];
+    _selectedLemburPegawai = [];
     renderLemburPills();
     
     // Reload dynamic employee list for Overtime (Lembur)
@@ -2250,7 +2250,7 @@
         📂 ARSIP REKAP LEMBUR
       </div>
       <div class="shimmer-wrapper">
-        <div class="shimmer sh-line" class="sh-box mb-10"></div>
+        <div class="shimmer sh-line" style="width:100%; height:80px; border-radius:15px; margin-bottom:10px"></div>
       </div>
     `;
 

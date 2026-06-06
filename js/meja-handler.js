@@ -210,4 +210,4 @@ function adminCaptureSignatureFor(uid, name) {
 }
 
 // Auto-init Desktop Mode jika di layar laptop/PC
-setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (e) { console.warn('[meja-handler.js] Operasi gagal:', e.message); } }, 1000);
+setTimeout(() => { try { if (typeof initDesktopMode === 'function') initDesktopMode(); } catch (_) { } }, 1000);

@@ -227,25 +227,14 @@
       if (el && !el.dataset.loaded && !el.dataset.loading) {
         el.dataset.loading = 'true';
         try {
-          const res = await fetch(`templates/tab-${tab}.html?t=${Date.now()}`);
+          // Use anti-cache query string for development if needed, but simple fetch is fine for PWA (Service Worker will handle cache)
+          const res = await fetch(`templates/tab-${tab}.html`);
           if (res.ok) {
             el.innerHTML = await res.text();
             el.dataset.loaded = 'true';
-          } else {
-            el.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center; font-family: sans-serif;">
-              <h2>⚠️ Gagal Memuat Tab</h2>
-              <p>HTTP Error: ${res.status}</p>
-              <p>Path: templates/tab-${tab}.html</p>
-              <button onclick="location.reload()" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; margin-top: 15px; cursor: pointer;">Muat Ulang Aplikasi</button>
-            </div>`;
           }
         } catch (e) {
           console.error(`Failed to load template for tab ${tab}:`, e);
-          el.innerHTML = `<div style="padding: 40px; color: #ef4444; text-align: center; font-family: sans-serif;">
-              <h2>⚠️ Kesalahan Jaringan</h2>
-              <p>${e.message}</p>
-              <button onclick="location.reload()" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; margin-top: 15px; cursor: pointer;">Muat Ulang Aplikasi</button>
-            </div>`;
         } finally {
           delete el.dataset.loading;
         }

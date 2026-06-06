@@ -8,10 +8,6 @@
         console.log('[Init] Starting application...');
         await idb.init();
 
-        // ── FIX: MUST inject HTML BEFORE fetching data so DOM elements exist! ──
-        const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
-        await switchTab(lastTab);
-
         // Critical: Load role & face settings first
         await Promise.allSettled([
           loadFaceToggle(),
@@ -40,6 +36,8 @@
           _cekWajibFace();
         }, 1500);
 
+        const lastTab = localStorage.getItem('absen_last_tab') || 'absen';
+        switchTab(lastTab);
         if (typeof hideResult === 'function') hideResult(); // Ensure result is hidden on startup
 
         if (IS_ADMIN) {

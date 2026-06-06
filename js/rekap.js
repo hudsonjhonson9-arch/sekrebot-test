@@ -1,8 +1,13 @@
 /* ════ REKAP ════ */
 /* ════ REKAP ════ */
 
+// Global state: hari libur & jam per pegawai
+window.AbsenApp.rekap.window.AbsenApp.rekap.hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
+window.AbsenApp.rekap.window.AbsenApp.rekap.jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
+window.AbsenApp.rekap.window.AbsenApp.rekap.liburLoaded = false;
+window.AbsenApp.rekap.window.AbsenApp.rekap.userListOrder = [];
 
-// Global state: hari libur & jam per pegawai diinisialisasi di state.js
+
 // Flatpickr instance for rekap range picker
 window.AbsenApp.rekap.fp = null;
 
@@ -222,7 +227,6 @@ async function loadRekap() {
     if ($('rsCuti')) $('rsCuti').textContent = ringkasan.cuti ?? 0;
     $('rsAlpa').textContent = ringkasan.alpa ?? 0;
 
-    let isAlpa = false, terlambatMnt = 0, cepatMnt = 0;
     // ── Khusus Harian: Hitung ulang ringkasan agar TB (Belum Absen) sesuai dengan card ──
     if (isHarianLoad && pegawai.length > 0) {
       let rM = 0, rP = 0, rPL = 0, rL = 0, rI = 0, rS = 0, rT = 0, rTu = 0, rC = 0, rA = 0;
@@ -635,8 +639,6 @@ function renderRekap(pg) {
       ? `<div class="rekap-jabatan">${jabatan}</div>`
       : '';
 
-    let isAlpa = false, terlambatMnt = 0, cepatMnt = 0;
-
     /* ─────────────────────────────────────────
        TAMPILAN HARIAN — CARD JAM PER PEGAWAI
        ───────────────────────────────────────── */
@@ -664,9 +666,9 @@ function renderRekap(pg) {
       const mPulang = toMenitLocal(rawPulang);
 
       // Status masuk
-      terlambatMnt = (mMasuk !== null && mMasukBatas !== null && mMasuk > mMasukBatas)
+      const terlambatMnt = (mMasuk !== null && mMasukBatas !== null && mMasuk > mMasukBatas)
         ? mMasuk - mMasukBatas : 0;
-      cepatMnt = (mPulang !== null && mPulangBatas !== null && mPulang < mPulangBatas)
+      const cepatMnt = (mPulang !== null && mPulangBatas !== null && mPulang < mPulangBatas)
         ? mPulangBatas - mPulang : 0;
 
       // Label & warna jam masuk
@@ -692,7 +694,7 @@ function renderRekap(pg) {
       // Kehadiran overall status untuk warna border card
       const isHadir = (masuk + lambatCount) > 0 || !!p._rawMasukLog || !!p._rawPulangLog;
       const isKet = izin > 0 || sakit > 0 || tugas > 0 || p.tubel > 0 || p.cuti > 0;
-      isAlpa = !isHadir && !isKet;
+      const isAlpa = !isHadir && !isKet;
       const cardBorderColor = isKet ? (p.tubel > 0 ? 'rgba(99,102,241,.25)' : p.cuti > 0 ? 'rgba(20,184,166,.25)' : 'rgba(139,92,246,.25)')
         : isAlpa ? 'rgba(239,68,68,.2)'
           : terlambatMnt > 0 || cepatMnt > 0 ? 'rgba(245,158,11,.3)'
@@ -875,7 +877,7 @@ function renderRekap(pg) {
           }
 
           if (k) {
-            html += renderLocText('📝 Ket', 'var(--warning)', k.loc);
+            html += renderLocText('📝 Ket', masukColor, k.loc);
           }
 
           if (pins.length > 0) {

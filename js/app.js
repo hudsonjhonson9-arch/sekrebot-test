@@ -77,6 +77,48 @@
       }
     }
 
+    // PWA Auto Update Check
+    async function checkForUpdate() {
+      try {
+        const res = await fetch('./version.json?t=' + Date.now());
+        if (res.ok) {
+          const remote = await res.json();
+          const local = localStorage.getItem('app_version');
+          if (local && local !== remote.version) {
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                title: '🔄 Pembaruan Tersedia!',
+                text: 'Versi baru dari aplikasi absensi tersedia. Muat ulang sekarang untuk menikmati fitur terbaru?',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Muat Ulang',
+                cancelButtonText: 'Nanti',
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  localStorage.setItem('app_version', remote.version);
+                  window.location.reload(true);
+                }
+              });
+            } else {
+              if (confirm('🔄 Versi baru tersedia! Muat ulang aplikasi sekarang?')) {
+                localStorage.setItem('app_version', remote.version);
+                window.location.reload(true);
+              }
+            }
+          } else if (!local) {
+            localStorage.setItem('app_version', remote.version);
+          }
+        }
+      } catch (e) {
+        console.warn('[PWA] Gagal mengecek pembaruan:', e);
+      }
+    }
+    
+    // Cek update setiap 5 menit
+    setInterval(checkForUpdate, 5 * 60 * 1000);
+    // Cek sesaat setelah init
+    setTimeout(checkForUpdate, 5000);
+
     // Jalankan initApp di akhir script atau via DOMContentLoaded
     document.addEventListener('DOMContentLoaded', initApp);
 

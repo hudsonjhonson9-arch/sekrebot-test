@@ -57,7 +57,7 @@
         const data = raw ? JSON.parse(raw) : {};
         data[uid] = storageData;
         localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
-      } catch (_) { }
+      } catch (e) { console.warn('[face.js] Operasi gagal:', e.message); }
 
       // Tetap simpan lengkap di RAM cache untuk tampilan saat ini
       if (!window._faceRefCache) window._faceRefCache = {};
@@ -230,7 +230,7 @@
           updateProfilFaceUI();
           updateFaceRegUI();
         }
-      } catch (_) { }
+      } catch (e) { console.warn('[face.js] Operasi gagal:', e.message); }
     }
 
     // ── Euclidean distance between two 128-d descriptors ──
@@ -591,7 +591,7 @@
           gl.getExtension('WEBGL_lose_context')?.loseContext();
           return 'webgl';
         }
-      } catch (_) {}
+      } catch (e) { console.warn('[face.js] Operasi gagal:', e.message); }
       return 'wasm';
     }
 

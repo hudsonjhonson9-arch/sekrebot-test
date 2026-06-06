@@ -1,11 +1,11 @@
 /* ─── GLOBAL STATE ── */
-window._simapoMasterEditId = null;
-window._allPinjamData = [];
-window._allTiketData = [];
-window._allMasterData = [];
+window.AbsenApp.simapo.masterEditId = null;
+window.AbsenApp.simapo.allPinjamData = [];
+window.AbsenApp.simapo.allTiketData = [];
+window.AbsenApp.simapo.allMasterData = [];
 
 /* ─── CACHE MANAGER ────────────────────────────────────────── */
-window._simapoCache = {
+window.AbsenApp.simapo.cache = {
   data: {},
   expiry: 2 * 60 * 1000,
   async getOrFetch(key, fetchFn, force = false) {
@@ -68,12 +68,12 @@ window.loadAdminSimapoPinjam = async function(force = false) {
   const el = document.getElementById('adminSimapoPinjamList');
   if (!el) return;
   
-  if (force || !window._allPinjamData || window._allPinjamData.length === 0) {
+  if (force || !window.AbsenApp.simapo.allPinjamData || window.AbsenApp.simapo.allPinjamData.length === 0) {
     window.showAdminSimapoShimmer('adminSimapoPinjamList');
   }
 
   try {
-    const data = await window._simapoCache.getOrFetch('admin_pinjam', async () => {
+    const data = await window.AbsenApp.simapo.cache.getOrFetch('admin_pinjam', async () => {
       try {
         const res = await apiFetch(P.simapoAdminPinjamList);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -86,10 +86,10 @@ window.loadAdminSimapoPinjam = async function(force = false) {
     }, force);
 
     if (data && Array.isArray(data)) {
-      window._allPinjamData = data;
+      window.AbsenApp.simapo.allPinjamData = data;
     } else {
       console.log('[SIMAPO] No data from server, using demo fallback');
-      window._allPinjamData = [
+      window.AbsenApp.simapo.allPinjamData = [
         { id:'P001', userid:'1234567', nama_peminjam:'Demo User 1', nama_barang:'Proyektor Epson', tujuanpeminjaman:'Presentasi', tanggalmulai:'2026-05-15', tanggalselesai:'2026-05-15', status:'MENUNGGU' },
         { id:'P002', userid:'7654321', nama_peminjam:'Demo User 2', nama_barang:'Kamera DSLR', tujuanpeminjaman:'Dokumentasi', tanggalmulai:'2026-05-18', tanggalselesai:'2026-05-20', status:'MENUNGGU' },
       ];
@@ -108,7 +108,7 @@ window.filterSAPinjam = function(status, btnEl) {
   document.querySelectorAll('.sa-filter-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
   
-  const filtered = status ? window._allPinjamData.filter(d => (d.status||'').toUpperCase() === status.toUpperCase()) : window._allPinjamData;
+  const filtered = status ? window.AbsenApp.simapo.allPinjamData.filter(d => (d.status||'').toUpperCase() === status.toUpperCase()) : window.AbsenApp.simapo.allPinjamData;
   window.renderAdminSimapoPinjam(filtered);
 };
 
@@ -153,21 +153,21 @@ window.renderAdminSimapoPinjam = function(data) {
 window.loadAdminSimapoTiket = async function(force = false) {
   const el = document.getElementById('adminSimapoTiketList');
   if (!el) return;
-  if (force || window._allTiketData.length === 0) window.showAdminSimapoShimmer('adminSimapoTiketList');
+  if (force || window.AbsenApp.simapo.allTiketData.length === 0) window.showAdminSimapoShimmer('adminSimapoTiketList');
 
-  const data = await window._simapoCache.getOrFetch('admin_tiket', async () => {
+  const data = await window.AbsenApp.simapo.cache.getOrFetch('admin_tiket', async () => {
     try {
       const res = await apiFetch(P.simapoAdminTiketList);
       return parseApiResponse(await res.json());
     } catch { return null; }
   }, force);
 
-  if (data) window._allTiketData = data;
-  else if (!force && window._allTiketData.length) {}
+  if (data) window.AbsenApp.simapo.allTiketData = data;
+  else if (!force && window.AbsenApp.simapo.allTiketData.length) {}
   else {
-    window._allTiketData = [{ id: 'T001', judul: 'AC Ruang Rapat Bocor', deskripsi: 'Air menetes.', lokasi: 'Ruang Rapat', nip_pelapor: '12345', nama_pelapor: 'Demo User', status: 'MASUK', createdat: '2026-05-12' }];
+    window.AbsenApp.simapo.allTiketData = [{ id: 'T001', judul: 'AC Ruang Rapat Bocor', deskripsi: 'Air menetes.', lokasi: 'Ruang Rapat', nip_pelapor: '12345', nama_pelapor: 'Demo User', status: 'MASUK', createdat: '2026-05-12' }];
   }
-  window.renderAdminSimapoTiket(window._allTiketData);
+  window.renderAdminSimapoTiket(window.AbsenApp.simapo.allTiketData);
 };
 
 window.renderAdminSimapoTiket = function(data) {
@@ -199,21 +199,21 @@ window.renderAdminSimapoTiket = function(data) {
 window.loadAdminSimapoMaster = async function(force = false) {
   const el = document.getElementById('adminSimapoMasterList');
   if (!el) return;
-  if (force || window._allMasterData.length === 0) window.showAdminSimapoShimmer('adminSimapoMasterList');
+  if (force || window.AbsenApp.simapo.allMasterData.length === 0) window.showAdminSimapoShimmer('adminSimapoMasterList');
 
-  const data = await window._simapoCache.getOrFetch('admin_master', async () => {
+  const data = await window.AbsenApp.simapo.cache.getOrFetch('admin_master', async () => {
     try {
       const res = await apiFetch(P.simapoAdminMasterList);
       return parseApiResponse(await res.json());
     } catch { return null; }
   }, force);
 
-  if (data) window._allMasterData = data;
-  else if (!force && window._allMasterData.length) {}
+  if (data) window.AbsenApp.simapo.allMasterData = data;
+  else if (!force && window.AbsenApp.simapo.allMasterData.length) {}
   else {
-    window._allMasterData = [{ id:'1',nama:'Demo Laptop',kodebarang:'IT-001',stok_saat_ini:5,satuan:'Unit',hargasatuan:10000000,isactive:true }];
+    window.AbsenApp.simapo.allMasterData = [{ id:'1',nama:'Demo Laptop',kodebarang:'IT-001',stok_saat_ini:5,satuan:'Unit',hargasatuan:10000000,isactive:true }];
   }
-  window.renderAdminSimapoMaster(window._allMasterData);
+  window.renderAdminSimapoMaster(window.AbsenApp.simapo.allMasterData);
 };
 
 window.renderAdminSimapoMaster = function(data) {
@@ -239,7 +239,7 @@ window.renderAdminSimapoMaster = function(data) {
 
 window.filterSAMaster = function(val) {
   const q = val.toLowerCase();
-  const filtered = window._allMasterData.filter(b => 
+  const filtered = window.AbsenApp.simapo.allMasterData.filter(b => 
     (b.nama && b.nama.toLowerCase().includes(q)) || 
     (b.kodebarang && b.kodebarang.toLowerCase().includes(q))
   );
@@ -247,12 +247,12 @@ window.filterSAMaster = function(val) {
 };
 
 window.showSimapoMasterForm = async function(id = null) {
-  window._simapoMasterEditId = id;
+  window.AbsenApp.simapo.masterEditId = id;
   const modal = document.getElementById('modalSimapoMaster');
   if (!modal) return;
 
   // Pastikan data kategori dimuat
-  const katData = await window._simapoCache.getOrFetch('simapo_kategori', async () => {
+  const katData = await window.AbsenApp.simapo.cache.getOrFetch('simapo_kategori', async () => {
     try {
       const res = await apiFetch(P.simapoKategoriList);
       return parseApiResponse(await res.json());
@@ -278,7 +278,7 @@ window.showSimapoMasterForm = async function(id = null) {
   if (titleEl) titleEl.textContent = id ? '✏️ Edit Data Aset' : '➕ Tambah Aset Baru';
 
   if (id) {
-    const item = window._allMasterData.find(b => b.id === id);
+    const item = window.AbsenApp.simapo.allMasterData.find(b => b.id === id);
     if (item) {
       document.getElementById('smfNama').value = item.nama || '';
       document.getElementById('smfKode').value = item.kodebarang || '';
@@ -307,18 +307,18 @@ window.adminSimapoPinjamAction = async function(id, status) {
   showToast('Memproses...', 'info');
   try {
     const res = await apiFetch(P.simapoAdminPinjamAction, { method:'POST', body: JSON.stringify({ id, status }) });
-    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_pinjam'); window.loadAdminSimapoPinjam(true); }
+    if (res.ok) { showToast('Berhasil', 'success'); window.AbsenApp.simapo.cache.clear('admin_pinjam'); window.loadAdminSimapoPinjam(true); }
     else throw 1;
-  } catch { showToast('Status diubah (Demo)', 'success'); window._simapoCache.clear('admin_pinjam'); window.loadAdminSimapoPinjam(true); }
+  } catch { showToast('Status diubah (Demo)', 'success'); window.AbsenApp.simapo.cache.clear('admin_pinjam'); window.loadAdminSimapoPinjam(true); }
 };
 
 window.adminSimapoTiketAction = async function(id, status) {
   showToast('Memproses...', 'info');
   try {
     const res = await apiFetch(P.simapoAdminTiketAction, { method:'POST', body: JSON.stringify({ id, status }) });
-    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
+    if (res.ok) { showToast('Berhasil', 'success'); window.AbsenApp.simapo.cache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
     else throw 1;
-  } catch { showToast('Status diubah (Demo)', 'success'); window._simapoCache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
+  } catch { showToast('Status diubah (Demo)', 'success'); window.AbsenApp.simapo.cache.clear('admin_tiket'); window.loadAdminSimapoTiket(true); }
 };
 
 window.deleteSimapoMaster = async function(id) {
@@ -326,14 +326,14 @@ window.deleteSimapoMaster = async function(id) {
   showToast('Menghapus...', 'info');
   try {
     const res = await apiFetch(P.simapoAdminMasterDel, { method:'POST', body: JSON.stringify({ id }) });
-    if (res.ok) { showToast('Aset dihapus', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+    if (res.ok) { showToast('Aset dihapus', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
     else throw 1;
-  } catch { showToast('Dihapus (Demo)', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+  } catch { showToast('Dihapus (Demo)', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
 };
 
 window.saveSimapoMaster = async function() {
   const payload = {
-    id: window._simapoMasterEditId,
+    id: window.AbsenApp.simapo.masterEditId,
     nama: document.getElementById('smfNama')?.value.trim(),
     kodebarang: document.getElementById('smfKode')?.value.trim(),
     satuan: document.getElementById('smfSatuan')?.value.trim(),
@@ -347,22 +347,22 @@ window.saveSimapoMaster = async function() {
   showToast('Menyimpan...', 'info');
   try {
     const res = await apiFetch(P.simapoAdminMasterSave, { method:'POST', body: JSON.stringify(payload) });
-    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); if(window.closeSimapoMasterForm) window.closeSimapoMasterForm(); }
+    if (res.ok) { showToast('Berhasil', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); if(window.closeSimapoMasterForm) window.closeSimapoMasterForm(); }
     else throw 1;
-  } catch { showToast('Simpan (Demo)', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); if(window.closeSimapoMasterForm) window.closeSimapoMasterForm(); }
+  } catch { showToast('Simpan (Demo)', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); if(window.closeSimapoMasterForm) window.closeSimapoMasterForm(); }
 };
 
 /* ─── OTHERS ── */
 window.populateMutasiBarangSelect = async function() {
   const sel = document.getElementById('mutasiBarangId'); if (!sel) return;
-  let data = window._allMasterData;
+  let data = window.AbsenApp.simapo.allMasterData;
   if (!data.length) try { data = parseApiResponse(await (await apiFetch(P.simapoAdminMasterList)).json()); } catch { data=[]; }
   sel.innerHTML = '<option value="">-- Pilih Barang --</option>' + data.map(b => `<option value="${b.id}">${b.nama} (${b.kodebarang})</option>`).join('');
 };
 
 window.loadMutasiRiwayat = async function(force = false) {
   const el = document.getElementById('mutasiRiwayatList'); if (!el) return;
-  const data = await window._simapoCache.getOrFetch('mutasi_riwayat', async () => {
+  const data = await window.AbsenApp.simapo.cache.getOrFetch('mutasi_riwayat', async () => {
     try { const res = await apiFetch(P.simapoMutasiList); return parseApiResponse(await res.json()); } catch { return null; }
   }, force);
   if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:var(--muted)">Belum ada riwayat.</div>'; return; }
@@ -371,7 +371,7 @@ window.loadMutasiRiwayat = async function(force = false) {
 
 window.loadOpnameForm = async function() {
   const el = document.getElementById('opnameFormList'); if (!el) return;
-  let data = window._allMasterData;
+  let data = window.AbsenApp.simapo.allMasterData;
   if (!data.length) try { data = parseApiResponse(await (await apiFetch(P.simapoAdminMasterList)).json()); } catch { data=[]; }
   el.innerHTML = data.map(b => `<div style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;"><div style="flex:1;"><div style="font-weight:700;font-size:13px">${b.nama}</div><div style="font-size:11px">${b.kodebarang} · Sistem: ${b.stok_saat_ini}</div></div><input type="number" class="form-input opname-input" data-id="${b.id}" data-sistem="${b.stok_saat_ini}" value="${b.stok_saat_ini}" style="width:70px;padding:6px;"></div>`).join('');
 };
@@ -386,9 +386,9 @@ window.submitStokOpname = async function() {
   showToast('Menyimpan...', 'info');
   try {
     const res = await apiFetch(P.simapoOpnameSave, { method:'POST', body: JSON.stringify({ items }) });
-    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+    if (res.ok) { showToast('Berhasil', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
     else throw 1;
-  } catch { showToast('Opname (Demo)', 'success'); window._simapoCache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
+  } catch { showToast('Opname (Demo)', 'success'); window.AbsenApp.simapo.cache.clear('admin_master'); window.loadAdminSimapoMaster(true); }
 };
 
 /* ─── KATEGORI ── */
@@ -399,7 +399,7 @@ window.loadSimapoKategori = async function(isAdmin = true, force = false) {
 
   if (force) window.showAdminSimapoShimmer(elId);
 
-  const data = await window._simapoCache.getOrFetch('simapo_kategori', async () => {
+  const data = await window.AbsenApp.simapo.cache.getOrFetch('simapo_kategori', async () => {
     try {
       const res = await apiFetch(P.simapoKategoriList);
       return parseApiResponse(await res.json());
@@ -448,7 +448,7 @@ window.addSimapoKategori = async function() {
     if (res.ok) {
       showToast('Kategori berhasil ditambahkan', 'success');
       input.value = '';
-      window._simapoCache.clear('simapo_kategori');
+      window.AbsenApp.simapo.cache.clear('simapo_kategori');
       window.loadSimapoKategori(true, true);
     } else throw 1;
   } catch {
@@ -465,7 +465,7 @@ window.deleteSimapoKategori = async function(id) {
     const res = await apiFetch(P.simapoKategoriDel, { method:'POST', body: JSON.stringify({ id }) });
     if (res.ok) {
       showToast('Kategori dihapus', 'success');
-      window._simapoCache.clear('simapo_kategori');
+      window.AbsenApp.simapo.cache.clear('simapo_kategori');
       window.loadSimapoKategori(true, true);
     } else throw 1;
   } catch {

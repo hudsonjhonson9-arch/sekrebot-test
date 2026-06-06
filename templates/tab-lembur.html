@@ -1,0 +1,68 @@
+<div class="rekap-header">
+        <div class="rekap-title">🌙 Rekap Lembur</div>
+      </div>
+
+      <!-- Filter Instansi Lembur (Only visible to Superadmin) -->
+      <div id="lemburInstansiSection" style="display: none; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-label" style="margin-bottom: 4px; font-weight:800; color:var(--gold);">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="lemburInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: var(--card); color: var(--white); border: 1px solid var(--border); border-radius: 12px;"
+          onchange="onLemburInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
+      </div>
+      <div class="card glass-card">
+        <div class="form-group">
+          <label class="form-label">📅 Pilih Rentang Tanggal Lembur</label>
+          <div style="position:relative;">
+            <input type="text" id="lemburDateSelect" class="form-input" placeholder="Ketuk untuk memilih tanggal..." readonly
+              style="background:var(--card-bg); color:var(--white); font-weight:600; cursor:pointer; padding-right:40px;">
+            <i class="fas fa-calendar-alt" style="position:absolute; right:15px; top:50%; transform:translateY(-50%); color:var(--primary); pointer-events:none;"></i>
+          </div>
+
+          <!-- Info badge: shown after date selection -->
+          <div id="lemburSelectedDatesList" style="margin-top:10px;"></div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; background:rgba(255,255,255,0.03); padding:10px 15px; border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+            <div>
+              <div style="font-size:13px; font-weight:600; color:var(--white);">Sertakan Hari Sabtu</div>
+              <div style="font-size:10px; color:var(--muted); margin-top:2px;">Abaikan jika hari libur akhir pekan</div>
+            </div>
+            <label class="lembur-toggle-wrap">
+              <input type="checkbox" id="lemburIncludeSabtu" onchange="recalculateLemburDates()">
+              <span class="lembur-knob"></span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">👥 Pilih Pegawai</label>
+          <div class="custom-search-dropdown" id="lemburPegawaiContainer">
+            <div class="dropdown-trigger" onclick="toggleLemburDropdown()">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="lemburSearchInput" placeholder="Cari pegawai..." autocomplete="off" oninput="filterLemburPegawai(this.value)">
+              <i class="fas fa-chevron-down arrow-icon"></i>
+            </div>
+            <div class="dropdown-list-wrap" id="lemburOptionsList"></div>
+            <select id="lemburPegawai" style="display:none"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📋 Dalam Rangka</label>
+          <input type="text" id="lemburDalamRangka" class="form-input"
+            placeholder="Contoh: Persiapan Musrenbang Tahun 2026..."
+            style="font-size:13px;">
+        </div>
+        <button class="btn-primary" onclick="handleFetchLembur()" id="btnFetchLembur">
+          <div class="btn-inner"><span>📊</span> Tarik Data Lembur</div>
+        </button>
+      </div>
+      
+      <div id="lemburResultList" style="margin-top:15px">
+        <!-- Hasil akan diinject di sini -->
+      </div>
+      
+      <!-- ARSIP REKAP LEMBUR -->
+      <div id="lemburArchiveSection" style="margin-top: 25px;">
+        <!-- Daftar arsip akan di-render di sini -->
+      </div>
+
+      <div class="footer">Lembur menarik data absen harian dan mengecek konflik dengan penugasan.</div>

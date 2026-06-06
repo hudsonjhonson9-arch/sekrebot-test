@@ -113,7 +113,7 @@
 
     /**
      * Fetch daftar hari libur untuk keperluan rekap (bukan admin panel).
-     * Hasilnya disimpan ke hariLiburSet & hariLiburMap.
+     * Hasilnya disimpan ke window.AbsenApp.rekap.hariLiburSet & hariLiburMap.
      * @returns {Promise<void>}
      */
         async function fetchLiburForRekap() {
@@ -127,9 +127,9 @@
           const tgl = String(r.tanggal || r.Tanggal || '').trim();
           if (tgl) hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
         });
-        hariLiburSet = new Set(Object.keys(hariLiburMap));
+        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(hariLiburMap));
         liburLoaded = true;
-      } catch (_) { }
+      } catch (e) { console.warn('[admin-libur.js] Operasi gagal:', e.message); }
     }
 
     // Fetch jam per pegawai dari user_list (kolom jam_masuk, jam_pulang)
@@ -152,7 +152,7 @@
             };
           }
         });
-      } catch (_) { }
+      } catch (e) { console.warn('[admin-libur.js] Operasi gagal:', e.message); }
     }
 
     // Durasi preview saat range berubah
@@ -208,7 +208,7 @@
             timestamp: Math.floor(Date.now() / 1000) 
           });
           const d = res?.data ?? {};
-          if (d.ok !== false) { ok++; hariLiburSet.add(tgl); } else fail++;
+          if (d.ok !== false) { ok++; window.AbsenApp.rekap.hariLiburSet.add(tgl); } else fail++;
         } catch { fail++; }
       }
       if (ok > 0) {
@@ -242,7 +242,7 @@
           .sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
         hariLiburMap = {};
         rows.forEach(r => { const t = String(r.tanggal || r.Tanggal || '').trim(); if (t) hariLiburMap[t] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur'; });
-        hariLiburSet = new Set(Object.keys(hariLiburMap));
+        window.AbsenApp.rekap.hariLiburSet = new Set(Object.keys(hariLiburMap));
         liburLoaded = true;
         const badge = $('liburTotalBadge');
         if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? 'inline-block' : 'none'; }
@@ -300,7 +300,7 @@
           nip: localStorage.getItem('MY_NIP') || '',
           timestamp: Math.floor(Date.now() / 1000) 
         });
-        hariLiburSet.delete(tgl);
+        window.AbsenApp.rekap.hariLiburSet.delete(tgl);
         loadLiburAdmin();
       } catch { alert('Gagal menghapus. Coba lagi.'); }
     }

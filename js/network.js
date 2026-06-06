@@ -22,7 +22,7 @@
       try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
     }
     function _lsSet(key, val) {
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch { }
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.warn('[network.js] Operasi gagal:', e.message); }
     }
 
     /* ── Baca/tulis permission state ke localStorage ── */

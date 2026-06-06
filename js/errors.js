@@ -145,3 +145,34 @@
       const code = codeMap[geoErr?.code] || ERROR_CODES.GPS_UNAVAILABLE;
       return new AbsenError(msgMap[geoErr?.code] || geoErr?.message || 'GPS error.', code, geoErr);
     }
+
+    /**
+     * Log error secara terpusat untuk menggantikan empty catch blocks.
+     * Mencegah error tertelan (silent failures) dan mempermudah debugging.
+     * 
+     * @param {string} module - Nama modul (misalnya 'Admin', 'Absen', 'API')
+     * @param {string} action - Nama fungsi atau aksi yang sedang berjalan
+     * @param {Error|any} error - Objek error yang ditangkap
+     */
+    function logError(module, action, error) {
+      const msg = error?.message || String(error);
+      console.warn(`[${module}] ${action} failed:`, msg);
+      
+      // Opsional: Jika IndexedDB siap, simpan histori error untuk keperluan diagnostic
+      try {
+        if (typeof idb !== 'undefined' && idb.set) {
+          const entry = {
+            key: `err_${Date.now()}_${Math.floor(Math.random()*1000)}`,
+            module,
+            action,
+            msg,
+            time: new Date().toISOString()
+          };
+          // Jangan di-await agar tidak memblokir
+          idb.set('master_data', entry).catch(() => {});
+        }
+      } catch (_) {
+        // Safe to ignore, this is already inside the error handler
+      }
+    }
+    window.logError = logError;

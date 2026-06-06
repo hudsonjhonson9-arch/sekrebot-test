@@ -14,7 +14,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: penugasanSave",
       "type": "n8n-nodes-base.webhook",
@@ -24,7 +25,13 @@
         72
       ],
       "webhookId": "penugasan-save-id",
-      "id": "9df46e0f-1f1a-4a1c-9500-3642143b8437"
+      "id": "9df46e0f-1f1a-4a1c-9500-3642143b8437",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -39,7 +46,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: penugasanList",
       "type": "n8n-nodes-base.webhook",
@@ -49,7 +57,13 @@
         336
       ],
       "webhookId": "penugasan-list-id",
-      "id": "9faaf4b0-4f82-4e7b-b011-e83cf3bec8ac"
+      "id": "9faaf4b0-4f82-4e7b-b011-e83cf3bec8ac",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -64,7 +78,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: lemburGet",
       "type": "n8n-nodes-base.webhook",
@@ -74,7 +89,13 @@
         528
       ],
       "webhookId": "lembur-get-id",
-      "id": "318aaca8-5f9f-4b2a-ac7e-e4a68c77e58a"
+      "id": "318aaca8-5f9f-4b2a-ac7e-e4a68c77e58a",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

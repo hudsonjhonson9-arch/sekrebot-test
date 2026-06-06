@@ -15,7 +15,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: lemburSave",
       "type": "n8n-nodes-base.webhook",
@@ -25,7 +26,13 @@
         800
       ],
       "webhookId": "lembur-save-id",
-      "id": "aa000001-0000-0000-0000-000000000001"
+      "id": "aa000001-0000-0000-0000-000000000001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -61,7 +68,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: lemburArchiveList",
       "type": "n8n-nodes-base.webhook",
@@ -71,7 +79,13 @@
         1000
       ],
       "webhookId": "lembur-archive-list-id",
-      "id": "aa000003-0000-0000-0000-000000000003"
+      "id": "aa000003-0000-0000-0000-000000000003",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -108,7 +122,8 @@
               }
             ]
           }
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Webhook: lemburArchiveDelete",
       "type": "n8n-nodes-base.webhook",
@@ -118,7 +133,13 @@
         1200
       ],
       "webhookId": "lembur-archive-delete-id",
-      "id": "aa000005-0000-0000-0000-000000000005"
+      "id": "aa000005-0000-0000-0000-000000000005",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

@@ -204,7 +204,7 @@
      * Aktifkan tab panel berdasarkan nama tab.
      * @param {string} tab - Nama tab: 'absen' | 'ket' | 'rekap' | 'profil' | 'admin' | 'tugas' | 'lembur'
      */
-    function switchTab(tab, isUserClick = false) {
+    async function switchTab(tab, isUserClick = false) {
       // Close more menu when switching tabs
       toggleMoreMenu(false);
       
@@ -222,22 +222,40 @@
       const T = getAllTabs();
       if (!T.includes(tab)) tab = 'absen';
 
+      // ── LAZY LOAD HTML FRAGMENT ──
+      const el = $('panel-' + tab);
+      if (el && !el.dataset.loaded && !el.dataset.loading) {
+        el.dataset.loading = 'true';
+        try {
+          // Use anti-cache query string for development if needed, but simple fetch is fine for PWA (Service Worker will handle cache)
+          const res = await fetch(`templates/tab-${tab}.html`);
+          if (res.ok) {
+            el.innerHTML = await res.text();
+            el.dataset.loaded = 'true';
+          }
+        } catch (e) {
+          console.error(`Failed to load template for tab ${tab}:`, e);
+        } finally {
+          delete el.dataset.loading;
+        }
+      }
+
       localStorage.setItem('absen_last_tab', tab);
       window.scrollTo(0, 0);
       document.querySelectorAll('.nav-item').forEach((t) => {
         if (t) t.classList.toggle('active', t.getAttribute('data-tab') === tab);
       });
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      const el = $('panel-' + tab); if (el) el.classList.add('active');
+      if (el) el.classList.add('active');
 
       if (tab === 'absen') {
         updateClock(); // refresh notif & batas jam periode segera
         if (!networkInfo.checked) cekJaringan(); // auto cek jaringan saat buka tab absen
       }
-      if (tab === 'ket' && !ketStatusLoaded) loadKetStatus();
+      if (tab === 'ket' && !window.AbsenApp.keterangan.loaded) loadKetStatus();
       if (tab === 'profil' && !logLoaded) loadLog();
       if (tab === 'profil' && !dokumenLoaded) loadDokumen();
-      if (tab === 'rekap' && !rekapLoaded) loadRekap();
+      if (tab === 'rekap' && !window.AbsenApp.rekap.loaded) loadRekap();
       if (tab === 'rekap') {
         if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
       }
@@ -396,7 +414,7 @@
           if (isNaN(dariMs) || isNaN(sampaiMs) || dariMs > sampaiMs) return false;
           return true;
         });
-      } catch (_) { }
+      } catch (e) { console.warn('[ui.js] Operasi gagal:', e.message); }
       // Debug: log periode yang berhasil dimuat (bisa dilihat di Console browser)
       if (jamPeriodeList.length) {
         console.log('[JamPeriode] Loaded', jamPeriodeList.length, 'periode:', jamPeriodeList.map(p => `${p.nama}: ${p.dari}→${p.sampai} (masuk:${p.masuk}, pulang:${p.pulang})`));
@@ -414,7 +432,7 @@
           if (j.masuk) JAM_MASUK_MENIT = toMenitStr(j.masuk) ?? JAM_MASUK_MENIT;
           if (j.pulang) JAM_PULANG_MENIT = toMenitStr(j.pulang) ?? JAM_PULANG_MENIT;
         }
-      } catch (_) { }
+      } catch (e) { console.warn('[ui.js] Operasi gagal:', e.message); }
     })();
     /**
      * Update tampilan jam dan tanggal di clock card secara real-time.

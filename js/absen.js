@@ -131,7 +131,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
     _motionData.accel_samples = _motionSamples.slice(-10); // 10 sample terakhir
     _motionData.gyro_available = !!window.DeviceOrientationEvent;
     _motionData.orientation_available = 'DeviceOrientationEvent' in window;
-  } catch (_) { }
+  } catch (e) { if(typeof logError === 'function') logError('Absen', 'DeviceMotion', e); }
 
   setBtnL('btnAbsen', true, 'Mengambil GPS...');
   const _gpsT0 = Date.now(); // catat waktu mulai sebelum acquire
@@ -152,7 +152,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
       try {
         const prevRaw = localStorage.getItem('_prev_loc_bapperida');
         if (prevRaw) prevLocData = JSON.parse(prevRaw);
-      } catch (_) { }
+      } catch (e) { /* Safe to ignore if JSON.parse fails or localStorage access denied */ }
       // Simpan lokasi saat ini untuk request berikutnya
       try {
         localStorage.setItem('_prev_loc_bapperida', JSON.stringify({
@@ -160,7 +160,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           acc: accuracy,
           ts: Math.floor(Date.now() / 1000)
         }));
-      } catch (_) { }
+      } catch (e) { /* Safe to ignore, probably quota exceeded */ }
 
       const gps_fingerprint = {
         has_altitude: _coords.altitude !== null && _coords.altitude !== undefined,
@@ -275,7 +275,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
             _score += 12; _flags.push('ACCURACY_CONSTANT_' + accuracy + 'm_x' + _accHist.length);
           }
         }
-      } catch (_) { }
+      } catch (e) { /* Safe to ignore sessionStorage errors */ }
 
       // ── Layer 10: Heading check ───────────────────────────
       const _heading = _coords.heading;
@@ -345,7 +345,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
             _score += 8; _flags.push('ACC_CONSTANT_CROSS_SESSION_x' + _lsAccHist.length);
           }
         }
-      } catch (_) { }
+      } catch (e) { /* Safe to ignore localStorage errors */ }
 
       // ── Layer 15: Coordinate jitter analysis ──────────────
       // GPS asli: koordinat berubah sedikit setiap kali (micro-jitter)
@@ -363,7 +363,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
             _score += 15; _flags.push('COORD_NO_JITTER_x' + _jitterHist.length);
           }
         }
-      } catch (_) { }
+      } catch (e) { /* Safe to ignore sessionStorage errors */ }
 
       // ── Evaluasi skor ─────────────────────────────────────
       const _isFake = _score >= 50;
@@ -386,7 +386,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
               _fake_detected: true, _score, _flags, source: 'telegram_miniapp', device: _ua
             })
           });
-        } catch (_) { }
+        } catch (e) { if(typeof logError === 'function') logError('Absen', 'ReportFakeGPS', e); }
         _isAbsenSubmitting = false; resolve(); return;
       }
 

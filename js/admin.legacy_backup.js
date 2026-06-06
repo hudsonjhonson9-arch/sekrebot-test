@@ -127,7 +127,7 @@
         });
         hariLiburSet = new Set(Object.keys(hariLiburMap));
         liburLoaded = true;
-      } catch (_) { }
+      } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
     }
 
     // Fetch jam per pegawai dari user_list (kolom jam_masuk, jam_pulang)
@@ -150,7 +150,7 @@
             };
           }
         });
-      } catch (_) { }
+      } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
     }
 
     // Durasi preview saat range berubah
@@ -194,7 +194,7 @@
       for (const tgl of dates) {
         try {
           const res = await apiFetch(P.liburAdd, { method: 'POST', body: JSON.stringify({ tanggal: tgl, nama: nama || 'Hari Libur', ditambahkan_oleh: MY_ID, admin_ids: ADMIN_IDS, timestamp: Math.floor(Date.now() / 1000) }) });
-          let d = {}; try { d = await res.json() } catch (_) { }
+          let d = {}; try { d = await res.json() } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
           if (d.ok !== false) { ok++; hariLiburSet.add(tgl); } else fail++;
         } catch { fail++; }
       }
@@ -991,7 +991,7 @@
           const rows = d.data || d || [];
           _seragamTypeRawCache = rows;      // simpan untuk loadSeragamTypeAdmin()
           _applySeragamTypeRows(rows);
-        } catch (_) { }
+        } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
       }
 
       // Proses jadwal seragam per hari
@@ -1007,7 +1007,7 @@
             });
             _applySeragamData(map);
           }
-        } catch (_) { }
+        } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
       }
     }
 
@@ -1445,7 +1445,7 @@
               }
             });
           }
-        } catch (_) { }
+        } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
 
         el.innerHTML = ids.map(id => {
           const nama = namaMap[id] || `ID: ${id}`;
@@ -1598,7 +1598,7 @@
         _applyAdminUI();
         if (typeof _applyAdminUIExtended === 'function') _applyAdminUIExtended();
 
-        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
+        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
         updateClock();
         initJamAdminUI();
 
@@ -1659,7 +1659,7 @@
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;
         JAM_PULANG_MENIT = mPulang;
-        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (_) { }
+        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
         updateClock();
         updateJamPreview();
         showResult('jamResult', 'jamRIcon', 'jamRTitle', 'jamRMsg', 'success', '✅', 'Jam Tersimpan!',
@@ -1669,7 +1669,7 @@
           'Simpan lokal berhasil, tapi gagal ke server. Pastikan webhook jam-absen aktif di n8n.');
         JAM_MASUK_MENIT = mMasuk;
         JAM_PULANG_MENIT = mPulang;
-        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (_) { }
+        try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: inM.value, pulang: inP.value })); } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
         updateClock(); updateJamPreview();
       } finally {
         if (btn) { setTimeout(() => { btn.disabled = false; $('btnJamText').textContent = 'Simpan Pengaturan Jam'; }, 2500); }
@@ -1913,7 +1913,7 @@
         try {
           const v = localStorage.getItem('face_recognition_bapperida');
           if (v !== null) FACE_RECOGNITION_ENABLED = v !== '0';
-        } catch (_) { }
+        } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
       }
       _faceTogglePending = FACE_RECOGNITION_ENABLED;
       _applyFaceToggleUI(FACE_RECOGNITION_ENABLED);
@@ -1937,7 +1937,7 @@
       try {
         await apiFetch(P.faceToggle, { method: 'POST', body: JSON.stringify({ enabled, admin_id: MY_ID, admin_ids: ADMIN_IDS }) });
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
+        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
         _applyFaceToggleUI(enabled);
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'success', '✅',
           enabled ? 'Face Recognition Diaktifkan' : 'Face Recognition Dinonaktifkan',
@@ -1948,7 +1948,7 @@
       } catch {
         // Simpan lokal saja
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
+        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'warning', '⚠️', 'Tersimpan Lokal',
           'Berhasil disimpan di perangkat ini, tapi gagal ke server. Pastikan webhook face-toggle aktif di n8n.');
       } finally {
@@ -1986,7 +1986,7 @@
         }));
         updateClock(); // refresh lokasiList di tab Absen
         _updateLocBadgeGPS(); // update badge lokasi setelah koordinat tersedia
-      } catch (_) { }
+      } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
     }
     loadLokasiPublik();
     // Badge lokasi — dipanggil setelah koordinat lokasi tersedia
@@ -2214,7 +2214,7 @@
             const savedAt = p.face_saved_at || null;
             let tgl = '?';
             if (savedAt && savedAt !== '') {
-              try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (_) { }
+              try { const d = new Date(savedAt); tgl = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; } catch (e) { console.warn('[admin.legacy_backup.js] Operasi gagal:', e.message); }
             }
             const thumb = p.face_photo || null;
 

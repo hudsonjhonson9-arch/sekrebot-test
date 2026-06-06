@@ -82,7 +82,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -92,7 +93,13 @@
       ],
       "id": "ebb27acc-340b-4ae9-9c45-9f23e38cd626",
       "name": "Face Toggle POST Webhook",
-      "webhookId": "face-toggle-post-0001"
+      "webhookId": "face-toggle-post-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -176,7 +183,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -186,7 +194,13 @@
       ],
       "id": "61d9fde7-e13d-4de8-89ff-acd80c98bd9e",
       "name": "Face Toggle GET Webhook",
-      "webhookId": "face-toggle-get-0001"
+      "webhookId": "face-toggle-get-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -288,7 +302,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -298,7 +313,13 @@
       ],
       "id": "4d1dd4e1-528b-409c-ae2c-56ad243e7d3e",
       "name": "Face Get Webhook",
-      "webhookId": "face-get-0001"
+      "webhookId": "face-get-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -382,7 +403,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -392,7 +414,13 @@
       ],
       "id": "f6e83a59-ff2a-4249-9821-8cf0598c1945",
       "name": "Face Register Webhook",
-      "webhookId": "face-register-0001"
+      "webhookId": "face-register-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     }
   ],
   "connections": {

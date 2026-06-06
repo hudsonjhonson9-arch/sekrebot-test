@@ -19,9 +19,10 @@
           body: JSON.stringify(body),
         });
         let data = null;
-        try { data = await res.json(); } catch (_) {}
+        try { data = await res.json(); } catch (e) { if(typeof logError === 'function') logError('API', 'apiPost.json()', e); }
         return { ok: res.ok, data, status: res.status };
       } catch (e) {
+        if(typeof logError === 'function') logError('API', 'apiPost', e);
         console.error(`[apiPost] ${endpoint}:`, e.message);
         return { ok: false, data: null, status: 0 };
       }
@@ -49,10 +50,11 @@
           try {
             raw = await res.json();
             rows = parseApiResponse(raw);
-          } catch (_) {}
+          } catch (e) { if(typeof logError === 'function') logError('API', 'apiGet.json()', e); }
         }
         return { ok: res.ok, rows, data: raw, status: res.status };
       } catch (e) {
+        if(typeof logError === 'function') logError('API', 'apiGet', e);
         console.error(`[apiGet] ${endpoint}:`, e.message);
         return { ok: false, rows: [], data: null, status: 0 };
       }
@@ -73,9 +75,10 @@
           // Jangan set Content-Type — biarkan browser set boundary otomatis
         });
         let data = null;
-        try { data = await res.json(); } catch (_) {}
+        try { data = await res.json(); } catch (e) { if(typeof logError === 'function') logError('API', 'apiUpload.json()', e); }
         return { ok: res.ok, data, status: res.status };
       } catch (e) {
+        if(typeof logError === 'function') logError('API', 'apiUpload', e);
         console.error(`[apiUpload] ${endpoint}:`, e.message);
         return { ok: false, data: null, status: 0 };
       }

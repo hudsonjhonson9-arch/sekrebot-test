@@ -64,7 +64,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -74,7 +75,13 @@
       ],
       "id": "acf891d7-949a-4636-8637-fef34d5016cf",
       "name": "Webhook Dokumen Get",
-      "webhookId": "dokumen-get-0001"
+      "webhookId": "dokumen-get-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -171,7 +178,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -181,7 +189,13 @@
       ],
       "id": "bcdedcd9-263d-4094-a198-11e9db2a2e78",
       "name": "Webhook Dokumen Delete",
-      "webhookId": "dokumen-delete-0001"
+      "webhookId": "dokumen-delete-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -292,7 +306,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -302,7 +317,13 @@
       ],
       "id": "a69262e1-d5c6-488e-a43f-729456a95e47",
       "name": "Webhook Dokumen Add",
-      "webhookId": "dokumen-add-0001"
+      "webhookId": "dokumen-add-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -323,7 +344,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -333,7 +355,13 @@
       ],
       "id": "58d8f36a-2c41-41fa-b33a-44959e3a4224",
       "name": "Dokumen List Webhook",
-      "webhookId": "dokumen-list-0001"
+      "webhookId": "dokumen-list-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

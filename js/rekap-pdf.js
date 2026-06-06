@@ -31,7 +31,7 @@
 
     async function generateRekapPDF(options = null) {
       // 1. Validasi Awal
-      if (!lastRekapPegawai || lastRekapPegawai.length === 0) {
+      if (!window.AbsenApp.rekap.lastPegawai || window.AbsenApp.rekap.lastPegawai.length === 0) {
         showRekapToast('fail', '⚠️ Muat rekap terlebih dahulu');
         return;
       }
@@ -106,7 +106,7 @@
           console.warn("Gagal load paraf, lanjut tanpa paraf.");
         }
 
-        const filteredPegawai = lastRekapPegawai.filter(p => p.nama && p.nama.trim() !== "");
+        const filteredPegawai = window.AbsenApp.rekap.lastPegawai.filter(p => p.nama && p.nama.trim() !== "");
 
         // Statistik untuk ringkasan di bawah
         const stats = { hadir: 0, sakit: 0, izin: 0, tugas: 0, tubel: 0, cuti: 0, tanpaBerita: 0, terlambat: 0 };
@@ -356,7 +356,7 @@
           return found;
         };
 
-        const kaban = getKepalaSignatureData(lastRekapPegawai) || filteredPegawai[0];
+        const kaban = getKepalaSignatureData(window.AbsenApp.rekap.lastPegawai) || filteredPegawai[0];
 
         // Dynamic Signature Title: Inspektur, Kepala Dinas, Kepala Badan, Camat, etc.
         let leaderTitle = 'Kepala Badan';
@@ -545,7 +545,7 @@
               <tbody>
         `;
         
-        const data = window.lastRekapPegawai || [];
+        const data = window.window.AbsenApp.rekap.lastPegawai || [];
         data.filter(p => p.nama && p.nama.trim() !== "").forEach((p, i) => {
           const jamM = p.dataExcelRow?.['Jam Masuk'] || p.jamMasuk || '—';
           const jamP = p.dataExcelRow?.['Jam Pulang'] || p.jamPulang || '—';

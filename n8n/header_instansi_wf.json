@@ -6,7 +6,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -16,7 +17,13 @@
       ],
       "id": "1e956403-cc5d-4f11-8e50-2d852aab910d",
       "name": "Webhook GET Instansi List",
-      "webhookId": "instansi-list-0001"
+      "webhookId": "instansi-list-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -87,7 +94,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -97,7 +105,13 @@
       ],
       "id": "8a892dfd-2309-4ce4-8fa2-2dfc9aa2980d",
       "name": "Webhook POST Instansi Update",
-      "webhookId": "instansi-update-0001"
+      "webhookId": "instansi-update-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

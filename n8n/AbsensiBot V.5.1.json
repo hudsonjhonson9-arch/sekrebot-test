@@ -134,7 +134,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -144,7 +145,13 @@
       ],
       "id": "45eab06e-47c6-48e9-932a-f03921c53e69",
       "name": "Signature List Webhook",
-      "webhookId": "sig-list-0001"
+      "webhookId": "sig-list-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -228,7 +235,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -238,7 +246,13 @@
       ],
       "id": "3a8619ad-4432-4603-887c-9215df0cc965",
       "name": "Signature Get Webhook",
-      "webhookId": "sig-get-0001"
+      "webhookId": "sig-get-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -383,7 +397,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -393,7 +408,13 @@
       ],
       "id": "2db3da5b-f6df-4f3e-9c2c-9449175cfb99",
       "name": "Signature Save Webhook",
-      "webhookId": "sig-save-0001"
+      "webhookId": "sig-save-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -520,7 +541,8 @@
       "parameters": {
         "path": "jam-absen",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "50264ec2-4515-4d57-936d-65fa73ac32e2",
       "name": "GET Jam Absen",
@@ -530,7 +552,13 @@
         3312,
         4656
       ],
-      "webhookId": "jam-absen-get"
+      "webhookId": "jam-absen-get",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -667,7 +695,8 @@
         "httpMethod": "POST",
         "path": "jam-absen",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "8d9f1f81-4f49-4a60-b637-e38d8075f1a4",
       "name": "POST Jam Absen",
@@ -677,7 +706,13 @@
         1952,
         4592
       ],
-      "webhookId": "jam-absen-post"
+      "webhookId": "jam-absen-post",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1059,7 +1094,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "19f75d70-70f2-439d-ace3-274c020f681d",
       "name": "Admin Delete Webhook",
@@ -1069,7 +1105,13 @@
         4784,
         4464
       ],
-      "webhookId": "2e9ee22e-7251-4f55-80fd-157a1db3bc86"
+      "webhookId": "2e9ee22e-7251-4f55-80fd-157a1db3bc86",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1208,7 +1250,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "19fe505f-2c50-4255-a435-128a387edcb2",
       "name": "Admin Add Webhook",
@@ -1218,7 +1261,13 @@
         4784,
         4784
       ],
-      "webhookId": "63eb8a2f-5c7b-49a4-b426-1a79d37e70f5"
+      "webhookId": "63eb8a2f-5c7b-49a4-b426-1a79d37e70f5",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1272,7 +1321,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -1282,7 +1332,13 @@
       ],
       "id": "3a4d7b12-a9ff-42be-86ee-5f0bc3acfc4a",
       "name": "Lokasi-Update",
-      "webhookId": "aef77773-aa01-423b-a296-ad514f5f54c1"
+      "webhookId": "aef77773-aa01-423b-a296-ad514f5f54c1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1323,7 +1379,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -1333,7 +1390,13 @@
       ],
       "id": "40df582a-138b-4a44-aa89-40580a7040d5",
       "name": "Lokasi-Delete",
-      "webhookId": "41a44297-191c-4839-a98b-e1fbc719bf4c"
+      "webhookId": "41a44297-191c-4839-a98b-e1fbc719bf4c",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1387,7 +1450,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -1397,7 +1461,13 @@
       ],
       "id": "9ccb5335-982d-447d-9a80-a9b03d093e8a",
       "name": "Lokasi-Add",
-      "webhookId": "1793dd42-6844-46d1-bbb6-95d868463fa3"
+      "webhookId": "1793dd42-6844-46d1-bbb6-95d868463fa3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1450,7 +1520,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -1460,7 +1531,13 @@
       ],
       "id": "4c530ad0-2026-437a-a565-92052d30cbf6",
       "name": "Lokasi-List",
-      "webhookId": "e9880d70-8142-42e5-b9a3-c4335a69ff5d"
+      "webhookId": "e9880d70-8142-42e5-b9a3-c4335a69ff5d",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1614,7 +1691,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -1624,7 +1702,13 @@
       ],
       "id": "f3853867-a1a4-4370-ad60-2c60184933ef",
       "name": "Libur Delete Webhook",
-      "webhookId": "libur-del-0001"
+      "webhookId": "libur-del-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -1790,7 +1874,8 @@
         "httpMethod": "POST",
         "path": "jam-periode-delete",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "f576f86d-c09b-4dbd-ac46-67f929fd3640",
       "name": "Periode Delete Webhook",
@@ -1800,7 +1885,13 @@
         4816,
         4048
       ],
-      "webhookId": "jam-periode-delete"
+      "webhookId": "jam-periode-delete",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2060,7 +2151,8 @@
         "httpMethod": "POST",
         "path": "jam-periode-add",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "dcc82ad7-4ebd-4fad-a09e-faeecc93db76",
       "name": "Periode Add Webhook",
@@ -2070,7 +2162,13 @@
         4784,
         3648
       ],
-      "webhookId": "jam-periode-add"
+      "webhookId": "jam-periode-add",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2134,7 +2232,8 @@
       "parameters": {
         "path": "jam-periode-list",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "id": "b3f942e3-8767-4bb1-bf0a-aa0cc095d644",
       "name": "Periode List Webhook",
@@ -2144,7 +2243,13 @@
         2864,
         3072
       ],
-      "webhookId": "jam-periode-list"
+      "webhookId": "jam-periode-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2356,7 +2461,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -2366,7 +2472,13 @@
       ],
       "id": "dec55ab4-dfb8-4c74-863e-846f4e25d97e",
       "name": "Libur Add Webhook",
-      "webhookId": "libur-add-0001"
+      "webhookId": "libur-add-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2454,7 +2566,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -2464,7 +2577,13 @@
       ],
       "id": "7a945dc6-3749-4523-8a70-ea58dae62832",
       "name": "Libur List Webhook",
-      "webhookId": "libur-list-0001"
+      "webhookId": "libur-list-0001",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2496,7 +2615,8 @@
       "parameters": {
         "path": "log-absen",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -2506,7 +2626,13 @@
       ],
       "id": "b67567e2-dc9a-401e-9a36-a03f8e768d38",
       "name": "Riwayat",
-      "webhookId": "43a8f232-cf00-418d-92db-4966b57e2dbf"
+      "webhookId": "43a8f232-cf00-418d-92db-4966b57e2dbf",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2603,7 +2729,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -2613,7 +2740,13 @@
       ],
       "id": "cb0d03d9-7262-4ae9-a4bf-42d6ce9728c2",
       "name": "Rekap",
-      "webhookId": "d8524e56-048d-4d1e-bf33-7822b51423ad"
+      "webhookId": "d8524e56-048d-4d1e-bf33-7822b51423ad",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -2708,7 +2841,8 @@
         "responseMode": "responseNode",
         "options": {
           "rawBody": false
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "9733cf06-cd0f-4e91-b590-87a943bba13d",
       "name": "User-List",
@@ -2718,7 +2852,13 @@
         -160,
         1024
       ],
-      "webhookId": "user-list"
+      "webhookId": "user-list",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3106,7 +3246,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -3116,14 +3257,21 @@
       ],
       "id": "2a093f7a-036b-46cb-9ef7-9457415f3ee1",
       "name": "Absen",
-      "webhookId": "14bf76b9-e325-44bc-a757-1b09485f8d94"
+      "webhookId": "14bf76b9-e325-44bc-a757-1b09485f8d94",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "add-employee",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {},
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
@@ -3133,7 +3281,13 @@
       ],
       "id": "894b1cf0-c3de-468a-ba80-8de5396a3f0b",
       "name": "Webhook - Tambah Pegawai",
-      "webhookId": "8315d78d-2c74-4518-b1d2-0e58f5b0c3e0"
+      "webhookId": "8315d78d-2c74-4518-b1d2-0e58f5b0c3e0",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3358,7 +3512,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "d7ec59bb-ea41-4d53-b715-bd294f10800e",
       "name": "Webhook User-Delete",
@@ -3368,7 +3523,13 @@
         224,
         624
       ],
-      "webhookId": "user-delete"
+      "webhookId": "user-delete",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3448,7 +3609,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "87d00b6b-93d0-4302-9d2d-cf0e16ab9c3d",
       "name": "Webhook User-Add",
@@ -3458,7 +3620,13 @@
         224,
         288
       ],
-      "webhookId": "user-add"
+      "webhookId": "user-add",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3574,7 +3742,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "72f8f17d-1ac6-4394-b795-f7c2395cec5e",
       "name": "Webhook User-Edit",
@@ -3584,7 +3753,13 @@
         0,
         0
       ],
-      "webhookId": "user-edit"
+      "webhookId": "user-edit",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3754,7 +3929,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "039cc594-714d-41c2-92f2-0a1ea4484a95",
       "name": "Webhook Log-Add",
@@ -3764,7 +3940,13 @@
         -160,
         2112
       ],
-      "webhookId": "e3e0debb-0752-47d7-be2f-031311fb1838"
+      "webhookId": "e3e0debb-0752-47d7-be2f-031311fb1838",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3773,7 +3955,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "e1d80ccc-f45c-4683-bd82-355d3ba29ffe",
       "name": "Webhook Log-Edit",
@@ -3783,7 +3966,13 @@
         -160,
         2304
       ],
-      "webhookId": "c9f25d8c-4595-42a0-84de-33d23afed4b6"
+      "webhookId": "c9f25d8c-4595-42a0-84de-33d23afed4b6",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3926,7 +4115,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -3937,7 +4127,13 @@
       "id": "6d09d48c-1779-4c88-b205-0604cdaf5ef5",
       "name": "Webhook Instansi-List",
       "webhookId": "instansi-list-0001",
-      "disabled": true
+      "disabled": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -3996,7 +4192,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -4006,7 +4203,13 @@
       ],
       "id": "6416ef12-b464-48fc-9a0b-487586aa64b3",
       "name": "Webhook Bidang-List",
-      "webhookId": "283089ac-f50b-4128-8567-d4cdec094ea4"
+      "webhookId": "283089ac-f50b-4128-8567-d4cdec094ea4",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {
@@ -4088,7 +4291,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "id": "af48cbfe-cc41-4641-8fb8-c6279078c49f",
       "name": "Admin List Webhook",
@@ -4098,7 +4302,13 @@
         -176,
         2832
       ],
-      "webhookId": "3f0df6f5-c885-4ef5-9d1f-7a85fc7e30ab"
+      "webhookId": "3f0df6f5-c885-4ef5-9d1f-7a85fc7e30ab",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

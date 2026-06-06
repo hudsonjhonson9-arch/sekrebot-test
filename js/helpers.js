@@ -153,7 +153,7 @@
 
       const todayStr = fmtD(nowWITA());
 
-      // Gunakan ketStatusCache jika sudah terisi — hindari request tambahan ke server
+      // Gunakan window.AbsenApp.keterangan.cache jika sudah terisi — hindari request tambahan ke server
       const _checkKetRows = (rows) => rows.some(r => {
         const st = (r.status || r.Status || '').toUpperCase();
         const tgl = r.tanggal || r.Tanggal || r.tgl_mulai || '';
@@ -161,13 +161,13 @@
         return (st === 'DISETUJUI' || st === 'APPROVED') && tgl <= todayStr && todayStr <= tglS;
       });
 
-      if (ketStatusCache.length > 0) {
-        if (_checkKetRows(ketStatusCache)) {
+      if (window.AbsenApp.keterangan.cache.length > 0) {
+        if (_checkKetRows(window.AbsenApp.keterangan.cache)) {
           console.log('autoUpdateStatusAktif: ada keterangan aktif (cache), skip update status');
           return;
         }
       } else {
-        // Cache kosong — fetch sekali, tidak simpan ke ketStatusCache agar tidak mempengaruhi UI ket
+        // Cache kosong — fetch sekali, tidak simpan ke window.AbsenApp.keterangan.cache agar tidak mempengaruhi UI ket
         try {
           const { ok: ckOk, data: dKet } = await apiGet(P.ketList, { user_id: MY_ID });
           if (ckOk) {
@@ -177,14 +177,14 @@
               return;
             }
           }
-        } catch (_) { }
+        } catch (e) { console.warn('[helpers.js] Operasi gagal:', e.message); }
       }
 
       // Update status ke AKTIF
       try {
         await apiPost(P.updateStatus, { user_id: MY_ID, status, tanggal: todayStr });
         if (userProfile) { userProfile.status = 'AKTIF'; applyProfile(); }
-      } catch (_) { }
+      } catch (e) { console.warn('[helpers.js] Operasi gagal:', e.message); }
     }
     function setBtnL(id, loading, txt) {
       const b = $(id); b.disabled = loading;

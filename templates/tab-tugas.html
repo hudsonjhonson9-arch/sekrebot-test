@@ -1,0 +1,89 @@
+<!-- Hidden file input for Proof -->
+      <input type="file" id="tugasBuktiInput" accept="image/*" capture="camera" style="display:none" onchange="processTugasBukti(this)">
+      
+      <div class="rekap-header">
+        <div class="rekap-title">📍 Penugasan & Perjalanan Dinas</div>
+      </div>
+
+      <!-- Filter Instansi Tugas (Only visible to Superadmin) -->
+      <div id="tugasInstansiSection" style="display: none; margin-bottom: 15px; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-label" style="margin-bottom: 4px; font-weight:800; color:var(--gold);">🏢 Pilih Instansi (Superadmin)</div>
+        <select id="tugasInstansiSelect" class="form-input" style="width: 100%; height: 38px; cursor: pointer; background: var(--card); color: var(--white); border: 1px solid var(--border); border-radius: 12px;"
+          onchange="onTugasInstansiChange()">
+          <option value="">— Pilih Instansi —</option>
+        </select>
+      </div>
+
+      <!-- FORM PEMBUATAN (Admin/Kabid Only) -->
+      <div class="card glass-card" id="tugasCreationForm" style="display:none; margin-bottom:20px">
+        <div style="font-size:12px; font-weight:800; color:var(--gold); margin-bottom:15px; text-transform:uppercase; letter-spacing:1px">
+          <i class="fas fa-plus-circle" style="margin-right:8px"></i> Buat Penugasan Baru
+        </div>
+        <div class="form-group">
+          <label class="form-label">👥 Pilih Pegawai</label>
+          <div class="custom-search-dropdown" id="tugasPegawaiContainer">
+            <div class="dropdown-trigger" onclick="toggleTugasDropdown()">
+              <i class="fas fa-search search-icon"></i>
+              <input type="text" id="tugasSearchInput" placeholder="Ketik nama atau NIP..." autocomplete="off" oninput="filterTugasPegawai(this.value)">
+              <i class="fas fa-chevron-down arrow-icon"></i>
+            </div>
+            <div class="dropdown-list-wrap" id="tugasOptionsList"></div>
+            <select id="tugasPegawai" style="display:none"></select>
+            <!-- Hidden container for selected chips -->
+            <div id="tugasSelectedChips" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:8px"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📍 Titik Koordinat Tugas (Opsional - jika kosong, koordinat diambil saat pengerjaan)</label>
+          <div id="tugasMap" style="height:220px; border-radius:14px; border:1px solid var(--border); margin-bottom:10px; z-index:1"></div>
+          <div style="display:flex; gap:8px">
+            <input type="text" id="tugasLat" class="form-input" placeholder="Latitude" readonly style="font-family:'JetBrains Mono',monospace">
+            <input type="text" id="tugasLon" class="form-input" placeholder="Longitude" readonly style="font-family:'JetBrains Mono',monospace">
+          </div>
+        </div>
+        <div class="form-group" id="actingAsGroup" style="display:none">
+          <label class="form-label">👔 Bertindak Sebagai (Pemberi Tugas)</label>
+          <select id="tugasPemberi" class="form-input" style="background:var(--card); color:var(--white); border:1px solid var(--border); border-radius:12px">
+             <option value="">-- Gunakan Profil Saya --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📜 Nomor Surat Tugas</label>
+          <input type="text" id="tugasNomorSurat" class="form-input" placeholder="Contoh: 800/123/BAPP-SB/2025">
+        </div>
+        <div class="form-group">
+          <label class="form-label">📝 Keterangan Tugas</label>
+          <textarea id="tugasKet" class="form-textarea" placeholder="Tuliskan detail tugas di sini..." style="min-height:80px"></textarea>
+        </div>
+        <div class="form-group">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+            <div>
+              <label class="form-label">📅 Tanggal Tugas</label>
+              <input type="date" id="tugasTanggal" class="form-input">
+            </div>
+            <div>
+              <label class="form-label">📏 Radius (Meter)</label>
+              <input type="number" id="tugasRadius" class="form-input" value="100" placeholder="Contoh: 100">
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="handleSaveTugas()" id="btnSaveTugas">
+          <div class="btn-inner"><span>💾</span> Simpan Penugasan</div>
+        </button>
+        <div class="result-card" id="tugasResult" style="display:none; margin-top:12px">
+          <div class="r-icon" id="tugasRIcon">✅</div>
+          <div class="r-title" id="tugasRTitle">—</div>
+          <div class="r-msg" id="tugasRMsg">—</div>
+        </div>
+      </div>
+      
+      <!-- MONITORING PROGRES (Atasan Only) -->
+      <div id="tugasMonitoringSection"></div>
+
+      <!-- DAFTAR TUGAS SAYA (Everyone) -->
+      <div id="tugasListSection">
+        <div class="shimmer-wrapper">
+          <div class="shimmer sh-line" style="width:100%; height:100px; border-radius:20px; margin-bottom:15px"></div>
+          <div class="shimmer sh-line" style="width:100%; height:100px; border-radius:20px"></div>
+        </div>
+      </div>

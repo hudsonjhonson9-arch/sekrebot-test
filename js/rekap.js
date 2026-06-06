@@ -1,22 +1,21 @@
 /* ════ REKAP ════ */
 /* ════ REKAP ════ */
-let rekapLoaded = false;
+
 // Global state: hari libur & jam per pegawai
-let hariLiburSet = new Set(); // Set of 'YYYY-MM-DD' strings
-let hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
-let jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
-let liburLoaded = false;
-let userListOrder = [];
-let lastRekapPegawai = [];
+window.AbsenApp.rekap.window.AbsenApp.rekap.hariLiburMap = {};        // { 'YYYY-MM-DD': 'nama libur' } untuk label di riwayat absen
+window.AbsenApp.rekap.window.AbsenApp.rekap.jamPegawaiMap = {};       // { [user_id]: {masuk:'HH:MM', pulang:'HH:MM'} }
+window.AbsenApp.rekap.window.AbsenApp.rekap.liburLoaded = false;
+window.AbsenApp.rekap.window.AbsenApp.rekap.userListOrder = [];
+
 
 // Flatpickr instance for rekap range picker
-let _rekapFp = null;
+window.AbsenApp.rekap.fp = null;
 
 function _initRekapFlatpickr() {
   const el = document.getElementById('rekapRangePicker');
   if (!el || !window.flatpickr) return;
   const today = fmtD(nowWITA());
-  _rekapFp = flatpickr(el, {
+  window.AbsenApp.rekap.fp = flatpickr(el, {
     mode: 'range',
     dateFormat: 'Y-m-d',
     defaultDate: [today, today],
@@ -39,8 +38,8 @@ function _initRekapFlatpickr() {
 }
 
 function _syncRekapFlatpickr(dari, sampai) {
-  if (!_rekapFp) return;
-  _rekapFp.setDate([dari, sampai], false);
+  if (!window.AbsenApp.rekap.fp) return;
+  window.AbsenApp.rekap.fp.setDate([dari, sampai], false);
 }
 
 function setPreset(preset, el) {
@@ -81,14 +80,14 @@ function onDateRangeChange() {
 
 
 async function fetchUserListOrder() {
-  if (userListOrder.length > 0) return userListOrder;
+  if (window.AbsenApp.rekap.userListOrder.length > 0) return window.AbsenApp.rekap.userListOrder;
   try {
     const instansiId = getScopedInstansiId();
     const instansiParam = instansiId ? `&instansi_id=${encodeURIComponent(instansiId)}` : '';
     const res = await apiGet(P.userList + '?format=full' + instansiParam);
     if (!res.ok) return [];
     const rows = res.rows || parseApiResponse(res.data) || [];
-    userListOrder = rows.map((r, idx) => ({
+    window.AbsenApp.rekap.userListOrder = rows.map((r, idx) => ({
       id: String(getField(r, 'id', 'ID') || '').trim(),
       nama: getField(r, 'nama', 'Nama', 'username', 'Username') || '',
       jabatan: getField(r, 'jabatan', 'Jabatan') || '',
@@ -96,7 +95,7 @@ async function fetchUserListOrder() {
       nip: getField(r, 'nip', 'NIP') || '',
       urutan: Number(getField(r, 'no', 'No', 'urutan', 'Urutan') || (idx + 1))
     }));
-    return userListOrder;
+    return window.AbsenApp.rekap.userListOrder;
   } catch (e) { return []; }
 }
 
@@ -111,7 +110,7 @@ async function loadRekap() {
   }
   const dari = $('rekapDari').value, sampai = $('rekapSampai').value;
   if (!dari || !sampai) return;
-  rekapLoaded = false;
+  window.AbsenApp.rekap.loaded = false;
   const btn = $('btnRekapRefresh'); btn.disabled = true;
   const dlBtn = $('btnDownloadRekap'), pdfBtn = $('btnDownloadPDF');
   if (dlBtn) dlBtn.disabled = true;
@@ -135,18 +134,18 @@ async function loadRekap() {
       const _jamReq = getJamForTanggal(dari);
       const jamMasukParam = _jamReq.masuk;
       const jamPulangParam = _jamReq.pulang;
-      // Hitung hari kerja di frontend (sudah punya hariLiburSet) lalu kirim ke n8n
+      // Hitung hari kerja di frontend (sudah punya window.AbsenApp.rekap.hariLiburSet) lalu kirim ke n8n
       function _countHK(d1, d2) {
         let c = 0; const dd = new Date(d1 + 'T00:00:00'), ds = new Date(d2 + 'T00:00:00');
         while (dd <= ds) {
           const dy = dd.getDay(), t = dd.toISOString().split('T')[0];
-          if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) c++;
+          if (dy !== 0 && dy !== 6 && !window.AbsenApp.rekap.hariLiburSet.has(t)) c++;
           dd.setDate(dd.getDate() + 1);
         }
         return c;
       }
       const hariKerjaParam = _countHK(dari, sampai);
-      const liburParam = encodeURIComponent(JSON.stringify([...hariLiburSet].filter(t => t >= dari && t <= sampai)));
+      const liburParam = encodeURIComponent(JSON.stringify([...window.AbsenApp.rekap.hariLiburSet].filter(t => t >= dari && t <= sampai)));
       const myNip = localStorage.getItem('MY_NIP') || '';
       const adminParam = IS_ADMIN ? '&is_admin=true' : '';
       const nipQuery = '&format=full'; // Show all employees to everyone
@@ -174,14 +173,14 @@ async function loadRekap() {
 
             rekapOK = true;
 
-            // Populate jamPegawaiMap from rekap metadata to avoid separate call
+            // Populate window.AbsenApp.rekap.jamPegawaiMap from rekap metadata to avoid separate call
           pegawai.forEach(p => {
             const id = String(p.id || p.ID || p.telegram_id || '').trim();
             const jm = (p.jam_masuk || '').trim();
             const jp = (p.jam_pulang || '').trim();
             if (id && (jm || jp)) {
               const toM = s => { const parts = (s || '').split(':').map(Number); return (isNaN(parts[0]) || isNaN(parts[1])) ? null : parts[0] * 60 + parts[1]; };
-              jamPegawaiMap[id] = { masuk: jm, pulang: jp, masukMenit: toM(jm), pulangMenit: toM(jp) };
+              window.AbsenApp.rekap.jamPegawaiMap[id] = { masuk: jm, pulang: jp, masukMenit: toM(jm), pulangMenit: toM(jp) };
             }
           });
 
@@ -199,7 +198,7 @@ async function loadRekap() {
           }
         }
       }
-    } catch (_) { }
+    } catch (e) { console.warn('[rekap.js] Operasi gagal:', e.message); }
 
     // ── Fallback jika n8n gagal ──
     if (!rekapOK) {
@@ -312,11 +311,11 @@ async function loadRekap() {
       return namaA.localeCompare(namaB, 'id');
     });
 
-    window.userListOrder = pegawai; // Save globally for saveLog() reference
+    window.window.AbsenApp.rekap.userListOrder = pegawai; // Save globally for saveLog() reference
 
 
-    lastRekapPegawai = pegawai;
-    rekapLoaded = true;
+    window.AbsenApp.rekap.lastPegawai = pegawai;
+    window.AbsenApp.rekap.loaded = true;
 
     renderRekap(pegawai);
   } catch (e) {
@@ -374,8 +373,8 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
       if (p && p.nama) return { masuk: toMenit(p.masuk), pulang: toMenit(p.pulang) };
     }
     return { 
-      masuk: jamPegawaiMap[id]?.masukMenit ?? JAM_MASUK_BATAS,
-      pulang: jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS
+      masuk: window.AbsenApp.rekap.jamPegawaiMap[id]?.masukMenit ?? JAM_MASUK_BATAS,
+      pulang: window.AbsenApp.rekap.jamPegawaiMap[id]?.pulangMenit ?? JAM_PULANG_BATAS
     };
   }
 
@@ -384,7 +383,7 @@ function computeRekap(rows, allRowsParam = null, userSeed = null, dari = null, s
     let dCur = new Date(dari + 'T00:00:00'), dEnd = new Date(sampai + 'T00:00:00');
     while (dCur <= dEnd) {
       const t = dCur.toISOString().split('T')[0], dy = dCur.getDay();
-      if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) rangeDates.push(t);
+      if (dy !== 0 && dy !== 6 && !window.AbsenApp.rekap.hariLiburSet.has(t)) rangeDates.push(t);
       dCur.setDate(dCur.getDate() + 1);
     }
   }
@@ -603,7 +602,7 @@ function renderRekap(pg) {
     const d = new Date(dari + 'T00:00:00'), s = new Date(sampai + 'T00:00:00');
     while (d <= s) {
       const day = d.getDay(), tgl = d.toISOString().split('T')[0];
-      if (day !== 0 && day !== 6 && !hariLiburSet.has(tgl)) count++;
+      if (day !== 0 && day !== 6 && !window.AbsenApp.rekap.hariLiburSet.has(tgl)) count++;
       d.setDate(d.getDate() + 1);
     }
     return count;
@@ -637,7 +636,7 @@ function renderRekap(pg) {
     const cuti = p.cuti || 0;
 
     const jabatanStr = jabatan
-      ? `<div style="font-size:9px;color:var(--gold);margin-top:1px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${jabatan}</div>`
+      ? `<div class="rekap-jabatan">${jabatan}</div>`
       : '';
 
     /* ─────────────────────────────────────────
@@ -655,7 +654,7 @@ function renderRekap(pg) {
         return isNaN(parts[0]) ? null : parts[0] * 60 + (parts[1] || 0);
       };
       const pgwId = String(p.id || '');
-      const jpgw = jamPegawaiMap[pgwId];
+      const jpgw = window.AbsenApp.rekap.jamPegawaiMap[pgwId];
       // Prioritas: 1) Periode khusus di tanggal tsb → 2) Jam per-pegawai → 3) Global
       const _jamHarian = getJamForTanggal(_dari);
       const jmBatas = _jamHarian.nama ? _jamHarian.masuk : (jpgw?.masuk || menitToStr(JAM_MASUK_MENIT));
@@ -721,21 +720,21 @@ function renderRekap(pg) {
       const pinsData = [parsePin(p._rawMasukLog, 'M', '#10b981'), parsePin(p._rawPulangLog, 'P', '#3b82f6')].filter(Boolean);
 
       return `
-      <div class="pegawai-card" style="border-color:${cardBorderColor};position:relative;overflow:hidden;padding-bottom:10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); cursor:pointer;" 
+      <div class="pegawai-card" class="rekap-card-wrap" style="border-color:${cardBorderColor}" 
            onclick="if(window.toggleRekapMap) window.toggleRekapMap(this, ${JSON.stringify(pinsData).replace(/"/g, '&quot;')}); else { const d=this.querySelector('.lokasi-detail'); if(d) d.style.display = d.style.display==='none'?'block':'none'; }">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${cardTopColor}"></div>
+        <div class="rekap-top-bar" style="background:${cardTopColor}"></div>
 
         <!-- Header pegawai -->
-        <div class="pegawai-top" style="margin-bottom:10px">
+        <div class="pegawai-top" class="mb-10">
           <div class="pegawai-avatar" style="background:linear-gradient(135deg,${cardTopColor},${isAlpa ? '#7f1d1d' : isKet ? '#4c1d95' : '#065f46'});font-size:11px">${idx + 1}</div>
-          <div style="flex:1;min-width:0">
-            <div class="pegawai-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
+          <div class="flex-1-min0">
+            <div class="pegawai-name" class="text-truncate">${nama}</div>
             ${jabatanStr}
-            <div class="pegawai-jabatan" style="margin-top:2px">${isMagang ? 'ID' : 'NIP'}: ${nip} ${!isMagang ? `· ${p.pangkat || '—'} ` : ''}· ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
-            ${periodeHarianNama ? `<div style="font-size:8px;font-weight:700;color:#a78bfa;margin-top:2px">🌙 ${periodeHarianNama}</div>` : ''}
+            <div class="pegawai-jabatan" class="mt-2">${isMagang ? 'ID' : 'NIP'}: ${nip} ${!isMagang ? `· ${p.pangkat || '—'} ` : ''}· ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
+            ${periodeHarianNama ? `<div class="rekap-periode">🌙 ${periodeHarianNama}</div>` : ''}
           </div>
           <!-- Badge status utama -->
-          <div style="flex-shrink:0;text-align:right">
+          <div class="flex-shrink-right">
             <div style="font-size:16px">${masukIcon}</div>
             <div style="font-size:9px;font-weight:700;color:${masukColor};margin-top:2px;white-space:nowrap">${masukLabel}</div>
           </div>
@@ -752,7 +751,7 @@ function renderRekap(pg) {
             ` : ''}
             <div style="display:flex;align-items:center;gap:10px">
               <div style="font-size:32px;line-height:1">${masukIcon}</div>
-              <div style="flex:1;min-width:0">
+              <div class="flex-1-min0">
                 <div style="font-size:14px;font-weight:800;color:${masukColor}">${masukLabel}</div>
                 <div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:pre-wrap;">${(p._rawKetLog?.Ket || p._rawKetLog?.ket || 'Keterangan').trim()}</div>
               </div>
@@ -774,7 +773,7 @@ function renderRekap(pg) {
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
             `) : ''}
-            <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🟢 Jam Masuk</div>
+            <div class="rekap-label-sm">🟢 Jam Masuk</div>
             ${rawMasuk
           ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${masukColor};line-height:1">${rawMasuk.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${masukColor};font-weight:700;margin-top:3px">${masukLabel}</div>`
@@ -797,7 +796,7 @@ function renderRekap(pg) {
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
                       title="Tambah Log Manual">➕</button>
             `) : ''}
-            <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">🔵 Jam Pulang</div>
+            <div class="rekap-label-sm">🔵 Jam Pulang</div>
             ${rawPulang
           ? `<div style="font-size:20px;font-family:'JetBrains Mono',monospace;font-weight:800;color:${pulangColor};line-height:1">${rawPulang.slice(0, 5)}</div>
                    <div style="font-size:9px;color:${pulangColor};font-weight:700;margin-top:3px">${pulangIcon} ${pulangLabel}</div>`
@@ -990,7 +989,7 @@ function renderRekap(pg) {
           <!-- TOP: Profile & Badge -->
           <div class="pegawai-top" style="margin-bottom:12px">
             <div class="pegawai-avatar" style="background:linear-gradient(135deg, var(--gold), #9b6e1a); box-shadow:0 2px 8px rgba(201,168,76,0.3)">${idx + 1}</div>
-            <div style="flex:1;min-width:0">
+            <div class="flex-1-min0">
               <div class="pegawai-name">${nama}</div>
               ${jabatanStr}
               <div class="pegawai-jabatan">${isMagang ? 'ID' : 'NIP'}: ${nip} ${!isMagang ? `· ${p.pangkat || '—'} ` : ''}· ${totalEntries} catatan · ⏳ ${parseFloat(p.jamHadir || 0).toFixed(1)} Jam</div>
@@ -1063,7 +1062,7 @@ function showRekapToast(type, msg) {
 async function downloadRekap() {
   const dari = $('rekapDari').value;
   const sampai = $('rekapSampai').value;
-  if (!lastRekapPegawai.length) {
+  if (!window.AbsenApp.rekap.lastPegawai.length) {
     showRekapToast('fail', '⚠️ Belum ada data. Muat rekap terlebih dahulu.');
     return;
   }
@@ -1085,7 +1084,7 @@ async function downloadRekap() {
       let finalEnd = limit < s ? limit : s;
       while (d <= finalEnd) {
         const day = d.getDay(), t = d.toISOString().split('T')[0];
-        if (day !== 0 && day !== 6 && !hariLiburSet.has(t)) c++;
+        if (day !== 0 && day !== 6 && !window.AbsenApp.rekap.hariLiburSet.has(t)) c++;
         d.setDate(d.getDate() + 1);
       }
       return c;
@@ -1106,7 +1105,7 @@ async function downloadRekap() {
     const idLabel = isMagang ? 'ID / NISN' : 'NIP';
 
     // 2. Mapping Data ke format Excel
-    const rowsExcel = lastRekapPegawai.map((p, i) => {
+    const rowsExcel = window.AbsenApp.rekap.lastPegawai.map((p, i) => {
       const masuk = p.masuk || 0;
       const lambat = p.lambat_count ?? 0;
       const cepat = p.pulang_cepat_count ?? 0;
@@ -1179,7 +1178,7 @@ async function downloadRekap() {
         dari, sampai, nip: localStorage.getItem('MY_NIP') || '',
         is_harian: isHarian, tanggal_label: tglLabel,
         chat_id: String(REKAP_CHAT_ID || MY_ID || ''),
-        pegawai: lastRekapPegawai,
+        pegawai: window.AbsenApp.rekap.lastPegawai,
         instansi_id: instId,
         instansi_name: instName
       };
@@ -1292,8 +1291,8 @@ function onRekapInstansiChange() {
   if (window.userProfile) {
     window.userProfile.instansi_id = val;
   }
-  // Invalidate userListOrder cache so it fetches new employees
-  userListOrder = [];
+  // Invalidate window.AbsenApp.rekap.userListOrder cache so it fetches new employees
+  window.AbsenApp.rekap.userListOrder = [];
   
   // Reload dynamic Bidang list for this instansi
   if (typeof loadBidangList === 'function') {

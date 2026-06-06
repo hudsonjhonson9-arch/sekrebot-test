@@ -7,7 +7,8 @@
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
-        }
+        },
+        "authentication": "headerAuth"
       },
       "name": "Kirim Rekap",
       "type": "n8n-nodes-base.webhook",
@@ -17,7 +18,13 @@
         32
       ],
       "id": "fe1891ff-dc1b-42e0-ac76-35b448026b6b",
-      "webhookId": "13301915-2a3a-46e9-b2dc-fcae03ca4f25"
+      "webhookId": "13301915-2a3a-46e9-b2dc-fcae03ca4f25",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "r01tQvSvzADocRWE",
+          "name": "Header Auth account"
+        }
+      }
     },
     {
       "parameters": {

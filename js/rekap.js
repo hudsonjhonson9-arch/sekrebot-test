@@ -874,7 +874,7 @@ function renderRekap(pg) {
           }
 
           if (k) {
-            html += renderLocText('📝 Ket', masukColor, k.loc);
+            html += renderLocText('📝 Ket', 'var(--warning)', k.loc);
           }
 
           if (pins.length > 0) {

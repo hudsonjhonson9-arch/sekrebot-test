@@ -51,6 +51,22 @@ async function handleAbsen() {
     unlock(); return;
   }
 
+  // ── Block if user already has Keterangan / status non-hadir today ──
+  const _todayRows = window._todayRows || [];
+  const GRP_KETERANGAN = ['IZIN', 'SAKIT', 'TUGAS', 'CUTI', 'DL', 'TUBEL', 'TANPA BERITA', 'ALPA', 'TB'];
+  const ketRow = _todayRows.find(r => {
+    const j = (r['Jenis Absen'] || r['jenis'] || r['Jenis'] || '').toUpperCase().trim();
+    return GRP_KETERANGAN.includes(j);
+  });
+
+  if (ketRow) {
+    const nmKet = (ketRow['Jenis Absen'] || ketRow['jenis'] || ketRow['Jenis'] || 'KETERANGAN').toUpperCase().trim();
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🚫', 'Tidak Dapat Absen', `Anda tidak dapat melakukan absen karena status hari ini adalah ${nmKet}.`);
+    setBtnL('btnAbsen', false, `🚫 Status: ${nmKet}`);
+    $('btnAbsen').disabled = true;
+    unlock(); return;
+  }
+
   // ── Cek jaringan WiFi ──
   setBtnL('btnAbsen', true, 'Memeriksa jaringan...');
   await cekJaringan();
@@ -621,8 +637,25 @@ async function handlePulangLuar() {
     return;
   }
 
-  // ── Cek: pegawai harus sudah absen masuk hari ini ──
+  // ── Block if user already has Keterangan / status non-hadir today ──
   const _todayRows = window._todayRows || [];
+  const GRP_KETERANGAN = ['IZIN', 'SAKIT', 'TUGAS', 'CUTI', 'DL', 'TUBEL', 'TANPA BERITA', 'ALPA', 'TB'];
+  const ketRow = _todayRows.find(r => {
+    const j = (r['Jenis Absen'] || r['jenis'] || r['Jenis'] || '').toUpperCase().trim();
+    return GRP_KETERANGAN.includes(j);
+  });
+
+  if (ketRow) {
+    const nmKet = (ketRow['Jenis Absen'] || ketRow['jenis'] || ketRow['Jenis'] || 'KETERANGAN').toUpperCase().trim();
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🚫', 'Tidak Dapat Absen', `Anda tidak dapat melakukan absen karena status hari ini adalah ${nmKet}.`);
+    $('btnPulangLuar').disabled = true;
+    const tSpan = $('btnPulangLuarText');
+    if (tSpan) tSpan.textContent = `🚫 Status: ${nmKet}`;
+    _isAbsenSubmitting = false;
+    return;
+  }
+
+  // ── Cek: pegawai harus sudah absen masuk hari ini ──
   const _sudahMasuk = _todayRows.some(r => {
     const j = (getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim();
     return j === 'MASUK' || j === 'DI LUAR JAM MASUK';

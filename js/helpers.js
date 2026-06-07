@@ -126,6 +126,9 @@
       const isSkrgMasuk = GRP_MASUK.includes(jenisSkrg);
       const isSkrgPulang = GRP_PULANG.includes(jenisSkrg);
 
+      const GRP_KETERANGAN = ['IZIN', 'SAKIT', 'TUGAS', 'CUTI', 'DL', 'TUBEL', 'TANPA BERITA', 'ALPA', 'TB'];
+      const ketRow = rows.find(r => GRP_KETERANGAN.includes((getField(r, 'Jenis Absen', 'jenis', 'Jenis') || '').toUpperCase().trim()));
+
       const sudahAbsen = (isSkrgMasuk && sudahMasuk) || (isSkrgPulang && sudahPulang);
       const pesanTolak = sudahMasuk && isSkrgMasuk
         ? 'Absen masuk hari ini sudah tercatat.'
@@ -133,7 +136,21 @@
 
       const btn = $('btnAbsen');
       if (!btn) return;
-      if (sudahAbsen) {
+      
+      if (ketRow) {
+        const nmKet = (getField(ketRow, 'Jenis Absen', 'jenis', 'Jenis') || 'KETERANGAN').toUpperCase().trim();
+        btn.disabled = true;
+        btn.dataset.manualDisabled = '1';
+        setBtnL('btnAbsen', false, `🚫 Status: ${nmKet}`);
+        
+        // Disable tombol pulang luar juga jika ada
+        const bpl = $('btnPulangLuar');
+        if (bpl) {
+          bpl.disabled = true;
+          const tSpan = $('btnPulangLuarText');
+          if (tSpan) tSpan.textContent = `🚫 Status: ${nmKet}`;
+        }
+      } else if (sudahAbsen) {
         btn.disabled = true;
         btn.dataset.manualDisabled = '1';
         setBtnL('btnAbsen', false, '✅ Sudah Absen');

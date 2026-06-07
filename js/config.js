@@ -308,11 +308,10 @@ async function apiFetch(path, opts = {}) {
       // Inject Authorization Bearer Token untuk Webhook N8n
       let finalHeaders = { ...HDR };
       if (path.includes('simapo')) {
-        // Hapus custom headers yang diblokir oleh CORS N8n bawaan
-        delete finalHeaders['x-app-token'];
-        delete finalHeaders['X-App-Token'];
+        // Hapus ngrok header tapi TETAP kirim X-App-Token (dibutuhkan oleh N8n webhook)
         delete finalHeaders['ngrok-skip-browser-warning'];
         finalHeaders['Authorization'] = 'Bearer ' + SIMAPO_TOKEN;
+        finalHeaders['X-App-Token'] = API_TOKEN; // N8n SIMAPO butuh ini
       }
       
       fetchOpts.headers = { ...finalHeaders, ...(opts.headers || {}) };

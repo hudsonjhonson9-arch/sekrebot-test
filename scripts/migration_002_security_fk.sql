@@ -8,19 +8,22 @@ DELETE FROM "Log_Absen" WHERE "ID" NOT IN (SELECT id FROM user_list) AND "ID" IS
 DELETE FROM ket_temp WHERE "ID_Pegawai" NOT IN (SELECT id FROM user_list) AND "ID_Pegawai" IS NOT NULL;
 DELETE FROM tanda_tangan WHERE telegram_id NOT IN (SELECT id FROM user_list);
 
--- 2. Tambahkan constraint Foreign Key
+-- 2. Tambahkan constraint Foreign Key (Idempotent)
+ALTER TABLE "Log_Absen" DROP CONSTRAINT IF EXISTS fk_log_absen_user;
 ALTER TABLE "Log_Absen"
 ADD CONSTRAINT fk_log_absen_user 
 FOREIGN KEY ("ID") 
 REFERENCES user_list (id) 
 ON DELETE CASCADE;
 
+ALTER TABLE ket_temp DROP CONSTRAINT IF EXISTS fk_ket_temp_user;
 ALTER TABLE ket_temp
 ADD CONSTRAINT fk_ket_temp_user 
 FOREIGN KEY ("ID_Pegawai") 
 REFERENCES user_list (id) 
 ON DELETE CASCADE;
 
+ALTER TABLE tanda_tangan DROP CONSTRAINT IF EXISTS fk_tanda_tangan_user;
 ALTER TABLE tanda_tangan
 ADD CONSTRAINT fk_tanda_tangan_user 
 FOREIGN KEY (telegram_id) 

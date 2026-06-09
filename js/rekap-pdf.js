@@ -98,7 +98,8 @@
           if (Array.isArray(sigData)) {
             sigData.forEach(s => {
               if (s.signature && s.signature.length > 100) {
-                sigMap[String(s.telegram_id)] = s.signature;
+                if (s.nip) sigMap[String(s.nip)] = s.signature;
+                if (s.telegram_id) sigMap[String(s.telegram_id)] = s.signature;
               }
             });
           }
@@ -227,7 +228,8 @@
               if (!peg) return;
 
               const uid = String(peg.id || peg.ID || peg.telegram_id || '');
-              const sig = sigMap[uid];
+              const nip = String(peg.nip || peg.NIP || '');
+              const sig = sigMap[nip] || sigMap[uid];
 
               if (sig) {
                 const isParafMasuk = (data.column.index === 4);
@@ -381,7 +383,9 @@
         
         doc.text(leaderTitle, signatureX, footerY + 11, { align: 'center' });
 
-        const kabanSig = kaban ? sigMap[String(kaban.id)] : null;
+        const kabanUid = String(kaban?.id || kaban?.ID || '');
+        const kabanNip = String(kaban?.nip || kaban?.NIP || '');
+        const kabanSig = kaban ? (sigMap[kabanNip] || sigMap[kabanUid]) : null;
         if (kabanSig) {
           try { doc.addImage(kabanSig, 'PNG', signatureX - 15, footerY + 14, 30, 15, undefined, 'FAST'); } catch (e) { }
         }

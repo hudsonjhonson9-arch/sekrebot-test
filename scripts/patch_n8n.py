@@ -1,26 +1,54 @@
 import json
+import os
 
-# Paths
-json_file = "d:/Code/absensi_refactored_v6/n8n/AbsensiBot V.5.1.json"
-js_file = "C:/Users/Agil/.gemini/antigravity-ide/brain/433bbe89-d542-489d-ba5a-10939e42d0be/scratch/validasi_absen_fixed.js"
+input_file = r"D:\Code\absensi_refactored_v6\n8n\AbsensiBot V.5.1.json"
+output_file = r"D:\Code\absensi_refactored_v6\n8n\AbsensiBot V.5.1 (Patched).json"
 
-with open(js_file, "r", encoding="utf-8") as f:
-    js_code = f.read()
+print(f"Reading {input_file}...")
+with open(input_file, 'r', encoding='utf-8') as f:
+    workflow = json.load(f)
 
-with open(json_file, "r", encoding="utf-8") as f:
-    data = json.load(f)
+nodes = workflow.get('nodes', [])
 
-# Find the node named 'Validasi Absen'
-found = False
-for node in data.get("nodes", []):
-    if node.get("name") == "Validasi Absen":
-        node["parameters"]["jsCode"] = js_code
-        found = True
-        break
+for node in nodes:
+    if node.get('name') == 'Parse Signature Save':
+        js_code = node['parameters']['jsCode']
+        js_code = js_code.replace("const telegram_id = String(body.telegram_id || '').trim();", 
+                                  "const nip = String(body.nip || body.telegram_id || '').trim();")
+        js_code = js_code.replace("if (!telegram_id) return [{json:{error:true,message:'telegram_id wajib diisi'}}];",
+                                  "if (!nip) return [{json:{error:true,message:'nip wajib diisi'}}];")
+        js_code = js_code.replace("telegram_id: Number(telegram_id),", "nip: nip,")
+        node['parameters']['jsCode'] = js_code
+        print("Patched 'Parse Signature Save' node.")
 
-if not found:
-    print("Error: Node 'Validasi Absen' not found.")
-else:
-    with open(json_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    print("Successfully updated AbsensiBot V.5.1.json")
+    elif node.get('name') == 'Upsert Signature':
+        # Ubah query menjadi UPSERT berbasis NIP dan perbaiki kutip tunggal
+        new_query = """INSERT INTO "tanda_tangan" ("nip", "signature", "saved_at", "saved_by") 
+VALUES ('{{ $json.nip }}', '{{ ($json.signature).toString().replace(/'/g, "''") }}', '{{ $json.saved_at }}', {{ $json.saved_by }})
+ON CONFLICT ("nip") 
+DO UPDATE SET 
+  "signature" = EXCLUDED."signature", 
+  "updated_at" = NOW(),
+  "saved_by" = EXCLUDED."saved_by"
+RETURNING *"""
+        node['parameters']['query'] = new_query
+        print("Patched 'Upsert Signature' node.")
+
+    elif node.get('name') == 'Get Signature by ID':
+        # Ubah query untuk mencari berdasarkan NIP
+        new_query = """SELECT * FROM "tanda_tangan" WHERE "nip" = '{{ ($input.first().json.query.nip || $input.first().json.query.telegram_id).toString().replace(/'/g, "''") }}'"""
+        node['parameters']['query'] = new_query
+        print("Patched 'Get Signature by ID' node.")
+        
+    elif node.get('name') == 'Format Signature Get':
+        # Return NIP as well
+        js_code = node['parameters']['jsCode']
+        if 'telegram_id:row.telegram_id,' in js_code:
+            js_code = js_code.replace('telegram_id:row.telegram_id,', 'nip:row.nip,telegram_id:row.telegram_id,')
+            node['parameters']['jsCode'] = js_code
+            print("Patched 'Format Signature Get' node.")
+
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(workflow, f, indent=2, ensure_ascii=False)
+
+print(f"Successfully saved patched workflow to: {output_file}")

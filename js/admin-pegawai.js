@@ -180,7 +180,7 @@
         $('previewTTDAdmin').innerHTML = '<span class="spin-sm"></span>';
         try {
            // Gunakan format full atau endpoint signature-get
-           const sRes = await apiGet(P.signatureGet, { telegram_id: uid });
+           const sRes = await apiGet(P.signatureGet, { nip: p.nip || p.NIP });
            const sigData = (sRes.data?.signature || sRes.rows?.[0]?.signature || '');
            if (sigData && sigData.length > 50) {
               $('previewTTDAdmin').innerHTML = `<img src="${sigData}" style="width:100%; height:100%; object-fit:contain; filter:brightness(1.8) contrast(1.2)">`;
@@ -295,11 +295,13 @@
 
     function openSignatureAdmin() {
       const uid = $('editPegawaiId').value;
+      const nip = $('inPegawaiNip').value;
       const nama = $('inPegawaiNama').value;
       if (!uid) return alert('Pilih pegawai dulu');
+      if (!nip) return alert('Pegawai ini belum memiliki NIP. Harap isi NIP terlebih dahulu.');
       // Gunakan fungsi signature yang sudah ada
       if (typeof openSignaturePad === 'function') {
-        openSignaturePad(uid, (newSig) => {
+        openSignaturePad(nip, (newSig) => {
           if (newSig) {
             $('previewTTDAdmin').innerHTML = `<img src="${newSig}" style="width:100%; height:100%; object-fit:contain; filter:brightness(1.8) contrast(1.2)">`;
           }

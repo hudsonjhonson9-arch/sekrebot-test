@@ -266,6 +266,15 @@ function getScopedInstansiId() {
  */
 const API_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';
 
+// ── HMAC Signature Generator (Anti-Spoofing) ──
+async function generateSignature(payloadString) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(payloadString);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const HDR = { 
   'Content-Type': 'application/json', 
   'ngrok-skip-browser-warning': 'true', 

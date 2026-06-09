@@ -473,6 +473,12 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         _gps_elapsed_ms: _gpsElapsed, _detection_score: _score, _detection_flags: _flags, ..._suspiciousPayload
       };
 
+      // ── GENERATE HMAC SIGNATURE (ANTI-SPOOFING) ──
+      if (typeof generateSignature === 'function') {
+         const sigBase = `${payload.request_id}${payload.nip}${payload.latitude}${payload.longitude}${payload.timestamp}${API_TOKEN}`;
+         payload._signature = await generateSignature(sigBase);
+      }
+
       // ── OFFLINE QUEUE INTERCEPTOR ──
       if (!navigator.onLine) {
         payload._is_offline_sync = true;
@@ -706,6 +712,14 @@ async function handlePulangLuar() {
           timestamp: Math.floor(Date.now() / 1000),
           init_data: initData, source: isTgX ? 'telegram_x_fallback' : 'telegram_miniapp', device: navigator.userAgent
         };
+
+      // ── GENERATE HMAC SIGNATURE (ANTI-SPOOFING) ──
+      if (typeof generateSignature === 'function') {
+         const nipValue = window.userProfile?.nip || '';
+         const sigBase = `${payload.request_id}${nipValue}${payload.latitude}${payload.longitude}${payload.timestamp}${API_TOKEN}`;
+         payload._signature = await generateSignature(sigBase);
+      }
+
       // ── OFFLINE QUEUE INTERCEPTOR ──
       if (!navigator.onLine) {
         payload._is_offline_sync = true;

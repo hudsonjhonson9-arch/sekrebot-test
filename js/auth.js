@@ -70,24 +70,96 @@
             throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
           }
 
-          // Login Success
-          window.MY_ID = String(user.telegram_id || user.id);
+          // ── FACE VERIFICATION LOGIN (PASSWORDLESS) ──
+          const isFaceEnabled = typeof FACE_RECOGNITION_ENABLED !== 'undefined' ? FACE_RECOGNITION_ENABLED : true;
+          const hasFace = !!(user.face_histogram || user.face_photo || user.face_model || user.foto_base64 || user.descriptor);
           const userNip = String(user.nip || '').trim();
-          localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
-          localStorage.setItem('MY_NIP', userNip); // Store NIP as primary key
-          localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
-          localStorage.setItem('MY_NAME', String(user.nama || 'User'));
-          localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+          const targetId = String(user.telegram_id || user.id);
           
-          // Explicitly set agency to avoid stale fallbacks
-          const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
-          if (finalInst) {
-            localStorage.setItem('MY_INSTANSI', finalInst);
-          } else {
-            localStorage.removeItem('MY_INSTANSI');
-          }
+          const finalizeLogin = () => {
+             window.MY_ID = targetId;
+             localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
+             localStorage.setItem('MY_NIP', userNip);
+             localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
+             localStorage.setItem('MY_NAME', String(user.nama || 'User'));
+             localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+             const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
+             if (finalInst) localStorage.setItem('MY_INSTANSI', finalInst);
+             else localStorage.removeItem('MY_INSTANSI');
+             location.reload();
+          };
 
-          location.reload(); // Refresh to init with new ID
+          if (isFaceEnabled && typeof openCamOverlay === 'function') {
+             // Sembunyikan form login
+             const overlayEl = document.getElementById('authOverlay');
+             if (overlayEl) overlayEl.style.display = 'none';
+
+             // Inject variabel sementara untuk face.js
+             window.MY_ID = targetId;
+             window.tgUser = { first_name: user.nama || 'User', username: userNip };
+             
+             if (!hasFace) {
+                // REGISTRASI WAJAH PERTAMA KALI
+                alert('Wajah Anda belum terdaftar.\nSilakan daftarkan wajah Anda ke sistem sekarang untuk mengamankan akun (Passwordless).');
+                openCamOverlay({
+                   isRegister: true,
+                   onDone: () => {
+                      alert('Wajah berhasil didaftarkan! Selamat datang.');
+                      finalizeLogin();
+                   },
+                   onCancel: () => {
+                      window.MY_ID = null; // revert
+                      window.tgUser = {};
+                      if (overlayEl) overlayEl.style.display = 'flex';
+                      btn.disabled = false;
+                      btn.innerHTML = originalText;
+                   }
+                });
+             } else {
+                // VERIFIKASI WAJAH
+                openCamOverlay(async (camResult) => {
+                   let similarity = 0;
+                   if (camResult && camResult.descriptor) {
+                      const refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
+                      if (refDescRaw) {
+                          try {
+                             const refDesc = typeof refDescRaw === 'string' ? JSON.parse(refDescRaw) : refDescRaw;
+                             const capDesc = Array.from(camResult.descriptor);
+                             if (refDesc.length === capDesc.length && refDesc.length > 0) {
+                                let sum = 0;
+                                for(let i=0; i<refDesc.length; i++) {
+                                   sum += (refDesc[i] - capDesc[i]) ** 2;
+                                }
+                                const dist = Math.sqrt(sum);
+                                // Pseudo-similarity (1.5 adalah max distance asumsi)
+                                similarity = Math.max(0, 1 - (dist / 1.5));
+                             }
+                          } catch(e){
+                             console.error('[Login] Error parsing face reference:', e);
+                          }
+                      }
+                   }
+
+                   // Threshold 0.50 untuk kemiripan wajah
+                   if (similarity >= 0.50) {
+                      finalizeLogin();
+                   } else {
+                      alert(`Verifikasi Gagal!\nWajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%). Silakan coba lagi atau posisikan wajah lurus ke kamera.`);
+                      window.MY_ID = null; // Revert
+                      window.tgUser = {};
+                      if (overlayEl) overlayEl.style.display = 'flex';
+                      btn.disabled = false;
+                      btn.innerHTML = originalText;
+                   }
+                });
+             }
+             // Biarkan tombol disable selagi kamera aktif
+             return; 
+          } else {
+             // Jika Face Recognition didisable dari admin, login normal
+             finalizeLogin();
+             return;
+          }
         } else {
           const payload = {
             id: $('regTelegram')?.value.trim() || window.MY_ID || Math.floor(Math.random() * 1000000),

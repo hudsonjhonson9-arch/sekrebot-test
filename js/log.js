@@ -63,6 +63,14 @@
         const s = $('rIcon2'); if (s) s.outerHTML = '<span id="rIcon2">🔄</span>'; 
       }
     }
+    let currentLogLimit = 10;
+    let currentRenderedLogs = [];
+    
+    window.loadMoreLogs = function() {
+      currentLogLimit += 10;
+      renderLog(null, true);
+    };
+
     function getLC(j) {
       const x = (j || '').toUpperCase().trim();
       if (x === 'MASUK') return { cls: 'l-masuk', icon: '🟢', lbl: 'MASUK' };
@@ -80,7 +88,13 @@
       if (x === 'TANPA BERITA') return { cls: 'l-alpa', icon: '❌', lbl: 'TANPA BERITA' };
       return { cls: 'l-pulang', icon: '📋', lbl: j || '—' };
     }
-    function renderLog(logs) {
+    function renderLog(logs, keepLimit = false) {
+      if (!keepLimit) {
+        currentLogLimit = 10;
+        currentRenderedLogs = logs;
+      } else {
+        logs = currentRenderedLogs;
+      }
       const el = $('logList');
       if (!logs?.length) { el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Belum ada data</div><div class="empty-sub">Data muncul setelah Anda absen</div></div>`; return; }
 
@@ -97,7 +111,11 @@
       const HARI_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
       const BULAN_ID = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-      el.innerHTML = Object.entries(byDate).map(([tgl, rows]) => {
+      const entries = Object.entries(byDate);
+      const isLimited = currentLogLimit < entries.length;
+      const visibleEntries = entries.slice(0, currentLogLimit);
+
+      let html = visibleEntries.map(([tgl, rows]) => {
         // ── Jam batas per tanggal (periode khusus atau global) ──
         const _jamTgl = getJamForTanggal(tgl);
         const jmBatas = _jamTgl.masuk;
@@ -273,6 +291,17 @@
 
     </div>`;
       }).join('');
+
+      if (isLimited) {
+         const sisa = entries.length - currentLogLimit;
+         html += `<div style="text-align:center; padding: 15px 0 25px;">
+                    <button onclick="window.loadMoreLogs()" style="background:var(--primary); color:var(--white); border:none; padding:10px 20px; border-radius:10px; font-size:12px; font-weight:bold; cursor:pointer; font-family:inherit; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
+                      Lihat Lebih Banyak (${sisa} hari lagi)
+                    </button>
+                  </div>`;
+      }
+      
+      el.innerHTML = html;
     }
     function updateLogStats(l) {
       // ── Statistik sederhana dihapus (sudah ada di Akumulasi) ──

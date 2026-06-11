@@ -116,65 +116,78 @@
                    }
                 });
              } else {
-                // VERIFIKASI WAJAH
                 openCamOverlay(async (camResult) => {
-                   let similarity = 0;
-                   if (camResult && camResult.descriptor) {
-                      const refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
-                      if (refDescRaw) {
-                          try {
-                             let refDesc = typeof refDescRaw === 'string' ? JSON.parse(refDescRaw) : refDescRaw;
-                             if (typeof refDesc === 'string') {
-                                try { refDesc = JSON.parse(refDesc); } catch(e){}
-                             }
-                             if (refDesc && !Array.isArray(refDesc) && typeof refDesc === 'object') {
-                                refDesc = Object.values(refDesc);
-                             } else if (refDesc) {
-                                refDesc = Array.from(refDesc);
-                             }
+                    let similarity = 0;
+                    let failReason = "Wajah tidak cocok. Silakan coba lagi.";
 
-                             const capDesc = Array.from(camResult.descriptor);
-                             const refDim = refDesc ? refDesc.length : 0;
-                             const capDim = capDesc.length;
+                    if (camResult && camResult.descriptor) {
+                       const refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
+                       if (!refDescRaw) {
+                           failReason = "Data biometrik wajah (descriptor) tidak ditemukan di server. Hubungi Admin untuk mendaftar ulang wajah.";
+                       } else {
+                           try {
+                              let refDesc = typeof refDescRaw === 'string' ? JSON.parse(refDescRaw) : refDescRaw;
+                              if (typeof refDesc === 'string') {
+                                 try { refDesc = JSON.parse(refDesc); } catch(e){}
+                              }
+                              if (refDesc && !Array.isArray(refDesc) && typeof refDesc === 'object') {
+                                 refDesc = Object.values(refDesc);
+                              } else if (refDesc) {
+                                 refDesc = Array.from(refDesc);
+                              }
 
-                             if (refDim > 0 && capDim > 0) {
-                                 const AI = typeof HumanInstance !== 'undefined' ? HumanInstance : window.HumanInstance;
-                                 if (capDim >= 512 && refDim >= 512 && AI) {
-                                     similarity = AI.match.similarity(refDesc, capDesc);
-                                 } else if (capDim >= 512 && refDim >= 512) {
-                                     // Fallback manual Cosine Similarity jika object HumanInstance belum tersedia
-                                     let dot = 0, normA = 0, normB = 0;
-                                     for(let i=0; i<refDim; i++) {
-                                        dot += refDesc[i] * capDesc[i];
-                                        normA += refDesc[i] * refDesc[i];
-                                        normB += capDesc[i] * capDesc[i];
-                                     }
-                                     similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB));
-                                 } else if (capDim === 128 && refDim === 128) {
-                                     let sum = 0;
-                                     for(let i=0; i<refDim; i++) {
-                                        sum += (refDesc[i] - capDesc[i]) ** 2;
-                                     }
-                                     const dist = Math.sqrt(sum);
-                                     similarity = Math.max(0, 1 - (dist / 1.5));
-                                 }
-                             }
-                          } catch(e){
-                             console.error('[Login] Error parsing face reference:', e);
-                          }
-                      }
-                   }
+                              const capDesc = Array.from(camResult.descriptor);
+                              const refDim = refDesc ? refDesc.length : 0;
+                              const capDim = capDesc.length;
 
-                   // Threshold 0.50 untuk kemiripan wajah
-                   if (similarity >= 0.50) {
-                      finalizeLogin();
-                   } else {
-                      alert(`Verifikasi Gagal!\nWajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%). Silakan coba lagi atau posisikan wajah lurus ke kamera.`);
-                      window.MY_ID = null; // Revert
-                      window.tgUser = {};
-                      if (overlayEl) overlayEl.style.display = 'flex';
-                      btn.disabled = false;
-                      btn.innerHTML = originalText;
+                              if (refDim === 0) {
+                                  failReason = "Data biometrik wajah Anda di database rusak (dimensi 0). Hubungi Admin.";
+                              } else if (refDim > 0 && capDim > 0) {
+                                  const AI = typeof HumanInstance !== 'undefined' ? HumanInstance : window.HumanInstance;
+                                  if (capDim >= 512 && refDim >= 512 && AI) {
+                                      similarity = AI.match.similarity(refDesc, capDesc);
+                                      failReason = `Wajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%). Posisikan wajah dengan lurus.`;
+                                  } else if (capDim >= 512 && refDim >= 512) {
+                                      // Fallback manual Cosine Similarity
+                                      let dot = 0, normA = 0, normB = 0;
+                                      for(let i=0; i<refDim; i++) {
+                                         dot += refDesc[i] * capDesc[i];
+                                         normA += refDesc[i] * refDesc[i];
+                                         normB += capDesc[i] * capDesc[i];
+                                      }
+                                      similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB));
+                                      failReason = `Wajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%).`;
+                                  } else if (capDim === 128 && refDim === 128) {
+                                      let sum = 0;
+                                      for(let i=0; i<refDim; i++) {
+                                         sum += (refDesc[i] - capDesc[i]) ** 2;
+                                      }
+                                      const dist = Math.sqrt(sum);
+                                      similarity = Math.max(0, 1 - (dist / 1.5));
+                                      failReason = `Wajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%).`;
+                                  } else {
+                                      failReason = `Format AI berbeda! Server: ${refDim}-dim, Kamera: ${capDim}-dim. Hubungi admin untuk reset wajah.`;
+                                  }
+                              }
+                           } catch(e){
+                              console.error('[Login] Error parsing face reference:', e);
+                              failReason = "Terjadi kesalahan saat memproses data wajah dari server.";
+                           }
+                       }
+                    } else {
+                       failReason = "Kamera gagal memindai wajah Anda dengan benar.";
+                    }
+
+                    // Threshold 0.50 untuk kemiripan wajah
+                    if (similarity >= 0.50) {
+                       finalizeLogin();
+                    } else {
+                       alert(`Verifikasi Gagal!\n${failReason}`);
+                       window.MY_ID = null; // Revert
+                       window.tgUser = {};
+                       if (overlayEl) overlayEl.style.display = 'flex';
+                       btn.disabled = false;
+                       btn.innerHTML = originalText;
                    }
                 });
              }

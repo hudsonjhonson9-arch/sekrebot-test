@@ -711,6 +711,7 @@
         }
 
         HumanInstance = new HumanConstructor(config);
+        window.HumanInstance = HumanInstance; // Expose ke global scope untuk auth.js
         _updateModelProgress(0, 30);
 
         // Langkah 4: Set Backend TFJS

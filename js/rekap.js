@@ -123,6 +123,25 @@ async function loadRekap() {
   await Promise.all([fetchJamPeriode(), window._jamAbsenReady]);
 
   const isHarianLoad = dari === sampai;
+  
+  if (!liburLoaded) {
+    try {
+      const resLibur = await apiGet(P.liburList);
+      if (resLibur.ok) {
+        const rawRows = (resLibur.rows && resLibur.rows.length) ? resLibur.rows : parseApiResponse(resLibur.data);
+        const rows = Array.isArray(rawRows) ? rawRows : (rawRows.data || rawRows.rows || []);
+        rows.forEach(r => {
+          const tgl = String(r.tanggal || r.Tanggal || '').trim();
+          if (tgl) {
+            hariLiburSet.add(tgl);
+            hariLiburMap[tgl] = r.nama || r.Nama || r.keterangan || r.Keterangan || 'Hari Libur';
+          }
+        });
+        liburLoaded = true;
+      }
+    } catch(e) { console.warn('Gagal memuat hari libur', e); }
+  }
+
   try {
     let pegawai = [], ringkasan = {};
     let rekapOK = false;

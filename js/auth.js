@@ -138,8 +138,18 @@
                              const capDim = capDesc.length;
 
                              if (refDim > 0 && capDim > 0) {
-                                 if (capDim >= 512 && refDim >= 512 && window.HumanInstance) {
-                                     similarity = window.HumanInstance.match.similarity(refDesc, capDesc);
+                                 const AI = typeof HumanInstance !== 'undefined' ? HumanInstance : window.HumanInstance;
+                                 if (capDim >= 512 && refDim >= 512 && AI) {
+                                     similarity = AI.match.similarity(refDesc, capDesc);
+                                 } else if (capDim >= 512 && refDim >= 512) {
+                                     // Fallback manual Cosine Similarity jika object HumanInstance belum tersedia
+                                     let dot = 0, normA = 0, normB = 0;
+                                     for(let i=0; i<refDim; i++) {
+                                        dot += refDesc[i] * capDesc[i];
+                                        normA += refDesc[i] * refDesc[i];
+                                        normB += capDesc[i] * capDesc[i];
+                                     }
+                                     similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB));
                                  } else if (capDim === 128 && refDim === 128) {
                                      let sum = 0;
                                      for(let i=0; i<refDim; i++) {

@@ -121,7 +121,21 @@
                     let failReason = "Wajah tidak cocok. Silakan coba lagi.";
 
                     if (camResult && camResult.descriptor) {
-                       const refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
+                       let refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
+
+                       // AUTO-GENERATE: Jika database tidak mengirim descriptor tapi ada foto base64
+                       if (!refDescRaw && (user.foto_base64 || user.face_photo) && typeof getDescriptorFromDataUrl === 'function') {
+                           try {
+                               console.log('[Login] Descriptor kosong dari server. Generate ulang dari foto_base64 secara live...');
+                               refDescRaw = await getDescriptorFromDataUrl(user.foto_base64 || user.face_photo);
+                               if (refDescRaw) {
+                                   console.log('[Login] Berhasil generate ulang descriptor wajah dari foto.');
+                               }
+                           } catch(e) {
+                               console.warn('[Login] Gagal mengekstrak descriptor dari foto:', e);
+                           }
+                       }
+
                        if (!refDescRaw) {
                            failReason = "Data biometrik wajah (descriptor) tidak ditemukan di server. Hubungi Admin untuk mendaftar ulang wajah.";
                        } else {

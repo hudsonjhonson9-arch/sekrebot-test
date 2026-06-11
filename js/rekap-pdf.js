@@ -758,6 +758,8 @@
         modal.style.display = 'none';
         const iframe = $('pdfPreviewIframe');
         if (iframe) iframe.src = 'about:blank';
+        const toolbar = $('pdfMobileToolbar');
+        if (toolbar) toolbar.style.display = 'none';
       }
     };
 
@@ -880,6 +882,26 @@
                   const pdf = await loadingTask.promise;
                   
                   canvasContainer.innerHTML = '';
+                  const wrapper = document.createElement('div');
+                  wrapper.id = 'pdfCanvasWrapper';
+                  wrapper.style.display = 'flex';
+                  wrapper.style.flexDirection = 'column';
+                  wrapper.style.alignItems = 'center';
+                  wrapper.style.transformOrigin = 'top center';
+                  wrapper.style.transition = 'transform 0.15s ease-out';
+                  canvasContainer.appendChild(wrapper);
+                  
+                  const toolbar = document.getElementById('pdfMobileToolbar');
+                  if (toolbar) toolbar.style.display = 'flex';
+                  
+                  window.currentPdfZoom = 1.0;
+                  window.zoomPdf = function(step) {
+                    window.currentPdfZoom = Math.max(0.5, Math.min(3.0, window.currentPdfZoom + step));
+                    const wrp = document.getElementById('pdfCanvasWrapper');
+                    const ind = document.getElementById('pdfZoomIndicator');
+                    if (wrp) wrp.style.transform = `scale(${window.currentPdfZoom})`;
+                    if (ind) ind.textContent = Math.round(window.currentPdfZoom * 100) + '%';
+                  };
                   
                   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
@@ -898,7 +920,7 @@
                     canvas.style.borderRadius = '4px';
                     canvas.style.background = '#fff';
                     
-                    canvasContainer.appendChild(canvas);
+                    wrapper.appendChild(canvas);
                     
                     const renderContext = {
                       canvasContext: context,

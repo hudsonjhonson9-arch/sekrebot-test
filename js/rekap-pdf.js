@@ -908,13 +908,19 @@
                     
                     const viewportBase = page.getViewport({ scale: 1.0 });
                     const containerWidth = canvasContainer.clientWidth - 40; // padding
-                    const scale = containerWidth / viewportBase.width;
-                    const viewport = page.getViewport({ scale: scale });
+                    const cssScale = containerWidth / viewportBase.width;
+                    
+                    const dpr = window.devicePixelRatio || 1;
+                    const renderScale = cssScale * dpr;
+                    const viewport = page.getViewport({ scale: renderScale });
                     
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.height = viewport.height;
                     canvas.width = viewport.width;
+                    
+                    canvas.style.width = `${Math.floor(viewport.width / dpr)}px`;
+                    canvas.style.height = `${Math.floor(viewport.height / dpr)}px`;
                     canvas.style.marginBottom = '20px';
                     canvas.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.5)';
                     canvas.style.borderRadius = '4px';

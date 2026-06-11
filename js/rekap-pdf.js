@@ -852,6 +852,11 @@
                 canvasContainer.style.display = 'flex';
                 const dataUri = window.lastGeneratedDoc.output('datauristring');
                 
+                if (window.innerWidth <= 768) {
+                  const sidebar = document.getElementById('pdfPreviewSidebar');
+                  if (sidebar) sidebar.classList.remove('show-sidebar');
+                }
+                
                 if (!window.pdfjsLib) {
                   canvasContainer.innerHTML = '<div style="color:#94a3b8;margin-top:20px;font-size:12px;">Memuat penampil PDF...</div>';
                   await new Promise((resolve, reject) => {

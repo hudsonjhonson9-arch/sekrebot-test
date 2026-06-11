@@ -2860,11 +2860,14 @@
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:20px;">📄</span>
           <div>
-            <h3 style="margin:0; font-size:16px; font-weight:700; color:#fff;">Pengaturan & Pratinjau PDF Rekap</h3>
-            <p style="margin:0; font-size:11px; color:#94a3b8;">Sesuaikan orientasi, ukuran kertas, margin, dan padding sebelum diunduh.</p>
+            <h3 style="margin:0; font-size:16px; font-weight:700; color:#fff;">Pratinjau PDF</h3>
+            <p style="margin:0; font-size:11px; color:#94a3b8;">Pratinjau sebelum diunduh.</p>
           </div>
         </div>
-        <button onclick="closePdfPreviewModal()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:10px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:16px;">&times;</button>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="btnTogglePdfSidebar" onclick="document.getElementById('pdfPreviewSidebar').classList.toggle('show-sidebar')" style="display:none; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; align-items:center;">⚙️ Pengaturan</button>
+          <button onclick="closePdfPreviewModal()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; border-radius:10px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; font-size:16px;">&times;</button>
+        </div>
       </div>
       
       <!-- Modal Body (Two Column Layout) -->
@@ -3069,12 +3072,12 @@
       to { transform: rotate(360deg); }
     }
     @media (max-width: 768px) {
-      #pdfPreviewModal > div { height: 95% !important; }
+      #pdfPreviewModal > div { height: 100% !important; width: 100% !important; border-radius: 0 !important; }
       #pdfPreviewFlexContainer { flex-direction: column !important; }
-      #pdfPreviewSidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; flex: 1; }
-      #pdfPreviewViewer { flex: 0 0 160px !important; }
-      #pdfPreviewIframe { display: none !important; }
-      #pdfPreviewMobileWarning { display: block !important; }
+      #pdfPreviewSidebar { display: none !important; width: 100% !important; border-right: none !important; border-bottom: 1px solid rgba(255,255,255,0.08) !important; flex: none !important; max-height: 45%; }
+      #pdfPreviewSidebar.show-sidebar { display: flex !important; }
+      #btnTogglePdfSidebar { display: flex !important; }
+      #pdfPreviewMobileWarning { display: none !important; }
     }
   </style>
 

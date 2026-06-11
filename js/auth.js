@@ -123,16 +123,31 @@
                       const refDescRaw = user.face_histogram || user.face_descriptor || user.descriptor || user.histogram || null;
                       if (refDescRaw) {
                           try {
-                             const refDesc = typeof refDescRaw === 'string' ? JSON.parse(refDescRaw) : refDescRaw;
+                             let refDesc = typeof refDescRaw === 'string' ? JSON.parse(refDescRaw) : refDescRaw;
+                             if (typeof refDesc === 'string') {
+                                try { refDesc = JSON.parse(refDesc); } catch(e){}
+                             }
+                             if (refDesc && !Array.isArray(refDesc) && typeof refDesc === 'object') {
+                                refDesc = Object.values(refDesc);
+                             } else if (refDesc) {
+                                refDesc = Array.from(refDesc);
+                             }
+
                              const capDesc = Array.from(camResult.descriptor);
-                             if (refDesc.length === capDesc.length && refDesc.length > 0) {
-                                let sum = 0;
-                                for(let i=0; i<refDesc.length; i++) {
-                                   sum += (refDesc[i] - capDesc[i]) ** 2;
-                                }
-                                const dist = Math.sqrt(sum);
-                                // Pseudo-similarity (1.5 adalah max distance asumsi)
-                                similarity = Math.max(0, 1 - (dist / 1.5));
+                             const refDim = refDesc ? refDesc.length : 0;
+                             const capDim = capDesc.length;
+
+                             if (refDim > 0 && capDim > 0) {
+                                 if (capDim >= 512 && refDim >= 512 && window.HumanInstance) {
+                                     similarity = window.HumanInstance.match.similarity(refDesc, capDesc);
+                                 } else if (capDim === 128 && refDim === 128) {
+                                     let sum = 0;
+                                     for(let i=0; i<refDim; i++) {
+                                        sum += (refDesc[i] - capDesc[i]) ** 2;
+                                     }
+                                     const dist = Math.sqrt(sum);
+                                     similarity = Math.max(0, 1 - (dist / 1.5));
+                                 }
                              }
                           } catch(e){
                              console.error('[Login] Error parsing face reference:', e);

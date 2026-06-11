@@ -116,38 +116,107 @@
         const roleFilter = document.getElementById('rekapRoleFilter');
         const isMagang = roleFilter && roleFilter.value === 'magang';
 
-        // 3. Update Table Body: Tambahkan Jabatan & Keterangan
-        const tableBody = filteredPegawai.map((p, i) => {
-          const row = p.dataExcelRow || {};
-          const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
-          const jamP = row['Jam Pulang'] || p.jamPulang || '—';
+        let tableBody = [];
+        let pdfHead = [];
+        let pdfColumnStyles = {};
 
-          // Logika Status & Keterangan
-          let ketStatus = '';
-          if (p.tubel > 0) { ketStatus = 'TUBEL'; stats.tubel++; }
-          else if (p.cuti > 0) { ketStatus = 'CUTI'; stats.cuti++; }
-          else if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
-          else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
-          else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
-          else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
-          else { ketStatus = 'TB'; stats.tanpaBerita++; }
+        if (isHarian) {
+          tableBody = filteredPegawai.map((p, i) => {
+            const row = p.dataExcelRow || {};
+            const jamM = row['Jam Masuk'] || p.jamMasuk || '—';
+            const jamP = row['Jam Pulang'] || p.jamPulang || '—';
 
-          if (p.lambat > 0) stats.terlambat++;
+            let ketStatus = '';
+            if (p.tubel > 0) { ketStatus = 'TUBEL'; stats.tubel++; }
+            else if (p.cuti > 0) { ketStatus = 'CUTI'; stats.cuti++; }
+            else if (p.sakit > 0) { ketStatus = 'SAKIT'; stats.sakit++; }
+            else if (p.izin > 0) { ketStatus = 'IZIN'; stats.izin++; }
+            else if (p.tugas > 0) { ketStatus = 'TUGAS/DL'; stats.tugas++; }
+            else if (jamM !== '—' && jamM !== '-') { stats.hadir++; }
+            else { ketStatus = 'TB'; stats.tanpaBerita++; }
 
-          const logKet = p.logKet || '';
-          const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
+            if (p.lambat > 0) stats.terlambat++;
 
-          return [
-            i + 1,
-            `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
-            (p.jabatan || '—') + (!isMagang && p.pangkat ? `\n(${p.pangkat})` : ''),
-            jamM,
-            '',
-            jamP,
-            '',
-            finalKet || '—'
-          ];
-        });
+            const logKet = p.logKet || '';
+            const finalKet = [ketStatus, logKet].filter(Boolean).join(': ');
+
+            return [
+              i + 1,
+              `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
+              (p.jabatan || '—') + (!isMagang && p.pangkat ? `\n(${p.pangkat})` : ''),
+              jamM,
+              '',
+              jamP,
+              '',
+              finalKet || '—'
+            ];
+          });
+
+          pdfHead = [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', isMagang ? 'Jabatan / Institusi' : 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']];
+          pdfColumnStyles = {
+            0: { halign: 'center', cellWidth: 7 },
+            3: { halign: 'center', cellWidth: 16 },
+            4: { cellWidth: 22, minCellHeight: 14 },
+            5: { halign: 'center', cellWidth: 16 },
+            6: { cellWidth: 22, minCellHeight: 14 }
+          };
+        } else {
+          // Rekapan Rentang Waktu (Seperti Excel)
+          tableBody = filteredPegawai.map((p, i) => {
+            const lambat = p.lambat_count ?? 0;
+            const cepat = p.pulang_cepat_count ?? 0;
+            const hHadir = (p.masuk || 0);
+            
+            stats.hadir += hHadir;
+            stats.sakit += (p.sakit || 0);
+            stats.izin += (p.izin || 0);
+            stats.tugas += (p.tugas || 0);
+            stats.tubel += (p.tubel || 0);
+            stats.cuti += (p.cuti || 0);
+            stats.tanpaBerita += (p.alpa || 0);
+            stats.terlambat += lambat;
+
+            const mTerlambat = p.menit_terlambat || 0;
+            const mCepat = p.menit_lebih_awal || 0;
+            const mAlpa = (p.alpa || 0) * 450;
+            const totalM = mTerlambat + mCepat + mAlpa;
+            
+            const toHHMMFormat = (mins) => {
+              if (isNaN(mins) || mins <= 0) return '00:00';
+              const h = Math.floor(mins / 60);
+              const m = mins % 60;
+              return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            };
+            const totalAkk = toHHMMFormat(totalM);
+            
+            return [
+              i + 1,
+              `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
+              (p.jabatan || '—'),
+              hHadir,
+              lambat,
+              mTerlambat,
+              cepat,
+              mCepat,
+              (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0),
+              p.alpa || 0,
+              totalAkk
+            ];
+          });
+
+          pdfHead = [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', 'Jabatan', 'Hadir', 'Lambat\n(x)', 'Lambat\n(m)', 'Cepat\n(x)', 'Cepat\n(m)', 'I/S/T', 'Alpa', 'Akumulasi']];
+          pdfColumnStyles = {
+            0: { halign: 'center', cellWidth: 7 },
+            3: { halign: 'center' },
+            4: { halign: 'center' },
+            5: { halign: 'center' },
+            6: { halign: 'center' },
+            7: { halign: 'center' },
+            8: { halign: 'center' },
+            9: { halign: 'center' },
+            10: { halign: 'center' }
+          };
+        }
 
         // 4. Proses Tabel & Hitung Kop Dinamis
         const instId = (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : null) || (window.userProfile?.instansi_id) || 'bapperida';
@@ -208,20 +277,16 @@
         doc.autoTable({
           startY: calculatedStartY,
           margin: { top: 20, left: margin, right: margin, bottom: 20 },
-          head: [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', isMagang ? 'Jabatan / Institusi' : 'Jabatan / Pangkat', 'Jam\nMasuk', 'Paraf\nMasuk', 'Jam\nPulang', 'Paraf\nPulang', 'Ket']],
+          head: pdfHead,
           body: tableBody,
           theme: 'grid',
           headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center', lineWidth: 0.1 },
           styles: { font: 'times', fontSize: cfg.fontSize, cellPadding: cfg.padding, valign: 'middle', overflow: 'linebreak' },
           rowPageBreak: cfg.rowPageBreak,
-          columnStyles: {
-            0: { halign: 'center', cellWidth: 7 },
-            3: { halign: 'center', cellWidth: 16 },
-            4: { cellWidth: 22, minCellHeight: 14 },
-            5: { halign: 'center', cellWidth: 16 },
-            6: { cellWidth: 22, minCellHeight: 14 }
-          },
+          columnStyles: pdfColumnStyles,
           didDrawCell: (data) => {
+            if (!isHarian) return; // Tidak ada gambar paraf di rekap range waktu
+            
             if (data.cell.section === 'body' && (data.column.index === 4 || data.column.index === 6)) {
               const rowIdx = data.row.index;
               const peg = filteredPegawai[rowIdx];
@@ -319,7 +384,7 @@
         doc.text('Ringkasan Kehadiran:', margin, currentY);
         doc.setFont('times', 'normal');
         doc.setFontSize(9);
-        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Tubel: ${stats.tubel} | Cuti: ${stats.cuti} | TB: ${stats.tanpaBerita} | Terlambat: ${stats.terlambat}`;
+        const statText = `Hadir: ${stats.hadir} | Sakit: ${stats.sakit} | Izin: ${stats.izin} | Tugas/DL: ${stats.tugas} | Tubel: ${stats.tubel} | Cuti: ${stats.cuti} | TB: ${stats.tanpaBerita}`;
         doc.text(statText, margin, currentY + 6);
 
         let footerY = currentY + 20;
@@ -772,15 +837,75 @@
         }
 
         const iframe = $('pdfPreviewIframe');
+        const canvasContainer = $('pdfPreviewCanvasContainer');
         if (iframe && window.lastGeneratedDoc) {
           try {
             if (window.innerWidth > 768) {
+              if (canvasContainer) canvasContainer.style.display = 'none';
+              iframe.style.display = 'block';
               const blobUrl = window.lastGeneratedDoc.output('bloburl');
               iframe.src = blobUrl;
             } else {
-              // Mobile fallback: Render as HTML Page
-              const htmlStr = window.buildHtmlPreview ? window.buildHtmlPreview() : '<div style="padding:20px;">Memuat pratinjau...</div>';
-              iframe.srcdoc = htmlStr;
+              // Mobile fallback: Render with PDF.js to canvas
+              iframe.style.display = 'none';
+              if (canvasContainer) {
+                canvasContainer.style.display = 'flex';
+                const dataUri = window.lastGeneratedDoc.output('datauristring');
+                
+                if (!window.pdfjsLib) {
+                  canvasContainer.innerHTML = '<div style="color:#94a3b8;margin-top:20px;font-size:12px;">Memuat penampil PDF...</div>';
+                  await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                    script.onload = () => {
+                      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                      resolve();
+                    };
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                  });
+                }
+                
+                canvasContainer.innerHTML = '<div style="color:#94a3b8;margin-top:20px;font-size:12px;">Memproses dokumen...</div>';
+                
+                try {
+                  const base64Data = dataUri.split('base64,')[1];
+                  const binaryString = atob(base64Data);
+                  const loadingTask = window.pdfjsLib.getDocument({data: binaryString});
+                  const pdf = await loadingTask.promise;
+                  
+                  canvasContainer.innerHTML = '';
+                  
+                  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum);
+                    
+                    const viewportBase = page.getViewport({ scale: 1.0 });
+                    const containerWidth = canvasContainer.clientWidth - 40; // padding
+                    const scale = containerWidth / viewportBase.width;
+                    const viewport = page.getViewport({ scale: scale });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    canvas.style.marginBottom = '20px';
+                    canvas.style.boxShadow = '0 10px 25px -5px rgba(0,0,0,0.5)';
+                    canvas.style.borderRadius = '4px';
+                    canvas.style.background = '#fff';
+                    
+                    canvasContainer.appendChild(canvas);
+                    
+                    const renderContext = {
+                      canvasContext: context,
+                      viewport: viewport
+                    };
+                    await page.render(renderContext).promise;
+                  }
+                } catch (pdfErr) {
+                  console.error("PDF.js render error:", pdfErr);
+                  canvasContainer.innerHTML = `<div style="color:#f87171;padding:20px;text-align:center;font-size:12px;">Gagal menampilkan PDF.<br>Silakan langsung unduh laporan.</div>`;
+                }
+              }
             }
           } catch (err) {
             console.warn("Pratinjau PDF gagal dirender di browser ini.");

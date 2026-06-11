@@ -76,6 +76,14 @@
       renderLog(null, true);
     };
 
+    window.collapseLogs = function() {
+      currentLogLimit = 10;
+      renderLog(null, true);
+      // Optional: scroll back to top of logs
+      const el = document.getElementById('logList');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
     function getLC(j) {
       const x = (j || '').toUpperCase().trim();
       if (x === 'MASUK') return { cls: 'l-masuk', icon: '🟢', lbl: 'MASUK' };
@@ -301,13 +309,21 @@
          const sisa = entries.length - currentLogLimit;
          html += `
             <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px 0 25px;">
-              <button onclick="window.loadMoreLogs()" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); padding: 10px 24px; border-radius: 50px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+              <button class="btn-pagination" onclick="window.loadMoreLogs()">
                 <span>Lihat 10 Lagi</span>
                 <span style="font-size: 14px;">⬇️</span>
               </button>
               
-              <button onclick="window.loadAllLogs()" style="background: transparent; color: var(--muted); border: none; padding: 6px 16px; border-radius: 50px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: underline; text-underline-offset: 4px;">
+              <button class="btn-pagination-all" onclick="window.loadAllLogs()">
                 Tampilkan Semua (${sisa} hari)
+              </button>
+            </div>
+         `;
+      } else if (entries.length > 10) {
+         html += `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 15px 0 25px;">
+              <button class="btn-pagination-all" onclick="window.collapseLogs()">
+                <span style="font-size: 14px; margin-right:4px;">⬆️</span> Sembunyikan (Tampilkan 10 Saja)
               </button>
             </div>
          `;

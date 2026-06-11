@@ -8,10 +8,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2192,
-        912
+        2288,
+        368
       ],
-      "id": "76e690ca-87c5-4ebe-a10b-20d736313ff2"
+      "id": "4e3512d2-c295-4063-a127-1982fbfe261f"
     },
     {
       "parameters": {
@@ -21,10 +21,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2640,
-        -544
+        -880,
+        -912
       ],
-      "id": "83489bc5-c627-403f-aabe-061ad7b1830e"
+      "id": "617a16f2-4d59-4049-a8a8-a5427b2b835f"
     },
     {
       "parameters": {
@@ -34,10 +34,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2480,
-        -1568
+        -720,
+        -1936
       ],
-      "id": "a2ca6bd4-c0b1-4320-a3db-78ba6b683ce5"
+      "id": "2a35725e-16d6-430d-91c3-912d654c8296"
     },
     {
       "parameters": {
@@ -47,10 +47,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2640,
-        128
+        -880,
+        -240
       ],
-      "id": "66682335-fdb6-48b1-969c-874d6a07afd0"
+      "id": "5005daf4-46f4-4440-8213-440c3f79d403"
     },
     {
       "parameters": {
@@ -74,10 +74,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3040,
-        4192
+        3136,
+        3648
       ],
-      "id": "b55c863a-f02f-48a2-8027-65d063badc7b",
+      "id": "80883ca1-ef82-4b00-b4d1-25097bac60ae",
       "name": "Respond Signature List"
     },
     {
@@ -87,10 +87,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2816,
-        4192
+        2912,
+        3648
       ],
-      "id": "7eec8fa2-b550-4eec-a9ad-55fafdd47ffd",
+      "id": "cd678d91-621b-40e5-b6c8-7d8559c72d57",
       "name": "Format Signature List"
     },
     {
@@ -102,10 +102,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2592,
-        4192
+        2688,
+        3648
       ],
-      "id": "dfd29239-1c53-420f-8b6b-f24e1870f15e",
+      "id": "37c57ccd-b3ca-412b-993d-3e1dfaaa0fd0",
       "name": "Get All Signatures",
       "alwaysOutputData": true,
       "credentials": {
@@ -122,10 +122,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2368,
-        4192
+        2464,
+        3648
       ],
-      "id": "a60d5c47-c198-4524-b2a2-7cee30fd39e6",
+      "id": "3d476038-7423-4562-865e-0793c428a51c",
       "name": "CORS Signature List"
     },
     {
@@ -140,10 +140,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        2144,
-        4192
+        2240,
+        3648
       ],
-      "id": "864b6cc7-e19b-4aa9-b5c4-6bb4378aa712",
+      "id": "c6e4ab5c-99af-4d7e-8687-dce723bcdbdf",
       "name": "Signature List Webhook",
       "webhookId": "sig-list-0001",
       "credentials": {
@@ -175,10 +175,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3040,
-        3984
+        3136,
+        3440
       ],
-      "id": "a09e608e-4204-4057-9569-1013e3bd15b2",
+      "id": "e689d494-c61b-4faa-b0e0-b094d93d1453",
       "name": "Respond Signature Get"
     },
     {
@@ -188,10 +188,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2816,
-        3984
+        2912,
+        3440
       ],
-      "id": "bfc03a10-08be-4fda-934e-1bd8c5ff35c4",
+      "id": "48ef0a22-e4d2-4b51-9123-7efaa9e4fd00",
       "name": "Format Signature Get"
     },
     {
@@ -203,10 +203,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2592,
-        3984
+        2688,
+        3440
       ],
-      "id": "5c93d92d-08fe-46ec-9fe7-ab54b92a932b",
+      "id": "879eff4b-4f34-4869-b645-04074ca2bfd2",
       "name": "Get Signature by ID",
       "alwaysOutputData": true,
       "credentials": {
@@ -223,10 +223,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2368,
-        3984
+        2464,
+        3440
       ],
-      "id": "26317909-1b6e-4858-9313-c264a4d16d1d",
+      "id": "931cf622-0c9d-49c0-8203-0616f0bf81e4",
       "name": "CORS Signature Get"
     },
     {
@@ -241,10 +241,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        2144,
-        3984
+        2240,
+        3440
       ],
-      "id": "df6531fd-91de-4429-a706-35506aa2c090",
+      "id": "22cf89fc-cd9a-400d-b9b0-1b6900b62189",
       "name": "Signature Get Webhook",
       "webhookId": "sig-get-0001",
       "credentials": {
@@ -276,10 +276,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3264,
-        3840
+        3360,
+        3296
       ],
-      "id": "7b33bf92-5ff3-48d9-8d25-f2f608797be4",
+      "id": "2afbaf88-c20c-40af-9eb4-7dded2a83738",
       "name": "Respond Signature Save"
     },
     {
@@ -293,10 +293,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3040,
-        3840
+        3136,
+        3296
       ],
-      "id": "9d5d660b-b997-4ceb-86b5-7509d8429e76",
+      "id": "df754961-fe18-468b-98dc-70709854d651",
       "name": "Upsert Signature",
       "alwaysOutputData": true,
       "credentials": {
@@ -328,10 +328,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3040,
-        3648
+        3136,
+        3104
       ],
-      "id": "35dbc6c4-fab2-454a-83b7-0a3af4a4e86d",
+      "id": "1c2b89ab-ce7c-41c6-88a6-0d2d03d42899",
       "name": "Respond Sig Save Error"
     },
     {
@@ -358,10 +358,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2816,
-        3744
+        2912,
+        3200
       ],
-      "id": "56bf5276-4f77-4d81-9437-893f4d4e7967",
+      "id": "7a2fb6ae-e3de-4aa4-a16e-b847a56b78c0",
       "name": "If Sig Save Error"
     },
     {
@@ -371,10 +371,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2592,
-        3744
+        2688,
+        3200
       ],
-      "id": "faede75c-92bb-43ce-8034-f415994d1653",
+      "id": "86f8a4dd-89d5-4f07-9ce9-bb7ba459b012",
       "name": "Parse Signature Save"
     },
     {
@@ -384,10 +384,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2368,
-        3744
+        2464,
+        3200
       ],
-      "id": "af13f45b-db2e-4255-a29d-ceeda57905d5",
+      "id": "afa8b647-12db-4add-8f89-e94c76b63f78",
       "name": "CORS Signature Save"
     },
     {
@@ -403,10 +403,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        2144,
-        3744
+        2240,
+        3200
       ],
-      "id": "23ef8224-8b33-4e61-a73b-1598dd957e87",
+      "id": "abf8a245-1d56-4f24-ae9f-7e7472ce735d",
       "name": "Signature Save Webhook",
       "webhookId": "sig-save-0001",
       "credentials": {
@@ -425,10 +425,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        384,
-        1504
+        480,
+        960
       ],
-      "id": "1b7225c6-8427-4bec-bd1a-d92f5b22a405",
+      "id": "ef16a8da-db13-4443-80b7-409c346d60df",
       "name": "Get All Periode",
       "credentials": {
         "postgres": {
@@ -446,10 +446,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        3088
+        912,
+        2544
       ],
-      "id": "3f29104e-406a-4131-9c2f-5b92caa093ac",
+      "id": "b6e38eae-90a2-45ef-a9fc-151d2eaa22cb",
       "name": "Get Jam dari Sheet",
       "credentials": {
         "postgres": {
@@ -467,10 +467,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1040,
-        3088
+        1136,
+        2544
       ],
-      "id": "a0f632be-609f-428b-b5cf-3d857771610c",
+      "id": "168655ab-1ee1-4045-8234-6807e507543f",
       "name": "Get Admin List",
       "credentials": {
         "postgres": {
@@ -502,39 +502,39 @@
           }
         }
       },
-      "id": "f33ad46a-f4d5-4c1b-9043-477388be02c7",
+      "id": "743c8c9d-5fe8-44ae-8fb3-17b614949151",
       "name": "Respond Jam GET",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1488,
-        3088
+        1584,
+        2544
       ]
     },
     {
       "parameters": {
         "jsCode": "// Ambil data jam dari Get Jam dari Sheet (bukan dari input langsung)\nlet row = {};\ntry {\n  const jamRows = $('Get Jam dari Sheet').all().map(i => i.json);\n  row = jamRows.find(r => String(r.key || '').trim() === 'jam_absen_global')\n     || jamRows[0]\n     || {};\n} catch(_) {}\n\n// Ambil daftar admin dari Get Admin List\nlet adminIds = [];\nlet adminRoles = {};\ntry {\n  const adminRows = $('Get Admin List').all().map(i => i.json);\n  adminRows.forEach(r => {\n    // PERBAIKAN: Gunakan String, JANGAN gunakan parseInt agar tidak dibulatkan\n    const uid = String(r.NIP || r.nip || '').trim();\n    if (uid && uid !== '0') {\n      adminIds.push(uid);\n      // Normalisasi role: jika mengandung 'super', paksa jadi 'superadmin'\n      let role = String(r.role || 'admin').toLowerCase().trim();\n      if (role.indexOf('super') !== -1) role = 'superadmin'; // Preserve roles like kepala, kabid\n      adminRoles[uid] = role;\n    }\n  });\n} catch(_) {}\n\nreturn [{ json: {\n  ok: true,\n  data: {\n    masuk:      row.masuk      || '07:15',\n    pulang:     row.pulang     || '14:30',\n    updated_at: row.updated_at || null,\n    admin_ids:  adminIds,\n    admin_roles: adminRoles\n  }\n}}];\n"
       },
-      "id": "a27d81fa-89b2-4211-b12a-0e05912bc562",
+      "id": "bb5b87bd-acfe-4ef5-a447-2aafed469079",
       "name": "Format Jam GET",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1264,
-        3088
+        1360,
+        2544
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "e8bb2082-c691-4c6a-af8b-556837f85e2e",
+      "id": "c1360cd2-3121-497f-9283-a39045a8517c",
       "name": "CORS GET Jam",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        3088
+        704,
+        2544
       ]
     },
     {
@@ -544,13 +544,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "5e2d3eee-eaf7-4875-9837-a6de763c5f62",
+      "id": "aecbf331-eef5-41b8-9fa5-1d9302f63de4",
       "name": "GET Jam Absen",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        384,
-        3088
+        480,
+        2544
       ],
       "webhookId": "jam-absen-get",
       "credentials": {
@@ -576,13 +576,13 @@
           }
         }
       },
-      "id": "2f6801ec-7b56-4e35-a93a-0478e3c7b3a0",
+      "id": "753ee66e-9ed3-4d69-a879-cd684d2e42a4",
       "name": "Respond Fail POST Jam",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -80,
-        3120
+        16,
+        2576
       ]
     },
     {
@@ -600,13 +600,13 @@
           }
         }
       },
-      "id": "a1d7ee43-d3e5-4e54-b973-50f554cbdce0",
+      "id": "82b76a06-807d-49b9-8216-b075926d9674",
       "name": "Respond OK POST Jam",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        144,
-        2928
+        240,
+        2384
       ]
     },
     {
@@ -615,13 +615,13 @@
         "query": "UPDATE \"jam_absen\" SET \"masuk\" = $1, \"pulang\" = $2 WHERE \"key\" = $3 RETURNING *",
         "options": {}
       },
-      "id": "00df011b-d3fa-4bd2-86a2-8e08d7986996",
+      "id": "c12ddea1-6fd6-499e-bf72-35878d609d42",
       "name": "Simpan Jam ke Sheet",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -80,
-        2928
+        16,
+        2384
       ],
       "credentials": {
         "postgres": {
@@ -655,39 +655,39 @@
         },
         "options": {}
       },
-      "id": "54375247-2464-4443-abf8-c3660277c968",
+      "id": "25a46e5c-2ff6-4e62-88eb-ba436d622b87",
       "name": "Is Valid Jam?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -304,
-        3024
+        -208,
+        2480
       ]
     },
     {
       "parameters": {
         "jsCode": "const body   = $input.first().json.body || {};\nconst masuk  = String(body.masuk  || '').trim();\nconst pulang = String(body.pulang || '').trim();\nconst reTime = /^([01]\\d|2[0-3]):[0-5]\\d$/;\nif (!reTime.test(masuk))  return [{ json: { ok: false, message: 'Format jam masuk tidak valid. Gunakan HH:MM (cth: 07:30)' } }];\nif (!reTime.test(pulang)) return [{ json: { ok: false, message: 'Format jam pulang tidak valid. Gunakan HH:MM (cth: 14:00)' } }];\nconst [hM, mM] = masuk.split(':').map(Number);\nconst [hP, mP] = pulang.split(':').map(Number);\nif (hM * 60 + mM >= hP * 60 + mP) return [{ json: { ok: false, message: 'Jam masuk harus lebih kecil dari jam pulang.' } }];\nreturn [{ json: {\n  ok: true, masuk, pulang,\n  diubah_oleh: body.diubah_oleh || null,\n  updated_at: new Date().toISOString()\n}}];"
       },
-      "id": "9e57935f-d2e7-4608-9874-387df4c77aa2",
+      "id": "444ba6f7-257f-4eeb-bb11-276e101fe553",
       "name": "Validasi Input Jam",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -528,
-        3024
+        -432,
+        2480
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "e1ed714f-5ad3-4360-ae04-1a18541b468f",
+      "id": "42604060-4598-4651-8c07-dc6dd0f656e9",
       "name": "CORS POST Jam",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -752,
-        3024
+        -656,
+        2480
       ]
     },
     {
@@ -698,13 +698,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "a7b06064-3316-4f6c-8ad4-3e4f338f50b3",
+      "id": "dd058426-0d23-4b3f-b602-d2d7a58f291b",
       "name": "POST Jam Absen",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -976,
-        3024
+        -880,
+        2480
       ],
       "webhookId": "jam-absen-post",
       "credentials": {
@@ -723,10 +723,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        768,
-        224
+        864,
+        -320
       ],
-      "id": "eefb0528-1912-47ed-bfcd-7ceb251cf522",
+      "id": "ff5ee99e-1987-4882-a2b6-7cb3a0f7d0ac",
       "name": "Delete Lokasi",
       "credentials": {
         "postgres": {
@@ -744,10 +744,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        992,
-        688
+        1088,
+        144
       ],
-      "id": "bab774f9-a230-4010-8b7f-516fb41ae5b2",
+      "id": "ba914f88-1c24-4533-8c7d-e550587f33db",
       "name": "Update Lokasi",
       "credentials": {
         "postgres": {
@@ -767,10 +767,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        992,
-        448
+        1088,
+        -96
       ],
-      "id": "8a49e569-af51-4f88-979f-cc31c9eafa75",
+      "id": "99492ed9-5ca7-4567-9e35-cd157b4d45da",
       "name": "Add Lokasi",
       "credentials": {
         "postgres": {
@@ -788,10 +788,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        672,
-        1152
+        768,
+        608
       ],
-      "id": "48273c37-0158-4fa2-9534-8b23497c1011",
+      "id": "5ef55723-3ea8-4cd0-bd70-c0fa131be476",
       "name": "Get Lokasi-List",
       "credentials": {
         "postgres": {
@@ -809,10 +809,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2640,
-        352
+        -880,
+        -16
       ],
-      "id": "6166f395-be02-47d6-81a1-96226f4ea3ed",
+      "id": "202fc1d7-096c-4340-96df-ff5b23302829",
       "name": "Get All Pegawai",
       "executeOnce": true,
       "credentials": {
@@ -828,13 +828,13 @@
         "query": "SELECT * FROM \"statistik_pegawai\" WHERE \"instansi_id\" = '{{ ($node[\"Rekap\"].json[\"query\"][\"instansi_id\"]).toString().replace(/'/g, \"''\") }}'",
         "options": {}
       },
-      "id": "b8065621-c475-4324-ad3e-2a0aa516d040",
+      "id": "36074ef7-443e-4c17-b173-3dcb8202d337",
       "name": "Get Statistik Pegawai",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2864,
-        352
+        -1104,
+        -16
       ],
       "executeOnce": true,
       "credentials": {
@@ -853,10 +853,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -3088,
-        352
+        -1328,
+        -16
       ],
-      "id": "b60d8d4e-2fb6-4b9a-a26c-dd26a2afb2b9",
+      "id": "5f38e42b-0117-4bf3-abf9-677bd4dbcd43",
       "name": "Get All Log",
       "alwaysOutputData": true,
       "credentials": {
@@ -875,10 +875,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2640,
-        -96
+        -880,
+        -464
       ],
-      "id": "64335f5f-e729-4298-992b-01d084fbb884",
+      "id": "5301bbd8-c6e7-45c1-801d-a10892a4c3b8",
       "name": "Get Log Riwayat",
       "credentials": {
         "postgres": {
@@ -896,10 +896,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -3088,
-        -320
+        -1328,
+        -688
       ],
-      "id": "0538f7bd-bdb2-4fa5-8a85-9d9531abc072",
+      "id": "63795a34-b848-4826-a293-415b0afe5979",
       "name": "Get Pegawai User-List",
       "credentials": {
         "postgres": {
@@ -914,13 +914,13 @@
         "query": "SELECT * FROM \"admin_list\"",
         "options": {}
       },
-      "id": "2532606f-a4ac-486c-beb9-7cd56ae4233c",
+      "id": "5049afb4-29e6-4d52-9843-9303a126ac68",
       "name": "Read Admin List (Del)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2080,
-        2896
+        2176,
+        2352
       ],
       "credentials": {
         "postgres": {
@@ -935,13 +935,13 @@
         "query": "SELECT * FROM \"admin_list\"",
         "options": {}
       },
-      "id": "2d0ccf8e-5f4f-4fba-be45-44e2ea72ffc1",
+      "id": "40325bd0-f6bd-4e52-9666-52cf710400b8",
       "name": "Read Admin List (Add)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2304,
-        3216
+        2400,
+        2672
       ],
       "credentials": {
         "postgres": {
@@ -966,13 +966,13 @@
           }
         }
       },
-      "id": "ab320705-147f-4f80-a99e-22af384cdcad",
+      "id": "25d6642c-b760-4387-a4df-9c8bd9da0fd4",
       "name": "Respond Fail Admin Del",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2752,
-        2992
+        2848,
+        2448
       ]
     },
     {
@@ -990,13 +990,13 @@
           }
         }
       },
-      "id": "b4dbcec9-b6b3-4fe4-8fb7-df4526bdad06",
+      "id": "6c22579a-d7e2-460f-bda3-273d78831ce6",
       "name": "Respond OK Admin Del",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3200,
-        2800
+        3296,
+        2256
       ]
     },
     {
@@ -1005,13 +1005,13 @@
         "query": "DELETE FROM \"admin_list\" RETURNING *",
         "options": {}
       },
-      "id": "b377131e-e1d6-4852-ab10-46b3f45dfc4f",
+      "id": "0a1359ff-2fd1-4f38-85ca-a07dc05b9f5b",
       "name": "Delete Admin from Sheet",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2976,
-        2800
+        3072,
+        2256
       ],
       "credentials": {
         "postgres": {
@@ -1026,13 +1026,13 @@
         "query": "SELECT * FROM \"admin_list\"",
         "options": {}
       },
-      "id": "bd0cfb9a-83c7-414b-be3d-ccee4cc79ca1",
+      "id": "fb36bddc-5763-46dd-9f90-9fa752365381",
       "name": "Get Admin Row",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2752,
-        2800
+        2848,
+        2256
       ],
       "credentials": {
         "postgres": {
@@ -1065,26 +1065,26 @@
         },
         "options": {}
       },
-      "id": "95046f9d-3f6f-4c46-8ff8-ce51c067622e",
+      "id": "587332ec-c49b-4ca2-a8a0-eba751a41903",
       "name": "Is Valid Admin Del",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2528,
-        2896
+        2624,
+        2352
       ]
     },
     {
       "parameters": {
         "jsCode": "const allInputs = $input.all();\n// Ambil request dari node Del Webhook\nconst reqNode = $('Admin Delete Webhook').first().json;\nconst body = reqNode.body || reqNode;\nconst query = reqNode.query || {};\n\n// Baca admin_ids DARI SHEET (node Read Admin List (Del))\nlet ADMIN_IDS = [];\ntry {\n  const sheetRows = $('Read Admin List (Del)').all().map(i => i.json);\n  ADMIN_IDS = sheetRows\n    .map(r => parseInt(r.telegram_id || r.Telegram_ID || 0))\n    .filter(id => id > 0);\n} catch(_) {}\n\nconst requesterId = parseInt(body.ditambahkan_oleh || 0);\nif (!requesterId || !ADMIN_IDS.includes(requesterId)) {\n  return [{ json: { ok: false, message: 'Akses ditolak.' } }];\n}\nconst tgId = parseInt(query.telegram_id || body.telegram_id || 0);\nif (!tgId) return [{ json: { ok: false, message: 'Telegram ID tidak ditemukan.' } }];\nif (tgId === requesterId) return [{ json: { ok: false, message: 'Tidak bisa menghapus akun sendiri.' } }];\nreturn [{ json: { ok: true, telegram_id: String(tgId) } }];"
       },
-      "id": "843ffd3d-d7cc-495b-9fc6-b9337d806bd7",
+      "id": "042deb9c-2af6-45fb-bebd-10ed595ab21f",
       "name": "Validasi Admin Del",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2304,
-        2896
+        2400,
+        2352
       ]
     },
     {
@@ -1097,13 +1097,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "85e95625-e41b-4377-aff2-a3fa03186d20",
+      "id": "703dd294-fa7e-4890-9f16-10589336ee76",
       "name": "Admin Delete Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        1856,
-        2896
+        1952,
+        2352
       ],
       "webhookId": "2e9ee22e-7251-4f55-80fd-157a1db3bc86",
       "credentials": {
@@ -1129,13 +1129,13 @@
           }
         }
       },
-      "id": "6f44bf5f-4167-4601-89af-7d729a24c218",
+      "id": "6bfd1f67-b5ee-452b-ae9a-b1ca8fe342f9",
       "name": "Respond Fail Admin Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2976,
-        3312
+        3072,
+        2768
       ]
     },
     {
@@ -1153,13 +1153,13 @@
           }
         }
       },
-      "id": "edac7ff5-1610-45f8-a4f1-8e8d8d378318",
+      "id": "b1efabfc-4558-4bd8-b751-9d234ab9fcab",
       "name": "Respond OK Admin Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3184,
-        3120
+        3280,
+        2576
       ]
     },
     {
@@ -1170,13 +1170,13 @@
           "queryBatching": "independently"
         }
       },
-      "id": "b47d64d0-7463-4aaa-a9da-e1e6689e2df4",
+      "id": "5c698c21-fc10-4bda-b02b-79d588b21569",
       "name": "Add Admin to Sheet",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2976,
-        3120
+        3072,
+        2576
       ],
       "credentials": {
         "postgres": {
@@ -1208,39 +1208,39 @@
         },
         "options": {}
       },
-      "id": "20f0c800-a488-40be-be72-6bba31c3170c",
+      "id": "3b942c46-e0fc-4813-ad97-ce29fad59d9b",
       "name": "Is Valid Admin Add",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2752,
-        3216
+        2848,
+        2672
       ]
     },
     {
       "parameters": {
         "jsCode": "const allInputs = $input.all();\n// Ambil request body dari node CORS Admin Add (pakai $('CORS Admin Add'))\nconst reqNode = $('CORS Admin Add').first().json;\nconst body = reqNode.body || reqNode;\n\n// Baca admin_ids DARI SHEET (node Read Admin List (Add))\nlet ADMIN_IDS = [];\ntry {\n  const sheetRows = $('Read Admin List (Add)').all().map(i => i.json);\n  ADMIN_IDS = sheetRows\n    .map(r => parseInt(r.telegram_id || r.Telegram_ID || 0))\n    .filter(id => id > 0);\n} catch(_) {}\n\nconst requesterId = parseInt(body.ditambahkan_oleh || 0);\nif (!requesterId || !ADMIN_IDS.includes(requesterId)) {\n  return [{ json: { ok: false, message: 'Akses ditolak. Hanya admin yang bisa menambah admin.' } }];\n}\nconst tgId = parseInt(body.telegram_id || 0);\nif (!tgId || tgId < 1) {\n  return [{ json: { ok: false, message: 'Telegram ID tidak valid.' } }];\n}\nconst nama = String(body.nama || '').trim() || String(tgId);\nconst role = ['admin','superadmin'].includes(body.role) ? body.role : 'admin';\nreturn [{ json: { ok: true, telegram_id: tgId, nama, role, ditambahkan_oleh: requesterId } }];"
       },
-      "id": "710a2abb-f635-4af9-9b9f-99ad6b22bb98",
+      "id": "a1466e47-92d7-48ef-b108-03073131a9d0",
       "name": "Validasi Admin Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2528,
-        3216
+        2624,
+        2672
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "f7558f83-5526-47eb-b039-4baf469c8ba1",
+      "id": "5ceede12-3bd1-47a8-966a-d64951af2d7b",
       "name": "CORS Admin Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2080,
-        3216
+        2176,
+        2672
       ]
     },
     {
@@ -1253,13 +1253,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "7c20bb6d-25cc-4f4a-9883-73c69a6322d6",
+      "id": "40e6c0b5-7307-4687-ba3f-4380855854b0",
       "name": "Admin Add Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        1856,
-        3216
+        1952,
+        2672
       ],
       "webhookId": "63eb8a2f-5c7b-49a4-b426-1a79d37e70f5",
       "credentials": {
@@ -1295,10 +1295,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1216,
-        688
+        1312,
+        144
       ],
-      "id": "d6eeee1f-4cd1-4d9e-8519-82904afe6214",
+      "id": "b23de407-5aa9-402d-a2f0-e1db329e5840",
       "name": "Respond Lokasi-Update"
     },
     {
@@ -1308,10 +1308,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        688
+        864,
+        144
       ],
-      "id": "fcbe25b7-9ba9-4e29-b406-2eea0fd65113",
+      "id": "2c73f1d2-c169-476a-99dd-c9b183640bad",
       "name": "Update Hari Lokasi"
     },
     {
@@ -1327,10 +1327,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        544,
-        688
+        640,
+        144
       ],
-      "id": "2ac36bee-9132-4058-bb7b-271042b7dc71",
+      "id": "26d6a503-4bee-4eeb-9c15-2c799b5885c1",
       "name": "Lokasi-Update",
       "webhookId": "aef77773-aa01-423b-a296-ad514f5f54c1",
       "credentials": {
@@ -1366,10 +1366,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        992,
-        224
+        1088,
+        -320
       ],
-      "id": "502f9334-3a7c-41ba-89ea-65e574545404",
+      "id": "8d79f9d1-d1ff-474d-a18e-35c0467d69dc",
       "name": "Respond Lokasi-Delete"
     },
     {
@@ -1385,10 +1385,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        544,
-        224
+        640,
+        -320
       ],
-      "id": "44967b84-06e8-440b-83e9-ddb93866bd8b",
+      "id": "0ff9f63c-cade-48d3-9002-9a4e0f207fcb",
       "name": "Lokasi-Delete",
       "webhookId": "41a44297-191c-4839-a98b-e1fbc719bf4c",
       "credentials": {
@@ -1405,10 +1405,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        448
+        864,
+        -96
       ],
-      "id": "125f67a5-ded8-404c-9359-1c4106b2e4c2",
+      "id": "d112188b-85cf-4303-adda-91ac09ed2c85",
       "name": "Validasi Lokasi-Add"
     },
     {
@@ -1437,10 +1437,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1216,
-        448
+        1312,
+        -96
       ],
-      "id": "a86c487c-71fb-4763-bf6d-bbf907060464",
+      "id": "9a7dd178-3409-4d4e-8659-c5d186614bb6",
       "name": "Respon Lokasi-Add"
     },
     {
@@ -1456,10 +1456,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        544,
-        448
+        640,
+        -96
       ],
-      "id": "349a06d9-5f9e-4690-be0f-109e77477582",
+      "id": "7ce44d0c-e56f-4e96-bae2-e62f90316473",
       "name": "Lokasi-Add",
       "webhookId": "1793dd42-6844-46d1-bbb6-95d868463fa3",
       "credentials": {
@@ -1495,10 +1495,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1072,
-        1152
+        1168,
+        608
       ],
-      "id": "20eae008-319d-4d4a-8195-716c72d2f791",
+      "id": "2cbbc6cb-67bb-4a8a-a6b2-bca83270eeae",
       "name": "Respon Lokasi-List"
     },
     {
@@ -1508,10 +1508,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        848,
-        1152
+        944,
+        608
       ],
-      "id": "2cd2de7c-1b62-41df-939a-b08636c0c8e5",
+      "id": "67bb191b-48d5-43da-8f29-93e06c94abea",
       "name": "Format Lokasi-List"
     },
     {
@@ -1526,10 +1526,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        496,
-        1168
+        592,
+        624
       ],
-      "id": "915b3187-cef9-4c3e-a7df-66b9e40791dd",
+      "id": "69653356-6d2d-4617-b4a8-49f0e7ceb19d",
       "name": "Lokasi-List",
       "webhookId": "e9880d70-8142-42e5-b9a3-c4335a69ff5d",
       "credentials": {
@@ -1567,10 +1567,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        608,
-        1824
+        704,
+        1280
       ],
-      "id": "b24bbf9a-35d2-412a-8b73-1d89fb59c801",
+      "id": "aa78968c-2aef-4c6b-af1b-85f9d3758bad",
       "name": "Is Valid?5"
     },
     {
@@ -1599,10 +1599,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1056,
-        1728
+        1152,
+        1184
       ],
-      "id": "e0ea0eee-8544-4803-9c49-db597d434a20",
+      "id": "537a7911-76a3-412c-83a1-a63e26ab8cb5",
       "name": "Respond OK Del"
     },
     {
@@ -1614,10 +1614,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        832,
-        1728
+        928,
+        1184
       ],
-      "id": "c3c6be86-e605-4ea8-be1e-4357e5f838f1",
+      "id": "79471e2d-cd89-4bc0-bfd6-124c29555ec7",
       "name": "Delete Libur Row",
       "credentials": {
         "postgres": {
@@ -1652,10 +1652,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        832,
-        1920
+        928,
+        1376
       ],
-      "id": "993c507f-3151-4cd7-9784-43801edb2939",
+      "id": "1333eb4c-11b2-4049-afbb-2bf72cd5333e",
       "name": "Respond Fail Del"
     },
     {
@@ -1665,10 +1665,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        384,
-        1824
+        480,
+        1280
       ],
-      "id": "acad0479-4ec3-4a6a-9e6c-bf93128c6c22",
+      "id": "7f380787-f99f-45bf-bc1c-090dbb33a0ff",
       "name": "Validasi Libur Del"
     },
     {
@@ -1678,10 +1678,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        1824
+        256,
+        1280
       ],
-      "id": "f4e6a3b8-ba31-4eba-9f0e-379788135d7b",
+      "id": "3d21bb96-3100-49d0-8abf-18be26e80b87",
       "name": "CORS Libur Delete"
     },
     {
@@ -1697,10 +1697,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -64,
-        1824
+        32,
+        1280
       ],
-      "id": "62f5ff95-dea7-4934-9894-ee9b8c998a88",
+      "id": "a59fb4c9-9081-4014-8a07-44a66036e58a",
       "name": "Libur Delete Webhook",
       "webhookId": "libur-del-0001",
       "credentials": {
@@ -1726,13 +1726,13 @@
           }
         }
       },
-      "id": "35eb3e19-20da-44a6-afff-a2bfd47c4f71",
+      "id": "6e041578-d8ef-4e77-84af-934016d4a2d0",
       "name": "Respond Fail Periode Del",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2752,
-        2576
+        2848,
+        2032
       ]
     },
     {
@@ -1758,13 +1758,13 @@
           }
         }
       },
-      "id": "09a4ef8a-5416-4bfe-bfd8-686efdaab9f0",
+      "id": "ca7983ad-37db-47b0-aaae-b974779245ab",
       "name": "Respond OK Periode Del",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3200,
-        2384
+        3296,
+        1840
       ]
     },
     {
@@ -1773,13 +1773,13 @@
         "query": "DELETE FROM \"jam_periode\" RETURNING *",
         "options": {}
       },
-      "id": "9deb90b2-9a1b-409f-a8ab-9293b072e459",
+      "id": "6abf0d78-7a1c-42fe-8aef-2694c2d86bb3",
       "name": "Hapus Baris Periode",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2976,
-        2384
+        3072,
+        1840
       ],
       "credentials": {
         "postgres": {
@@ -1794,13 +1794,13 @@
         "query": "SELECT * FROM \"jam_periode\"",
         "options": {}
       },
-      "id": "31c005be-4615-4067-a34b-106ea3c81dd6",
+      "id": "adcc9bf7-1eda-4ed4-af6b-1b16a41a2f00",
       "name": "Cari Baris Periode",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2752,
-        2384
+        2848,
+        1840
       ],
       "credentials": {
         "postgres": {
@@ -1834,39 +1834,39 @@
         },
         "options": {}
       },
-      "id": "9c53d5ce-c46a-4bbb-ae90-44baac2da40e",
+      "id": "a2964afd-db2d-4f8a-acea-c76e73fcd468",
       "name": "Is Valid Del Periode?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2528,
-        2480
+        2624,
+        1936
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $input.first().json.body || {};\nconst id   = String(body.id || '').trim();\nif (!id) return [{ json: { ok: false, message: 'ID periode wajib diisi.' } }];\nreturn [{ json: { ok: true, id } }];"
       },
-      "id": "de1890a6-4528-413b-8b12-2513a74b7482",
+      "id": "322056d7-f4f2-498f-864e-f6152c942474",
       "name": "Validasi Periode Del",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2304,
-        2480
+        2400,
+        1936
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "4bc7cdd6-a1e2-4b76-b58d-00b869fbf3a5",
+      "id": "d0dd8f43-672a-4aef-9e3a-ed52547c6a5e",
       "name": "CORS Periode Delete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2080,
-        2480
+        2176,
+        1936
       ]
     },
     {
@@ -1877,13 +1877,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "0da2ff73-0b18-4b54-9246-0b83b37b533e",
+      "id": "9ed67d86-ec46-42ed-b0ca-b7e6d319be2f",
       "name": "Periode Delete Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        1888,
-        2480
+        1984,
+        1936
       ],
       "webhookId": "jam-periode-delete",
       "credentials": {
@@ -1917,13 +1917,13 @@
           }
         }
       },
-      "id": "6cae07b0-9137-49f8-b5fd-fb24d9978352",
+      "id": "efc8279b-db5a-449a-be17-0ffcdddb6d0e",
       "name": "Respond Fail Periode Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2752,
-        2176
+        2848,
+        1632
       ]
     },
     {
@@ -1949,13 +1949,13 @@
           }
         }
       },
-      "id": "9ec4dfd3-b171-4424-91b7-625c7e95f1d8",
+      "id": "b3f99862-b503-443d-844c-cad5cddfc321",
       "name": "Respond OK Periode Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        2976,
-        1984
+        3072,
+        1440
       ]
     },
     {
@@ -2071,13 +2071,13 @@
         },
         "options": {}
       },
-      "id": "8d835908-e4f5-4d69-b4e5-a361c96528fd",
+      "id": "149097fb-a16c-4460-97a6-6f199428b109",
       "name": "Append Periode ke Sheet",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2752,
-        1984
+        2848,
+        1440
       ],
       "credentials": {
         "postgres": {
@@ -2111,39 +2111,39 @@
         },
         "options": {}
       },
-      "id": "57610469-084f-4835-ba50-44f84d44e20b",
+      "id": "0e7bce3d-ee74-4986-8896-f803533f1f22",
       "name": "Is Valid Periode?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        2528,
-        2080
+        2624,
+        1536
       ]
     },
     {
       "parameters": {
         "jsCode": "const body    = $input.first().json.body || {};\nconst nama    = String(body.nama   || '').trim();\nconst dari    = String(body.dari   || '').trim();\nconst sampai  = String(body.sampai || dari).trim();\nconst masuk   = String(body.masuk  || '').trim();\nconst pulang  = String(body.pulang || '').trim();\nconst reDate  = /^\\d{4}-\\d{2}-\\d{2}$/;\nconst reTime  = /^([01]\\d|2[0-3]):[0-5]\\d$/;\nif (!nama)              return [{ json: { ok: false, message: 'Nama periode wajib diisi.' } }];\nif (!reDate.test(dari)) return [{ json: { ok: false, message: 'Format tanggal mulai tidak valid (YYYY-MM-DD).' } }];\nif (!reDate.test(sampai)) return [{ json: { ok: false, message: 'Format tanggal selesai tidak valid (YYYY-MM-DD).' } }];\nif (sampai < dari)      return [{ json: { ok: false, message: 'Tanggal selesai tidak boleh sebelum tanggal mulai.' } }];\nif (!reTime.test(masuk))  return [{ json: { ok: false, message: 'Format jam masuk tidak valid (HH:MM).' } }];\nif (!reTime.test(pulang)) return [{ json: { ok: false, message: 'Format jam pulang tidak valid (HH:MM).' } }];\nconst [hM, mM] = masuk.split(':').map(Number);\nconst [hP, mP] = pulang.split(':').map(Number);\nif (hM * 60 + mM >= hP * 60 + mP) return [{ json: { ok: false, message: 'Jam masuk harus lebih kecil dari jam pulang.' } }];\n// Generate UUID v4 sederhana\nconst uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n  const r = Math.random() * 16 | 0;\n  return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);\n});\nreturn [{ json: {\n  ok: true, id: uid, nama, dari, sampai, masuk, pulang,\n  ditambahkan_oleh: body.ditambahkan_oleh || null,\n  timestamp: body.timestamp || Math.floor(Date.now() / 1000)\n}}];"
       },
-      "id": "12eb5bd7-5d34-451d-ab43-488e65b79b4c",
+      "id": "142a0b38-f737-4c61-8226-d0219a64b91b",
       "name": "Validasi Periode Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2304,
-        2080
+        2400,
+        1536
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "e4ede279-c972-485f-83c3-b5dba9f9d759",
+      "id": "4514f367-7226-4fec-8541-43e03951d240",
       "name": "CORS Periode Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2080,
-        2080
+        2176,
+        1536
       ]
     },
     {
@@ -2154,13 +2154,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "1d1f1bd9-b0c3-40da-88c1-bf9547e3cd3b",
+      "id": "ca011905-528b-4f5a-8312-9bacfdea6724",
       "name": "Periode Add Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        1856,
-        2080
+        1952,
+        1536
       ],
       "webhookId": "jam-periode-add",
       "credentials": {
@@ -2193,39 +2193,39 @@
           }
         }
       },
-      "id": "559b4d08-bc46-45f8-8fe1-e2e377f8a96b",
+      "id": "157486ab-009b-4498-a6d1-7a15e6f34e6d",
       "name": "Respond Periode List",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        832,
-        1504
+        928,
+        960
       ]
     },
     {
       "parameters": {
         "jsCode": "const rows = $input.all()\n  .map(i => { const { row_number, ...rest } = i.json; return { ...rest, row_number }; })\n  .filter(r => String(r.id || '').trim() && String(r.dari || '').trim());\nreturn [{ json: { ok: true, data: rows, count: rows.length } }];"
       },
-      "id": "bfd50e3f-15ea-49de-88af-1634112fb98e",
+      "id": "0d2b4fff-7f29-498c-b317-1dc63c3a7ec2",
       "name": "Format Periode List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        1504
+        704,
+        960
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({ statusCode: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept' }, body: '' });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "9ce39a07-97ec-4577-b813-8edc7ffb1925",
+      "id": "e1e46ec6-5d37-43a8-a471-8cebafd01279",
       "name": "CORS Periode List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        1504
+        256,
+        960
       ]
     },
     {
@@ -2235,13 +2235,13 @@
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "b904d97d-311f-4e75-b583-c027768e7c44",
+      "id": "28914a58-c4a6-48d7-b1b5-5c8b2114a8ad",
       "name": "Periode List Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -64,
-        1504
+        32,
+        960
       ],
       "webhookId": "jam-periode-list",
       "credentials": {
@@ -2279,10 +2279,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        608,
-        2240
+        704,
+        1696
       ],
-      "id": "a4028ca3-0460-4fc6-b7f3-3f32c44c0786",
+      "id": "e84fc031-7abf-4b5d-b5f8-7dad346597d5",
       "name": "Is Valid?4"
     },
     {
@@ -2311,10 +2311,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1056,
-        2144
+        1152,
+        1600
       ],
-      "id": "8c10444a-b344-4754-bf14-78d2987b2cf9",
+      "id": "28a88637-b2d9-4de6-b28f-766bc789913a",
       "name": "Respond OK Add"
     },
     {
@@ -2384,10 +2384,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        832,
-        2144
+        928,
+        1600
       ],
-      "id": "24c1b0ae-17b5-457e-9811-7657c2aa3f0b",
+      "id": "e9856b18-ad91-41dd-a726-ff4325dc4f83",
       "name": "Append Libur",
       "credentials": {
         "postgres": {
@@ -2422,10 +2422,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        832,
-        2336
+        928,
+        1792
       ],
-      "id": "d9ce3bb4-9773-4dd7-aaba-69ba6dbbeb0d",
+      "id": "49b21091-0a56-4972-a183-40b2b9a147b4",
       "name": "Respond Fail Add"
     },
     {
@@ -2435,10 +2435,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        384,
-        2240
+        480,
+        1696
       ],
-      "id": "9a6fce3e-d38a-4680-88a5-76d334133158",
+      "id": "186f5863-dae1-46ca-9e2b-9488b88ae75e",
       "name": "Validasi Libur Add"
     },
     {
@@ -2448,10 +2448,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        2240
+        256,
+        1696
       ],
-      "id": "66d26be3-688d-4072-87f1-417fcc792cc3",
+      "id": "51532f91-838a-4aab-ae42-6d2da34e013d",
       "name": "CORS Libur Add"
     },
     {
@@ -2467,10 +2467,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -64,
-        2240
+        32,
+        1696
       ],
-      "id": "91463ae6-3573-43ba-91b2-63e9bfe040d7",
+      "id": "bedea031-ce07-4f8b-9bb4-9571e4ae6410",
       "name": "Libur Add Webhook",
       "webhookId": "libur-add-0001",
       "credentials": {
@@ -2506,10 +2506,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        832,
-        2560
+        928,
+        2016
       ],
-      "id": "01a9115e-bdd3-48eb-b11a-6f77686f1213",
+      "id": "d9bd264f-d420-49b7-87d7-595c60816601",
       "name": "Respond Libur List"
     },
     {
@@ -2519,10 +2519,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        2560
+        704,
+        2016
       ],
-      "id": "1419fe61-d514-4a55-af04-cd37eba952e7",
+      "id": "8562aa3d-a0ac-4602-90f8-0b6af7c5bf94",
       "name": "Format Libur"
     },
     {
@@ -2534,10 +2534,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        384,
-        2560
+        480,
+        2016
       ],
-      "id": "d3de673d-308b-42bc-88a3-40ae80787e3d",
+      "id": "f6566bb7-8e66-4e99-ab6f-6b7bf12c9dce",
       "name": "Get All Libur",
       "alwaysOutputData": true,
       "credentials": {
@@ -2554,10 +2554,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        2560
+        256,
+        2016
       ],
-      "id": "67bfa6df-cddf-4a6e-ad02-2c7d7a084b3f",
+      "id": "45b16fc0-425d-4b62-9734-4a983cab589a",
       "name": "CORS Libur List"
     },
     {
@@ -2572,10 +2572,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -64,
-        2560
+        32,
+        2016
       ],
-      "id": "f6a8ef4d-0b0e-45be-a3d5-99ed7447d7d9",
+      "id": "35efcbe0-5927-467c-aac9-7a974c65cb55",
       "name": "Libur List Webhook",
       "webhookId": "libur-list-0001",
       "credentials": {
@@ -2592,10 +2592,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2416,
-        -96
+        -656,
+        -464
       ],
-      "id": "8c90dff1-04e1-41a0-9f99-b67dfc26baa5",
+      "id": "65da6eb9-57d5-4980-9ccd-57b823248581",
       "name": "Format"
     },
     {
@@ -2605,10 +2605,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2864,
-        -96
+        -1104,
+        -464
       ],
-      "id": "836f8f4d-ce4b-45d9-9417-edae663652b8",
+      "id": "ff197f5e-f80c-48d8-92e5-470195c77f4a",
       "name": "CORS Riwayat"
     },
     {
@@ -2621,10 +2621,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -3088,
-        -96
+        -1328,
+        -464
       ],
-      "id": "3c9bbb3e-7a45-4080-af86-d58e71c773b5",
+      "id": "6fb03bbf-e6dd-43b4-98cf-6d9edd45177d",
       "name": "Riwayat",
       "webhookId": "43a8f232-cf00-418d-92db-4966b57e2dbf",
       "credentials": {
@@ -2660,10 +2660,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -2192,
-        -96
+        -432,
+        -464
       ],
-      "id": "39ce8c72-3a70-4a87-9cf9-7bf657b3a560",
+      "id": "81f5cfb7-c452-417a-9dc4-bf3a04c11593",
       "name": "Respon Webhook Riwayat"
     },
     {
@@ -2673,10 +2673,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2864,
-        128
+        -1104,
+        -240
       ],
-      "id": "fabb13a1-5550-46b0-8ead-54ed929d30d1",
+      "id": "ff70c106-c953-411e-a82e-95cdd09e9b01",
       "name": "CORS Rekap"
     },
     {
@@ -2717,10 +2717,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -2192,
-        352
+        -432,
+        -16
       ],
-      "id": "09756386-7404-4ded-9ecb-b7c483dbc898",
+      "id": "050637df-08b6-4e29-af76-d86aefcf5280",
       "name": "Respon Rekap"
     },
     {
@@ -2735,10 +2735,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -3088,
-        128
+        -1328,
+        -240
       ],
-      "id": "0c16da6c-55de-4bbc-95cc-0a49016999e3",
+      "id": "c01722a8-c083-4c2e-a5ea-249bfcf8eb01",
       "name": "Rekap",
       "webhookId": "d8524e56-048d-4d1e-bf33-7822b51423ad",
       "credentials": {
@@ -2750,15 +2750,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const queryArr = $('Rekap').all();\nconst query = (queryArr.length > 0) ? (queryArr[0].json.query || {}) : {};\nconst dari   = query.dari   || null;\nconst sampai = query.sampai || null;\n\n// Parse libur & jam periode from query\nlet hariLiburSet = new Set();\ntry {\n  if (query.libur) {\n    const arr = JSON.parse(decodeURIComponent(query.libur));\n    if (Array.isArray(arr)) arr.forEach(d => hariLiburSet.add(d));\n  }\n} catch(e){}\n\nlet jamPeriodeList = [];\ntry {\n  if (query.jam_periode) {\n    jamPeriodeList = JSON.parse(decodeURIComponent(query.jam_periode));\n  }\n} catch(e){}\n\nfunction toMenit(str) {\n  if (!str) return null;\n  const parts = String(str).split(':').map(Number);\n  return (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) ? null : parts[0] * 60 + parts[1];\n}\n\nconst JAM_MASUK_STANDAR  = toMenit(query.jam_masuk) || (7 * 60 + 15); \nconst JAM_PULANG_STANDAR = toMenit(query.jam_pulang) || (14 * 60 + 30); \n\nfunction getJamForTanggal(tglStr) {\n  const tMs = new Date(tglStr + 'T00:00:00').getTime();\n  if (isNaN(tMs)) return { masuk: JAM_MASUK_STANDAR, pulang: JAM_PULANG_STANDAR };\n\n  const periode = jamPeriodeList.find(p => {\n    const dariMs = new Date(p.dari + 'T00:00:00').getTime();\n    const sampaiMs = new Date(p.sampai + 'T00:00:00').getTime();\n    return tMs >= dariMs && tMs <= sampaiMs;\n  });\n\n  if (periode && periode.masuk && periode.pulang) {\n    return { masuk: toMenit(periode.masuk), pulang: toMenit(periode.pulang) };\n  }\n  return { masuk: JAM_MASUK_STANDAR, pulang: JAM_PULANG_STANDAR };\n}\n\n// 1. Ambil daftar USER_LIST\nconst userList = $input.all().map((i, idx) => {\n  const j = i.json;\n  return {\n    id: String(j.id || j.ID || j.telegram_id || '').trim(),\n    nama: j.nama || j.Nama || j.username || 'Pegawai',\n    nip: String(j.nip || j.NIP || '—'),\n    jabatan: j.jabatan || j.Jabatan || '',\n    pangkat: j.pangkat || j.Pangkat || '',\n    jam_masuk: j.jam_masuk || j.Jam_Masuk || null,\n    jam_pulang: j.jam_pulang || j.Jam_Pulang || null,\n    bidang: String(j.bidang || j.Bidang || '—'),\n    nomorhp: j.nomorhp || j.no_hp || '',\n    urutan: Number(j.no || j.No || idx)\n  };\n}).filter(u => u.id);\n\n// 2. Ambil Global Statistik\nconst gStatsMap = {};\ntry {\n  const gRows = $('Get Statistik Pegawai').all();\n  gRows.forEach(r => {\n    const rawNip = String(r.json.nip || r.json.NIP || r.json.Nip || '').trim();\n    const cleanNip = rawNip.replace(/\\D/g, '');\n    if (cleanNip) gStatsMap[cleanNip] = r.json;\n    const tid = String(r.json.pegawai_id || r.json.Step_Id || r.json.ID || r.json.id || '').trim();\n    if (tid) gStatsMap[tid] = r.json;\n  });\n} catch(e) { console.warn('Gagal memuat statistik_pegawai', e); }\n\nconst map = {};\nuserList.forEach(u => {\n  map[u.id] = {\n    ...u, masuk: 0, pulang: 0, di_luar_masuk_periode: 0, di_luar_pulang_periode: 0,\n    izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0, alpa: 0,\n    menit_terlambat_periode: 0, menit_lebih_awal_periode: 0,\n    hadir_dates: new Set(), excused_dates: new Set(), jamHadirMenit: 0,\n    jamMasuk: '-', jamPulang: '-',\n    _rawMasukLog: null, _rawPulangLog: null, _rawKetLog: null,\n    logByDate: {}\n  };\n});\n\nlet rangeDates = [];\nlet hariKerjaAktif = 0;\nif (dari && sampai) {\n  let dCur = new Date(dari + 'T00:00:00');\n  let dEnd = new Date(sampai + 'T00:00:00');\n  while (dCur <= dEnd) {\n    const t = dCur.getFullYear() + '-' + String(dCur.getMonth() + 1).padStart(2, '0') + '-' + String(dCur.getDate()).padStart(2, '0');\n    const dy = dCur.getDay();\n    if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) {\n      rangeDates.push(t);\n      hariKerjaAktif++;\n    }\n    dCur.setDate(dCur.getDate() + 1);\n  }\n}\nif (hariKerjaAktif === 0) hariKerjaAktif = 1;\n\n// 3. Ambil data LOG\nconst allLogs = $('Get All Log').all();\nfor (const r of allLogs) {\n  const d = r.json;\n  const tid = String(d.ID || d.id || d.telegram_id || '').trim();\n  if (!tid || !map[tid]) continue;\n  \n  const p = map[tid];\n  let jenis = String(d['Jenis Absen'] || d.jenis_absen || d.jenis || '').toUpperCase().trim();\n  const tglStr = d.tanggal || d.Tanggal || '';\n  const tgl = tglStr.substring(0, 10);\n  const jamStr = String(d.jam || d.Jam || '').substring(0, 5);\n  const jamMenit = toMenit(jamStr);\n  \n  if (!tgl || jamMenit === null) continue;\n  if (!p.logByDate[tgl]) p.logByDate[tgl] = {};\n\n  const pkId = d.ID_Log || d.id_log || d.ID_log || d.Id_Log || null;\n  const rawRecord = { ...d, ID_Log: pkId };\n  \n  const batas = getJamForTanggal(tgl);\n\n  if (jenis === 'MASUK' || jenis === 'DI LUAR JAM MASUK') {\n    jenis = (jamMenit > batas.masuk) ? 'DI LUAR JAM MASUK' : 'MASUK';\n    p._rawMasukLog = rawRecord;\n    p.jamMasuk = jamStr;\n    p.logByDate[tgl].masuk = jamMenit;\n    \n    if (jenis === 'DI LUAR JAM MASUK') {\n      p.di_luar_masuk_periode++;\n      p.menit_terlambat_periode += (jamMenit - batas.masuk);\n    } else {\n      p.masuk++;\n    }\n    p.hadir_dates.add(tgl);\n  } \n  else if (jenis === 'PULANG' || jenis === 'DI LUAR JAM PULANG' || jenis === 'PULANG LUAR') {\n    if (jenis !== 'PULANG LUAR') {\n      jenis = (jamMenit < batas.pulang) ? 'DI LUAR JAM PULANG' : 'PULANG';\n    }\n    \n    p._rawPulangLog = rawRecord;\n    p.jamPulang = jamStr;\n    p.logByDate[tgl].pulang = jamMenit;\n    \n    if (jenis === 'DI LUAR JAM PULANG') {\n      p.di_luar_pulang_periode++;\n      p.menit_lebih_awal_periode += (batas.pulang - jamMenit);\n    } else {\n      p.pulang++;\n    }\n  }\n  else if (['IZIN', 'SAKIT', 'TUGAS', 'DL', 'TUBEL', 'CUTI', 'TB', 'TANPA BERITA', 'ALPA'].includes(jenis)) {\n    p._rawKetLog = rawRecord;\n    if (jenis === 'IZIN') p.izin++; \n    else if (jenis === 'SAKIT') p.sakit++; \n    else if (jenis === 'TUBEL') p.tubel++;\n    else if (jenis === 'CUTI') p.cuti++;\n    else if (['TB', 'TANPA BERITA', 'ALPA'].includes(jenis)) p.alpa++;\n    else p.tugas++;\n    if (!['TB', 'TANPA BERITA', 'ALPA', 'IZIN'].includes(jenis)) p.excused_dates.add(tgl);\n  }\n}\n\n// 4. Hitung kompilasi final\nconst finalPegawai = userList.map(u => {\n  const p = map[u.id];\n  \n  let jamHadirMenit = 0;\n  for (const t of rangeDates) {\n    if (p.logByDate[t] && p.logByDate[t].masuk !== undefined && p.logByDate[t].pulang !== undefined) {\n      const durasi = p.logByDate[t].pulang - p.logByDate[t].masuk;\n      if (durasi > 0) jamHadirMenit += durasi;\n    }\n  }\n  const jamHadir = jamHadirMenit / 60;\n  \n  let alpaPeriod = p.alpa;\n  \n  const totalMasukEntries = p.masuk + p.di_luar_masuk_periode;\n  let disiplinPct = 100;\n  if (totalMasukEntries > 0) {\n    disiplinPct = Math.max(0, Math.round(((totalMasukEntries - p.di_luar_masuk_periode) / totalMasukEntries) * 100));\n  } else if (p.hadir_dates.size > 0) { \n    disiplinPct = 100;\n  }\n  \n  let kehadiranSahPeriod = 0;\n  for (const t of rangeDates) {\n    if (p.hadir_dates.has(t) || p.excused_dates.has(t)) {\n      kehadiranSahPeriod++;\n    }\n  }\n  let kehadiranPct = Math.round((kehadiranSahPeriod / hariKerjaAktif) * 100);\n  if (kehadiranPct > 100) kehadiranPct = 100; \n\n  const cleanUserNip = String(u.nip || '').replace(/\\D/g, '');\n  const gs = gStatsMap[cleanUserNip] || gStatsMap[u.id] || {};\n  const mTerlambatGlobal = parseInt(gs.akum_menit_terlambat || 0);\n  const mCepatGlobal     = parseInt(gs.akum_menit_lebih_awal || 0);\n\n  return {\n    ...p,\n    alpa: alpaPeriod,\n    lambat_count: p.di_luar_masuk_periode, \n    pulang_cepat_count: p.di_luar_pulang_periode,\n    di_luar_masuk: mTerlambatGlobal, \n    di_luar_pulang: mCepatGlobal,\n    menit_terlambat: mTerlambatGlobal, \n    menit_lebih_awal: mCepatGlobal,\n    menit_terlambat_periode: p.menit_terlambat_periode,\n    menit_lebih_awal_periode: p.menit_lebih_awal_periode,\n    ID_Log: p._rawMasukLog?.ID_Log || p._rawPulangLog?.ID_Log || p._rawKetLog?.ID_Log,\n    jamHadir: jamHadir.toFixed(1),\n    disiplinPct: disiplinPct,\n    kehadiranPct: kehadiranPct,\n    totalAkkHHMM: Math.floor((p.menit_terlambat_periode + p.menit_lebih_awal_periode)/60) + ':' + String((p.menit_terlambat_periode + p.menit_lebih_awal_periode)%60).padStart(2, '0'),\n    hadir_dates: Array.from(p.hadir_dates),\n    excused_dates: Array.from(p.excused_dates)\n  };\n});\n\nconst sum = k => finalPegawai.reduce((s, p) => s + (p[k] || 0), 0);\n\nreturn [{ json: {\n  ringkasan: {\n    masuk: sum('masuk'), pulang: sum('pulang'), luar: sum('lambat_count') + sum('pulang_cepat_count'),\n    izin: sum('izin'), sakit: sum('sakit'), tugas: sum('tugas'), tubel: sum('tubel'), cuti: sum('cuti'), alpa: sum('alpa')\n  },\n  pegawai: finalPegawai\n}}];"
+        "jsCode": "const queryArr = $('Rekap').all();\nconst query = (queryArr.length > 0) ? (queryArr[0].json.query || {}) : {};\nconst dari   = query.dari   || null;\nconst sampai = query.sampai || null;\n\n// Parse libur & jam periode from query\nlet hariLiburSet = new Set();\ntry {\n  if (query.libur) {\n    const arr = JSON.parse(decodeURIComponent(query.libur));\n    if (Array.isArray(arr)) arr.forEach(d => hariLiburSet.add(d));\n  }\n} catch(e){}\n\nlet jamPeriodeList = [];\ntry {\n  if (query.jam_periode) {\n    jamPeriodeList = JSON.parse(decodeURIComponent(query.jam_periode));\n  }\n} catch(e){}\n\nfunction toMenit(str) {\n  if (!str) return null;\n  const parts = String(str).split(':').map(Number);\n  return (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) ? null : parts[0] * 60 + parts[1];\n}\n\nconst JAM_MASUK_STANDAR  = toMenit(query.jam_masuk) || (7 * 60 + 15); \nconst JAM_PULANG_STANDAR = toMenit(query.jam_pulang) || (14 * 60 + 30); \n\nfunction getJamForTanggal(tglStr) {\n  const tMs = new Date(tglStr + 'T00:00:00').getTime();\n  if (isNaN(tMs)) return { masuk: JAM_MASUK_STANDAR, pulang: JAM_PULANG_STANDAR };\n\n  const periode = jamPeriodeList.find(p => {\n    const dariMs = new Date(p.dari + 'T00:00:00').getTime();\n    const sampaiMs = new Date(p.sampai + 'T00:00:00').getTime();\n    return tMs >= dariMs && tMs <= sampaiMs;\n  });\n\n  if (periode && periode.masuk && periode.pulang) {\n    return { masuk: toMenit(periode.masuk), pulang: toMenit(periode.pulang) };\n  }\n  return { masuk: JAM_MASUK_STANDAR, pulang: JAM_PULANG_STANDAR };\n}\n\n// 1. Ambil daftar USER_LIST\nconst userList = $input.all().map((i, idx) => {\n  const j = i.json;\n  return {\n    id: String(j.id || j.ID || j.telegram_id || '').trim(),\n    nama: j.nama || j.Nama || j.username || 'Pegawai',\n    nip: String(j.nip || j.NIP || '—'),\n    jabatan: j.jabatan || j.Jabatan || '',\n    pangkat: j.pangkat || j.Pangkat || '',\n    jam_masuk: j.jam_masuk || j.Jam_Masuk || null,\n    jam_pulang: j.jam_pulang || j.Jam_Pulang || null,\n    bidang: String(j.bidang || j.Bidang || '—'),\n    nomorhp: j.nomorhp || j.no_hp || '',\n    urutan: Number(j.no || j.No || idx)\n  };\n}).filter(u => u.id);\n\n// 2. Ambil Global Statistik\nconst gStatsMap = {};\ntry {\n  const gRows = $('Get Statistik Pegawai').all();\n  gRows.forEach(r => {\n    const rawNip = String(r.json.nip || r.json.NIP || r.json.Nip || '').trim();\n    const cleanNip = rawNip.replace(/\\D/g, '');\n    if (cleanNip) gStatsMap[cleanNip] = r.json;\n    const tid = String(r.json.pegawai_id || r.json.Step_Id || r.json.ID || r.json.id || '').trim();\n    if (tid) gStatsMap[tid] = r.json;\n  });\n} catch(e) { console.warn('Gagal memuat statistik_pegawai', e); }\n\nconst map = {};\nuserList.forEach(u => {\n  map[u.id] = {\n    ...u, masuk: 0, pulang: 0, di_luar_masuk_periode: 0, di_luar_pulang_periode: 0,\n    izin: 0, sakit: 0, tugas: 0, tubel: 0, cuti: 0, alpa: 0,\n    menit_terlambat_periode: 0, menit_lebih_awal_periode: 0,\n    hadir_dates: new Set(), excused_dates: new Set(), jamHadirMenit: 0,\n    jamMasuk: '-', jamPulang: '-',\n    _rawMasukLog: null, _rawPulangLog: null, _rawKetLog: null,\n    logByDate: {}\n  };\n});\n\nlet rangeDates = [];\nlet hariKerjaAktif = 0;\nif (dari && sampai) {\n  let dCur = new Date(dari + 'T00:00:00');\n  let dEnd = new Date(sampai + 'T00:00:00');\n  while (dCur <= dEnd) {\n    const t = dCur.getFullYear() + '-' + String(dCur.getMonth() + 1).padStart(2, '0') + '-' + String(dCur.getDate()).padStart(2, '0');\n    const dy = dCur.getDay();\n    if (dy !== 0 && dy !== 6 && !hariLiburSet.has(t)) {\n      rangeDates.push(t);\n      hariKerjaAktif++;\n    }\n    dCur.setDate(dCur.getDate() + 1);\n  }\n}\nif (hariKerjaAktif === 0) hariKerjaAktif = 1;\n\n// 3. Ambil data LOG\nconst allLogs = $('Get All Log').all();\nfor (const r of allLogs) {\n  const d = r.json;\n  const tid = String(d.ID || d.id || d.telegram_id || '').trim();\n  if (!tid || !map[tid]) continue;\n  \n  const p = map[tid];\n  let jenis = String(d['Jenis Absen'] || d.jenis_absen || d.jenis || '').toUpperCase().trim();\n  const tglStr = d.tanggal || d.Tanggal || '';\n  const tgl = tglStr.substring(0, 10);\n  const jamStr = String(d.jam || d.Jam || '').substring(0, 5);\n  const jamMenit = toMenit(jamStr);\n  \n  if (!tgl || jamMenit === null) continue;\n  if (!p.logByDate[tgl]) p.logByDate[tgl] = {};\n\n  const pkId = d.ID_Log || d.id_log || d.ID_log || d.Id_Log || null;\n  const rawRecord = { ...d, ID_Log: pkId };\n  \n  const batas = getJamForTanggal(tgl);\n\n  if (jenis === 'MASUK' || jenis === 'DI LUAR JAM MASUK') {\n    jenis = (jamMenit > batas.masuk) ? 'DI LUAR JAM MASUK' : 'MASUK';\n    p._rawMasukLog = rawRecord;\n    p.jamMasuk = jamStr;\n    p.logByDate[tgl].masuk = jamMenit;\n    \n    if (jenis === 'DI LUAR JAM MASUK') {\n      p.di_luar_masuk_periode++;\n      p.menit_terlambat_periode += (jamMenit - batas.masuk);\n    } else {\n      p.masuk++;\n    }\n    p.hadir_dates.add(tgl);\n  } \n  else if (jenis === 'PULANG' || jenis === 'DI LUAR JAM PULANG' || jenis === 'PULANG LUAR') {\n    if (jenis !== 'PULANG LUAR') {\n      jenis = (jamMenit < batas.pulang) ? 'DI LUAR JAM PULANG' : 'PULANG';\n    }\n    \n    p._rawPulangLog = rawRecord;\n    p.jamPulang = jamStr;\n    p.logByDate[tgl].pulang = jamMenit;\n    \n    if (jenis === 'DI LUAR JAM PULANG') {\n      p.di_luar_pulang_periode++;\n      p.menit_lebih_awal_periode += (batas.pulang - jamMenit);\n    } else {\n      p.pulang++;\n    }\n  }\n  else if (['IZIN', 'SAKIT', 'TUGAS', 'DL', 'TUBEL', 'CUTI', 'TB', 'TANPA BERITA', 'ALPA'].includes(jenis)) {\n    p._rawKetLog = rawRecord;\n    if (jenis === 'IZIN') p.izin++; \n    else if (jenis === 'SAKIT') p.sakit++; \n    else if (jenis === 'TUBEL') p.tubel++;\n    else if (jenis === 'CUTI') p.cuti++;\n    else if (['TB', 'TANPA BERITA', 'ALPA'].includes(jenis)) p.alpa++;\n    else p.tugas++;\n    if (!['TB', 'TANPA BERITA', 'ALPA', 'IZIN'].includes(jenis)) p.excused_dates.add(tgl);\n  }\n}\n\n// 4. Hitung kompilasi final\nconst finalPegawai = userList.map(u => {\n  const p = map[u.id];\n  \n  let jamHadirMenit = 0;\n  for (const t of rangeDates) {\n    if (p.logByDate[t] && p.logByDate[t].masuk !== undefined && p.logByDate[t].pulang !== undefined) {\n      const durasi = p.logByDate[t].pulang - p.logByDate[t].masuk;\n      if (durasi > 0) jamHadirMenit += durasi;\n    }\n  }\n  const jamHadir = jamHadirMenit / 60;\n  \n  let alpaPeriod = p.alpa;\n  \n  const totalDisiplinEntries = p.masuk + p.di_luar_masuk_periode + p.alpa;\n  let disiplinPct = 100;\n  if (totalDisiplinEntries > 0) {\n    disiplinPct = Math.max(0, Math.round((p.masuk / totalDisiplinEntries) * 100));\n  } else if (p.hadir_dates.size > 0) {\n    disiplinPct = 100;\n  }\n  \n  let kehadiranSahPeriod = 0;\n  for (const t of rangeDates) {\n    if (p.hadir_dates.has(t) || p.excused_dates.has(t)) {\n      kehadiranSahPeriod++;\n    }\n  }\n  let kehadiranPct = Math.round((kehadiranSahPeriod / hariKerjaAktif) * 100);\n  if (kehadiranPct > 100) kehadiranPct = 100; \n\n  const cleanUserNip = String(u.nip || '').replace(/\\D/g, '');\n  const gs = gStatsMap[cleanUserNip] || gStatsMap[u.id] || {};\n  const mTerlambatGlobal = parseInt(gs.akum_menit_terlambat || 0);\n  const mCepatGlobal     = parseInt(gs.akum_menit_lebih_awal || 0);\n\n  return {\n    ...p,\n    alpa: alpaPeriod,\n    lambat_count: p.di_luar_masuk_periode, \n    pulang_cepat_count: p.di_luar_pulang_periode,\n    di_luar_masuk: mTerlambatGlobal, \n    di_luar_pulang: mCepatGlobal,\n    menit_terlambat: mTerlambatGlobal, \n    menit_lebih_awal: mCepatGlobal,\n    menit_terlambat_periode: p.menit_terlambat_periode,\n    menit_lebih_awal_periode: p.menit_lebih_awal_periode,\n    ID_Log: p._rawMasukLog?.ID_Log || p._rawPulangLog?.ID_Log || p._rawKetLog?.ID_Log,\n    jamHadir: jamHadir.toFixed(1),\n    disiplinPct: disiplinPct,\n    kehadiranPct: kehadiranPct,\n    totalAkkHHMM: Math.floor((p.menit_terlambat_periode + p.menit_lebih_awal_periode)/60) + ':' + String((p.menit_terlambat_periode + p.menit_lebih_awal_periode)%60).padStart(2, '0'),\n    hadir_dates: Array.from(p.hadir_dates),\n    excused_dates: Array.from(p.excused_dates)\n  };\n});\n\nconst sum = k => finalPegawai.reduce((s, p) => s + (p[k] || 0), 0);\n\nreturn [{ json: {\n  ringkasan: {\n    masuk: sum('masuk'), pulang: sum('pulang'), luar: sum('lambat_count') + sum('pulang_cepat_count'),\n    izin: sum('izin'), sakit: sum('sakit'), tugas: sum('tugas'), tubel: sum('tubel'), cuti: sum('cuti'), alpa: sum('alpa')\n  },\n  pegawai: finalPegawai\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2416,
-        352
+        -656,
+        -16
       ],
-      "id": "19c3d873-9ae7-43a8-b6ae-c72da4304a08",
+      "id": "cded1ddd-b57e-49b1-9dae-551b1eecdeb8",
       "name": "Hitung Rekap"
     },
     {
@@ -2800,39 +2800,39 @@
           }
         }
       },
-      "id": "6d43c30b-2b08-467b-a444-bec2cb305e92",
+      "id": "b7e09af4-82bd-452e-a5ce-aba2da408879",
       "name": "Respond User-List",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -2640,
-        -320
+        -880,
+        -688
       ]
     },
     {
       "parameters": {
         "jsCode": "// Support opsional: ?nip=xxx atau ?id=xxx (Telegram ID)\n// Kembalikan hanya 1 pegawai jika parameter pencarian spesifik diberikan\nconst query = $('User-List').first().json.query || {};\nconst nipParam = String(query.nip || '').trim();\nconst idParam = String(query.id || query.user_id || query.telegram_id || '').trim();\nconst format = query.format || '';\n\nlet rows = $input.all().map(i => i.json);\n\n// Hanya filter jika nip/id diberikan DAN format BUKAN 'full'\nif ((nipParam || idParam) && format !== 'full') {\n  const filtered = rows.filter(r => {\n    const rNip = String(r.nip || r.NIP || '').trim();\n    const rId  = String(r.id || r.ID || '').trim();\n    \n    if (nipParam && rNip === nipParam) return true;\n    if (idParam && rId === idParam) return true;\n    return false;\n  });\n  \n  if (!filtered.length) {\n    return [{ json: { ok: false, error: 'Pegawai tidak ditemukan', query: { nip: nipParam, id: idParam } } }];\n  }\n  \n  const p = filtered[0];\n  const pData = {\n    id            : String(p.id || p.ID || ''),\n    nama          : p.Nama      || p.nama      || p.username || '',\n    username      : p.Username  || p.username  || '',\n    nip           : p.NIP       || p.nip       || '',\n    no            : p.no        || p.No        || null,\n    jabatan       : p.Jabatan   || p.jabatan   || '',\n    pangkat       : p.Pangkat   || p.pangkat   || '',\n    bidang        : p.Bidang    || p.bidang    || '',\n    status        : p.Status    || p.status    || 'AKTIF',\n    role: (function(p){ const j = String(p.Jabatan || p.jabatan || '').toLowerCase(); const r = String(p.role || p.Role || '').toUpperCase(); if (r && r !== 'USER') return r; if (j.includes('kepala badan') || j.includes('kepala dinas')) return 'KEPALA'; if (j.includes('sekretaris')) return 'SEKRETARIS'; if (j.includes('kepala bidang') || j.includes('kabid')) return 'KABID'; if (j.includes('irban')) return 'IRBAN'; return r || 'USER'; })(p),\n    is_admin      : !!p.is_admin,\n    instansi_id   : p.instansi_id || p.Instansi_Id || '',\n    nomorhp       : p.nomorhp   || p.no_hp     || '',\n    has_face      : !!(p.face_histogram || p.has_face),\n    face_model    : p.face_model || null,\n    face_histogram: p.face_histogram || p.face_descriptor || p.descriptor || null,\n    face_photo    : p.face_photo || p.Face_Photo || p.foto_base64 || null,\n    has_signature : !!(p.has_signature || p.has_Signature),\n    jam_masuk     : p.jam_masuk || p.Jam_Masuk || null,\n    jam_pulang    : p.jam_pulang|| p.Jam_Pulang|| null\n  };\n\n  return [{ json: {\n    ok            : true,\n    single        : true,\n    data          : [pData],\n    ...pData\n  } }];\n}\n\n// Kembalikan semua dalam format array rows map\nconst data = rows.map(p => ({\n  id: String(p.id || p.ID || ''),\n  nama: p.Nama || p.nama || p.username || '',\n  nip: p.NIP || p.nip || '',\n  no: p.no || p.No || null,\n  jabatan: p.Jabatan || p.jabatan || '',\n  pangkat: p.pangkat || p.Pangkat || '',\n  status: p.Status || p.status || 'AKTIF',\n  role: (function(p){ const j = String(p.Jabatan || p.jabatan || '').toLowerCase(); const r = String(p.role || p.Role || '').toUpperCase(); if (r && r !== 'USER') return r; if (j.includes('kepala badan') || j.includes('kepala dinas')) return 'KEPALA'; if (j.includes('sekretaris')) return 'SEKRETARIS'; if (j.includes('kepala bidang') || j.includes('kabid')) return 'KABID'; if (j.includes('irban')) return 'IRBAN'; return r || 'USER'; })(p),\n  is_admin: !!p.is_admin,\n  instansi_id: p.instansi_id || p.Instansi_Id || '',\n  bidang: p.Bidang || p.bidang,\n  nomorhp: p.nomorhp || p.no_hp || '',\n  has_face: !!(p.face_histogram || p.has_Face),\n  face_model: p.face_model || null,\n  face_histogram: p.face_histogram || p.face_descriptor || p.descriptor || null,\n  has_signature: !!(p.has_signature || p.has_Signature)\n}));\n\nreturn [{ json: { ok: true, data, total: data.length } }];"
       },
-      "id": "15d92402-0145-451d-a23f-959e1367a2a7",
+      "id": "781a1323-09aa-4461-a63e-d2f457957c3e",
       "name": "Filter User-List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2864,
-        -320
+        -1104,
+        -688
       ]
     },
     {
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method']\n            || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "b2556e62-ef4f-4601-81e8-e6cea9041735",
+      "id": "7f206692-7030-4fcc-875a-019752cb8eca",
       "name": "CORS User-List",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2864,
-        -544
+        -1104,
+        -912
       ]
     },
     {
@@ -2844,13 +2844,13 @@
           "rawBody": false
         }
       },
-      "id": "c2e49317-024e-4010-be1c-033b9679ea55",
+      "id": "1c19902b-3d2b-4efe-b5a9-5ad8bc5562e2",
       "name": "User-List",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -3088,
-        -544
+        -1328,
+        -912
       ],
       "webhookId": "user-list",
       "credentials": {
@@ -2886,10 +2886,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        4432,
-        1200
+        4528,
+        656
       ],
-      "id": "57806e0e-f4d7-4014-a5b3-ee9b8d76191e",
+      "id": "2e9d1c3d-7ac2-4494-824d-365119caee95",
       "name": "Respond Fail Absen"
     },
     {
@@ -2918,10 +2918,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        5216,
-        848
+        5312,
+        304
       ],
-      "id": "0686a51c-e7bf-4827-bb71-42814b708284",
+      "id": "0b806e6a-bb94-45cd-b357-60ccd3abfdba",
       "name": "Respond OK Absen"
     },
     {
@@ -2937,10 +2937,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        4880,
-        912
+        4976,
+        368
       ],
-      "id": "626c3adf-415c-4bb5-acb1-4b0abfeb777a",
+      "id": "d7675c62-621b-4e3f-a93a-171863f81ee2",
       "name": "Kirim Konfirmasi Absen",
       "webhookId": "54f1b81f-a0ec-4e56-8a36-8e7d9f260568",
       "credentials": {
@@ -2958,10 +2958,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4656,
-        1008
+        4752,
+        464
       ],
-      "id": "b2494dec-5bb7-4483-bf54-bb51b3bfd9e8",
+      "id": "31efe61b-125f-47b8-9ecb-247a9fa9563a",
       "name": "Format Konfirmasi Absen"
     },
     {
@@ -2975,10 +2975,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4432,
-        1008
+        4528,
+        464
       ],
-      "id": "94f91b6e-e6ce-4eb4-83f6-9ae327dfb7c1",
+      "id": "e92b995f-f90b-47c2-a01a-dc9d1c566d41",
       "name": "Simpan Log",
       "credentials": {
         "postgres": {
@@ -3015,10 +3015,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4208,
-        1008
+        4304,
+        464
       ],
-      "id": "85ef8d9f-0507-4592-b95e-1486618e2d3d",
+      "id": "4a7a0f2c-c554-4d68-adb1-14c1346c9b80",
       "name": "Is Valid? Absen"
     },
     {
@@ -3028,10 +3028,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3984,
-        1008
+        4080,
+        464
       ],
-      "id": "93e8b9fd-02a6-439d-9503-0d6faa1de130",
+      "id": "4d0aa3fa-419d-4ae6-8e4a-a07c308cf0e4",
       "name": "Validasi Absen"
     },
     {
@@ -3043,10 +3043,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3760,
-        1008
+        3856,
+        464
       ],
-      "id": "2328d73a-b2e0-4341-b297-9bbb01045d21",
+      "id": "418d1f28-f76a-4eb9-9464-f2d3a215fb2c",
       "name": "Get Periode Absen",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -3066,10 +3066,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3536,
-        1008
+        3632,
+        464
       ],
-      "id": "6c706d88-df6d-40ff-a3bb-d56e55075046",
+      "id": "09871516-fc15-4454-b982-50bf4c1f0ab0",
       "name": "Get Jam Absen",
       "executeOnce": true,
       "credentials": {
@@ -3088,10 +3088,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3312,
-        1008
+        3408,
+        464
       ],
-      "id": "233aab19-808b-43cb-844a-e53cec1881a9",
+      "id": "32f5c170-e865-4530-85e6-a93c37d48f16",
       "name": "Get Absen Masuk",
       "alwaysOutputData": true,
       "executeOnce": true,
@@ -3111,10 +3111,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3088,
-        1008
+        3184,
+        464
       ],
-      "id": "75dddf69-fd1c-4033-9a5d-19826ac6f817",
+      "id": "00f07b19-ac6d-47fb-8ad6-3abaee00439c",
       "name": "Get Lokasi",
       "executeOnce": true,
       "credentials": {
@@ -3133,10 +3133,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2864,
-        1008
+        2960,
+        464
       ],
-      "id": "a276845d-f5ad-4cf3-a679-f50a1fd04d31",
+      "id": "6bd14ed6-ec9d-4619-a59b-51ede24cf134",
       "name": "Get Pegawai Absen",
       "executeOnce": true,
       "credentials": {
@@ -3155,10 +3155,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2416,
-        912
+        2512,
+        368
       ],
-      "id": "15bad2cd-6c8e-4353-b7a3-c61e2ca1ac44",
+      "id": "1b61c110-a23c-49a0-9614-34985c51258e",
       "name": "Check Request ID",
       "alwaysOutputData": true,
       "credentials": {
@@ -3196,10 +3196,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2640,
-        912
+        2736,
+        368
       ],
-      "id": "1a039c88-5554-4368-acdb-ec827b22b6e5",
+      "id": "b93db7be-65c8-446a-8e8e-13f3c7db434b",
       "name": "Is Duplicate?"
     },
     {
@@ -3220,10 +3220,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2864,
-        816
+        2960,
+        272
       ],
-      "id": "0d6352ab-79a9-46d3-a70a-c7a3f4b6acdd",
+      "id": "8b24e041-9ce1-430c-979b-8cfe99c52cdd",
       "name": "Respond Duplicate Early"
     },
     {
@@ -3233,10 +3233,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1968,
-        912
+        2064,
+        368
       ],
-      "id": "d951eac6-6d10-434b-82bb-dab0fee0d098",
+      "id": "47829af8-92a3-45f8-8afd-e19969ff3b9a",
       "name": "CORS Absen"
     },
     {
@@ -3252,10 +3252,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        1744,
-        912
+        1840,
+        368
       ],
-      "id": "9d40b93a-1d33-4188-9a66-c7d4e8daeddc",
+      "id": "c96e4aa8-46d9-475d-ae7d-3552cbfd987c",
       "name": "Absen",
       "webhookId": "14bf76b9-e325-44bc-a757-1b09485f8d94",
       "credentials": {
@@ -3276,10 +3276,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
       "position": [
-        -2256,
-        -704
+        -496,
+        -1072
       ],
-      "id": "3832b224-4afc-4e46-916d-b71790f6df12",
+      "id": "28557fa2-73db-461d-9889-8558ac313e8e",
       "name": "Webhook - Tambah Pegawai",
       "webhookId": "8315d78d-2c74-4518-b1d2-0e58f5b0c3e0",
       "credentials": {
@@ -3458,10 +3458,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2032,
-        -704
+        -272,
+        -1072
       ],
-      "id": "eb58aeba-8547-4d31-9d20-e0c83c16b785",
+      "id": "41c6ccc5-98e4-4d2f-8236-df407cb74b5c",
       "name": "Insert ke user_list",
       "credentials": {
         "postgres": {
@@ -3479,10 +3479,10 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1808,
-        -704
+        -48,
+        -1072
       ],
-      "id": "814521fc-8dc2-4721-ac85-34e9811b6544",
+      "id": "d4edaf78-3473-4a2c-88e4-81ce397f1e93",
       "name": "Konfirmasi via Telegram",
       "webhookId": "a2c0d266-ffb5-4d0d-9497-9679af5ca682",
       "credentials": {
@@ -3499,10 +3499,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1584,
-        -704
+        176,
+        -1072
       ],
-      "id": "2de46683-5fd4-4adb-ad37-b650a0d675e4",
+      "id": "b7ba3457-a9f4-4bad-ad80-440914911a33",
       "name": "HTTP Response"
     },
     {
@@ -3515,13 +3515,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "a41c2dc5-b22e-48d8-819d-47ca6fc65376",
+      "id": "95ee545c-fc6e-45ee-baff-d2067979552d",
       "name": "Webhook User-Delete",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -2704,
-        -944
+        -944,
+        -1312
       ],
       "webhookId": "user-delete",
       "credentials": {
@@ -3535,26 +3535,26 @@
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "95926a25-de09-4700-b495-ad5490ada0a4",
+      "id": "392f4bec-f0c2-4afb-8f78-5b41f18603b8",
       "name": "CORS User-Delete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2480,
-        -944
+        -720,
+        -1312
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $input.first().json.body || {};\nconst id = String(body.id || '').trim();\nif (!id) return [{ json: { ok: false, message: 'ID wajib diisi' } }];\nreturn [{ json: { ok: true, id } }];"
       },
-      "id": "a20573a2-1725-4006-af42-ad410c98d634",
+      "id": "20403071-7d8a-454a-90a7-7c8c4963d625",
       "name": "Validate User-Delete",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2256,
-        -944
+        -496,
+        -1312
       ]
     },
     {
@@ -3563,13 +3563,13 @@
         "query": "DELETE FROM \"user_list\" WHERE \"id\" = {{ ($json.id).toString().replace(/'/g, \"''\") }} RETURNING *",
         "options": {}
       },
-      "id": "d99736b3-2f21-4f5e-93e1-28f1214aa7f0",
+      "id": "7b19af69-85b9-4e8c-ba54-bb0d3563a942",
       "name": "Supabase User-Delete",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2032,
-        -944
+        -272,
+        -1312
       ],
       "credentials": {
         "postgres": {
@@ -3593,13 +3593,13 @@
           }
         }
       },
-      "id": "79665843-03fc-406c-8aa9-2780746efedb",
+      "id": "70b1facb-5e2f-4e73-b43a-087a12d07b06",
       "name": "Respond User-Delete",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1808,
-        -944
+        -48,
+        -1312
       ]
     },
     {
@@ -3612,13 +3612,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "89258455-23d3-400f-aaa8-2409bc849b69",
+      "id": "72ee1458-31da-4f35-90c6-b428387f22b9",
       "name": "Webhook User-Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -2704,
-        -1280
+        -944,
+        -1648
       ],
       "webhookId": "user-add",
       "credentials": {
@@ -3632,26 +3632,26 @@
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "bc767143-d59d-4d52-9ca8-4fbdaf8ac9d2",
+      "id": "d39700a8-50e3-4858-94a6-06244324f308",
       "name": "CORS User-Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2480,
-        -1280
+        -720,
+        -1648
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $input.first().json.body || {};\nconst id = String(body.id || body.telegram_id || '').trim();\nif (!id || id === 'undefined') return [{ json: { ok: false, message: 'ID (Telegram ID) wajib diisi' } }];\n\nconst clean = (val) => {\n  if (val === undefined || val === null || String(val).trim().toLowerCase() === 'undefined') return '';\n  return String(val).trim();\n};\n\nconst nama = clean(body.nama || body.username);\nif (!nama) return [{ json: { ok: false, message: 'Nama wajib diisi' } }];\n\nconst no = body.no ? parseInt(body.no) : 999;\n\nreturn [{ \n  json: { \n    ok: true, \n    id, \n    nama, \n    no, \n    nip: clean(body.nip || body.NIP),\n    jabatan: clean(body.jabatan || body.Jabatan),\n    bidang: clean(body.bidang || body.Bidang),\n    status: clean(body.status || body.Status || 'AKTIF').toUpperCase(),\n    role: clean(body.role || body.Role || 'USER').toUpperCase(),\n    pangkat: clean(body.pangkat || body.Pangkat),\n    nomorhp: clean(body.no_hp || body.nomorhp || body.NomorHP),\n    instansi_id: clean(body.instansi_id || '')\n  } \n}];"
       },
-      "id": "075e82b3-8f67-4cc2-adc8-a6a4d32d9806",
+      "id": "0c8cba5a-f779-40bf-9f3e-687be1d9720b",
       "name": "Validate User-Add",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2256,
-        -1280
+        -496,
+        -1648
       ]
     },
     {
@@ -3662,13 +3662,13 @@
           "queryBatching": "independently"
         }
       },
-      "id": "7e14e5c6-14e8-48f0-bbb8-85637638ed95",
+      "id": "2ff323c2-4659-4904-bb0e-0ee5d9b02cda",
       "name": "Supabase User-Add",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2032,
-        -1280
+        -272,
+        -1648
       ],
       "credentials": {
         "postgres": {
@@ -3692,13 +3692,13 @@
           }
         }
       },
-      "id": "7a034b1c-c906-4077-9825-125886977266",
+      "id": "80bdca13-3fa4-4fd6-841c-1f05560bf2f0",
       "name": "Respond User-Add",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1808,
-        -1136
+        -48,
+        -1504
       ]
     },
     {
@@ -3707,13 +3707,13 @@
         "query": "SELECT * FROM \"user_list\" WHERE instansi_id = '{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}' ORDER BY \"no\" ASC",
         "options": {}
       },
-      "id": "15e7c657-5c95-467d-b915-9b190aeef772",
+      "id": "8a9af4f7-1b55-4d49-9b71-c46a830010e6",
       "name": "Get All Pegawai (Reorder)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1808,
-        -1328
+        -48,
+        -1696
       ],
       "credentials": {
         "postgres": {
@@ -3726,13 +3726,13 @@
       "parameters": {
         "jsCode": "const allPegawai = $input.all().map(i => i.json);\n\n// Scoring Functions (Hierarki)\nfunction getJabatanScore(j) {\n  if (!j) return 0;\n  const s = String(j).toUpperCase().trim();\n  if (s.includes('KEPALA DINAS') || s.includes('KEPALA BADAN') || s.includes('INSPEKTUR') || s === 'KEPALA') return 100;\n  if (s.includes('SEKRETARIS')) return 90;\n  if (s.includes('KEPALA BIDANG') || s.includes('KABID') || s.includes('IRBAN')) return 80;\n  if (s.includes('KASUBAG') || s.includes('KASUBBID') || s.includes('KETUA TIM') || s.includes('KOORDINATOR')) return 70;\n  if (s.includes('NON ASN') || s.includes('HONORER') || s.includes('THL')) return 40;\n  return 50; // Staf/Pelaksana\n}\n\nfunction getPangkatScore(p) {\n  if (!p) return 0;\n  const s = String(p).toUpperCase().replace(/\\s/g, '').replace(/[.-]/g, '/');\n  if (s.includes('IV/E')) return 17;\n  if (s.includes('IV/D')) return 16;\n  if (s.includes('IV/C')) return 15;\n  if (s.includes('IV/B')) return 14;\n  if (s.includes('IV/A')) return 13;\n  if (s.includes('III/D')) return 12;\n  if (s.includes('III/C')) return 11;\n  if (s.includes('III/B')) return 10;\n  if (s.includes('III/A')) return 9;\n  if (s.includes('II/D')) return 8;\n  if (s.includes('II/C')) return 7;\n  if (s.includes('II/B')) return 6;\n  if (s.includes('II/A')) return 5;\n  if (s.includes('I/D')) return 4;\n  if (s.includes('I/C')) return 3;\n  if (s.includes('I/B')) return 2;\n  if (s.includes('I/A')) return 1;\n  return 0;\n}\n\nfunction getUmurScore(nip) {\n  const dob = String(nip || '99999999').replace(/\\D/g, '').substring(0, 8);\n  return dob.length === 8 ? parseInt(dob) : 99999999;\n}\n\n// 1. Sortir Berdasarkan Hierarki\nconst list = [...allPegawai];\nlist.sort((a, b) => {\n  const scoreJa = getJabatanScore(a.Jabatan || a.jabatan);\n  const scoreJb = getJabatanScore(b.Jabatan || b.jabatan);\n  if (scoreJa !== scoreJb) return scoreJb - scoreJa;\n\n  const scorePa = getPangkatScore(a.pangkat || a.Pangkat);\n  const scorePb = getPangkatScore(b.pangkat || b.Pangkat);\n  if (scorePa !== scorePb) return scorePb - scorePa;\n\n  const ageA = getUmurScore(a.NIP || a.nip);\n  const ageB = getUmurScore(b.NIP || b.nip);\n  if (ageA !== ageB) return ageA - ageB;\n\n  return 0;\n});\n\n// 2. Berikan Nomor Urut Baru dan Filter Perubahan (Loop Prevention)\nconst updates = [];\nlist.forEach((p, index) => {\n  const newNo = index + 1;\n  const oldNo = p.no ? parseInt(p.no) : null;\n  \n  if (newNo !== oldNo) {\n    updates.push({\n      json: {\n        id: String(p.id || p.ID),\n        no: newNo,\n        username: p.username || p.Nama || p.nama\n      }\n    });\n  }\n});\n\nreturn updates;"
       },
-      "id": "f542a88f-8e74-4538-ba63-d895613bcd36",
+      "id": "c4f336a7-1687-4b4b-9859-27ee8083605f",
       "name": "Process Reorder Logic",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1584,
-        -1328
+        176,
+        -1696
       ]
     },
     {
@@ -3745,13 +3745,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "cd54d4ea-4073-4a5e-8072-4f01a18e7422",
+      "id": "7a3b0230-6877-4a34-a18d-59c665bc9dfc",
       "name": "Webhook User-Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -2928,
-        -1568
+        -1168,
+        -1936
       ],
       "webhookId": "user-edit",
       "credentials": {
@@ -3765,26 +3765,26 @@
       "parameters": {
         "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
-      "id": "140f49ea-d5fa-4578-ac01-a248969bc063",
+      "id": "17ed8e96-be74-4a29-b841-911f1735d9e4",
       "name": "CORS User-Edit",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2704,
-        -1568
+        -944,
+        -1936
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $input.first().json.body || {};\nconst id = String(body.id || body.telegram_id || '').trim();\nif (!id || id === 'undefined') return [{ json: { ok: false, message: 'ID wajib diisi' } }];\n\nconst clean = (val) => {\n  if (val === undefined || val === null || String(val).trim().toLowerCase() === 'undefined') return '';\n  return String(val).trim();\n};\n\nconst no = body.no ? parseInt(body.no) : null;\nconst nomorhp = clean(body.no_hp || body.nomorhp);\n\nreturn [{ \n  json: { \n    ok: true, \n    id, \n    nama: clean(body.nama || body.username || body.username),\n    nip: clean(body.nip || body.NIP),\n    jabatan: clean(body.jabatan || body.Jabatan),\n    bidang: clean(body.bidang || body.Bidang),\n    status: clean(body.status || body.Status || 'AKTIF').toUpperCase(),\n    role: clean(body.role || body.Role || 'USER').toUpperCase(),\n    pangkat: clean(body.pangkat || body.Pangkat),\n    no, \n    nomorhp \n  } \n}];"
       },
-      "id": "e3827ab9-a4d1-4da5-ae07-fb4db0459b58",
+      "id": "f38e5a34-72f2-4460-a404-60a133bd3174",
       "name": "Validate User-Edit",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2256,
-        -1568
+        -496,
+        -1936
       ]
     },
     {
@@ -3793,13 +3793,13 @@
         "query": "UPDATE \"user_list\" SET \"username\" = COALESCE(NULLIF('{{ ($json.nama).toString().replace(/'/g, \"''\") }}', ''), \"username\"), \"NIP\" = COALESCE(NULLIF('{{ ($json.nip).toString().replace(/'/g, \"''\") }}', ''), \"NIP\"), \"no\" = COALESCE(NULLIF(NULLIF('{{ ($json.no).toString().replace(/'/g, \"''\") }}', ''), 'null')::numeric, \"no\"), \"Jabatan\" = COALESCE(NULLIF('{{ ($json.jabatan).toString().replace(/'/g, \"''\") }}', ''), \"Jabatan\"), \"bidang\" = COALESCE(NULLIF('{{ ($json.bidang).toString().replace(/'/g, \"''\") }}', ''), \"bidang\"), \"Status\" = COALESCE(NULLIF('{{ ($json.status).toString().replace(/'/g, \"''\") }}', ''), \"Status\"), \"pangkat\" = COALESCE(NULLIF('{{ ($json.pangkat).toString().replace(/'/g, \"''\") }}', ''), \"pangkat\"), \"nomorhp\" = COALESCE(NULLIF('{{ ($json.nomorhp).toString().replace(/'/g, \"''\") }}', ''), \"nomorhp\"), \"role\" = COALESCE(NULLIF('{{ ($json.role).toString().replace(/'/g, \"''\") }}', ''), \"role\"), \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}', ''), \"instansi_id\") WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' OR \"telegram_id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
-      "id": "36854490-7637-40c8-99f3-62291b405d5c",
+      "id": "2ff1556d-12a1-4acb-b966-3165ebde75e8",
       "name": "Supabase User-Edit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2032,
-        -1568
+        -272,
+        -1936
       ],
       "credentials": {
         "postgres": {
@@ -3823,13 +3823,13 @@
           }
         }
       },
-      "id": "fa176dde-3f5e-4eb5-b0f9-6cfc58537416",
+      "id": "9f785724-36d6-4579-9486-3d24826c520c",
       "name": "Respond User-Edit",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1808,
-        -1568
+        -48,
+        -1936
       ]
     },
     {
@@ -3838,13 +3838,13 @@
         "query": "UPDATE \"user_list\" SET \"no\" = '{{ ($json.no).toString().replace(/'/g, \"''\") }}' WHERE \"id\" = '{{ ($json.id).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
-      "id": "ad5e7149-8486-46c8-ad29-c6d2cfc8b250",
+      "id": "f397f440-0127-418b-9b54-d075eb7d2353",
       "name": "Supabase Update No (All)",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -1360,
-        -1328
+        400,
+        -1696
       ],
       "credentials": {
         "postgres": {
@@ -3867,10 +3867,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -640,
-        3568
+        -544,
+        3024
       ],
-      "id": "9696139a-0e67-466b-a0f6-83e9817d2962",
+      "id": "708df55b-5e30-47a2-b3b8-c530027fde17",
       "name": "Schedule Trigger"
     },
     {
@@ -3880,10 +3880,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -480,
-        3568
+        -384,
+        3024
       ],
-      "id": "b3ad954c-91c5-4b32-82cc-eb9096623778",
+      "id": "57c72a5c-5b11-48ed-b542-76015282f823",
       "name": "Read Tanggal Pulang1"
     },
     {
@@ -3897,10 +3897,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -64,
-        3568
+        32,
+        3024
       ],
-      "id": "39206685-c039-470c-8776-5b170944ec5f",
+      "id": "18e32a2b-ed17-4231-95b4-f7b284cbc241",
       "name": "Create a row",
       "credentials": {
         "postgres": {
@@ -3916,10 +3916,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -272,
-        3568
+        -176,
+        3024
       ],
-      "id": "55604431-6ce0-426c-8b34-172294c227cc",
+      "id": "32bb360d-eac7-4040-a656-0d4cc7bd0c05",
       "name": "Code in JavaScript1"
     },
     {
@@ -3932,13 +3932,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "55ae1036-ac54-4436-8273-ed2dc6e417ad",
+      "id": "d51ab5d5-2a7c-460d-b124-09ee4fc2ab17",
       "name": "Webhook Log-Add",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -3088,
-        544
+        -1328,
+        176
       ],
       "webhookId": "e3e0debb-0752-47d7-be2f-031311fb1838",
       "credentials": {
@@ -3958,13 +3958,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "968b9b9b-0b96-452d-b58d-86e92ff4d66b",
+      "id": "544a5f18-7df9-44f1-8632-b377c892a951",
       "name": "Webhook Log-Edit",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -3088,
-        736
+        -1328,
+        368
       ],
       "webhookId": "c9f25d8c-4595-42a0-84de-33d23afed4b6",
       "credentials": {
@@ -3978,26 +3978,26 @@
       "parameters": {
         "jsCode": "const req = $input.first().json;\nif (req.method === 'OPTIONS') {\n  return [{ json: { _cors_preflight: true } }];\n}\nreturn [{ json: req }];"
       },
-      "id": "c2dc1e21-ff9e-43c0-a63a-556de7325387",
+      "id": "2148b7ea-2942-4055-b193-564ef666c7cc",
       "name": "CORS Log-Manage",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2864,
-        640
+        -1104,
+        272
       ]
     },
     {
       "parameters": {
         "jsCode": "const body = $input.first().json.body || {};\nconst logId = body.ID_Log || body.id_log || body.ID_LOG || body.ID_log || body.Id_Log || null;\nconst id = String(body.telegram_id || '').trim();\nconst nama = String(body.nama || '').trim();\nconst nip = String(body.nip || '').trim();\nconst tgl = String(body.tanggal || '').trim();\nconst jam = String(body.jam || '').trim();\nconst jenis = String(body.jenis_absen || '').trim();\nconst ket = String(body.keterangan || '').trim();\nconst adminId = String(body.admin_id || '').trim();\nconst instansi_id = String(body.instansi_id || '').trim();\nconst request_id = String(body.request_id || '').trim();\n\nif (!id || !tgl || !jam || !jenis) {\n  return [{ json: { ok: false, message: 'Data tidak lengkap (ID, Tanggal, Jam, Jenis wajib).' } }];\n}\n\nreturn [{ json: { ok: true, ID_Log: logId, telegram_id: id, nama, nip, tanggal: tgl, jam, jenis_absen: jenis, keterangan: ket, admin_id: adminId, request_id:request_id, instansi_id:instansi_id } }];"
       },
-      "id": "5ae31938-0529-4f6b-bdd4-b3a227d2db0b",
+      "id": "8196a0b9-bc5a-4e73-a186-166ea01ca6e9",
       "name": "Validate Log-Manage",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2640,
-        640
+        -880,
+        272
       ]
     },
     {
@@ -4011,13 +4011,13 @@
           ]
         }
       },
-      "id": "84700b0a-612a-4d74-9a16-23b8ce5ca9a0",
+      "id": "38df9967-7625-4535-926c-e86790c7ed40",
       "name": "Check ID_Log (Edit/Add)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        -2416,
-        640
+        -656,
+        272
       ]
     },
     {
@@ -4026,13 +4026,13 @@
         "query": "UPDATE \"Log_Absen\" SET \"ID\" = '{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}', \"Nama\" = '{{ ($json.nama).toString().replace(/'/g, \"''\") }}', \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, \"''\") }}', \"Tanggal\" = '{{ ($json.tanggal).toString().replace(/'/g, \"''\") }}', \"Jam\" = '{{ ($json.jam).toString().replace(/'/g, \"''\") }}', \"Jenis Absen\" = '{{ ($json.jenis_absen).toString().replace(/'/g, \"''\") }}', \"Ket\" = '{{ ($json.keterangan).toString().replace(/'/g, \"''\") }}', \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString().replace(/'/g, \"''\") }}', ''), (SELECT instansi_id FROM user_list WHERE \"NIP\" = '{{ ($json.nip).toString().replace(/'/g, \"''\") }}' LIMIT 1), (SELECT instansi_id FROM user_list WHERE id::text = '{{ ($json.telegram_id).toString().replace(/'/g, \"''\") }}' LIMIT 1), \"Log_Absen\".instansi_id, 'bapperida') WHERE \"ID_Log\" = '{{ ($json.ID_Log).toString().replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
-      "id": "c15312ab-8211-4341-9808-38c7228ecabf",
+      "id": "c93658dc-e04e-4213-b9e7-396c1d12fa7e",
       "name": "Supabase Log-Update",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2192,
-        544
+        -432,
+        176
       ],
       "credentials": {
         "postgres": {
@@ -4049,13 +4049,13 @@
           "queryBatching": "independently"
         }
       },
-      "id": "0638e16c-1c62-4421-80b8-0774d212e4f8",
+      "id": "feb3030b-8d77-4094-b7ff-2a6c8a7022d0",
       "name": "Supabase Log-Insert",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2192,
-        736
+        -432,
+        368
       ],
       "credentials": {
         "postgres": {
@@ -4079,13 +4079,13 @@
           }
         }
       },
-      "id": "568deb15-cd2e-4591-a823-21479e188b42",
+      "id": "58f6692f-a7d1-40b4-9382-e9749e06b6f0",
       "name": "Respond Log-Manage",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -1968,
-        640
+        -208,
+        272
       ]
     },
     {
@@ -4097,10 +4097,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4432,
-        816
+        4528,
+        272
       ],
-      "id": "e17ef641-5be3-4908-93cd-4dfd92bcf33e",
+      "id": "2131523a-bb29-4e47-9113-04ec824b21ec",
       "name": "Update rows in a table",
       "credentials": {
         "postgres": {
@@ -4121,10 +4121,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -1056,
-        2592
+        -960,
+        2048
       ],
-      "id": "f392ebe0-ac39-4758-ac27-3d6b8a31bcfa",
+      "id": "402271db-a874-4e3f-a362-9d8b3fff14e3",
       "name": "Webhook Instansi-List",
       "webhookId": "instansi-list-0001",
       "credentials": {
@@ -4144,10 +4144,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -832,
-        2592
+        -736,
+        2048
       ],
-      "id": "1dd637d5-2f01-491a-8790-2183fc60ace0",
+      "id": "72b600ed-b431-4b9a-b8d3-19e2945f13a0",
       "name": "Get Instansi List",
       "credentials": {
         "postgres": {
@@ -4179,10 +4179,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        -624,
-        2592
+        -528,
+        2048
       ],
-      "id": "ec6bb18c-6ebb-4bc3-a1bf-8fdd01d43165",
+      "id": "152e2785-554d-466d-82fc-37b4459066ce",
       "name": "Respond Instansi List",
       "disabled": true
     },
@@ -4198,10 +4198,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -1040,
-        2384
+        -944,
+        1840
       ],
-      "id": "7c1d10f3-c61c-4ddf-9b4d-852f0f9ede77",
+      "id": "c27eca93-cb1a-4306-bd78-1fea93d6aeca",
       "name": "Webhook Bidang-List",
       "webhookId": "283089ac-f50b-4128-8567-d4cdec094ea4",
       "credentials": {
@@ -4220,10 +4220,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -816,
-        2384
+        -720,
+        1840
       ],
-      "id": "8de10a7f-58b4-4a37-8631-5af7af1b3ad6",
+      "id": "d2a97b7d-c284-4975-93c1-925f53a929d1",
       "name": "Get Bidang List",
       "credentials": {
         "postgres": {
@@ -4254,10 +4254,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -592,
-        2384
+        -496,
+        1840
       ],
-      "id": "e2b57222-ad3b-4443-8984-0d826723f2b0",
+      "id": "a337e51b-e091-4c13-bb44-3058a0aa104a",
       "name": "Respond Bidang List"
     },
     {
@@ -4273,10 +4273,10 @@
       "type": "@devlikeapro/n8n-nodes-waha.WAHA",
       "typeVersion": 202502,
       "position": [
-        4880,
-        1104
+        4976,
+        560
       ],
-      "id": "5ee91a96-092a-4b60-b5e4-1b15e74ef3e9",
+      "id": "e63bfaf9-caba-4c8a-aca7-83066bf5e020",
       "name": "Send a text message1",
       "credentials": {
         "wahaApi": {
@@ -4294,13 +4294,13 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "ded01c1e-e456-44b8-b49e-4dd08a823067",
+      "id": "399fba1f-e604-47d1-89d3-2804968664e3",
       "name": "Admin List Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -3104,
-        1264
+        -1344,
+        896
       ],
       "webhookId": "3f0df6f5-c885-4ef5-9d1f-7a85fc7e30ab",
       "credentials": {
@@ -4316,13 +4316,13 @@
         "query": "SELECT \"id\", \"username\", \"NIP\", \"Jabatan\", \"Status\", \"no\", \"bidang\", \"pangkat\", \"nomorhp\", \"role\", \"is_admin\", \"instansi_id\"\nFROM \"user_list\"\nWHERE (UPPER(\"role\") NOT IN ('USER') \n   OR \"is_admin\" = true \n   OR UPPER(\"Jabatan\") LIKE '%KEPALA%' \n   OR UPPER(\"Jabatan\") LIKE '%SEKRETARIS%' \n   OR UPPER(\"Jabatan\") LIKE '%KABID%' \n   OR UPPER(\"Jabatan\") LIKE '%IRBAN%'\n   OR UPPER(\"Jabatan\") LIKE '%INSPEKTUR%')\n   AND instansi_id = '{{ ($json.query.instansi_id).toString().replace(/'/g, \"''\") }}'\nORDER BY \"no\" ASC NULLS LAST;\n",
         "options": {}
       },
-      "id": "16b6cebe-8f55-4548-a290-35f4f4e1cb70",
+      "id": "8424f1cd-ef31-4ff5-a9c3-fa88029d232f",
       "name": "Get Admin from DB",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -2880,
-        1264
+        -1120,
+        896
       ],
       "credentials": {
         "postgres": {
@@ -4335,13 +4335,13 @@
       "parameters": {
         "jsCode": "const rows = $input.all().map(i => {\n  const p = i.json;\n  \n  // Normalisasi property agar dashboard tidak bingung dengan kapitalisasi\n  const normalized = {\n    ...p,\n    id: String(p.id || ''),\n    nama: p.username || '', // Di skema Anda 'username' sepertinya berisi nama lengkap\n    nip: p.NIP || '',\n    jabatan: p.Jabatan || '',\n    status: p.Status || 'AKTIF'\n  };\n\n  // Logika pemetaan role dinamis\n  const role = (function(p){ \n    const j = String(p.jabatan || '').toLowerCase(); \n    const r = String(p.role || '').toUpperCase(); \n    if (r && r !== 'USER') return r; \n    if (j.includes('kepala badan') || j.includes('kepala dinas')) return 'KEPALA'; \n    if (j.includes('sekretaris')) return 'SEKRETARIS'; \n    if (j.includes('kepala bidang') || j.includes('kabid')) return 'KABID'; \n    if (j.includes('irban')) return 'IRBAN'; \n    if (j.includes('inspektur')) return 'INSPEKTUR';\n    return r || 'USER'; \n  })(normalized);\n\n  return { ...normalized, role };\n});\n\n// Hanya kirim yang benar-benar admin/pimpinan\nconst admins = rows.filter(r => \n  ['ADMIN', 'SUPERADMIN', 'KEPALA', 'SEKRETARIS', 'KABID', 'IRBAN', 'INSPEKTUR'].includes(r.role) \n  || r.is_admin === true\n);\n\nreturn [{\n  json: {\n    ok: true,\n    data: admins,\n    total: admins.length,\n    timestamp: new Date().toISOString()\n  }\n}];\n"
       },
-      "id": "99243954-1c87-418e-a159-c2186892b0ec",
+      "id": "48f3c1d3-7cdd-4647-9361-d9034c02e2f4",
       "name": "Format Respon",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -2672,
-        1264
+        -912,
+        896
       ]
     },
     {
@@ -4363,13 +4363,13 @@
           }
         }
       },
-      "id": "1c3ebd54-0666-4c0a-a53e-5355db02beef",
+      "id": "ed97fb6d-5e6e-42d4-a7f6-a57dbdf4ddaa",
       "name": "Respond Admin List",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        -2448,
-        1264
+        -688,
+        896
       ]
     },
     {
@@ -4381,10 +4381,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2064,
-        256
+        2160,
+        -288
       ],
-      "id": "b58d78e1-c0b5-49d8-ad0e-7f8997d62a69",
+      "id": "e11f77d3-de8e-48b6-abea-a31bfe23ac60",
       "name": "Sync Statistik Pegawai",
       "credentials": {
         "postgres": {
@@ -4412,10 +4412,10 @@
       "type": "n8n-nodes-base.postgresTrigger",
       "typeVersion": 1,
       "position": [
-        1792,
-        64
+        1888,
+        -480
       ],
-      "id": "23df1d77-ab7b-48e5-8577-0c07f1d86e5f",
+      "id": "6ee7e3c6-c524-42ef-90ba-6b0ee863cc63",
       "name": "Trigger INSERT",
       "credentials": {
         "postgres": {
@@ -4444,10 +4444,10 @@
       "type": "n8n-nodes-base.postgresTrigger",
       "typeVersion": 1,
       "position": [
-        1792,
-        256
+        1888,
+        -288
       ],
-      "id": "6e9fb5a3-ceec-4dae-b4bf-e96fba247927",
+      "id": "ac198c56-9816-401c-901d-528b02fadfd2",
       "name": "Trigger UPDATE",
       "credentials": {
         "postgres": {
@@ -4476,10 +4476,10 @@
       "type": "n8n-nodes-base.postgresTrigger",
       "typeVersion": 1,
       "position": [
-        1808,
-        512
+        1904,
+        -32
       ],
-      "id": "039d5c0d-91a4-49bc-8738-8d2da89b827d",
+      "id": "75e3b864-d720-4c81-961f-2089a49b794f",
       "name": "Trigger DELETE",
       "credentials": {
         "postgres": {

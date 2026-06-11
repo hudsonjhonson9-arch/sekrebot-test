@@ -163,8 +163,6 @@
         } else {
           // Rekapan Rentang Waktu (Seperti Excel)
           tableBody = filteredPegawai.map((p, i) => {
-            const lambat = p.lambat_count ?? 0;
-            const cepat = p.pulang_cepat_count ?? 0;
             const hHadir = (p.masuk || 0);
             
             stats.hadir += hHadir;
@@ -174,12 +172,16 @@
             stats.tubel += (p.tubel || 0);
             stats.cuti += (p.cuti || 0);
             stats.tanpaBerita += (p.alpa || 0);
-            stats.terlambat += lambat;
+            stats.terlambat += (p.lambat_count || 0);
 
-            const mTerlambat = p.menit_terlambat || 0;
-            const mCepat = p.menit_lebih_awal || 0;
-            const mAlpa = (p.alpa || 0) * 450;
-            const totalM = mTerlambat + mCepat + mAlpa;
+            const mT_p = p.menit_terlambat_periode || 0;
+            const mT_all = p.menit_terlambat || 0;
+            const mC_p = p.menit_lebih_awal_periode || 0;
+            const mC_all = p.menit_lebih_awal || 0;
+            const mAlpa_p = (p.alpa || 0) * 450;
+            const mAlpa_all = (p.all_alpa || 0) * 450;
+            const totalM_p = mT_p + mC_p + mAlpa_p;
+            const totalM_all = mT_all + mC_all + mAlpa_all;
             
             const toHHMMFormat = (mins) => {
               if (isNaN(mins) || mins <= 0) return '00:00';
@@ -187,24 +189,25 @@
               const m = mins % 60;
               return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             };
-            const totalAkk = toHHMMFormat(totalM);
+            
+            const lbt_str = `${mT_p} | ${mT_all}`;
+            const cpt_str = `${mC_p} | ${mC_all}`;
+            const akum_str = `${toHHMMFormat(totalM_p)} | ${toHHMMFormat(totalM_all)}`;
             
             return [
               i + 1,
               `${p.nama}\n${isMagang ? 'ID' : 'NIP'}. ${p.nip || '—'}`,
               (p.jabatan || '—'),
               hHadir,
-              lambat,
-              mTerlambat,
-              cepat,
-              mCepat,
+              lbt_str,
+              cpt_str,
               (p.izin || 0) + (p.sakit || 0) + (p.tugas || 0),
               p.alpa || 0,
-              totalAkk
+              akum_str
             ];
           });
 
-          pdfHead = [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', 'Jabatan', 'Hadir', 'Lambat\n(x)', 'Lambat\n(m)', 'Cepat\n(x)', 'Cepat\n(m)', 'I/S/T', 'Alpa', 'Akumulasi']];
+          pdfHead = [['No', isMagang ? 'Nama / ID' : 'Nama / NIP', 'Jabatan', 'Hadir', 'Lambat(m)\nRntg|Total', 'Cepat(m)\nRntg|Total', 'I/S/T', 'Alpa', 'Akumulasi\nRntg|Total']];
           pdfColumnStyles = {
             0: { halign: 'center', cellWidth: 7 },
             3: { halign: 'center' },
@@ -212,9 +215,7 @@
             5: { halign: 'center' },
             6: { halign: 'center' },
             7: { halign: 'center' },
-            8: { halign: 'center' },
-            9: { halign: 'center' },
-            10: { halign: 'center' }
+            8: { halign: 'center' }
           };
         }
 

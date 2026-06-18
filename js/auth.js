@@ -99,23 +99,10 @@
              window.tgUser = { first_name: user.nama || 'User', username: userNip };
              
              if (!hasFace) {
-                // REGISTRASI WAJAH PERTAMA KALI
-                alert('Wajah Anda belum terdaftar.\nSilakan daftarkan wajah Anda ke sistem sekarang untuk mengamankan akun (Passwordless).');
-                openCamOverlay({
-                   isRegister: true,
-                   onDone: () => {
-                      alert('Wajah berhasil didaftarkan! Selamat datang.');
-                      finalizeLogin();
-                   },
-                   onCancel: () => {
-                      window.MY_ID = null; // revert
-                      window.tgUser = {};
-                      if (overlayEl) overlayEl.style.display = 'flex';
-                      btn.disabled = false;
-                      btn.innerHTML = originalText;
-                   }
-                });
-             } else {
+                // REGISTRASI WAJAH PERTAMA KALI DITUNDA
+                // Langsung proses login tanpa buka kamera
+                finalizeLogin();
+             } else { else {
                 openCamOverlay(async (camResult) => {
                     let similarity = 0;
                     let failReason = "Wajah tidak cocok. Silakan coba lagi.";

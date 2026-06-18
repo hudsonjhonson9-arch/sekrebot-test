@@ -71,7 +71,7 @@
           }
 
           // ── FACE VERIFICATION LOGIN (PASSWORDLESS) ──
-          const isFaceEnabled = typeof FACE_RECOGNITION_ENABLED !== 'undefined' ? FACE_RECOGNITION_ENABLED : true;
+const isFaceEnabled = false; // 👈 Ubah menjadi false untuk matikan scan wajah saat login
           const hasFace = !!(user.face_histogram || user.face_photo || user.face_model || user.foto_base64 || user.descriptor);
           const userNip = String(user.nip || '').trim();
           const targetId = String(user.telegram_id || user.id);

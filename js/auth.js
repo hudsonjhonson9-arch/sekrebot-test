@@ -70,6 +70,32 @@
             throw new Error('Hasil pencarian NIP tidak cocok. Hubungi admin.');
           }
 
+          // ── LOGIN NORMAL (MEMATIKAN SCAN WAJAH SECARA PAKSA) ──
+          const userNip = String(user.nip || '').trim();
+          const targetId = String(user.telegram_id || user.id);
+          
+          const finalizeLogin = () => {
+             window.MY_ID = targetId;
+             localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
+             localStorage.setItem('MY_NIP', userNip);
+             localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
+             localStorage.setItem('MY_NAME', String(user.nama || 'User'));
+             localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+             const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
+             if (finalInst) localStorage.setItem('MY_INSTANSI', finalInst);
+             else localStorage.removeItem('MY_INSTANSI');
+             
+             // Sembunyikan overlay loading/kamera jika masih ada
+             const overlayEl = document.getElementById('authOverlay');
+             if (overlayEl) overlayEl.style.display = 'none';
+             
+             location.reload();
+          };
+
+          // Langsung izinkan masuk tanpa mempedulikan wajah
+          finalizeLogin();
+          return;
+
           // ── FACE VERIFICATION LOGIN (PASSWORDLESS) ──
 const isFaceEnabled = false; // 👈 Ubah menjadi false untuk matikan scan wajah saat login
           const hasFace = !!(user.face_histogram || user.face_photo || user.face_model || user.foto_base64 || user.descriptor);

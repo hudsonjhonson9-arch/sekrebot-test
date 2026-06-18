@@ -108,6 +108,30 @@
       }
     }
     function fullName() { return window.tgUser?.first_name ? `${window.tgUser.first_name}${window.tgUser.last_name ? ' ' + window.tgUser.last_name : ''}` : 'Pengguna'; }
+
+    /** Terapkan branding header mobile/desktop sesuai instansi aktif */
+    function applyInstansiBranding(instansiId) {
+      const instId = (instansiId || window.userProfile?.instansi_id || localStorage.getItem('MY_INSTANSI') || (typeof getScopedInstansiId === 'function' ? getScopedInstansiId() : '') || '').trim();
+      if (!instId) return;
+
+      const instData = typeof getInstansiData === 'function' ? getInstansiData(instId) : null;
+      const instName = instData?.nama_instansi
+        || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
+
+      setT('headerOrgSub', instName);
+      setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN ${String(instName).toUpperCase()}`);
+      document.title = `Absensi ${instName}`;
+
+      const logoWrap = $('headerLogoWrap');
+      if (logoWrap) {
+        const logoUrl = (instData?.logo_url || '').trim();
+        const defaultLogo = 'https://raw.githubusercontent.com/hudsonjhonson9-arch/sekrebot/main/Lambang_Kabupaten_Sumba_Barat.png';
+        const finalLogo = logoUrl || defaultLogo;
+        logoWrap.innerHTML = `<img src="${finalLogo}" alt="${instName}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;" onerror="this.parentElement.innerHTML='🏛️'">`;
+      }
+    }
+    window.applyInstansiBranding = applyInstansiBranding;
+
     function applyProfile() {
       const p = userProfile, n = p.nama || fullName(), i = (n[0] || '?').toUpperCase();
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
@@ -117,8 +141,7 @@
       setT('ketMeta', `NIP: ${p.nip || '—'} · ID: ${window.MY_ID || '—'}`);
 
       setT('headerOrgName', p.bidang || 'Sekretariat');
-      setT('headerOrgSub', p.instansi || 'BAPPERIDA SUMBA BARAT');
-      setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN BAPPERIDA`);
+      applyInstansiBranding(p.instansi_id);
       // ── Badge status (baca dari data, bukan hardcode) ──
       const st = (p.status || 'AKTIF').toUpperCase();
       const stEmoji = st === 'AKTIF' ? '✅' : st === 'SAKIT' ? '🤒' : st === 'IZIN' ? '🙏' : st === 'TUGAS' ? '💼' : st === 'NONAKTIF' ? '🚫' : '⚙️';
@@ -174,10 +197,7 @@
       window.userProfile = userProfile;
       
       setT('headerOrgName', 'Sekretariat');
-      setT('headerOrgSub', 'BAPPERIDA SUMBA BARAT');
-
-      const logoWrap = $('headerLogoWrap');
-      if (logoWrap) logoWrap.innerHTML = '🏛️';
+      applyInstansiBranding();
 
       ['userAvatar', 'ketAvatar'].forEach(id => { const e = $(id); if (e) e.textContent = i; });
       setT('userName', n); setT('ketNama', n);

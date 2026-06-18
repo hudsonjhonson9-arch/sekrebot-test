@@ -382,6 +382,7 @@
       }
       localStorage.setItem('MY_INSTANSI', val);
       document.documentElement.style.setProperty('--agency-name', `'${val.toUpperCase()}'`);
+      if (typeof applyInstansiBranding === 'function') applyInstansiBranding(val);
       if (window.userProfile) {
         window.userProfile.instansi_id = val;
       }

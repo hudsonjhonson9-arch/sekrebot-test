@@ -31,6 +31,8 @@
           localStorage.setItem('absen_instansi_map', JSON.stringify(instMap));
           window.INSTANSI_LIST = Object.keys(instMap).map(k => instMap[k]);
           console.log('[Instansi] Cached full mapping to localStorage:', instMap);
+
+          if (typeof applyInstansiBranding === 'function') applyInstansiBranding();
           
           if (typeof populateSuperadminInstansiSelect === 'function') {
             populateSuperadminInstansiSelect();

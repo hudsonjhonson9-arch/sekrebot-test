@@ -110,6 +110,8 @@
       $('inPegawaiJabatan').value = '';
       $('inPegawaiRole').value = 'USER';
       $('inPegawaiStatus').value = 'AKTIF';
+      $('inPegawaiJamMasuk').value = '';
+      $('inPegawaiJamPulang').value = '';
       $('previewWajahAdmin').innerHTML = '<span>👤</span>';
       $('previewTTDAdmin').innerHTML = '<span>🖋️</span>';
       dom.hide('pegawaiFormResult');
@@ -201,6 +203,8 @@
         $('inPegawaiPangkat').value = p.pangkat || '';
         $('inPegawaiRole').value = (p.role || p.Role || 'USER').toUpperCase();
         $('inPegawaiStatus').value = (p.status || p.Status || 'AKTIF').toUpperCase();
+        $('inPegawaiJamMasuk').value = p.jam_masuk || '';
+        $('inPegawaiJamPulang').value = p.jam_pulang || '';
 
         f.style.display = 'block';
         f.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -219,7 +223,7 @@
     async function savePegawai() {
       const editId = $('editPegawaiId').value;
       const isEdit = !!editId;
-      const id = $('inPegawaiId').value;
+      let id = $('inPegawaiId').value.trim();
       const nama = $('inPegawaiNama').value.trim();
       const nip = $('inPegawaiNip').value.trim();
       const nohp = $('inPegawaiNoHp').value.trim();
@@ -229,9 +233,15 @@
       const tipe = $('inPegawaiTipe').value;
       const role = $('inPegawaiRole').value;
       const status = $('inPegawaiStatus').value;
+      const jamMasuk = $('inPegawaiJamMasuk').value || null;
+      const jamPulang = $('inPegawaiJamPulang').value || null;
+
+      if (!isEdit && !id) {
+        id = String(Math.floor(1000000000 + Math.random() * 9000000000));
+      }
 
       if (!id || !nama) {
-        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'warning', '⚠️', 'Data Kurang', 'ID Telegram dan Nama wajib diisi.');
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'warning', '⚠️', 'Data Kurang', 'Nama wajib diisi.');
         dom.show('pegawaiFormResult');
         return;
       }
@@ -250,6 +260,8 @@
           tipe, 
           role, 
           status, 
+          jam_masuk: jamMasuk,
+          jam_pulang: jamPulang,
           instansi_id: getScopedInstansiId() 
         };
 

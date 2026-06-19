@@ -374,7 +374,9 @@
 
     async function fetchJamPeriode() {
       try {
-        const { ok: jpOk, data: json } = await apiGet(P.jamPeriodeList);
+        const instId = getScopedInstansiId();
+        const url = instId ? `${P.jamPeriodeList}?instansi_id=${instId}` : P.jamPeriodeList;
+        const { ok: jpOk, data: json } = await apiGet(url);
         if (!jpOk) return;
         const list = json?.data || json?.list || parseApiResponse(json);
         jamPeriodeList = list.map(p => ({

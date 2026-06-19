@@ -121,11 +121,13 @@
     if ($('lemburDari')) $('lemburDari').value = today;
     if ($('lemburSampai')) $('lemburSampai').value = today;
 
-    // Load archives if manager
+    // Load archives if has overtime access
     const p = window.userProfile || {};
     const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
     const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
-    if (isManager) {
+    const userInstansi = (p.instansi_id || localStorage.getItem('MY_INSTANSI') || '').toLowerCase().trim();
+    const hasLemburAccess = isManager || (userInstansi && userInstansi !== '');
+    if (hasLemburAccess) {
       loadLemburArchive();
     }
   }
@@ -141,6 +143,8 @@
     const p = userProfile || {};
     const role = String(p.role || localStorage.getItem('MY_ROLE') || 'USER').toLowerCase().trim();
     const isManager = ['kepala', 'sekretaris', 'kabid', 'irban', 'admin', 'superadmin'].includes(role) || !!window.IS_ADMIN;
+    const userInstansi = (p.instansi_id || localStorage.getItem('MY_INSTANSI') || '').toLowerCase().trim();
+    const hasLemburAccess = isManager || (userInstansi && userInstansi !== '');
     
     // 1. Sidebar/Bottom Nav & Admin Visibility
     if (typeof applyAdminVisibility === 'function') applyAdminVisibility();
@@ -153,8 +157,8 @@
     if (navTugasDesk) navTugasDesk.style.display = 'flex';
     if (moreTugas) moreTugas.style.display = 'flex';
     
-    if (navLemburDesk) navLemburDesk.style.display = isManager ? 'flex' : 'none';
-    if (moreLembur) moreLembur.style.display = isManager ? 'flex' : 'none';
+    if (navLemburDesk) navLemburDesk.style.display = hasLemburAccess ? 'flex' : 'none';
+    if (moreLembur) moreLembur.style.display = hasLemburAccess ? 'flex' : 'none';
 
     // 2. Form vs List visibility
     const creationForm = $('tugasCreationForm');

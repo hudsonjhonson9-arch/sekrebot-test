@@ -638,6 +638,9 @@ function renderRekap(pg) {
 
   const isMagang = document.getElementById('rekapRoleFilter')?.value === 'magang';
 
+  const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+  const isAdmin = isSA || (window.userProfile?.role?.toLowerCase().includes('admin')) || !!window.IS_ADMIN;
+
   el.innerHTML = filteredPg.map((p, idx) => {
     const nama = p.nama || '—';
     const nip = p.nip || '—';
@@ -763,7 +766,7 @@ function renderRekap(pg) {
         <!-- ── CARD JAM MASUK / PULANG ── -->
         ${isKet ? `
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden; margin-bottom:8px;">
-            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) && p._rawKetLog ? `
+            ${isAdmin && p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
@@ -782,7 +785,7 @@ function renderRekap(pg) {
 
           <!-- JAM MASUK -->
           <div style="background:${masukBg}; border:1px solid ${masukColor}33; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ? (p._rawMasukLog || p._rawKetLog ? `
+            ${isAdmin ? (p._rawMasukLog || p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawMasukLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${masukColor}22; color:${masukColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"
@@ -805,7 +808,7 @@ function renderRekap(pg) {
 
           <!-- JAM PULANG -->
           <div style="background:${isKet ? masukBg : 'rgba(96,165,250,.07)'}; border:1px solid ${isKet ? masukColor + '33' : 'rgba(96,165,250,.2)'}; border-radius:10px; padding:10px 12px; position:relative; overflow:hidden;">
-            ${(typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ? (p._rawPulangLog || p._rawKetLog ? `
+            ${isAdmin ? (p._rawPulangLog || p._rawKetLog ? `
               <button onclick="event.stopPropagation(); openLogEditor('${p.id}', '${_dari}', ${JSON.stringify(p._rawPulangLog || p._rawKetLog).replace(/"/g, '&quot;')})" 
                       style="position:absolute; top:0; right:0; bottom:0; width:30px; background:rgba(255,255,255,0.05); border:none; border-left:1px solid ${pulangColor}22; color:${pulangColor}; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;"
                       onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'"

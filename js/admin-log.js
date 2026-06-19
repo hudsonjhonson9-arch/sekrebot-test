@@ -28,8 +28,11 @@
      * @returns {Promise<void>}
      */
     async function openLogEditor(uid = '', date = '', log = null, hintJenis = '') {
-      if (typeof _isSuperAdmin === 'function' && !_isSuperAdmin()) {
-        alert('Maaf, hanya Super Admin yang diizinkan untuk menambah atau mengedit log secara manual.');
+      const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+      const isAdmin = isSA || (window.userProfile?.role?.toLowerCase().includes('admin')) || !!window.IS_ADMIN;
+
+      if (!isAdmin) {
+        alert('Maaf, hanya Admin atau Super Admin yang diizinkan untuk menambah atau mengedit log secara manual.');
         return;
       }
 
@@ -147,6 +150,14 @@
     
     async function saveLog() {
       if (_isLogSubmitting) return; // Prevent double submission
+
+      const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+      const isAdmin = isSA || (window.userProfile?.role?.toLowerCase().includes('admin')) || !!window.IS_ADMIN;
+
+      if (!isAdmin) {
+        alert('Maaf, hanya Admin atau Super Admin yang diizinkan untuk menyimpan log.');
+        return;
+      }
       
       let editId = $('editLogId').value;
       const uid = $('inLogPegawai').value;

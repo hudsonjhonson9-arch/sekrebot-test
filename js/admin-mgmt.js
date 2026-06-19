@@ -244,7 +244,10 @@ let _jamAbsenPromise = null;   // Promise aktif yang sedang berjalan
 async function _getJamAbsen() {
   if (_jamAbsenCache) return _jamAbsenCache;
   if (_jamAbsenPromise) return _jamAbsenPromise;
-  _jamAbsenPromise = apiGet(P.jamAbsen)
+  const configSelect = $('configInstansiSelect');
+  const instId = (configSelect && configSelect.value) || getScopedInstansiId();
+  const params = instId ? { instansi_id: instId } : {};
+  _jamAbsenPromise = apiGet(P.jamAbsen, params)
     .then(res => {
       if (!res.ok) return Promise.reject(new Error('HTTP error'));
       const raw = res.data;
@@ -299,6 +302,7 @@ async function loadJamAbsen() {
     try { localStorage.setItem('jam_absen_bapperida', JSON.stringify({ masuk: menitToStr(JAM_MASUK_MENIT), pulang: menitToStr(JAM_PULANG_MENIT) })); } catch (_) { }
     updateClock();
     initJamAdminUI();
+    if (typeof initSuperadminConfigScoping === 'function') initSuperadminConfigScoping();
 
     // FIX: Jika sedang di tab admin saat data jam/admin dimuat, refresh UI admin
     const activeTab = document.querySelector('.tab.active')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
@@ -368,9 +372,12 @@ async function simpanJamAbsen() {
   const btn = $('btnSimpanJam');
   if (btn) { btn.disabled = true; dom.setText('btnJamText', '💾 Menyimpan...'); }
   try {
+    const configSelect = $('configInstansiSelect');
+    const instId = (configSelect && configSelect.value) || getScopedInstansiId() || 'bapperida';
     await apiPost(P.jamAbsen, {
       masuk: inM.value,
       pulang: inP.value,
+      instansi_id: instId,
       diubah_oleh: MY_ID,
       nip: localStorage.getItem('MY_NIP') || '',
       timestamp: Math.floor(Date.now() / 1000)
@@ -424,4 +431,81 @@ function initJamAdminUI() {
     if (m !== null) { JAM_PULANG_MENIT = m; updateJamPreview(); updateClock(); }
   });
 }
+
+function initSuperadminConfigScoping() {
+  const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+  const sec = $('configInstansiSection');
+  if (!sec) return;
+
+  if (isSA) {
+    sec.style.display = 'block';
+    const el = $('configInstansiSelect');
+    if (el) {
+      if (el.options.length <= 1) {
+        try {
+          const cached = localStorage.getItem('absen_instansi_map');
+          if (cached) {
+            const map = JSON.parse(cached);
+            const keys = Object.keys(map);
+            el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+              keys.map(k => {
+                const inst = map[k];
+                const id = inst.id || inst.ID || k;
+                const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                return `<option value="${id}">${name}</option>`;
+              }).join('');
+          }
+        } catch (e) {
+          console.error('[Config Superadmin] populate error:', e);
+        }
+      }
+      const scoped = getScopedInstansiId();
+      if (scoped) {
+        el.value = scoped;
+      }
+    }
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+async function onConfigInstansiChange() {
+  const el = $('configInstansiSelect');
+  if (!el) return;
+  const instId = el.value;
+  if (!instId) return;
+
+  _resetJamAbsenCache();
+  try {
+    const res = await apiGet(P.jamAbsen, { instansi_id: instId });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = res.data;
+    const jam = data?.data || data || {};
+    
+    const inM = $('inputJamMasuk'), inP = $('inputJamPulang');
+    if (inM && jam.masuk) inM.value = jam.masuk;
+    if (inP && jam.pulang) inP.value = jam.pulang;
+    
+    if (jam.masuk) { const m = toMenitStr(jam.masuk); if (m !== null) JAM_MASUK_MENIT = m; }
+    if (jam.pulang) { const m = toMenitStr(jam.pulang); if (m !== null) JAM_PULANG_MENIT = m; }
+    
+    updateClock();
+    updateJamPreview();
+    
+    // Sync other dropdowns
+    const mainSelect = $('adminInstansiSelect');
+    if (mainSelect) {
+      mainSelect.value = instId;
+      // Set local storage and trigger update
+      localStorage.setItem('MY_INSTANSI', instId);
+      if (window.userProfile) window.userProfile.instansi_id = instId;
+    }
+  } catch (e) {
+    console.error('[Config Scoping] Failed to load jam for instansi:', instId, e);
+  }
+}
+
+window.initSuperadminConfigScoping = initSuperadminConfigScoping;
+window.onConfigInstansiChange = onConfigInstansiChange;
+
 

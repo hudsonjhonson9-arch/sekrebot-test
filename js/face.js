@@ -669,7 +669,7 @@
         // Langkah 2: Deteksi backend terbaik secara otomatis
         const bestBackend = await _detectBestBackend();
         const isMobile = _isMobileDevice();
-        const inputSize = isMobile ? 512 : 1024; // Resolusi ditingkatkan sesuai permintaan
+        const inputSize = isMobile ? 256 : 1024; // Optimasi 256 pada mobile untuk performa low-end
         console.log(`[AI] Device: ${isMobile ? 'Mobile' : 'Desktop'} | Backend: ${bestBackend} | InputSize: ${inputSize}`);
 
         const config = {
@@ -692,7 +692,7 @@
             iris: { enabled: false },
             description: { enabled: true, modelPath: 'faceres.json' },
             emotion: { enabled: false },
-            liveness: { enabled: true }
+            liveness: { enabled: !isMobile } // Dinonaktifkan di mobile untuk performa low-end
           },
           body: { enabled: false },
           hand: { enabled: false },
@@ -720,6 +720,15 @@
             await HumanInstance.tf.setBackend(bestBackend);
             await HumanInstance.tf.ready();
             console.log(`[AI] TFJS backend aktif: ${await HumanInstance.tf.getBackend()}`);
+            if (isMobile) {
+              try {
+                HumanInstance.tf.env().set('WEBGL_FORCE_F16_TEXTURING', true);
+                HumanInstance.tf.env().set('WEBGL_PACK', true);
+                console.log('[AI] Mobile TFJS flags applied: FP16 & Packing enabled');
+              } catch (err) {
+                console.warn('[AI] Gagal mengatur environment flags:', err);
+              }
+            }
           } catch (e) {
             console.warn('[AI] Backend manual gagal, biarkan Human memilih otomatis:', e.message);
           }
@@ -1161,7 +1170,8 @@
               const realScore = f.real || 0;
               const genericScore = f.liveness || 0;
               _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
-              const isLive = (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+              const isMobile = _isMobileDevice();
+              const isLive = isMobile ? true : (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
               detection = {
                 landmarks: { positions: f.landmarks || [] },
                 descriptor: f.embedding || null,

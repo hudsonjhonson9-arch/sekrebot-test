@@ -40,6 +40,8 @@
           window.INSTANSI_LIST = Object.keys(instMap).map(k => instMap[k]);
           
           console.log('[Instansi] Cached full mapping to localStorage:', instMap);
+
+          if (typeof applyInstansiBranding === 'function') applyInstansiBranding();
           
           if (typeof populateSuperadminInstansiSelect === 'function') {
             populateSuperadminInstansiSelect();
@@ -49,6 +51,7 @@
           if (typeof initSuperadminRekapScoping === 'function') initSuperadminRekapScoping();
           if (typeof initSuperadminTugasScoping === 'function') initSuperadminTugasScoping();
           if (typeof initSuperadminLemburScoping === 'function') initSuperadminLemburScoping();
+          if (typeof initSuperadminConfigScoping === 'function') initSuperadminConfigScoping();
           if (typeof loadLokasiAdmin === 'function') loadLokasiAdmin();
         } catch(e) {
           console.error('[Instansi] Cache error:', e);
@@ -1138,7 +1141,7 @@
     async function savePegawai() {
       const editId = $('editPegawaiId').value;
       const isEdit = !!editId;
-      const id = $('inPegawaiId').value;
+      let id = $('inPegawaiId').value.trim();
       const nama = $('inPegawaiNama').value.trim();
       const no = $('inPegawaiNo').value;
       const nip = $('inPegawaiNip').value.trim();
@@ -1148,8 +1151,12 @@
       const role = $('inPegawaiRole').value;
       const status = $('inPegawaiStatus').value;
 
+      if (!isEdit && !id) {
+        id = String(Math.floor(1000000000 + Math.random() * 9000000000));
+      }
+
       if (!id || !nama) {
-        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'warning', '⚠️', 'Data Kurang', 'ID Telegram dan Nama wajib diisi.');
+        showResult('pegawaiFormResult', 'pegawaiFormRIcon', 'pegawaiFormRTitle', 'pegawaiFormRMsg', 'warning', '⚠️', 'Data Kurang', 'Nama wajib diisi.');
         return;
       }
 
@@ -1559,7 +1566,10 @@
     async function _getJamAbsen() {
       if (_jamAbsenCache) return _jamAbsenCache;
       if (_jamAbsenPromise) return _jamAbsenPromise;
-      _jamAbsenPromise = apiFetch(P.jamAbsen, { method: 'GET' })
+      const configSelect = $('configInstansiSelect');
+      const instId = (configSelect && configSelect.value) || getScopedInstansiId();
+      const url = instId ? `${P.jamAbsen}?instansi_id=${instId}` : P.jamAbsen;
+      _jamAbsenPromise = apiFetch(url, { method: 'GET' })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
         .then(d => {
           _jamAbsenCache = d.data || d;
@@ -1654,7 +1664,18 @@
       const btn = $('btnSimpanJam');
       if (btn) { btn.disabled = true; $('btnJamText').textContent = '💾 Menyimpan...'; }
       try {
-        await apiFetch(P.jamAbsen, { method: 'POST', body: JSON.stringify({ masuk: inM.value, pulang: inP.value, diubah_oleh: MY_ID, timestamp: Math.floor(Date.now() / 1000) }) });
+        const configSelect = $('configInstansiSelect');
+        const instId = (configSelect && configSelect.value) || getScopedInstansiId() || 'bapperida';
+        await apiFetch(P.jamAbsen, { 
+          method: 'POST', 
+          body: JSON.stringify({ 
+            masuk: inM.value, 
+            pulang: inP.value, 
+            instansi_id: instId,
+            diubah_oleh: MY_ID, 
+            timestamp: Math.floor(Date.now() / 1000) 
+          }) 
+        });
         // Invalidasi cache agar loadAdminMgmt() membaca data terbaru
         _jamAbsenCache = null; _jamAbsenPromise = null;
         JAM_MASUK_MENIT = mMasuk;
@@ -2374,4 +2395,82 @@
 
     window.initSuperadminAdminScoping = initSuperadminAdminScoping;
     window.onAdminInstansiChange = onAdminInstansiChange;
+
+    function initSuperadminConfigScoping() {
+      const isSA = typeof _isSuperAdmin === 'function' && _isSuperAdmin();
+      const sec = $('configInstansiSection');
+      if (!sec) return;
+
+      if (isSA) {
+        sec.style.display = 'block';
+        const el = $('configInstansiSelect');
+        if (el) {
+          if (el.options.length <= 1) {
+            try {
+              const cached = localStorage.getItem('absen_instansi_map');
+              if (cached) {
+                const map = JSON.parse(cached);
+                const keys = Object.keys(map);
+                el.innerHTML = '<option value="">— Pilih Instansi —</option>' +
+                  keys.map(k => {
+                    const inst = map[k];
+                    const id = inst.id || inst.ID || k;
+                    const name = inst.nama_instansi || inst.header || inst.nama || id.toUpperCase();
+                    return `<option value="${id}">${name}</option>`;
+                  }).join('');
+              }
+            } catch (e) {
+              console.error('[Config Superadmin] populate error:', e);
+            }
+          }
+          const scoped = getScopedInstansiId();
+          if (scoped) {
+            el.value = scoped;
+          }
+        }
+      } else {
+        sec.style.display = 'none';
+      }
+    }
+
+    async function onConfigInstansiChange() {
+      const el = $('configInstansiSelect');
+      if (!el) return;
+      const instId = el.value;
+      if (!instId) return;
+
+      _resetJamAbsenCache();
+      try {
+        const url = `${P.jamAbsen}?instansi_id=${instId}`;
+        const res = await apiFetch(url, { method: 'GET' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const jam = data.data || data;
+        
+        const inM = $('inputJamMasuk'), inP = $('inputJamPulang');
+        if (inM && jam.masuk) inM.value = jam.masuk;
+        if (inP && jam.pulang) inP.value = jam.pulang;
+        
+        if (jam.masuk) { const m = toMenitStr(jam.masuk); if (m !== null) JAM_MASUK_MENIT = m; }
+        if (jam.pulang) { const m = toMenitStr(jam.pulang); if (m !== null) JAM_PULANG_MENIT = m; }
+        
+        updateClock();
+        updateJamPreview();
+        
+        // Sync other dropdowns
+        const mainSelect = $('adminInstansiSelect');
+        if (mainSelect) {
+          mainSelect.value = instId;
+          // Set local storage and trigger update
+          localStorage.setItem('MY_INSTANSI', instId);
+          if (window.userProfile) window.userProfile.instansi_id = instId;
+        }
+      } catch (e) {
+        console.error('[Config Scoping] Failed to load jam for instansi:', instId, e);
+      }
+    }
+
+    window.initSuperadminConfigScoping = initSuperadminConfigScoping;
+    window.onConfigInstansiChange = onConfigInstansiChange;
+
 

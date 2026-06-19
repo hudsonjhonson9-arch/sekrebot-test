@@ -99,22 +99,39 @@
              window.tgUser = { first_name: user.nama || 'User', username: userNip };
              
              if (!hasFace) {
-                // REGISTRASI WAJAH PERTAMA KALI
-                alert('Wajah Anda belum terdaftar.\nSilakan daftarkan wajah Anda ke sistem sekarang untuk mengamankan akun (Passwordless).');
-                openCamOverlay({
-                   isRegister: true,
-                   onDone: () => {
-                      alert('Wajah berhasil didaftarkan! Selamat datang.');
-                      finalizeLogin();
-                   },
-                   onCancel: () => {
-                      window.MY_ID = null; // revert
-                      window.tgUser = {};
-                      if (overlayEl) overlayEl.style.display = 'flex';
-                      btn.disabled = false;
-                      btn.innerHTML = originalText;
-                   }
-                });
+                 // REGISTRASI WAJAH PERTAMA KALI
+                 alert('Wajah Anda belum terdaftar.\nSilakan daftarkan wajah Anda ke sistem sekarang untuk mengamankan akun (Passwordless).');
+                 openCamOverlay({
+                    isRegister: true,
+                    onDone: async (camResult) => {
+                       if (!camResult || !camResult.dataUrl) {
+                          alert('Gagal mengambil data wajah.');
+                          if (overlayEl) overlayEl.style.display = 'flex';
+                          btn.disabled = false;
+                          btn.innerHTML = originalText;
+                          return;
+                       }
+                       
+                       try {
+                          const faceOk = await syncFaceToServer(targetId, camResult.dataUrl, camResult.descriptor, user.nama, new Date().toISOString());
+                          if (!faceOk) throw new Error('Gagal menyimpan data wajah ke server. Hubungi Admin.');
+                          alert('Wajah berhasil didaftarkan! Selamat datang.');
+                          finalizeLogin();
+                       } catch (err) {
+                          alert('⚠️ ' + err.message);
+                          if (overlayEl) overlayEl.style.display = 'flex';
+                          btn.disabled = false;
+                          btn.innerHTML = originalText;
+                       }
+                    },
+                    onCancel: () => {
+                       window.MY_ID = null; // revert
+                       window.tgUser = {};
+                       if (overlayEl) overlayEl.style.display = 'flex';
+                       btn.disabled = false;
+                       btn.innerHTML = originalText;
+                    }
+                 });
              } else {
                 openCamOverlay(async (camResult) => {
                     let similarity = 0;
@@ -214,7 +231,7 @@
           }
         } else {
           const payload = {
-            id: $('regTelegram')?.value.trim() || window.MY_ID || Math.floor(Math.random() * 1000000),
+            id: $('regTelegram')?.value.trim() || window.MY_ID || String(Math.floor(Math.random() * 1000000)),
             nama: $('regNama').value.trim(),
             nip: $('regNip').value.trim(),
             jabatan: $('regJabatan').value.trim(),
@@ -230,13 +247,65 @@
           if (payload.nip.length < 3) throw new Error('ID / NIP minimal terdiri dari 3 karakter');
           if (payload.no_hp && payload.no_hp.length < 10) throw new Error('Nomor WhatsApp minimal 10 digit');
 
-          const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);
-          if (!regOk || d?.ok === false) throw new Error(d?.message || 'Pendaftaran gagal');
+          // Sembunyikan form pendaftaran sementara untuk scan wajah
+          const overlayEl = document.getElementById('authOverlay');
+          if (overlayEl) overlayEl.style.display = 'none';
 
-          window.MY_ID = payload.id;
-          localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
-          localStorage.setItem('MY_NIP', String(payload.nip));
-          location.reload();
+          alert('Untuk menyelesaikan pendaftaran, silakan scan wajah Anda.');
+
+          // Buka kamera untuk mendaftarkan wajah
+          openCamOverlay({
+            isRegister: true,
+            onDone: async (camResult) => {
+              if (!camResult || !camResult.dataUrl) {
+                alert('Pendaftaran dibatalkan: Gagal memindai wajah.');
+                if (overlayEl) overlayEl.style.display = 'flex';
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+              }
+
+              btn.disabled = true;
+              btn.innerHTML = '<span class="spin-sm"></span> Menyimpan Akun...';
+
+              try {
+                // 1. Simpan user ke database
+                const { ok: regOk, data: d } = await apiPost(P.userAdd || P.faceRegister, payload);
+                if (!regOk || d?.ok === false) throw new Error(d?.message || 'Pendaftaran user gagal');
+
+                // 2. Simpan wajah ke server
+                window.MY_ID = payload.id;
+                window.tgUser = { first_name: payload.nama, username: payload.nip };
+                
+                const faceOk = await syncFaceToServer(payload.id, camResult.dataUrl, camResult.descriptor, payload.nama, new Date().toISOString());
+                if (!faceOk) throw new Error('Gagal menyimpan data wajah ke server. Hubungi Admin.');
+
+                // 3. Finalisasi login otomatis setelah sukses register
+                localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
+                localStorage.setItem('MY_NIP', String(payload.nip));
+                localStorage.setItem('MY_ROLE', 'USER');
+                localStorage.setItem('MY_NAME', String(payload.nama));
+                localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(payload));
+                if (payload.instansi_id) localStorage.setItem('MY_INSTANSI', payload.instansi_id);
+
+                alert('Pendaftaran berhasil! Wajah Anda telah terdaftar.');
+                location.reload();
+              } catch (err) {
+                alert('⚠️ ' + err.message);
+                window.MY_ID = null;
+                window.tgUser = {};
+                if (overlayEl) overlayEl.style.display = 'flex';
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+              }
+            },
+            onCancel: () => {
+              if (overlayEl) overlayEl.style.display = 'flex';
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            }
+          });
+          return;
         }
       } catch (err) {
         alert('⚠️ ' + err.message);

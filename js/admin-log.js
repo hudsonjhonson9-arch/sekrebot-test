@@ -212,7 +212,7 @@
             jam: jamRaw,
             jenis_absen: jenis,
             keterangan: ket,
-            admin_id: String(window.userProfile?.nip || window.userProfile?.NIP || localStorage.getItem('MY_NIP') || (_pegawaiListCache || []).find(u => String(u.id || u.ID) === String(window.MY_ID))?.nip || '').trim(),
+            admin_id: localStorage.getItem('MY_NIP') || String(window.userProfile?.nip || window.userProfile?.NIP || '').trim(),
             request_id: reqId, // Include idempotency key
             timestamp: Math.floor(Date.now() / 1000)
           });

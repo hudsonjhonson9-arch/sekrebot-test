@@ -43,7 +43,7 @@
 
       try {
         if (mode === 'login') {
-          const nip = $('loginNip').value.trim();
+          const nip = $('loginNip').value.trim().replace(/\s/g, '');
           if (!nip) throw new Error('Silakan masukkan NIP');
           if (nip.length < 3) throw new Error('ID / NIP minimal terdiri dari 3 karakter');
 
@@ -233,7 +233,7 @@
           const payload = {
             id: $('regTelegram')?.value.trim() || window.MY_ID || String(Math.floor(Math.random() * 1000000)),
             nama: $('regNama').value.trim(),
-            nip: $('regNip').value.trim(),
+            nip: $('regNip').value.trim().replace(/\s/g, ''),
             jabatan: $('regJabatan').value.trim(),
             no_hp: $('regNomor')?.value.trim() || '',
             bidang: $('regBidang').value || '',

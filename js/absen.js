@@ -35,7 +35,7 @@ async function handleAbsen() {
 
   const unlock = () => { _isAbsenSubmitting = false; };
   if (isDesktop()) {
-    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung', 'Absensi hanya dapat dilakukan dari smartphone. Gunakan Telegram di HP Anda.');
+    showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung', 'HADIR hanya dapat dilakukan dari smartphone. Gunakan Telegram di HP Anda.');
     unlock(); return;
   }
   setBtnL('btnAbsen', true, 'Memeriksa...');
@@ -550,7 +550,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           });
         } else if (kode_tolak === 'SUDAH_ABSEN') {
           showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', 'ℹ️', 'Sudah Absen',
-            `${ket}\n\nRiwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.`);
+            `${ket}\n\nRiwayat HADIR hari ini sudah tercatat. Tidak perlu absen ulang.`);
           setBtnL('btnAbsen', false, '✅ Sudah Tercatat');
           $('btnAbsen').disabled = true;
           logLoaded = false;
@@ -559,7 +559,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 
           Swal.fire({
             title: 'ℹ️ Sudah Absen',
-            text: 'Riwayat absensi hari ini sudah tercatat. Tidak perlu absen ulang.',
+            text: 'Riwayat HADIR hari ini sudah tercatat. Tidak perlu absen ulang.',
             icon: 'info',
             timer: 3000,
             showConfirmButton: true
@@ -624,7 +624,7 @@ async function handlePulangLuar() {
   }
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung',
-      'Absensi hanya dapat dilakukan dari smartphone.');
+      'HADIR hanya dapat dilakukan dari smartphone.');
     _isAbsenSubmitting = false;
     return;
   }

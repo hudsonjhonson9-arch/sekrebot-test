@@ -30,11 +30,7 @@
         }
 
         if (successCount > 0) {
-          const msg = document.createElement('div');
-          msg.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:10px 16px;border-radius:20px;font-size:12px;font-weight:700;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
-          msg.textContent = `✅ ${successCount} data offline berhasil disinkronisasi`;
-          document.body.appendChild(msg);
-          setTimeout(() => { if (msg.parentNode) msg.parentNode.removeChild(msg); }, 4000);
+          showToast(`${successCount} data offline berhasil disinkronisasi`, 'success');
 
           if (typeof loadLog === 'function') setTimeout(loadLog, 1500);
           if (typeof loadMyAssignments === 'function') setTimeout(loadMyAssignments, 1500);

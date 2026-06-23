@@ -275,7 +275,7 @@
           enabled ? 'Face Recognition Diaktifkan' : 'Face Recognition Dinonaktifkan',
           enabled
             ? 'Semua pegawai wajib verifikasi wajah saat absen.'
-            : 'Absensi hanya menggunakan GPS, tanpa kamera.'
+            : 'HADIR hanya menggunakan GPS, tanpa kamera.'
         );
       } catch {
         // Simpan lokal saja

@@ -80,7 +80,7 @@
       [ERROR_CODES.FACE_MODEL_NOT_READY]:{ icon: '⏳', title: 'Model AI Belum Siap',      type: 'warning', hint: 'Tunggu model AI selesai dimuat.' },
       [ERROR_CODES.SUDAH_ABSEN]:         { icon: 'ℹ️', title: 'Sudah Absen',             type: 'warning', hint: '' },
       [ERROR_CODES.BELUM_MASUK]:         { icon: '⚠️', title: 'Belum Absen Masuk',        type: 'warning', hint: 'Lakukan absen masuk terlebih dahulu.' },
-      [ERROR_CODES.DILUAR_JADWAL]:       { icon: '🕐', title: 'Di Luar Jadwal Absen',     type: 'warning', hint: 'Absensi hanya bisa dilakukan sesuai jadwal.' },
+      [ERROR_CODES.DILUAR_JADWAL]:       { icon: '🕐', title: 'Di Luar Jadwal Absen',     type: 'warning', hint: 'HADIR hanya bisa dilakukan sesuai jadwal.' },
       [ERROR_CODES.LOKASI_JAUH]:         { icon: '📍', title: 'Lokasi Terlalu Jauh',      type: 'fail',    hint: 'Anda berada di luar radius lokasi absen yang diizinkan.' },
       [ERROR_CODES.KET_DUPLIKAT]:        { icon: '⚠️', title: 'Keterangan Sudah Ada',     type: 'warning', hint: 'Keterangan untuk tanggal ini sudah pernah diajukan.' },
       [ERROR_CODES.KET_FORM_INVALID]:    { icon: '📋', title: 'Form Tidak Lengkap',       type: 'fail',    hint: 'Lengkapi semua field yang wajib diisi.' },

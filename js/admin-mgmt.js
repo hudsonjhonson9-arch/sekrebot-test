@@ -152,7 +152,7 @@ async function tambahAdmin() {
   const namaInput = $('inputAdminNama');
   const roleInput = $('inputAdminRole');
   const tgId = (idInput?.value || '').trim();
-  const nip = (nipInput?.value || '').trim();
+  const nip = (nipInput?.value || '').trim().replace(/\s/g, '');
   const nama = (namaInput?.value || '').trim();
   const role = roleInput?.value || 'admin';
 

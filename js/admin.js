@@ -15,19 +15,7 @@
         }
         const json = await res.json();
         console.log('[Instansi] Raw JSON:', json);
-        
-        // Robust parsing: extract array regardless of wrapping
-        let data = [];
-        if (Array.isArray(json)) {
-            // Check if it's [ { data: [...] } ]
-            if (json.length === 1 && json[0].data && Array.isArray(json[0].data)) data = json[0].data;
-            // Check if it's [ {...}, {...} ]
-            else data = json;
-        } else if (json && Array.isArray(json.data)) {
-            data = json.data;
-        }
-        
-        console.log('[Instansi] Parsed Data:', data);
+        let data = parseApiResponse(json);
 
         // Cache the instansi mapping in localStorage for global access
         try {
@@ -1144,7 +1132,7 @@
       let id = $('inPegawaiId').value.trim();
       const nama = $('inPegawaiNama').value.trim();
       const no = $('inPegawaiNo').value;
-      const nip = $('inPegawaiNip').value.trim();
+      const nip = $('inPegawaiNip').value.trim().replace(/\s/g, '');
       const jabatan = $('inPegawaiJabatan').value.trim();
       const pangkat = $('inPegawaiPangkat').value;
       const bidang = $('inPegawaiBidang').value;
@@ -1964,7 +1952,7 @@
           enabled ? 'Face Recognition Diaktifkan' : 'Face Recognition Dinonaktifkan',
           enabled
             ? 'Semua pegawai wajib verifikasi wajah saat absen.'
-            : 'Absensi hanya menggunakan GPS, tanpa kamera.'
+            : 'HADIR hanya menggunakan GPS, tanpa kamera.'
         );
       } catch {
         // Simpan lokal saja

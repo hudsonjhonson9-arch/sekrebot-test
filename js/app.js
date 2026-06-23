@@ -48,6 +48,11 @@
         // Initialize Tugas & Lembur Module
         if (typeof initTugasLembur === 'function') initTugasLembur();
 
+        // Strip spasi dari input NIP
+        document.querySelectorAll('#loginNip, #regNip, #inPegawaiNip, #inputAdminNip').forEach(el => {
+          el.addEventListener('input', () => { el.value = el.value.replace(/\s/g, ''); });
+        });
+
         // Manage Logout Button Visibility
         const logoutSec = $('logoutSection');
         if (logoutSec) {

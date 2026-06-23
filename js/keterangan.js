@@ -449,7 +449,7 @@
       const idKet = r.id_ket || r.ID_Ket || r.row_number || r.rowNumber || idx;
       const tgl = r.tanggal || r.Tanggal || '?';
       const jenis = (r.jenis || r['Jenis Absen'] || '').replace(' PENDING', '').trim();
-      if (!confirm(`Hapus pengajuan ${jenis}\n${tgl}?\nData akan dihapus dari ket_temp dan Log Absensi.`)) return;
+      if (!confirm(`Hapus pengajuan ${jenis}\n${tgl}?\nData akan dihapus dari ket_temp dan Log HADIR.`)) return;
       try {
         const res = await apiPost(P.ketDelete, {
             user_id: MY_ID, id_ket: idKet,

@@ -5363,7 +5363,7 @@
       }
 
       .bottom-nav::before {
-        content: var(--agency-name, 'ABSENSI');
+        content: var(--agency-name, 'HADIR');
         display: block;
         font-size: 18px;
         font-weight: 900;

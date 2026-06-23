@@ -1,24 +1,6 @@
 /* ════ HELPERS — DOM, DATA, RESULT UI ════ */
     /* ════ RIWAYAT HARI INI ════ */
     /**
-     * Parse berbagai format response array dari n8n menjadi array flat.
-     * @deprecated Gunakan parseApiResponse() dari config.js untuk kode baru.
-     * @param {any} json - Response JSON dari API
-     * @returns {any[]}
-     */
-        function parseRows(json) {
-      if (!json) return [];
-      // Jika format nya [ { data: [...], total: 10 } ] (N8N standard wrapper)
-      if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0]?.data)) return json[0].data;
-      // Jika format nya langsung array [ {...}, {...} ]
-      if (Array.isArray(json)) return json;
-      // Jika format nya object { data: [...] }
-      if (Array.isArray(json?.data)) return json.data;
-      // Jika format nya [ [...] ] (array di dalam array)
-      if (Array.isArray(json?.[0])) return json[0];
-      return [];
-    }
-    /**
      * Ambil nilai field dari row data dengan fallback multi-key.
      * Menangani perbedaan kapitalisasi key antara format lama dan baru.
      * @param {Object} r - Baris data

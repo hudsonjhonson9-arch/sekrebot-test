@@ -469,9 +469,9 @@
         }
 
         // 6. Simpan & Kirim references
-        const fileName = `Rekap_Absensi_${dari}_${sampai}.pdf`;
+        const fileName = `Rekap_HADIR_${dari}_${sampai}.pdf`;
         const pdfBase64 = doc.output('datauristring').split(',')[1];
-        const pdfMsg = `📄 *REKAP ABSENSI PDF*\n📅 Periode: ${tanggalLabel}\n👤 Peminta: ${window.userProfile?.nama || window.MY_ID}\n🪪 NIP: ${localStorage.getItem('MY_NIP') || '-'}\n\nLaporan telah siap.`;
+        const pdfMsg = `📄 *REKAP HADIR PDF*\n📅 Periode: ${tanggalLabel}\n👤 Peminta: ${window.userProfile?.nama || window.MY_ID}\n🪪 NIP: ${localStorage.getItem('MY_NIP') || '-'}\n\nLaporan telah siap.`;
         const instName = instData?.nama_instansi || (typeof getInstansiName === 'function' ? getInstansiName(instId) : instId.toUpperCase());
 
         window.lastGeneratedDoc = doc;
@@ -501,8 +501,8 @@
               
               if (Share) {
                 await Share.share({
-                  title: 'Unduh Rekap Absensi',
-                  text: 'Berikut adalah laporan rekap absensi yang Anda unduh.',
+                  title: 'Unduh Rekap HADIR',
+                  text: 'Berikut adalah laporan rekap HADIR yang Anda unduh.',
                   url: writeResult.uri,
                   dialogTitle: 'Buka atau Simpan PDF'
                 });
@@ -977,8 +977,8 @@
                 });
                 if (Share) {
                   await Share.share({
-                    title: 'Unduh Rekap Absensi',
-                    text: 'Berikut adalah laporan rekap absensi yang Anda unduh.',
+                    title: 'Unduh Rekap HADIR',
+                    text: 'Berikut adalah laporan rekap HADIR yang Anda unduh.',
                     url: writeResult.uri,
                   });
                 }

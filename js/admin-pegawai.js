@@ -225,7 +225,7 @@
       const isEdit = !!editId;
       let id = $('inPegawaiId').value.trim();
       const nama = $('inPegawaiNama').value.trim();
-      const nip = $('inPegawaiNip').value.trim();
+      const nip = $('inPegawaiNip').value.trim().replace(/\s/g, '');
       const nohp = $('inPegawaiNoHp').value.trim();
       const jabatan = $('inPegawaiJabatan').value.trim();
       const pangkat = $('inPegawaiPangkat').value;
@@ -307,7 +307,7 @@
 
     function openSignatureAdmin() {
       const uid = $('editPegawaiId').value;
-      const nip = $('inPegawaiNip').value;
+      const nip = $('inPegawaiNip').value.replace(/\s/g, '');
       const nama = $('inPegawaiNama').value;
       if (!uid) return alert('Pilih pegawai dulu');
       if (!nip) return alert('Pegawai ini belum memiliki NIP. Harap isi NIP terlebih dahulu.');

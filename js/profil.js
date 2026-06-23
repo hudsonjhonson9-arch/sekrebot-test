@@ -120,7 +120,7 @@
 
       setT('headerOrgSub', instName);
       setT('pegawaiFormTitleText', `DATABASE KEPEGAWAIAN ${String(instName).toUpperCase()}`);
-      document.title = `Absensi ${instName}`;
+      document.title = `HADIR ${instName}`;
 
       const logoWrap = $('headerLogoWrap');
       if (logoWrap) {

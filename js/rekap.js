@@ -180,13 +180,16 @@ async function loadRekap() {
             ringkasan = d.ringkasan || {};
             let fetchedPegawai = d.pegawai;
 
-            // Filter Pegawai vs Magang based on NIP length
+            // Filter Pegawai vs Magang based on NIP digit count (18 digit = PNS/PPPK)
+            // Penting: strip spasi/tanda baca dulu sebelum cek panjang, karena NIP bisa berformat
+            // "19740613 200012 2 001" (22 char) maupun "197406132000122001" (18 char)
+            const _nipDigits = nip => String(nip || '').replace(/\D/g, '');
             const roleFilter = document.getElementById('rekapRoleFilter');
             const roleFilterVal = roleFilter ? roleFilter.value : 'pegawai'; // Default ke pegawai
             if (roleFilterVal === 'pegawai') {
-              pegawai = fetchedPegawai.filter(p => p.nip && String(p.nip).trim().length === 18);
+              pegawai = fetchedPegawai.filter(p => p.nip && _nipDigits(p.nip).length === 18);
             } else if (roleFilterVal === 'magang') {
-              pegawai = fetchedPegawai.filter(p => !p.nip || String(p.nip).trim().length !== 18);
+              pegawai = fetchedPegawai.filter(p => !p.nip || _nipDigits(p.nip).length !== 18);
             } else {
               pegawai = fetchedPegawai;
             }
@@ -1201,8 +1204,8 @@ async function downloadRekap() {
     ];
     ws['!cols'] = wscols;
 
-    XLSX.utils.book_append_sheet(wb, ws, "Rekap Absensi");
-    const filename = `Rekap_Absensi_${isHarian ? dari : dari + '_sd_' + sampai}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, "Rekap HADIR");
+    const filename = `Rekap_HADIR_${isHarian ? dari : dari + '_sd_' + sampai}.xlsx`;
     XLSX.writeFile(wb, filename);
 
     showRekapToast('success', `✅ Excel berhasil diunduh: ${filename}`);

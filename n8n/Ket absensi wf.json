@@ -76,7 +76,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM \"user_list\" WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida')",
+                                         "query":  "SELECT *, \"instansi_id\" FROM \"user_list\" WHERE \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida')",
                                          "options":  {
 
                                                      }
@@ -480,7 +480,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM \"admin_list\" WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida') OR \"role\" IN ('super admin', 'superadmin')",
+                                         "query":  "SELECT id AS telegram_id, \"NIP\", instansi_id FROM user_list WHERE is_admin = true AND (instansi_id = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida') OR UPPER(role) IN ('SUPERADMIN', 'SUPER ADMIN'))",
                                          "options":  {
 
                                                      }
@@ -1445,7 +1445,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM public.view_user_mgmt WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida')",
+                                         "query":  "SELECT *, \"instansi_id\" FROM public.view_user_mgmt WHERE \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida')",
                                          "options":  {
 
                                                      }
@@ -1658,7 +1658,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM public.view_user_mgmt WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida')",
+                                         "query":  "SELECT *, \"instansi_id\" FROM public.view_user_mgmt WHERE \"instansi_id\" = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida')",
                                          "options":  {
 
                                                      }
@@ -1968,7 +1968,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM \"admin_list\" WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida') OR \"role\" IN ('super admin', 'superadmin')",
+                                         "query":  "SELECT id AS telegram_id, \"NIP\", instansi_id FROM user_list WHERE is_admin = true AND (instansi_id = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida') OR UPPER(role) IN ('SUPERADMIN', 'SUPER ADMIN'))",
                                          "options":  {
 
                                                      }
@@ -2178,7 +2178,7 @@
                   {
                       "parameters":  {
                                          "operation":  "executeQuery",
-                                         "query":  "SELECT *, \"instansi_id\" FROM \"admin_list\" WHERE \"instansi_id\" = COALESCE(NULLIF({{ ($json.instansi_id).toString() }}, ''), 'bapperida') OR \"role\" IN ('super admin', 'superadmin')",
+                                         "query":  "SELECT id AS telegram_id, \"NIP\", instansi_id FROM user_list WHERE is_admin = true AND (instansi_id = COALESCE(NULLIF('{{ ($json.instansi_id).toString() }}', ''), 'bapperida') OR UPPER(role) IN ('SUPERADMIN', 'SUPER ADMIN'))",
                                          "options":  {
 
                                                      }
@@ -3891,4 +3891,3 @@
                  "instanceId":  "4b55943efb5f219d407bc408d9277d6d643804fc75070b4ed56250fe03c8ea67"
              }
 }
-

@@ -731,6 +731,32 @@
       display: block
     }
 
+    .gps-track-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      backdrop-filter: blur(12px);
+    }
+    .gps-track-badge.active { display: flex; }
+    .gps-track-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: gps-pulse 2s ease-in-out infinite;
+    }
+    @keyframes gps-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .gps-track-label { color: #10b981; font-weight: 700; flex: 1; }
+    .gps-track-interval { font-size: 9px; color: var(--muted); font-weight: 600; }
+
     .gps-row {
       display: flex;
       justify-content: space-between;

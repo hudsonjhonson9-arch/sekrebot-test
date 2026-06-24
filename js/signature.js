@@ -6,7 +6,7 @@
     let _sigDrawing = false;
     let _sigHasContent = false;
     let _sigPhotoData = null;     // base64 dari upload foto
-    let _sigTargetId = null;     // telegram_id pemilik tanda tangan
+    let _sigTargetNip = null;    // NIP pemilik tanda tangan
     let _sigCallback = null;     // callback setelah simpan berhasil
 
     // ── State tanda tangan tersimpan per pegawai (cache lokal) ──
@@ -15,11 +15,11 @@
     // ── Buka signature pad ──
     /**
      * Buka overlay untuk menggambar atau mengupload tanda tangan digital.
-     * @param {string|number} telegramId - ID Telegram pemilik tanda tangan
+     * @param {string} nip - NIP pemilik tanda tangan
      * @param {Function|null} callback - Dipanggil setelah simpan berhasil
      */
-        function openSignaturePad(telegramId, callback) {
-      _sigTargetId = telegramId || MY_ID;
+        function openSignaturePad(nip, callback) {
+      _sigTargetNip = nip || localStorage.getItem('MY_NIP') || '';
       _sigCallback = callback || null;
       _sigMode = 'draw';
       _sigHasContent = false;
@@ -28,8 +28,9 @@
       // Reset title
       const titleEl = $('sigOverlayTitle');
       if (titleEl) {
-        const isOwnSig = String(_sigTargetId) === String(MY_ID);
-        titleEl.textContent = isOwnSig ? 'Tanda Tangan Saya' : `Tanda Tangan: ${_sigTargetId}`;
+        const myNip = localStorage.getItem('MY_NIP') || '';
+        const isOwnSig = _sigTargetNip === myNip;
+        titleEl.textContent = isOwnSig ? 'Tanda Tangan Saya' : `Tanda Tangan NIP: ${_sigTargetNip}`;
       }
 
       // Reset UI
@@ -275,13 +276,10 @@
       if (btnTxt) btnTxt.textContent = 'Menyimpan...';
 
       try {
-        const targetNip = String(_sigTargetId) === String(MY_ID) 
-          ? (localStorage.getItem('MY_NIP') || '') 
-          : (window._adminNipMap ? window._adminNipMap[_sigTargetId] : _sigTargetId);
+        const nip = _sigTargetNip || localStorage.getItem('MY_NIP') || '';
 
         const payload = {
-          telegram_id: _sigTargetId,
-          nip: targetNip,
+          nip: nip,
           signature: dataUrl,
           savedAt: new Date().toISOString(),
           savedBy: MY_ID
@@ -289,26 +287,23 @@
         const { ok: sigOk, data: res } = await apiPost(P.signatureSave, payload);
 
         if (sigOk) {
-          // Cache lokal
-          _sigCache[targetNip || _sigTargetId] = dataUrl;
-          try { localStorage.setItem(`sig_${targetNip || _sigTargetId}`, dataUrl); } catch (_) { }
+          _sigCache[nip] = dataUrl;
+          try { localStorage.setItem(`sig_${nip}`, dataUrl); } catch (_) { }
 
           _showSigMsg('✅ Tanda tangan berhasil disimpan!', 'ok');
           // Update UI profil
-          if (String(_sigTargetId) === String(MY_ID)) updateProfilSigUI(dataUrl);
-          // Callback jika ada
+          if (nip === localStorage.getItem('MY_NIP')) updateProfilSigUI(dataUrl);
           if (typeof _sigCallback === 'function') _sigCallback(dataUrl);
-          // Tutup overlay setelah 1.5 detik
           setTimeout(() => closeSignaturePad(), 1500);
         } else {
           throw new Error('Server error ' + 200);
         }
       } catch (e) {
         // Fallback: simpan lokal saja
-        const fallbackKey = _sigTargetId === MY_ID ? (localStorage.getItem('MY_NIP') || _sigTargetId) : _sigTargetId;
-        _sigCache[fallbackKey] = dataUrl;
-        try { localStorage.setItem(`sig_${fallbackKey}`, dataUrl); } catch (_) { }
-        if (String(_sigTargetId) === String(MY_ID)) updateProfilSigUI(dataUrl);
+        const nip = _sigTargetNip || localStorage.getItem('MY_NIP') || '';
+        _sigCache[nip] = dataUrl;
+        try { localStorage.setItem(`sig_${nip}`, dataUrl); } catch (_) { }
+        if (nip === localStorage.getItem('MY_NIP')) updateProfilSigUI(dataUrl);
         _showSigMsg('⚠️ Tersimpan lokal (server tidak merespons)', 'warn');
         setTimeout(() => closeSignaturePad(), 1800);
       } finally {

@@ -185,25 +185,25 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
 
 // ── Override existing openSignaturePad for Admin Support ──
 const _origOpenSignaturePad = openSignaturePad;
-openSignaturePad = function (telegramId, callback) {
-  _sigTargetId = telegramId || MY_ID;
+openSignaturePad = function (nip, callback) {
+  _sigTargetNip = nip || localStorage.getItem('MY_NIP') || '';
   _sigCallback = callback || null;
 
   const titleEl = $('sigOverlayTitle');
   if (titleEl) {
-    const isOwn = String(_sigTargetId) === String(MY_ID);
-    if (!isOwn) {
-      // Find name from list if admin is capturing for someone else
-      titleEl.textContent = `✍️ TTD: ${telegramId}`;
+    const myNip = localStorage.getItem('MY_NIP') || '';
+    if (_sigTargetNip !== myNip) {
+      titleEl.textContent = `✍️ TTD NIP: ${nip}`;
     }
   }
-  _origOpenSignaturePad(telegramId, callback);
+  _origOpenSignaturePad(nip, callback);
 };
 
 // ── Admin: Capture Signature Helper ──
 function adminCaptureSignatureFor(uid, name) {
-  openSignaturePad(uid, (dataUrl) => {
-    // Optional refresh after save
+  // Look up NIP from the user object
+  const nip = window._adminNipMap ? window._adminNipMap[uid] : uid;
+  openSignaturePad(nip || uid, (dataUrl) => {
     loadAdminFaceReg();
   });
   const titleEl = $('sigOverlayTitle');

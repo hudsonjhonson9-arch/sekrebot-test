@@ -90,7 +90,7 @@
               </div>
               <div class="face-adm-btns" style="display:flex; flex-direction:column; gap:6px; margin-left:12px">
                 <button class="face-adm-btn" onclick="adminCaptureFaceFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">📷 Wajah</button>
-                <button class="face-adm-btn" onclick="adminCaptureSignatureFor('${uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">✍️ TTD</button>
+                <button class="face-adm-btn" onclick="adminCaptureSignatureFor('${u.nip || uid}','${nama.replace(/'/g, "&#39;")}')" style="min-width:75px">✍️ TTD</button>
               </div>
             </div>`;
         }).join('');

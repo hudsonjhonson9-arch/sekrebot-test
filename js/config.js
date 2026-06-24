@@ -167,6 +167,7 @@ const P = {
   lemburSave: isTest ? '/webhook-test/lembur-save' : '/webhook/lembur-save',
   lemburArchiveList: isTest ? '/webhook-test/lembur-archive-list' : '/webhook/lembur-archive-list',
   lemburArchiveDelete: isTest ? '/webhook-test/lembur-archive-delete' : '/webhook/lembur-archive-delete',
+  gpsTrack: isTest ? '/webhook-test/gps-track' : '/webhook/gps-track',
 };
 
 function getScopedInstansiId() {

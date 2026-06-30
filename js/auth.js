@@ -72,7 +72,10 @@
 
           // ── FACE VERIFICATION LOGIN (PASSWORDLESS) ──
           const isFaceEnabled = typeof FACE_RECOGNITION_ENABLED !== 'undefined' ? FACE_RECOGNITION_ENABLED : true;
-          const hasFace = !!(user.face_histogram || user.face_photo || user.face_model || user.foto_base64 || user.descriptor);
+          const hasFace = !!(user.face_histogram && user.face_histogram !== '[]' && user.face_histogram !== '[]' && user.face_histogram !== '')
+            || !!(user.face_photo && user.face_photo !== '' && user.face_photo !== 'null')
+            || !!(user.foto_base64 && user.foto_base64 !== '')
+            || !!(user.descriptor && user.descriptor !== '[]');
           const userNip = String(user.nip || '').trim();
           const targetId = String(user.telegram_id || user.id);
           

@@ -117,7 +117,7 @@
           if (containerId) {
             showResult(containerId, cardId, cardId + 'Icon', cardId + 'Msg', cfg.type, cfg.icon, cfg.title, fullMsg);
           } else {
-            showResult(cardId, cfg.type, cfg.icon, cfg.title, fullMsg);
+            showResult(cardId, 'rIcon', 'rTitle', 'rMsg', cfg.type, cfg.icon, cfg.title, fullMsg);
           }
         } catch (_) {
           // Fallback: console saja jika showResult tidak tersedia / arg salah

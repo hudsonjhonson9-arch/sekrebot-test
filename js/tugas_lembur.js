@@ -267,7 +267,7 @@
     }
 
     // Monitoring Section
-    if (isManager) {
+    if (isManagerRole) {
       loadMonitoringTasks();
     } else {
       const monEl = $('tugasMonitoringSection');

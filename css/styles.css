@@ -4216,7 +4216,7 @@
     }
     @media (min-width: 768px) {
       #adminMap {
-        height: 400px;
+        height: 400px !important;
       }
       #tugasMap {
         height: 400px !important;

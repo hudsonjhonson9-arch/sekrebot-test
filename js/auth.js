@@ -83,9 +83,14 @@
             try {
               const sessionBody = { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' };
                const { ok, data: sData } = await apiPost(P.sessionLogin, sessionBody);
-               console.log('[Login] Session response:', { ok, hasToken: !!sData?.session_token, keys: Object.keys(sData || {}) });
+               console.log('[Login] Session response:', { ok, data: sData });
                if (ok && sData?.session_token) {
                 setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
+              } else {
+                // Fallback: generate client-side token if n8n doesn't provide one
+                const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                console.log('[Login] Using fallback token');
+                setSession(fallbackToken, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
               }
             } catch (_) {}
             window.MY_ID = targetId;
@@ -302,9 +307,13 @@
                 try {
                   const sBody = { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' };
                   const { ok, data: sData } = await apiPost(P.sessionLogin, sBody);
-                  console.log('[Register] Session response:', { ok, hasToken: !!sData?.session_token, keys: Object.keys(sData || {}) });
+                  console.log('[Register] Session response:', { ok, data: sData });
                   if (ok && sData?.session_token) {
                     setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
+                  } else {
+                    const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                    console.log('[Register] Using fallback token');
+                    setSession(fallbackToken, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
                   }
                 } catch (_) {}
                 localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));

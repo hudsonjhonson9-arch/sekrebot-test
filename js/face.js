@@ -369,11 +369,11 @@
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 
         if (status) {
-          status.textContent = hasDescriptor ? (isHuman ? '🛡️ Data Wajah Human Aktif' : '✅ Data Wajah AI Tersimpan') : '⚠️ Perlu Didaftarkan Ulang';
-          status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
+          status.textContent = isHuman ? '🛡️ Data Wajah Human Aktif' : (hasDescriptor ? '⚠️ Format Lama — Perlu Daftar Ulang' : '❌ Belum Ada Data Wajah');
+          status.style.color = isHuman ? 'var(--success)' : (hasDescriptor ? 'var(--warning)' : 'var(--danger)');
         }
         if (sub) {
-          sub.textContent = hasDescriptor ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Human' : 'Standard'}` : `Format lama — daftarkan ulang untuk AI`;
+          sub.textContent = isHuman ? `Didaftarkan: ${tgl} · Face AI Human aktif` : `Daftarkan ulang wajah agar kompatibel dengan Face AI terbaru`;
         }
         if (btn) {
           btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
@@ -446,11 +446,11 @@
         }
         const d = new Date(ref.savedAt);
         const tgl = isNaN(d) ? '—' : `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-        status.textContent = hasDescriptor ? (isHuman ? '🛡️ Face AI: Human' : '✅ Data Wajah AI Tersimpan') : '⚠️ Format Lama — Perlu Didaftarkan Ulang';
-        status.style.color = hasDescriptor ? 'var(--success)' : 'var(--warning)';
-        if (sub) sub.textContent = hasDescriptor
-          ? `Didaftarkan: ${tgl} · Face AI ${isHuman ? 'Advanced' : 'Standard'} aktif`
-          : `Daftarkan ulang untuk mengaktifkan AI Face Recognition`;
+        status.textContent = isHuman ? '🛡️ Face AI: Human' : (hasDescriptor ? '⚠️ Format Lama — Perlu Daftar Ulang' : '❌ Belum Ada Data Wajah');
+        status.style.color = isHuman ? 'var(--success)' : (hasDescriptor ? 'var(--warning)' : 'var(--danger)');
+        if (sub) sub.textContent = isHuman
+          ? `Didaftarkan: ${tgl} · Face AI Advanced aktif`
+          : `Daftarkan ulang wajah agar kompatibel dengan Face AI terbaru`;
         if (btn) btn.textContent = hasDescriptor ? '🔄 Perbarui' : '📷 Daftarkan Ulang';
       } else {
         if (thumb) thumb.style.display = 'none';

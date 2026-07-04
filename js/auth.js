@@ -207,7 +207,7 @@
                                       similarity = Math.max(0, 1 - (dist / 1.5));
                                       failReason = `Wajah tidak cocok (Akurasi: ${(similarity*100).toFixed(0)}%).`;
                                   } else {
-                                      failReason = `Format AI berbeda! Server: ${refDim}-dim, Kamera: ${capDim}-dim. Hubungi admin untuk reset wajah.`;
+                                       failReason = `Data wajah format lama (${refDim}-dim). Silakan daftar ulang wajah di menu Profil → Face AI.`;
                                   }
                               }
                            } catch(e){

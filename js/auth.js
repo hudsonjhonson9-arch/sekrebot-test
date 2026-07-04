@@ -87,12 +87,19 @@
                if (ok && sData?.session_token) {
                 setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
               } else {
-                // Fallback: generate client-side token if n8n doesn't provide one
-                const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-                console.log('[Login] Using fallback token');
-                setSession(fallbackToken, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
+                console.error('[Login] Session login returned no token:', sData);
+                if (typeof Swal !== 'undefined') {
+                  Swal.fire('Gagal', 'Session tidak dapat dibuat. Error: ' + JSON.stringify(sData), 'error');
+                }
+                return;
               }
-            } catch (_) {}
+            } catch (e) {
+              console.error('[Login] Session login request failed:', e);
+              if (typeof Swal !== 'undefined') {
+                Swal.fire('Gagal', 'Tidak dapat menghubungi server session. Hubungi admin.', 'error');
+              }
+              return;
+            }
             window.MY_ID = targetId;
             localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
             localStorage.setItem('MY_NIP', userNip);
@@ -311,11 +318,17 @@
                   if (ok && sData?.session_token) {
                     setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
                   } else {
-                    const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-                    console.log('[Register] Using fallback token');
-                    setSession(fallbackToken, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
+                    console.error('[Register] Session login returned no token:', sData);
+                    alert('Pendaftaran berhasil tapi session gagal dibuat. Hubungi admin. Error: ' + JSON.stringify(sData));
+                    location.reload();
+                    return;
                   }
-                } catch (_) {}
+                } catch (e) {
+                  console.error('[Register] Session login request failed:', e);
+                  alert('Pendaftaran berhasil tapi server session tidak terjangkau. Hubungi admin.');
+                  location.reload();
+                  return;
+                }
                 localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
                 localStorage.setItem('MY_NIP', String(payload.nip));
                 localStorage.setItem('MY_ROLE', 'USER');
@@ -412,14 +425,25 @@
             if (sOk && sData?.session_token) {
               setSession(sData.session_token, { nip, role, instansi_id: instansi });
             } else {
-              const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-              console.log('[Auth] Using fallback token');
-              setSession(fallbackToken, { nip, role, instansi_id: instansi });
+              // Token tidak di-DB → show error, jangan pakai fallback
+              console.error('[Auth] session-login returned no token:', sData);
+              $('authOverlay').style.display = 'flex';
+              const splash = $('appSplash');
+              if (splash) splash.remove();
+              if (typeof Swal !== 'undefined') {
+                Swal.fire('Gagal', 'Session tidak dapat dibuat. Pastikan Anda terdaftar di sistem. Error: ' + JSON.stringify(sData), 'error');
+              }
+              return false;
             }
-          } catch (_) {
-            const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-            console.log('[Auth] session-login failed, using fallback token');
-            setSession(fallbackToken, { nip, role, instansi_id: instansi });
+          } catch (e) {
+            console.error('[Auth] session-login request failed:', e);
+            $('authOverlay').style.display = 'flex';
+            const splash = $('appSplash');
+            if (splash) splash.remove();
+            if (typeof Swal !== 'undefined') {
+              Swal.fire('Gagal', 'Tidak dapat menghubungi server session. Hubungi admin.', 'error');
+            }
+            return false;
           }
 
           // Simpan user data

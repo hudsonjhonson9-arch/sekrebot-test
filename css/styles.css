@@ -6067,21 +6067,20 @@ body {
 }
 
 html.light-theme {
-  --navy: #f1f5f9; /* Soft Slate-100 (Background utama, lebih bersahabat di mata) */
-  --white: #1e293b; /* Slate-800 (Warna teks utama, tidak hitam pekat) */
-  --muted: #64748b; /* Slate-500 (Teks sekunder) */
-  --card-bg: #ffffff; /* Solid White (Kartu putih bersih untuk kontras lembut) */
-  --border: rgba(201, 168, 76, 0.25); /* Border emas tipis lembut */
-  --gold-dim: rgba(201, 168, 76, 0.08);
-  
-  /* Penyesuaian warna gold agar lebih terbaca di background putih */
-  --gold-darker: #b38f36; 
+  /* Warm Eye-Comfort Palette — ponytail: warm tones reduce eye strain */
+  --navy: #f8f6f1;       /* Warm parchment background */
+  --white: #2c2417;      /* Warm dark text (high contrast on cream) */
+  --muted: #6b5e4e;      /* Warm secondary text */
+  --card-bg: #fffdf9;    /* Warm white cards — no pure #fff glare */
+  --border: rgba(138, 105, 20, 0.18);  /* Gold border, warmer & visible */
+  --gold-dim: rgba(138, 105, 20, 0.08);
+  --gold-darker: #8a6914;  /* Dark gold for 4.5:1+ contrast on cream */
 
-  /* High contrast status colors for light theme */
-  --success: #15803d; /* green-700 */
-  --warning: #b45309; /* amber-700 */
-  --info: #1d4ed8; /* blue-700 */
-  --danger: #b91c1c; /* red-700 */
+  /* High contrast status colors — warmer tones */
+  --success: #1a7a3a;    /* Forest green */
+  --warning: #a3620a;    /* Deep amber */
+  --info: #1b5fc4;       /* Deep blue */
+  --danger: #b01c1c;     /* Deep red */
 }
 
 /* Ensure background of body, app and panel are light and allow body::before gradient to show */
@@ -6097,16 +6096,16 @@ html.light-theme .app {
   }
 }
 
-/* Specific text color contrast fixes for Light Theme */
+/* Specific text color contrast fixes for Light Theme — warm tones */
 html.light-theme #akCepat,
 html.light-theme #akTotalCepat {
-  color: #ea580c !important; /* orange-600 for contrast */
+  color: #a3620a !important; /* warm amber */
 }
 html.light-theme .l-tugas .log-jenis {
   color: #7c3aed !important; /* violet-600 */
 }
 html.light-theme .l-pending .log-jenis {
-  color: #ca8a04 !important; /* amber-600 */
+  color: #a3620a !important; /* warm amber */
 }
 
 html.light-theme .filter-chip.active {
@@ -6115,74 +6114,74 @@ html.light-theme .filter-chip.active {
   color: var(--gold-darker) !important;
 }
 
-/* 1. Latar Belakang & Efek Gradasi */
+/* 1. Latar Belakang & Efek Gradasi — warm, soft gradients */
 html.light-theme body::before {
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 168, 76, 0.08) 0%, transparent 60%),
-              radial-gradient(ellipse 60% 40% at 100% 100%, rgba(241, 245, 249, 0.8) 0%, transparent 60%);
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(201, 168, 76, 0.12) 0%, transparent 55%),
+              radial-gradient(ellipse 50% 40% at 100% 100%, rgba(138, 105, 20, 0.06) 0%, transparent 50%);
 }
 
-/* 2. Navigasi Bawah & Sidebar Desktop */
+/* 2. Navigasi Bawah & Sidebar Desktop — warm glass effect */
 html.light-theme .bottom-nav {
-  background: rgba(255, 255, 255, 0.92);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.08);
+  background: rgba(248, 246, 241, 0.92);
+  border-top: 1px solid rgba(138, 105, 20, 0.12);
+  box-shadow: 0 -10px 40px rgba(138, 105, 20, 0.06);
 }
 @media (min-width: 768px) {
   html.light-theme .bottom-nav {
-    background: #e2e8f0 !important; /* Soft slate-200 background to reduce glare */
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background: #f0ede5 !important;
+    border-right: 1px solid rgba(138, 105, 20, 0.1);
   }
 }
 html.light-theme .nav-item {
-  color: #334155 !important; /* slate-700 for softer contrast on soft backgrounds */
+  color: #4a4035 !important;
 }
 html.light-theme .nav-item i {
-  color: #475569 !important;
-  opacity: 0.8 !important;
+  color: #6b5e4e !important;
+  opacity: 0.85 !important;
 }
 html.light-theme .nav-item:hover {
-  background: rgba(0, 0, 0, 0.04) !important;
-  color: #0f172a !important;
+  background: rgba(138, 105, 20, 0.06) !important;
+  color: #2c2417 !important;
 }
 html.light-theme .nav-item:hover i {
-  color: #0f172a !important;
+  color: #2c2417 !important;
   opacity: 1 !important;
 }
 html.light-theme .nav-item.active {
-  color: #b38f36 !important; /* gold-darker for readability */
+  color: #8a6914 !important;
 }
 html.light-theme .nav-item.active i {
-  color: #b38f36 !important;
+  color: #8a6914 !important;
   opacity: 1 !important;
 }
 
-/* Mobile Specific Light Theme Nav Main */
+/* Mobile Specific Light Theme Nav Main — warm gold gradient */
 @media (max-width: 767px) {
   html.light-theme .nav-item.nav-main {
-    background: #ffffff !important;
-    border-color: #f8fafc !important;
-    color: #475569 !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+    background: #fffdf9 !important;
+    border-color: rgba(138, 105, 20, 0.1) !important;
+    color: #4a4035 !important;
+    box-shadow: 0 10px 30px rgba(138, 105, 20, 0.06) !important;
   }
   html.light-theme .nav-item.nav-main i {
-    color: #475569 !important;
+    color: #6b5e4e !important;
   }
   html.light-theme .nav-item.nav-main.active {
-    background: linear-gradient(135deg, #ffffff, #c9a84c) !important;
-    border-color: #c9a84c !important;
-    color: #ffffff !important;
-    box-shadow: 0 10px 25px rgba(201, 168, 76, 0.3) !important;
+    background: linear-gradient(135deg, #8a6914, #c9a84c) !important;
+    border-color: #8a6914 !important;
+    color: #fffdf9 !important;
+    box-shadow: 0 10px 25px rgba(138, 105, 20, 0.25) !important;
   }
   html.light-theme .nav-item.nav-main.active i {
-    color: #ffffff !important;
+    color: #fffdf9 !important;
   }
 }
 
 /* Desktop Specific Light Theme Nav Main & Sidebar Header */
 @media (min-width: 768px) {
   html.light-theme .bottom-nav::before {
-    border-bottom-color: rgba(0, 0, 0, 0.06) !important;
-    color: #b38f36 !important; /* gold-darker for better contrast on white background */
+    border-bottom-color: rgba(138, 105, 20, 0.12) !important;
+    color: #8a6914 !important;
   }
   html.light-theme .nav-item.nav-main {
     background: transparent !important;
@@ -6192,44 +6191,44 @@ html.light-theme .nav-item.active i {
   html.light-theme .nav-item.nav-main,
   html.light-theme .nav-item.nav-main i,
   html.light-theme .nav-item.nav-main span {
-    color: #334155 !important;
+    color: #4a4035 !important;
   }
   html.light-theme .nav-item.nav-main.active {
-    background: rgba(201, 168, 76, 0.1) !important;
-    border: 1px solid rgba(201, 168, 76, 0.2) !important;
+    background: rgba(138, 105, 20, 0.1) !important;
+    border: 1px solid rgba(138, 105, 20, 0.2) !important;
     box-shadow: none !important;
   }
   html.light-theme .nav-item.nav-main.active,
   html.light-theme .nav-item.nav-main.active i,
   html.light-theme .nav-item.nav-main.active span {
-    color: #b38f36 !important;
+    color: #8a6914 !important;
   }
   html.light-theme .nav-item.nav-main:hover,
   html.light-theme .nav-item.nav-main:hover i,
   html.light-theme .nav-item.nav-main:hover span {
-    color: #0f172a !important;
+    color: #2c2417 !important;
   }
   html.light-theme .nav-item.nav-main:hover {
-    background: rgba(0, 0, 0, 0.04) !important;
+    background: rgba(138, 105, 20, 0.06) !important;
   }
   html.light-theme .nav-item.active {
-    background: rgba(201, 168, 76, 0.1) !important;
-    border: 1px solid rgba(201, 168, 76, 0.2) !important;
+    background: rgba(138, 105, 20, 0.1) !important;
+    border: 1px solid rgba(138, 105, 20, 0.2) !important;
   }
   html.light-theme .nav-item.active::after {
-    background: #c9a84c !important;
-    box-shadow: 2px 0 10px rgba(201, 168, 76, 0.4) !important;
+    background: #8a6914 !important;
+    box-shadow: 2px 0 10px rgba(138, 105, 20, 0.35) !important;
   }
   /* Theme toggle text and icon adjustments in desktop sidebar */
   html.light-theme #themeToggleBtnDesk {
-    color: #475569 !important;
+    color: #6b5e4e !important;
   }
   html.light-theme #themeToggleBtnDesk i {
-    color: #475569 !important;
+    color: #6b5e4e !important;
   }
 }
 
-/* 3. Panel & Kartu */
+/* 3. Panel & Kartu — warm white cards with soft gold border */
 html.light-theme .panel {
   background: transparent;
 }
@@ -6239,349 +6238,349 @@ html.light-theme .user-card,
 html.light-theme .today-card,
 html.light-theme .gps-card,
 html.light-theme .auth-card {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(201, 168, 76, 0.3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 253, 249, 0.9);
+  border-color: rgba(138, 105, 20, 0.2);
+  box-shadow: 0 4px 20px rgba(138, 105, 20, 0.04);
 }
 html.light-theme .clock-left {
-  border-right-color: rgba(0, 0, 0, 0.08);
+  border-right-color: rgba(138, 105, 20, 0.12);
 }
 html.light-theme .clock-time {
-  color: #0f172a;
+  color: #2c2417;
 }
 html.light-theme .clock-loc-badge.unknown {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(138, 105, 20, 0.06);
+  border-color: rgba(138, 105, 20, 0.12);
 }
 html.light-theme .clock-weather-temp {
-  color: #2563eb;
+  color: #1b5fc4;
 }
 html.light-theme .clock-weather-cond {
-  color: #334155;
+  color: #4a4035;
 }
 html.light-theme .clock-weather-tag {
-  background: rgba(0, 0, 0, 0.04);
-  color: #475569;
+  background: rgba(138, 105, 20, 0.06);
+  color: #6b5e4e;
 }
 html.light-theme .avatar {
   color: #0a1628;
 }
 
-/* 4. Form Controls, Inputs & Select Options */
+/* 4. Form Controls, Inputs & Select Options — warm white inputs */
 html.light-theme .form-input,
 html.light-theme .form-textarea,
 html.light-theme .form-input-auth {
-  background: #ffffff;
-  color: #0f172a;
-  border-color: rgba(201, 168, 76, 0.35);
+  background: #fffdf9;
+  color: #2c2417;
+  border-color: rgba(138, 105, 20, 0.25);
 }
 html.light-theme .form-input:focus,
 html.light-theme .form-textarea:focus,
 html.light-theme .form-input-auth:focus {
-  border-color: #c9a84c;
-  background: #ffffff;
+  border-color: #8a6914;
+  background: #fffdf9;
 }
 html.light-theme select.form-input,
 html.light-theme select.date-range-input,
 html.light-theme select.dok-input,
 html.light-theme .dok-select {
-  background-color: #ffffff;
-  color: #0f172a;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23b38f36' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-color: #fffdf9;
+  color: #2c2417;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a6914' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 html.light-theme select.form-input option,
 html.light-theme select.date-range-input option,
 html.light-theme select.dok-input option {
-  background: #ffffff;
-  color: #0f172a;
+  background: #fffdf9;
+  color: #2c2417;
 }
 html.light-theme select.form-input option:checked,
 html.light-theme select.date-range-input option:checked,
 html.light-theme select.dok-input option:checked {
-  background: rgba(201, 168, 76, 0.2);
-  color: #b38f36;
+  background: rgba(138, 105, 20, 0.15);
+  color: #8a6914;
 }
 
 /* 5. Pills, Lists, & Tables */
 html.light-theme .jenis-pill {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(201, 168, 76, 0.25);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  background: rgba(138, 105, 20, 0.04);
+  border-color: rgba(138, 105, 20, 0.18);
+  box-shadow: 0 2px 4px rgba(138, 105, 20, 0.03);
 }
 html.light-theme .jenis-pill:hover {
-  background: rgba(201, 168, 76, 0.05);
+  background: rgba(138, 105, 20, 0.08);
 }
 html.light-theme .jenis-pill.active {
   background: var(--gold-dim);
-  border-color: #c9a84c;
-  color: #b38f36;
+  border-color: #8a6914;
+  color: #8a6914;
 }
 html.light-theme .log-list,
 html.light-theme #dokumenList .dok-card {
-  background: rgba(255, 255, 255, 0.7);
-  border-color: rgba(201, 168, 76, 0.25);
+  background: rgba(255, 253, 249, 0.75);
+  border-color: rgba(138, 105, 20, 0.18);
 }
 html.light-theme #dokumenList .dok-card:hover {
-  background: #ffffff;
-  border-color: #c9a84c;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  background: #fffdf9;
+  border-color: #8a6914;
+  box-shadow: 0 8px 24px rgba(138, 105, 20, 0.05);
 }
 html.light-theme #dokumenList .dok-title {
-  color: #0f172a;
+  color: #2c2417;
 }
 html.light-theme #dokumenList .dok-action-view {
-  color: #475569;
+  color: #6b5e4e;
 }
 html.light-theme .today-row,
 html.light-theme .lokasi-item {
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+  border-bottom-color: rgba(138, 105, 20, 0.08);
 }
 html.light-theme .admin-table-wrapper {
-  background: #ffffff;
-  border-color: rgba(201, 168, 76, 0.3);
+  background: #fffdf9;
+  border-color: rgba(138, 105, 20, 0.2);
 }
 html.light-theme .admin-table {
-  color: #1e293b;
+  color: #2c2417;
 }
 html.light-theme .admin-table thead {
-  background: rgba(0, 0, 0, 0.02);
-  border-bottom-color: rgba(201, 168, 76, 0.3);
+  background: rgba(138, 105, 20, 0.04);
+  border-bottom-color: rgba(138, 105, 20, 0.2);
 }
 html.light-theme .admin-table tr {
-  border-bottom-color: rgba(0, 0, 0, 0.04);
+  border-bottom-color: rgba(138, 105, 20, 0.06);
 }
 html.light-theme .admin-table tr:hover {
-  background: rgba(0, 0, 0, 0.015) !important;
+  background: rgba(138, 105, 20, 0.03) !important;
 }
 html.light-theme .admin-nav {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(201, 168, 76, 0.3);
+  background: rgba(255, 253, 249, 0.9);
+  border-color: rgba(138, 105, 20, 0.2);
 }
 html.light-theme .admin-nav-btn.active {
   background: #7c3aed;
   box-shadow: 0 2px 10px rgba(124, 58, 237, 0.15);
 }
 html.light-theme .floating-menu {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  background: #fffdf9;
+  border-color: rgba(138, 105, 20, 0.12);
+  box-shadow: 0 10px 30px rgba(138, 105, 20, 0.08);
 }
 html.light-theme .floating-menu-item {
-  color: #0f172a;
-  border-bottom-color: rgba(0, 0, 0, 0.05);
+  color: #2c2417;
+  border-bottom-color: rgba(138, 105, 20, 0.08);
 }
 html.light-theme .floating-menu-item:active {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(138, 105, 20, 0.06);
 }
 
 /* 6. Shimmer, Buttons, & Overlays */
 html.light-theme .shimmer {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.03) 25%, rgba(0, 0, 0, 0.08) 50%, rgba(0, 0, 0, 0.03) 75%);
+  background: linear-gradient(90deg, rgba(138, 105, 20, 0.04) 25%, rgba(138, 105, 20, 0.1) 50%, rgba(138, 105, 20, 0.04) 75%);
 }
 html.light-theme .btn-secondary-outline {
-  border-color: rgba(0, 0, 0, 0.15) !important;
-  color: #334155 !important;
+  border-color: rgba(138, 105, 20, 0.2) !important;
+  color: #4a4035 !important;
 }
 html.light-theme .btn-secondary-outline:hover {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: rgba(138, 105, 20, 0.06) !important;
 }
 html.light-theme .more-menu-content {
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 253, 249, 0.98);
+  box-shadow: 0 15px 40px rgba(138, 105, 20, 0.08);
 }
 html.light-theme .more-item {
-  color: #1e293b;
+  color: #2c2417;
 }
 html.light-theme .more-item:hover {
-  background: rgba(201, 168, 76, 0.08);
+  background: rgba(138, 105, 20, 0.06);
 }
 html.light-theme .divider::before,
 html.light-theme .divider::after {
-  background: rgba(201, 168, 76, 0.25);
+  background: rgba(138, 105, 20, 0.18);
 }
 html.light-theme .divider span {
-  color: #475569;
+  color: #6b5e4e;
 }
 html.light-theme .wifi-bar.checking {
-  background: rgba(201, 168, 76, 0.05);
-  border-color: rgba(201, 168, 76, 0.2);
+  background: rgba(138, 105, 20, 0.06);
+  border-color: rgba(138, 105, 20, 0.15);
 }
 html.light-theme .gps-row-box {
-  background: rgba(0, 0, 0, 0.02);
-  border-color: rgba(0, 0, 0, 0.04);
+  background: rgba(138, 105, 20, 0.03);
+  border-color: rgba(138, 105, 20, 0.06);
 }
 html.light-theme .gps-row-box .gps-val {
-  color: #0f172a;
+  color: #2c2417;
 }
 html.light-theme .acc-bar {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(138, 105, 20, 0.06);
 }
 html.light-theme #appSplash {
-  background: #ffffff !important;
+  background: #f8f6f1 !important;
 }
 html.light-theme #appSplash .splash-title {
-  color: #0f172a !important;
+  color: #2c2417 !important;
 }
 html.light-theme #appSplash .splash-bar {
-  background: rgba(0, 0, 0, 0.05) !important;
+  background: rgba(138, 105, 20, 0.08) !important;
 }
 html.light-theme #appSplash .splash-progress {
-  background: #c9a84c !important;
+  background: linear-gradient(90deg, #8a6914, #c9a84c) !important;
 }
 
-/* 7. Kalender Flatpickr */
+/* 7. Kalender Flatpickr — warm calendar */
 html.light-theme .flatpickr-calendar {
-  background: #ffffff !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
-  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 10px 30px rgba(138, 105, 20, 0.08) !important;
+  border: 1px solid rgba(138, 105, 20, 0.12) !important;
 }
 html.light-theme .flatpickr-calendar::before,
 html.light-theme .flatpickr-calendar::after {
-  display: none !important; /* Hilangkan panah segitiga flatpickr yang hitam */
+  display: none !important;
 }
 html.light-theme .flatpickr-day {
-  color: #334155 !important;
+  color: #4a4035 !important;
 }
 html.light-theme .flatpickr-day:hover,
 html.light-theme .flatpickr-day.prevMonthDay:hover,
 html.light-theme .flatpickr-day.nextMonthDay:hover {
-  background: #f1f5f9 !important;
-  color: #000000 !important;
+  background: #f8f6f1 !important;
+  color: #2c2417 !important;
 }
 html.light-theme .flatpickr-day.prevMonthDay,
 html.light-theme .flatpickr-day.nextMonthDay {
-  color: #94a3b8 !important;
+  color: #a89880 !important;
 }
 html.light-theme .flatpickr-day.selected {
-  background: #c9a84c !important;
-  color: #ffffff !important;
-  border-color: #c9a84c !important;
+  background: #8a6914 !important;
+  color: #fffdf9 !important;
+  border-color: #8a6914 !important;
 }
 html.light-theme .flatpickr-day.inRange {
-  background: rgba(201, 168, 76, 0.1) !important;
+  background: rgba(138, 105, 20, 0.1) !important;
   box-shadow: none !important;
 }
 html.light-theme .flatpickr-months,
 html.light-theme .flatpickr-month {
-  color: #0f172a !important;
-  fill: #0f172a !important;
+  color: #2c2417 !important;
+  fill: #2c2417 !important;
 }
 html.light-theme .flatpickr-current-month input.cur-year {
-  color: #0f172a !important;
+  color: #2c2417 !important;
 }
 html.light-theme .flatpickr-current-month .numInputWrapper span.arrowUp::after {
-  border-bottom-color: #0f172a !important;
+  border-bottom-color: #2c2417 !important;
 }
 html.light-theme .flatpickr-current-month .numInputWrapper span.arrowDown::after {
-  border-top-color: #0f172a !important;
+  border-top-color: #2c2417 !important;
 }
 html.light-theme .flatpickr-weekday {
-  color: #475569 !important;
+  color: #6b5e4e !important;
 }
 
-/* 8. SweetAlert2 */
+/* 8. SweetAlert2 — warm modal */
 html.light-theme .swal2-popup {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  color: #0f172a !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1) !important;
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.12) !important;
+  color: #2c2417 !important;
+  box-shadow: 0 20px 50px rgba(138, 105, 20, 0.08) !important;
 }
 html.light-theme .swal2-title {
-  color: #b38f36 !important;
+  color: #8a6914 !important;
 }
 html.light-theme .swal2-html-container {
-  color: #1e293b !important;
+  color: #2c2417 !important;
 }
 html.light-theme .swal2-cancel {
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
-  color: #334155 !important;
+  background: #f0ede5 !important;
+  border-color: #e0dbd0 !important;
+  color: #4a4035 !important;
 }
 html.light-theme .swal2-confirm {
-  color: #ffffff !important;
+  color: #fffdf9 !important;
 }
 html.light-theme .swal2-confirm.swal2-confirm-disabled {
-  background: #e2e8f0 !important;
-  color: #94a3b8 !important;
+  background: #e0dbd0 !important;
+  color: #a89880 !important;
 }
 
 /* 9. Profile biometrics & documents */
 html.light-theme #profilFaceThumbWrap,
 html.light-theme .profil-sig-thumb {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(201, 168, 76, 0.3) !important;
+  background: rgba(138, 105, 20, 0.04) !important;
+  border-color: rgba(138, 105, 20, 0.2) !important;
 }
 html.light-theme .face-adm-thumb {
-  background: rgba(0, 0, 0, 0.02) !important;
+  background: rgba(138, 105, 20, 0.04) !important;
 }
 html.light-theme .dok-modal {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  color: #0f172a !important;
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.12) !important;
+  color: #2c2417 !important;
 }
 html.light-theme .dok-modal-title h3 {
-  color: #0f172a !important;
+  color: #2c2417 !important;
 }
 html.light-theme .dok-modal-close {
-  background: rgba(239, 68, 68, 0.08) !important;
+  background: rgba(176, 28, 28, 0.08) !important;
 }
 html.light-theme .dok-tab {
-  color: #64748b !important;
+  color: #6b5e4e !important;
 }
 html.light-theme .dok-tab.active {
   background: var(--gold) !important;
-  color: #000000 !important;
+  color: #2c2417 !important;
 }
 html.light-theme .dok-input {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #0f172a !important;
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.15) !important;
+  color: #2c2417 !important;
 }
 html.light-theme .dok-file-label {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #475569 !important;
+  background: rgba(138, 105, 20, 0.04) !important;
+  border-color: rgba(138, 105, 20, 0.15) !important;
+  color: #6b5e4e !important;
 }
 html.light-theme .pdf-opt-label {
-  color: #475569 !important;
+  color: #6b5e4e !important;
 }
 
-/* 10. PDF Preview modal overrides */
+/* 10. PDF Preview modal overrides — warm preview */
 html.light-theme #pdfPreviewModal > div {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  color: #0f172a !important;
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.12) !important;
+  color: #2c2417 !important;
 }
 html.light-theme #pdfPreviewModal h3 {
-  color: #0f172a !important;
+  color: #2c2417 !important;
 }
 html.light-theme #pdfPreviewSidebar {
-  background: rgba(0, 0, 0, 0.01) !important;
-  border-right-color: rgba(0, 0, 0, 0.06) !important;
+  background: rgba(138, 105, 20, 0.02) !important;
+  border-right-color: rgba(138, 105, 20, 0.1) !important;
 }
 html.light-theme #pdfPreviewSidebar label {
-  color: #475569 !important;
+  color: #6b5e4e !important;
 }
 html.light-theme #pdfPreviewSidebar .form-input {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #0f172a !important;
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.15) !important;
+  color: #2c2417 !important;
 }
 html.light-theme #pdfPreviewViewer {
-  background: #f1f5f9 !important;
+  background: #f0ede5 !important;
 }
 
 /* 11. Overrides for Meja Absen card and Admin Input Keterangan Card in Light Theme */
 html.light-theme .meja-absen-card {
   background: var(--card-bg) !important;
   border-color: var(--border) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 10px 30px rgba(138, 105, 20, 0.04) !important;
 }
 
 html.light-theme #adminKetCard {
   background: var(--card-bg) !important;
   border-color: var(--border) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 20px 40px rgba(138, 105, 20, 0.04) !important;
 }
 
 html.light-theme .meja-title,
@@ -6591,39 +6590,39 @@ html.light-theme #adminKetCard div {
 
 html.light-theme .meja-status-bar,
 html.light-theme .meja-loc-bar {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.06) !important;
+  background: rgba(138, 105, 20, 0.03) !important;
+  border-color: rgba(138, 105, 20, 0.08) !important;
 }
 
 html.light-theme #mejaAbsenCard div[style*="border-top"] {
-  border-top-color: rgba(0, 0, 0, 0.08) !important;
+  border-top-color: rgba(138, 105, 20, 0.1) !important;
 }
 
 html.light-theme #humanJsCacheControl {
-  background: rgba(0, 0, 0, 0.02) !important;
-  border-color: rgba(0, 0, 0, 0.05) !important;
+  background: rgba(138, 105, 20, 0.03) !important;
+  border-color: rgba(138, 105, 20, 0.08) !important;
 }
 
 html.light-theme .admin-select-custom,
 html.light-theme .admin-input-premium {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: #fffdf9 !important;
+  border: 1px solid rgba(138, 105, 20, 0.18) !important;
   color: var(--white) !important;
 }
 
 html.light-theme .admin-select-custom option {
-  background: #ffffff !important;
+  background: #fffdf9 !important;
   color: var(--white) !important;
 }
 
 html.light-theme .admin-upload-btn {
-  background: rgba(99, 102, 241, 0.06) !important;
-  border-color: rgba(99, 102, 241, 0.3) !important;
+  background: rgba(124, 58, 237, 0.06) !important;
+  border-color: rgba(124, 58, 237, 0.3) !important;
 }
 
 html.light-theme .dropdown-trigger {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: #fffdf9 !important;
+  border: 1px solid rgba(138, 105, 20, 0.18) !important;
 }
 
 html.light-theme .dropdown-trigger input {
@@ -6631,17 +6630,17 @@ html.light-theme .dropdown-trigger input {
 }
 
 html.light-theme .dropdown-list-wrap {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+  background: #fffdf9 !important;
+  border: 1px solid rgba(138, 105, 20, 0.12) !important;
+  box-shadow: 0 10px 30px rgba(138, 105, 20, 0.06) !important;
 }
 
 html.light-theme .dropdown-item {
-  border-bottom-color: rgba(0, 0, 0, 0.04) !important;
+  border-bottom-color: rgba(138, 105, 20, 0.06) !important;
 }
 
 html.light-theme .dropdown-item:hover {
-  background: rgba(201, 168, 76, 0.08) !important;
+  background: rgba(138, 105, 20, 0.06) !important;
 }
 
 /* --- PAGINATION BUTTONS --- */
@@ -6694,6 +6693,6 @@ html.light-theme .dropdown-item:hover {
 }
 
 html.light-theme .btn-pagination-all:hover {
-  color: #0f172a;
-  text-decoration-color: rgba(0, 0, 0, 0.5);
+  color: #2c2417;
+  text-decoration-color: rgba(44, 36, 23, 0.5);
 }

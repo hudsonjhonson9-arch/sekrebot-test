@@ -103,9 +103,9 @@ let REKAP_CHAT_ID = null;
 const WIFI_CHECK_ENABLED = true;
 const WIFI_MODE = 'block';
 
-/* ════ SESSION MANAGEMENT (Memory-only) ════ */
-// Tidak disimpan di localStorage — hilang saat tab ditutup.
-// Server validasi tiap request via auth_sessions table.
+/* ════ SESSION MANAGEMENT (sessionStorage-backed) ════ */
+// sessionStorage: hilang saat tab ditutup, survive page reload.
+// Lebih aman dari localStorage (per-tab scope, auto-clear saat close).
 window._session = {
   token: null,
   nip: null,
@@ -114,12 +114,32 @@ window._session = {
   isLoggedIn: false,
 };
 
+// Restore session dari sessionStorage on page load
+(function restoreSession() {
+  try {
+    const t = sessionStorage.getItem('_sess_token');
+    if (t) {
+      window._session.token = t;
+      window._session.nip = sessionStorage.getItem('_sess_nip') || '';
+      window._session.role = sessionStorage.getItem('_sess_role') || 'USER';
+      window._session.instansi_id = sessionStorage.getItem('_sess_inst') || '';
+      window._session.isLoggedIn = true;
+    }
+  } catch (_) {}
+})();
+
 function setSession(token, data) {
   window._session.token = token;
   window._session.nip = data.nip || '';
   window._session.role = (data.role || 'USER').toUpperCase();
   window._session.instansi_id = data.instansi_id || '';
   window._session.isLoggedIn = true;
+  try {
+    sessionStorage.setItem('_sess_token', token);
+    sessionStorage.setItem('_sess_nip', data.nip || '');
+    sessionStorage.setItem('_sess_role', (data.role || 'USER').toUpperCase());
+    sessionStorage.setItem('_sess_inst', data.instansi_id || '');
+  } catch (_) {}
 }
 
 function clearSession() {
@@ -128,6 +148,12 @@ function clearSession() {
   window._session.role = 'USER';
   window._session.instansi_id = '';
   window._session.isLoggedIn = false;
+  try {
+    sessionStorage.removeItem('_sess_token');
+    sessionStorage.removeItem('_sess_nip');
+    sessionStorage.removeItem('_sess_role');
+    sessionStorage.removeItem('_sess_inst');
+  } catch (_) {}
 }
 
 function _getSessionRole() {

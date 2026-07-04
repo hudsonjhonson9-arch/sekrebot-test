@@ -779,7 +779,7 @@ function renderRekap(pg) {
               <div style="font-size:32px;line-height:1">${masukIcon}</div>
               <div style="flex:1;min-width:0">
                 <div style="font-size:14px;font-weight:800;color:${masukColor}">${masukLabel}</div>
-                <div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:pre-wrap;">${(p._rawKetLog?.Ket || p._rawKetLog?.ket || 'Keterangan').trim()}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4;white-space:pre-wrap;">${escapeHtml((p._rawKetLog?.Ket || p._rawKetLog?.ket || 'Keterangan').trim())}</div>
               </div>
             </div>
           </div>

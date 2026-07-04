@@ -81,8 +81,8 @@
               </td>
               <td style="padding:12px; text-align:center">
                 <div style="display:flex; gap:6px; justify-content:center">
-                  <button onclick="editPegawai('${nip}', event)" class="btn-sm-admin" style="background:rgba(96,165,250,0.1); color:#60a5fa; border-color:rgba(96,165,250,0.2)">✍️ Edit</button>
-                  <button onclick="deletePegawai('${uid}', '${nama.replace(/'/g, "\\'")}', '${nip}')" class="btn-sm-admin" style="background:rgba(239,68,68,0.1); color:#f87171; border-color:rgba(239,68,68,0.2)">🗑</button>
+                  <button onclick="editPegawai('${escapeHtml(nip)}', event)" class="btn-sm-admin" style="background:rgba(96,165,250,0.1); color:#60a5fa; border-color:rgba(96,165,250,0.2)">✍️ Edit</button>
+                  <button onclick="deletePegawai('${escapeHtml(uid)}', '${escapeHtml(nama)}', '${escapeHtml(nip)}')" class="btn-sm-admin" style="background:rgba(239,68,68,0.1); color:#f87171; border-color:rgba(239,68,68,0.2)">🗑</button>
                 </div>
               </td>
             </tr>
@@ -93,7 +93,7 @@
         el.innerHTML = html;
         
       } catch (e) {
-        el.innerHTML = `<div class="empty-state" style="padding:20px">🔌 Gagal: ${e.message}</div>`;
+        el.innerHTML = `<div class="empty-state" style="padding:20px">🔌 Gagal: ${escapeHtml(e.message)}</div>`;
       }
     }
 
@@ -129,6 +129,7 @@
     async function editPegawai(nipOrId, ev) {
       const f = $('pegawaiForm');
       if (!f) return;
+      if (!requireAdmin()) return;
       
       const btn = ev ? (ev.currentTarget || ev.target) : null;
       let originalInner = '';
@@ -172,7 +173,7 @@
         const previewEl = $('previewWajahAdmin');
         if (previewEl) {
           if (faceSrc && faceSrc.length > 100) {
-            previewEl.innerHTML = `<img src="${faceSrc}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; background:var(--bg-card)">`;
+            previewEl.innerHTML = `<img src="${escapeHtml(faceSrc)}" style="width:100%; height:100%; object-fit:cover; border-radius:50%; background:var(--bg-card)">`;
           } else {
             previewEl.innerHTML = '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:50%; font-size:24px; opacity:0.5">👤</div>';
           }
@@ -184,8 +185,8 @@
            // Gunakan format full atau endpoint signature-get
            const sRes = await apiGet(P.signatureGet, { nip: p.nip || p.NIP });
            const sigData = (sRes.data?.signature || sRes.rows?.[0]?.signature || '');
-           if (sigData && sigData.length > 50) {
-              $('previewTTDAdmin').innerHTML = `<img src="${sigData}" style="width:100%; height:100%; object-fit:contain; filter:brightness(1.8) contrast(1.2)">`;
+            if (sigData && sigData.length > 50) {
+               $('previewTTDAdmin').innerHTML = `<img src="${escapeHtml(sigData)}" style="width:100%; height:100%; object-fit:contain; filter:brightness(1.8) contrast(1.2)">`;
            } else {
               $('previewTTDAdmin').innerHTML = '<span style="font-size:24px; opacity:0.5">🖋️</span>';
            }
@@ -330,6 +331,7 @@
      * @returns {Promise<void>}
      */
         async function deletePegawai(uid, nama, nip) {
+      if (!requireAdmin()) return;
       if (!confirm(`Hapus pegawai "${nama}" (NIP: ${nip || uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
       try {
         const res = await apiPost(P.userDel, { id: uid, nip: nip || '' });

@@ -77,7 +77,7 @@
       } catch (e) {
         console.error('[Instansi] Error:', e);
         const el = $('regInstansi');
-        if (el) el.innerHTML = `<option value="">— Error: ${e.message || 'Koneksi Terputus'} —</option>`;
+        if (el) el.innerHTML = `<option value="">— Error: ${escapeHtml(e.message || 'Koneksi Terputus')} —</option>`;
       }
     }
 

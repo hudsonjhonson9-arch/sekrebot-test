@@ -126,7 +126,7 @@ async function loadAdminMgmt() {
                 </div>
               </div>
               ${!isMe ? `
-                <button onclick="hapusAdmin('${id}','${nama.replace(/'/g, "&#39;")}', '${nip}')" 
+                <button onclick="hapusAdmin('${escapeHtml(id)}','${escapeHtml(nama)}', '${escapeHtml(nip)}')" 
                         style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171; font-size:10px; padding:5px 8px; border-radius:8px; cursor:pointer; font-weight:700">
                   Cabut
                 </button>
@@ -137,7 +137,7 @@ async function loadAdminMgmt() {
       </div>
     `;
   } catch (e) {
-    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat daftar manajemen: ${e.message}</div></div>`;
+    el.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat daftar manajemen: ${escapeHtml(e.message)}</div></div>`;
   }
 }
 
@@ -147,6 +147,7 @@ function toggleAdminForm() {
 }
 
 async function tambahAdmin() {
+  if (!requireAdmin()) return;
   const idInput = $('inputAdminTgId');
   const nipInput = $('inputAdminNip');
   const namaInput = $('inputAdminNama');
@@ -195,6 +196,7 @@ async function tambahAdmin() {
 }
 
 async function hapusAdmin(tgId, nama, nip) {
+  if (!requireAdmin()) return;
   if (tgId == MY_ID) {
     _showAdminMgmtResult('warning', '⚠️', 'Tidak Bisa', 'Anda tidak bisa mencabut hak akses Anda sendiri.');
     return;

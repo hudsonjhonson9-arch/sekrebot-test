@@ -19,7 +19,7 @@
       const fmtD = s => { try { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }); } catch { return s; } };
       box.style.display = 'block';
       box.innerHTML =
-        `<b style="color:#a78bfa">🌙 ${nama || '(belum ada nama)'}</b><br>` +
+        `<b style="color:#a78bfa">🌙 ${escapeHtml(nama) || '(belum ada nama)'}</b><br>` +
         `📅 ${dari ? fmtD(dari) : '—'} s.d. ${sampai ? fmtD(sampai) : '—'}<br>` +
         `🟢 Masuk ≤ ${masuk || '—'} &nbsp;·&nbsp; 🔵 Pulang ≥ ${pulang || '—'}`;
     }
@@ -569,7 +569,7 @@
             html += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.2);border-radius:10px;margin-bottom:6px">
           <div style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(34,197,94,.3);overflow:hidden;flex-shrink:0;background:rgba(0,0,0,.3)">
             ${thumb
-                ? `<img src="${thumb}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='👤'">`
+                ? `<img src="${escapeHtml(thumb)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.parentNode.innerHTML='👤'">`
                 : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:16px">👤</div>`
               }
           </div>
@@ -577,7 +577,7 @@
             <div style="font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nama}</div>
             <div style="font-size:9px;color:var(--muted)">${nip ? 'NIP: ' + nip + ' · ' : ''}Terdaftar: ${tgl}${engineBadge}</div>
           </div>
-          <button onclick="resetFacePegawai('${uid}','${nama.replace(/'/g, "\'")}')"
+          <button onclick="resetFacePegawai('${escapeHtml(uid)}','${escapeHtml(nama)}')"
             style="font-size:9px;padding:3px 8px;border-radius:6px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--danger);cursor:pointer;flex-shrink:0;font-weight:700">
             🗑️ Reset
           </button>
@@ -599,6 +599,7 @@
      * @returns {Promise<void>}
      */
         async function resetFacePegawai(uid, nama) {
+  if (!requireAdmin()) return;
       if (!confirm('Reset data wajah ' + nama + '?\nPegawai akan dipaksa daftar ulang saat buka app.')) return;
       try {
         const res = await apiPost(P.faceRegister, { user_id: uid, foto_base64: '', histogram: [], saved_at: '', _reset: true });

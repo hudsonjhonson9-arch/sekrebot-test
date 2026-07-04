@@ -1082,7 +1082,7 @@
 
       if (!resLembur.ok) {
         const msg = getApiErrorMsg(resLembur.data, 'Gagal menarik data dari server.');
-        listEl.innerHTML = `<div class="empty-state">❌ ${msg}</div>`;
+        listEl.innerHTML = `<div class="empty-state">❌ ${escapeHtml(msg)}</div>`;
         return;
       }
       
@@ -1903,7 +1903,7 @@
       renderMonitoringTasks(data);
     } catch (e) {
       console.error('[TugasLembur] Monitoring Load Error:', e);
-      el.innerHTML = `<div class="empty-state" style="padding:20px; font-size:11px">⚠️ Gagal memuat monitoring: ${e.message}</div>`;
+      el.innerHTML = `<div class="empty-state" style="padding:20px; font-size:11px">⚠️ Gagal memuat monitoring: ${escapeHtml(e.message)}</div>`;
     }
   }
 

@@ -3,6 +3,26 @@
 // Di-set setelah biometric login berhasil, expired dalam 24 jam.
 // Server validasi tiap request via auth_sessions table.
 
+/* ════ SECURITY UTILS ════ */
+// ponytail: single escapeHtml, apply di semua innerHTML/onclick injection
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function requireAdmin() {
+  const role = (window._session?.role || '').toLowerCase();
+  if (!role.includes('admin') && !role.includes('super') && !role.includes('kepala') && !role.includes('sekretaris') && !role.includes('kabid')) {
+    alert('Akses ditolak: hanya admin');
+    return false;
+  }
+  return true;
+}
+
 /* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
 const DB_NAME = 'AbsensiOfflineDB';
 const DB_VERSION = 1;

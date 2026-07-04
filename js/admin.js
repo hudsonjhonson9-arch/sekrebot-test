@@ -69,7 +69,7 @@
       } catch (e) {
         console.error('[Instansi] Error:', e);
         const el = $('regInstansi');
-        if (el) el.innerHTML = `<option value="">— Error: ${e.message || 'Koneksi Terputus'} —</option>`;
+        if (el) el.innerHTML = `<option value="">— Error: ${escapeHtml(e.message || 'Koneksi Terputus')} —</option>`;
       }
     }
 
@@ -1052,14 +1052,14 @@
               <div style="font-size:9px; color:rgba(255,255,255,0.4)">ID: ${uid} &nbsp;·&nbsp; ${jab} &nbsp;·&nbsp; ${bid}</div>
             </div>
             <div style="display:flex; gap:6px; margin-left:10px">
-              <button onclick="editPegawai('${uid}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
-              <button onclick="deletePegawai('${uid}', '${nama.replace(/'/g, "\\'")}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">🗑</button>
+              <button onclick="editPegawai('${escapeHtml(uid)}')" style="background:rgba(96,165,250,0.1); border:1px solid rgba(110,131,236,0.35); color:#60a5fa; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">✍️</button>
+              <button onclick="deletePegawai('${escapeHtml(uid)}', '${escapeHtml(nama)}')" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer">🗑</button>
             </div>
           </div>`;
         }).join('');
       } catch (e) {
         console.error('[Fetch Pegawai Error]', e);
-        el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data pegawai</div><div class="empty-sub">${e.message || 'Coba lagi beberapa saat'}</div></div>`;
+        el.innerHTML = `<div class="empty-state" style="padding:15px"><div class="empty-icon">🔌</div><div class="empty-text">Gagal memuat data pegawai</div><div class="empty-sub">${escapeHtml(e.message || 'Coba lagi beberapa saat')}</div></div>`;
       }
     }
 
@@ -1090,6 +1090,7 @@
     async function editPegawai(uid) {
       const f = $('pegawaiForm');
       if (!f) return;
+      if (!requireAdmin()) return;
       try {
         // Find existing data in list (to avoid extra fetch)
         // Or fetch single if needed. For now, try logic: fetch all or find in cache
@@ -1194,6 +1195,7 @@
     }
 
     async function deletePegawai(uid, nama) {
+      if (!requireAdmin()) return;
       if (!confirm(`Hapus pegawai "${nama}" (${uid})?\nData wajah dan ttd mungkin juga tidak akan bisa digunakan lagi.`)) return;
       try {
         const res = await apiFetch(P.userDel, {

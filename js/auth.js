@@ -81,8 +81,7 @@
           
           const finalizeLogin = async () => {
             try {
-              const sessionBody = { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' };
-               const { ok, data: sData } = await apiPost(P.sessionLogin, sessionBody);
+               const { ok, data: sData } = await apiGet(P.sessionLogin, { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' });
                console.log('[Login] Session response:', { ok, data: sData });
                if (ok && sData?.session_token) {
                 setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
@@ -312,8 +311,7 @@
 
                 // 3. Buat session + finalisasi login
                 try {
-                  const sBody = { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' };
-                  const { ok, data: sData } = await apiPost(P.sessionLogin, sBody);
+                  const { ok, data: sData } = await apiGet(P.sessionLogin, { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' });
                   console.log('[Register] Session response:', { ok, data: sData });
                   if (ok && sData?.session_token) {
                     setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
@@ -370,7 +368,7 @@
       console.log('[Auth] Logging out user...');
       if (window._session?.token) {
         try {
-          await apiPost(P.sessionLogin, { action: 'logout', session_token: window._session.token });
+          await apiGet(P.sessionLogin, { action: 'logout', session_token: window._session.token });
         } catch (_) {}
       }
       clearSession();
@@ -420,7 +418,7 @@
           // Selalu buat session — Telegram ID valid sebagai identitas
           if (!nip) nip = 'TG_' + window.MY_ID; // fallback NIP from Telegram ID
           try {
-            const { ok: sOk, data: sData } = await apiPost(P.sessionLogin, { nip, user_id: targetId, role, instansi_id: instansi });
+            const { ok: sOk, data: sData } = await apiGet(P.sessionLogin, { nip, user_id: targetId, role, instansi_id: instansi });
             console.log('[Auth] session-login response:', { ok: sOk, data: sData });
             if (sOk && sData?.session_token) {
               setSession(sData.session_token, { nip, role, instansi_id: instansi });

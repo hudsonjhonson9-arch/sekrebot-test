@@ -4917,17 +4917,6 @@
         ]
       ]
     },
-    "Security Gate User-List": {
-      "main": [
-        [
-          {
-            "node": "Validate Session User-List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Security Gate User-Edit": {
       "main": [
         [
@@ -5967,7 +5956,7 @@
       "main": [
         [
           {
-            "node": "Security Gate User-List",
+            "node": "Get Pegawai User-List",
             "type": "main",
             "index": 0
           }
@@ -6651,35 +6640,6 @@
         [
           {
             "node": "Respond Forbidden Absen",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Validate Session User-List": {
-      "main": [
-        [
-          {
-            "node": "Check Role User-List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Role User-List": {
-      "main": [
-        [
-          {
-            "node": "Get Pegawai User-List",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Respond Forbidden User-List",
             "type": "main",
             "index": 0
           }

@@ -6336,21 +6336,91 @@ html.light-theme .lokasi-item {
   border-bottom-color: rgba(138, 105, 20, 0.08);
 }
 html.light-theme .admin-table-wrapper {
-  background: #fffdf9;
-  border-color: rgba(138, 105, 20, 0.2);
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.2) !important;
 }
 html.light-theme .admin-table {
-  color: #2c2417;
+  color: #2c2417 !important;
 }
 html.light-theme .admin-table thead {
-  background: rgba(138, 105, 20, 0.04);
-  border-bottom-color: rgba(138, 105, 20, 0.2);
+  background: rgba(138, 105, 20, 0.06) !important;
+  border-bottom-color: rgba(138, 105, 20, 0.2) !important;
+}
+html.light-theme .admin-table th {
+  color: #8a6914 !important;
 }
 html.light-theme .admin-table tr {
-  border-bottom-color: rgba(138, 105, 20, 0.06);
+  border-bottom-color: rgba(138, 105, 20, 0.08) !important;
 }
 html.light-theme .admin-table tr:hover {
+  background: rgba(138, 105, 20, 0.04) !important;
+}
+html.light-theme .admin-table td {
+  color: #2c2417 !important;
+}
+/* Override inline hardcoded hex colors from JS */
+html.light-theme .admin-table .btn-sm-admin {
+  border-color: rgba(138, 105, 20, 0.25) !important;
+}
+html.light-theme .admin-table .btn-sm-admin[style*="rgba(96,165,250"],
+html.light-theme .admin-table button[style*="rgba(96,165,250"] {
+  background: rgba(27, 95, 196, 0.1) !important;
+  color: #1b5fc4 !important;
+  border-color: rgba(27, 95, 196, 0.25) !important;
+}
+html.light-theme .admin-table button[style*="rgba(239,68,68"] {
+  background: rgba(176, 28, 28, 0.08) !important;
+  color: #b01c1c !important;
+  border-color: rgba(176, 28, 28, 0.2) !important;
+}
+/* Status badges */
+html.light-theme .admin-table span[style*="rgba(34,197,94"] {
+  background: rgba(26, 122, 58, 0.1) !important;
+  color: #1a7a3a !important;
+  border-color: rgba(26, 122, 58, 0.25) !important;
+}
+html.light-theme .admin-table span[style*="rgba(239,68,68"] {
+  background: rgba(176, 28, 28, 0.08) !important;
+  color: #b01c1c !important;
+  border-color: rgba(176, 28, 28, 0.2) !important;
+}
+
+/* 12. Manajemen Pegawai Terpadu — inline style overrides */
+html.light-theme #pegawaiInstansiSection {
+  background: rgba(138, 105, 20, 0.04) !important;
+  border-color: rgba(138, 105, 20, 0.15) !important;
+}
+html.light-theme #pegawaiInstansiSelect {
+  background: #fffdf9 !important;
+  border-color: rgba(138, 105, 20, 0.2) !important;
+  color: #2c2417 !important;
+}
+html.light-theme #pegawaiForm {
+  background: rgba(138, 105, 20, 0.04) !important;
+  border-color: rgba(138, 105, 20, 0.18) !important;
+  border-left-color: #8a6914 !important;
+}
+html.light-theme #adminFaceRegCard {
+  background: var(--card-bg) !important;
+  border-color: var(--border) !important;
+}
+
+/* 13. Manajemen Admin list — inline style overrides */
+html.light-theme #adminMgmtList > div {
   background: rgba(138, 105, 20, 0.03) !important;
+  border-color: rgba(138, 105, 20, 0.15) !important;
+}
+html.light-theme #adminMgmtList div[style*="border-bottom:1px solid rgba(255"] {
+  border-bottom-color: rgba(138, 105, 20, 0.1) !important;
+}
+html.light-theme #adminMgmtList div[style*="background:rgba(255,255,255,0.03)"] {
+  background: rgba(138, 105, 20, 0.06) !important;
+  border-color: rgba(138, 105, 20, 0.12) !important;
+}
+html.light-theme #adminMgmtList button[style*="rgba(239,68,68"] {
+  background: rgba(176, 28, 28, 0.08) !important;
+  color: #b01c1c !important;
+  border-color: rgba(176, 28, 28, 0.2) !important;
 }
 html.light-theme .admin-nav {
   background: rgba(255, 253, 249, 0.9);

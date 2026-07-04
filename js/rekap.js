@@ -172,10 +172,13 @@ async function loadRekap() {
       const instansiId = getScopedInstansiId();
       const instansiParam = instansiId ? `&instansi_id=${encodeURIComponent(instansiId)}` : '';
       const jamPeriodeParam = encodeURIComponent(JSON.stringify(typeof jamPeriodeList !== 'undefined' ? jamPeriodeList : []));
-      const res = await apiFetch(`${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&jam_periode=${jamPeriodeParam}${nipQuery}${adminParam}${instansiParam}`, { method: 'GET' });
+      const _rekapUrl = `${P.rekap}?dari=${dari}&sampai=${sampai}&jam_masuk=${jamMasukParam}&jam_pulang=${jamPulangParam}&hari_kerja=${hariKerjaParam}&libur=${liburParam}&jam_periode=${jamPeriodeParam}${nipQuery}${adminParam}${instansiParam}`;
+      console.log('[Rekap] session:', { token: !!window._session?.token, role: window._session?.role, url: _rekapUrl });
+      const res = await apiFetch(_rekapUrl, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
           const d = Array.isArray(json) ? json[0] : json;
+          console.log('[Rekap] Response keys:', Object.keys(d || {}), 'pegawai:', d?.pegawai?.length ?? 'missing', 'ringkasan:', d?.ringkasan);
           if (d?.pegawai?.length) {
             ringkasan = d.ringkasan || {};
             let fetchedPegawai = d.pegawai;
@@ -221,11 +224,11 @@ async function loadRekap() {
           }
         }
       }
-    } catch (_) { }
+    } catch (e) { console.error('[Rekap] Fetch error:', e); }
 
     // ── Fallback jika n8n gagal ──
     if (!rekapOK) {
-      console.warn('[Rekap] Gagal memuat rekapitulasi data dari server.');
+      console.warn('[Rekap] Gagal memuat rekapitulasi data dari server.', { hasToken: !!window._session?.token });
       if (typeof showToast === 'function') {
         showToast('Gagal memuat rekapitulasi data dari server.', 'error');
       } else {

@@ -1014,7 +1014,7 @@
         }
 
         await apiPost(P.kirimRekap, { 
-          chat_id: String(typeof REKAP_CHAT_ID !== 'undefined' && REKAP_CHAT_ID ? REKAP_CHAT_ID : (window.MY_ID || localStorage.getItem('MY_ID') || '')), 
+          chat_id: String(typeof REKAP_CHAT_ID !== 'undefined' && REKAP_CHAT_ID ? REKAP_CHAT_ID : (window.MY_ID || localStorage.getItem(STORAGE_KEYS.USER_ID) || '')), 
           pesan: window.lastGeneratedPdfMsg,
           nip: localStorage.getItem('MY_NIP') || '',
           file_base64: window.lastGeneratedPdfBase64,

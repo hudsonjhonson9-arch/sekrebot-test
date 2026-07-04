@@ -355,7 +355,12 @@ async function apiFetch(path, opts = {}) {
 
         if (r.status === 401) {
           clearSession();
-          localStorage.clear();
+          // Hapus auth-related keys saja, simpan face data + preferences
+          localStorage.removeItem(STORAGE_KEYS.USER_ID);
+          localStorage.removeItem(STORAGE_KEYS.USER_OBJ);
+          localStorage.removeItem('MY_NIP');
+          localStorage.removeItem('MY_ROLE');
+          localStorage.removeItem('MY_INSTANSI');
           location.href = location.pathname;
           throw new Error('Session expired. Silakan login ulang.');
         }

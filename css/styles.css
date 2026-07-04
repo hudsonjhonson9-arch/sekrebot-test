@@ -4218,6 +4218,9 @@
       #adminMap {
         height: 400px;
       }
+      #tugasMap {
+        height: 400px !important;
+      }
     }
 
     .map-hint {

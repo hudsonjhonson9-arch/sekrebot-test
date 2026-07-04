@@ -117,16 +117,7 @@ window._session = {
 // Restore session dari localStorage on page load
 (function restoreSession() {
   try {
-    let t = localStorage.getItem('_sess_token');
-    // Buang old fallback token (cs_...) — tidak valid di DB
-    if (t && t.startsWith('cs_')) {
-      console.warn('[Session] Old fallback token detected, clearing');
-      localStorage.removeItem('_sess_token');
-      localStorage.removeItem('_sess_nip');
-      localStorage.removeItem('_sess_role');
-      localStorage.removeItem('_sess_inst');
-      t = null;
-    }
+    const t = localStorage.getItem('_sess_token');
     console.log('[Session] Restore:', { hasToken: !!t, tokenLen: t?.length || 0 });
     if (t) {
       window._session.token = t;

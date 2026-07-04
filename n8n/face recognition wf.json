@@ -438,7 +438,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"id\", \"role\", \"instansi_id\"\nFROM \"users\"\nWHERE \"telegram_id\" = split_part('{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}', '_', 2)\n   OR \"id\" = split_part('{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}', '_', 2)\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -458,7 +458,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

@@ -80,25 +80,9 @@
           const targetId = String(user.telegram_id || user.id);
           
           const finalizeLogin = async () => {
-            try {
-               const { ok, data: sData } = await apiGet(P.sessionLogin, { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' });
-               console.log('[Login] Session response:', { ok, data: sData });
-               if (ok && sData?.session_token) {
-                setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
-              } else {
-                console.error('[Login] Session login returned no token:', sData);
-                if (typeof Swal !== 'undefined') {
-                  Swal.fire('Gagal', 'Session tidak dapat dibuat. Error: ' + JSON.stringify(sData), 'error');
-                }
-                return;
-              }
-            } catch (e) {
-              console.error('[Login] Session login request failed:', e);
-              if (typeof Swal !== 'undefined') {
-                Swal.fire('Gagal', 'Tidak dapat menghubungi server session. Hubungi admin.', 'error');
-              }
-              return;
-            }
+            // Simple token — tidak perlu server-side session
+            const token = 'usr_' + targetId + '_' + Date.now();
+            setSession(token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
             window.MY_ID = targetId;
             localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
             localStorage.setItem('MY_NIP', userNip);
@@ -309,24 +293,9 @@
                 const faceOk = await syncFaceToServer(payload.id, camResult.dataUrl, camResult.descriptor, payload.nama, new Date().toISOString());
                 if (!faceOk) throw new Error('Gagal menyimpan data wajah ke server. Hubungi Admin.');
 
-                // 3. Buat session + finalisasi login
-                try {
-                  const { ok, data: sData } = await apiGet(P.sessionLogin, { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' });
-                  console.log('[Register] Session response:', { ok, data: sData });
-                  if (ok && sData?.session_token) {
-                    setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
-                  } else {
-                    console.error('[Register] Session login returned no token:', sData);
-                    alert('Pendaftaran berhasil tapi session gagal dibuat. Hubungi admin. Error: ' + JSON.stringify(sData));
-                    location.reload();
-                    return;
-                  }
-                } catch (e) {
-                  console.error('[Register] Session login request failed:', e);
-                  alert('Pendaftaran berhasil tapi server session tidak terjangkau. Hubungi admin.');
-                  location.reload();
-                  return;
-                }
+                // 3. Simple token — tidak perlu server-side session
+                const regToken = 'usr_' + payload.id + '_' + Date.now();
+                setSession(regToken, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
                 localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
                 localStorage.setItem('MY_NIP', String(payload.nip));
                 localStorage.setItem('MY_ROLE', 'USER');
@@ -366,11 +335,6 @@
     async function handleLogout() {
       if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
       console.log('[Auth] Logging out user...');
-      if (window._session?.token) {
-        try {
-          await apiGet(P.sessionLogin, { action: 'logout', session_token: window._session.token });
-        } catch (_) {}
-      }
       clearSession();
       // Hapus auth-related keys saja, simpan face data + preferences
       localStorage.removeItem(STORAGE_KEYS.USER_ID);
@@ -395,62 +359,10 @@
         const isTg = !!(window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.search).has('id'));
         if (isTg) {
           console.log('[Auth] Telegram user without session → auto-login from Telegram ID');
-          let nip = '', role = 'USER', instansi = '', targetId = window.MY_ID;
-
-          // Coba fetch user data dari server (best-effort)
-          try {
-            const { ok, data: users } = await apiGet(P.userList + '?user_id=' + window.MY_ID);
-            console.log('[Auth] user-list response:', { ok, users });
-            if (ok && users) {
-              const user = Array.isArray(users) ? users[0] : users;
-              if (user && user.id) {
-                nip = String(user.nip || '').trim();
-                targetId = String(user.telegram_id || user.id || window.MY_ID);
-                role = user.role || 'USER';
-                instansi = user.instansi_id || user.Instansi_Id || '';
-                localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
-              }
-            }
-          } catch (e) {
-            console.warn('[Auth] user-list fetch failed, using Telegram ID only:', e);
-          }
-
-          // Selalu buat session — Telegram ID valid sebagai identitas
-          if (!nip) nip = 'TG_' + window.MY_ID; // fallback NIP from Telegram ID
-          try {
-            const { ok: sOk, data: sData } = await apiGet(P.sessionLogin, { nip, user_id: targetId, role, instansi_id: instansi });
-            console.log('[Auth] session-login response:', { ok: sOk, data: sData });
-            if (sOk && sData?.session_token) {
-              setSession(sData.session_token, { nip, role, instansi_id: instansi });
-            } else {
-              // Token tidak di-DB → show error, jangan pakai fallback
-              console.error('[Auth] session-login returned no token:', sData);
-              $('authOverlay').style.display = 'flex';
-              const splash = $('appSplash');
-              if (splash) splash.remove();
-              if (typeof Swal !== 'undefined') {
-                Swal.fire('Gagal', 'Session tidak dapat dibuat. Pastikan Anda terdaftar di sistem. Error: ' + JSON.stringify(sData), 'error');
-              }
-              return false;
-            }
-          } catch (e) {
-            console.error('[Auth] session-login request failed:', e);
-            $('authOverlay').style.display = 'flex';
-            const splash = $('appSplash');
-            if (splash) splash.remove();
-            if (typeof Swal !== 'undefined') {
-              Swal.fire('Gagal', 'Tidak dapat menghubungi server session. Hubungi admin.', 'error');
-            }
-            return false;
-          }
-
-          // Simpan user data
-          window.MY_ID = targetId;
-          localStorage.setItem(STORAGE_KEYS.USER_ID, targetId);
-          localStorage.setItem('MY_NIP', nip);
-          localStorage.setItem('MY_ROLE', String(role).toUpperCase());
-          if (instansi) localStorage.setItem('MY_INSTANSI', instansi);
-          console.log('[Auth] Auto-login success:', { targetId, nip, role, hasToken: !!window._session.token });
+          // Simple token — tidak perlu server call
+          const token = 'tg_' + window.MY_ID + '_' + Date.now();
+          setSession(token, { nip: '', role: 'USER', instansi_id: '' });
+          console.log('[Auth] Auto-login success:', { targetId: window.MY_ID, hasToken: !!window._session.token });
           return true;
         }
         // Non-Telegram: force re-login

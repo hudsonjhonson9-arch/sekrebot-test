@@ -421,6 +421,86 @@
           "name": "Header Auth account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = ($json.headers.authorization || $json.headers['x-app-token'] || '').trim();\nif (!auth) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak ditemukan' } }];\n}\n\nlet token = auth;\nif (/^Bearer\\s+/i.test(token)) {\n  token = token.replace(/^Bearer\\s+/i, '').trim();\n}\n\nconst VALID_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (token !== VALID_TOKEN) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak valid' } }];\n}\n\nconst ts = Date.now();\nconst hmac = require('crypto').createHmac('sha256', VALID_TOKEN);\nhmac.update(String(ts));\nconst sig = hmac.digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    _auth_ok: true,\n    _server_ts: ts,\n    _sig: sig\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        -208
+      ],
+      "id": "cdabbbcc-a8b5-4df9-89e8-94a8de3f236b",
+      "name": "Security Gate Face-Register"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        488,
+        -208
+      ],
+      "id": "84c4e4d4-f12d-47eb-81e1-0967d7c81764",
+      "name": "Validate Session Face-Register",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        716,
+        -208
+      ],
+      "id": "3c2eb86c-e215-4e2d-b6ac-8942051ee50b",
+      "name": "Check Role Face-Register"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        716,
+        -48
+      ],
+      "id": "236e7efd-59c9-4a8a-b3a8-26b1aa58f464",
+      "name": "Respond Forbidden Face-Register"
     }
   ],
   "connections": {
@@ -582,7 +662,7 @@
       "main": [
         [
           {
-            "node": "Parse Face Data",
+            "node": "Security Gate Face-Register",
             "type": "main",
             "index": 0
           }
@@ -594,6 +674,46 @@
         [
           {
             "node": "CORS Face Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Gate Face-Register": {
+      "main": [
+        [
+          {
+            "node": "Validate Session Face-Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session Face-Register": {
+      "main": [
+        [
+          {
+            "node": "Check Role Face-Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role Face-Register": {
+      "main": [
+        [
+          {
+            "node": "Parse Face Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden Face-Register",
             "type": "main",
             "index": 0
           }

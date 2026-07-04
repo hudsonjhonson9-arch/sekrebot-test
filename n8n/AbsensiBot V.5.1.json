@@ -4445,6 +4445,380 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = ($json.headers.authorization || $json.headers['x-app-token'] || '').trim();\nif (!auth) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak ditemukan' } }];\n}\n\nlet token = auth;\nif (/^Bearer\\s+/i.test(token)) {\n  token = token.replace(/^Bearer\\s+/i, '').trim();\n}\n\nconst VALID_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (token !== VALID_TOKEN) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak valid' } }];\n}\n\nconst ts = Date.now();\nconst hmac = require('crypto').createHmac('sha256', VALID_TOKEN);\nhmac.update(String(ts));\nconst sig = hmac.digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    _auth_ok: true,\n    _server_ts: ts,\n    _sig: sig\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5788,
+        1120
+      ],
+      "id": "591d4ee0-5bda-4746-89a1-27b9e8ca9b1c",
+      "name": "Security Gate Admin-List"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6038,
+        1120
+      ],
+      "id": "24e7577a-9792-4f5c-8138-6826b03fb1a6",
+      "name": "Validate Session Admin-List",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6288,
+        1120
+      ],
+      "id": "add62bcb-1945-45bc-86f6-e4494485110e",
+      "name": "Check Role Admin-List"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6288,
+        1300
+      ],
+      "id": "09e36191-0eed-4f5b-9a4f-f903d3b4145c",
+      "name": "Respond Forbidden Admin-List"
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = ($json.headers.authorization || $json.headers['x-app-token'] || '').trim();\nif (!auth) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak ditemukan' } }];\n}\n\nlet token = auth;\nif (/^Bearer\\s+/i.test(token)) {\n  token = token.replace(/^Bearer\\s+/i, '').trim();\n}\n\nconst VALID_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (token !== VALID_TOKEN) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak valid' } }];\n}\n\nconst ts = Date.now();\nconst hmac = require('crypto').createHmac('sha256', VALID_TOKEN);\nhmac.update(String(ts));\nconst sig = hmac.digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    _auth_ok: true,\n    _server_ts: ts,\n    _sig: sig\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5788,
+        1856
+      ],
+      "id": "c118222c-f0b6-4e4e-9b50-3269c4e7409f",
+      "name": "Security Gate User-Delete"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6038,
+        1856
+      ],
+      "id": "e2519a4e-2b83-476c-8913-7749b7985883",
+      "name": "Validate Session User-Delete",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6288,
+        1856
+      ],
+      "id": "5204b30a-0c68-4393-b488-7b2dd5fba855",
+      "name": "Check Role User-Delete"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6288,
+        2036
+      ],
+      "id": "2a9a7ffa-1e4a-4bd3-b620-82bd4f0a91a2",
+      "name": "Respond Forbidden User-Delete"
+    },
+    {
+      "parameters": {
+        "jsCode": "const auth = ($json.headers.authorization || $json.headers['x-app-token'] || '').trim();\nif (!auth) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak ditemukan' } }];\n}\n\nlet token = auth;\nif (/^Bearer\\s+/i.test(token)) {\n  token = token.replace(/^Bearer\\s+/i, '').trim();\n}\n\nconst VALID_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (token !== VALID_TOKEN) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak valid' } }];\n}\n\nconst ts = Date.now();\nconst hmac = require('crypto').createHmac('sha256', VALID_TOKEN);\nhmac.update(String(ts));\nconst sig = hmac.digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    _auth_ok: true,\n    _server_ts: ts,\n    _sig: sig\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5788,
+        2100
+      ],
+      "id": "0d0706c7-9f96-4b03-ba31-ea33198ec979",
+      "name": "Security Gate User-Add"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6038,
+        2100
+      ],
+      "id": "7b832590-ef49-4184-afd1-15a38ac3a9da",
+      "name": "Validate Session User-Add",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6288,
+        2100
+      ],
+      "id": "bbe409d6-9c22-472d-b219-854f5395b46f",
+      "name": "Check Role User-Add"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6288,
+        2280
+      ],
+      "id": "8c9420a5-d217-40d3-873c-a74c04932ea7",
+      "name": "Respond Forbidden User-Add"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5788,
+        608
+      ],
+      "id": "1076068e-1957-4726-9b41-869b6d0c12a2",
+      "name": "Validate Session Absen",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"USER\",\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\",\"IRBAN\",\"INSPEKTUR\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6038,
+        608
+      ],
+      "id": "4f54def8-ace9-4bcd-af7b-ac5bbe2d3be5",
+      "name": "Check Role Absen"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6038,
+        788
+      ],
+      "id": "c0886982-1400-492d-9d4a-fb668126b0dd",
+      "name": "Respond Forbidden Absen"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5788,
+        2344
+      ],
+      "id": "23ef873c-87fd-4339-84b6-50cb9ed79ecc",
+      "name": "Validate Session User-List",
+      "credentials": {
+        "postgres": {
+          "id": "vYOiyrTftLtD3zzd",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\nconst session = rows[0]?.json;\n\nif (!session || !session.user_id) {\n  return [{ json: { ok: false, error: \"Sesi tidak valid atau telah kedaluwarsa\", code: \"SESSION_INVALID\" } }];\n}\n\nconst role = (session.role || '').toUpperCase();\nconst allowed = [\"ADMIN\",\"SUPERADMIN\",\"KEPALA\",\"SEKRETARIS\",\"KABID\"].map(r => r.toUpperCase());\n\nif (!allowed.includes(role)) {\n  return [{ json: { ok: false, error: \"Akses ditolak: role \" + role + \" tidak memiliki izin\", code: \"FORBIDDEN\" } }];\n}\n\nreturn [{ json: { ...items[0].json, _session: session } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6038,
+        2344
+      ],
+      "id": "3212b6ad-8e68-41a4-8138-b2309c77a9fb",
+      "name": "Check Role User-List"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Authorization, Content-Type, X-App-Token"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        6038,
+        2524
+      ],
+      "id": "84aa1536-8944-4949-8e37-be455968c761",
+      "name": "Respond Forbidden User-List"
     }
   ],
   "connections": {
@@ -4536,7 +4910,7 @@
       "main": [
         [
           {
-            "node": "Check Request ID",
+            "node": "Validate Session Absen",
             "type": "main",
             "index": 0
           }
@@ -4547,7 +4921,7 @@
       "main": [
         [
           {
-            "node": "Get Pegawai User-List",
+            "node": "Validate Session User-List",
             "type": "main",
             "index": 0
           }
@@ -5837,7 +6211,7 @@
       "main": [
         [
           {
-            "node": "Validate User-Delete",
+            "node": "Security Gate User-Delete",
             "type": "main",
             "index": 0
           }
@@ -5886,7 +6260,7 @@
       "main": [
         [
           {
-            "node": "Validate User-Add",
+            "node": "Security Gate User-Add",
             "type": "main",
             "index": 0
           }
@@ -6072,7 +6446,7 @@
       "main": [
         [
           {
-            "node": "Get Admin from DB",
+            "node": "Security Gate Admin-List",
             "type": "main",
             "index": 0
           }
@@ -6128,6 +6502,184 @@
         [
           {
             "node": "Sync Statistik Pegawai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Gate Admin-List": {
+      "main": [
+        [
+          {
+            "node": "Validate Session Admin-List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session Admin-List": {
+      "main": [
+        [
+          {
+            "node": "Check Role Admin-List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role Admin-List": {
+      "main": [
+        [
+          {
+            "node": "Get Admin from DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden Admin-List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Gate User-Delete": {
+      "main": [
+        [
+          {
+            "node": "Validate Session User-Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session User-Delete": {
+      "main": [
+        [
+          {
+            "node": "Check Role User-Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role User-Delete": {
+      "main": [
+        [
+          {
+            "node": "Validate User-Delete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden User-Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Security Gate User-Add": {
+      "main": [
+        [
+          {
+            "node": "Validate Session User-Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session User-Add": {
+      "main": [
+        [
+          {
+            "node": "Check Role User-Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role User-Add": {
+      "main": [
+        [
+          {
+            "node": "Validate User-Add",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden User-Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session Absen": {
+      "main": [
+        [
+          {
+            "node": "Check Role Absen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role Absen": {
+      "main": [
+        [
+          {
+            "node": "Check Request ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden Absen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Session User-List": {
+      "main": [
+        [
+          {
+            "node": "Check Role User-List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Role User-List": {
+      "main": [
+        [
+          {
+            "node": "Get Pegawai User-List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Forbidden User-List",
             "type": "main",
             "index": 0
           }

@@ -372,16 +372,58 @@
       location.href = location.pathname; 
     }
 
-    function _checkIdentityOnLoad() {
+    async function _checkIdentityOnLoad() {
       if (!window.MY_ID) {
         $('authOverlay').style.display = 'flex';
         const splash = $('appSplash');
         if (splash) splash.remove(); // No need splash if no auth
         return false;
       }
-      // MY_ID ada tapi token tidak ada → session expired / force re-login
+      // MY_ID ada tapi token tidak ada → auto-login dari Telegram ID
       if (!window._session.token) {
-        console.warn('[Auth] MY_ID exists but no session token → forcing re-login');
+        const isTg = !!(window.Telegram?.WebApp?.initData || new URLSearchParams(window.location.search).has('id'));
+        if (isTg) {
+          console.log('[Auth] Telegram user without session → auto-login from Telegram ID');
+          try {
+            // Fetch user data dari server
+            const { ok, data: users } = await apiGet(P.userList + '?user_id=' + window.MY_ID);
+            if (ok && users && ((Array.isArray(users) && users.length > 0) || users.id)) {
+              const user = Array.isArray(users) ? users[0] : users;
+              const nip = String(user.nip || '').trim();
+              const targetId = String(user.telegram_id || user.id || window.MY_ID);
+              const role = user.role || 'USER';
+              const instansi = user.instansi_id || user.Instansi_Id || '';
+
+              // Create session
+              try {
+                const { ok: sOk, data: sData } = await apiPost(P.sessionLogin, { nip, user_id: targetId, role, instansi_id: instansi });
+                if (sOk && sData?.session_token) {
+                  setSession(sData.session_token, { nip, role, instansi_id: instansi });
+                } else {
+                  const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                  setSession(fallbackToken, { nip, role, instansi_id: instansi });
+                }
+              } catch (_) {
+                const fallbackToken = 'cs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                setSession(fallbackToken, { nip, role, instansi_id: instansi });
+              }
+
+              // Simpan user data
+              window.MY_ID = targetId;
+              localStorage.setItem(STORAGE_KEYS.USER_ID, targetId);
+              localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+              localStorage.setItem('MY_NIP', nip);
+              localStorage.setItem('MY_ROLE', String(role).toUpperCase());
+              if (instansi) localStorage.setItem('MY_INSTANSI', instansi);
+              console.log('[Auth] Auto-login success:', { targetId, nip, role });
+              return true;
+            }
+          } catch (e) {
+            console.error('[Auth] Auto-login failed:', e);
+          }
+        }
+        // Fallback: force re-login
+        console.warn('[Auth] No session token → forcing re-login');
         localStorage.removeItem(STORAGE_KEYS.USER_ID);
         localStorage.removeItem(STORAGE_KEYS.USER_OBJ);
         localStorage.removeItem('MY_NIP');

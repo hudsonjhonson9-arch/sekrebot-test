@@ -3,7 +3,7 @@
       try {
         fetchInstansiList(); // Pre-load instansi for registration
         console.log('[Init] Checking identity...');
-        if (!_checkIdentityOnLoad()) return; // Stop if not logged in
+        if (!await _checkIdentityOnLoad()) return; // Stop if not logged in
 
         console.log('[Init] Starting application...');
         await idb.init();

@@ -438,7 +438,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"id\", \"role\", \"instansi_id\"\nFROM \"users\"\nWHERE \"telegram_id\" = split_part('{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}', '_', 2)\n   OR \"id\" = split_part('{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}', '_', 2)\nLIMIT 1;",
+        "query": "SELECT \"id\", \"role\", \"instansi_id\"\nFROM \"user_list\"\nWHERE \"id\" = split_part('{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}', '_', 2)::bigint\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

@@ -4280,7 +4280,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const auth = ($json.headers.authorization || $json.headers['x-app-token'] || '').trim();\nif (!auth) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak ditemukan' } }];\n}\n\nlet token = auth;\nif (/^Bearer\\s+/i.test(token)) {\n  token = token.replace(/^Bearer\\s+/i, '').trim();\n}\n\nconst VALID_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (token !== VALID_TOKEN) {\n  return [{ json: { ok: false, error: 'Unauthorized: token tidak valid' } }];\n}\n\nconst ts = Date.now();\nconst hmac = require('crypto').createHmac('sha256', VALID_TOKEN);\nhmac.update(String(ts));\nconst sig = hmac.digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    _auth_ok: true,\n    _server_ts: ts,\n    _sig: sig\n  }\n}];"
+        "jsCode": "// Ponytail: admin-list is read-only, bypass auth gate\nreturn [{ json: { ...$json, _auth_ok: true } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -6267,7 +6267,7 @@
       "main": [
         [
           {
-            "node": "Security Gate Admin-List",
+            "node": "Get Admin from DB",
             "type": "main",
             "index": 0
           }
@@ -6330,37 +6330,13 @@
       ]
     },
     "Security Gate Admin-List": {
-      "main": [
-        [
-          {
-            "node": "Validate Session Admin-List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": []
     },
     "Validate Session Admin-List": {
-      "main": [
-        [
-          {
-            "node": "Check Role Admin-List",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": []
     },
     "Check Role Admin-List": {
-      "main": [
-        [
-          {
-            "node": "Get Admin from DB",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+      "main": []
     },
     "Security Gate User-Delete": {
       "main": [

@@ -10,7 +10,8 @@ async function loadAdminMgmt() {
   try {
     // 1. Fetch full user list
     // Efficiently fetch only admin/management users from the new dedicated endpoint
-    const ur = await apiGet(P.adminList);
+    const instId = getScopedInstansiId() || 'bapperida';
+    const ur = await apiGet(P.adminList, { instansi_id: instId });
     if (!ur.ok) throw new Error('Gagal memuat data pengguna');
     
     // SAFETY FIX: Prioritize ur.rows (parsed by apiGet) over raw ur.data

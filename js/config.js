@@ -103,9 +103,9 @@ let REKAP_CHAT_ID = null;
 const WIFI_CHECK_ENABLED = true;
 const WIFI_MODE = 'block';
 
-/* ════ SESSION MANAGEMENT (sessionStorage-backed) ════ */
-// sessionStorage: hilang saat tab ditutup, survive page reload.
-// Lebih aman dari localStorage (per-tab scope, auto-clear saat close).
+/* ════ SESSION MANAGEMENT (localStorage-backed) ════ */
+// localStorage: persist across tab close / WebView restart.
+// Token tetap aman karena hanya disimpan di device yang login.
 window._session = {
   token: null,
   nip: null,
@@ -114,16 +114,16 @@ window._session = {
   isLoggedIn: false,
 };
 
-// Restore session dari sessionStorage on page load
+// Restore session dari localStorage on page load
 (function restoreSession() {
   try {
-    const t = sessionStorage.getItem('_sess_token');
+    const t = localStorage.getItem('_sess_token');
     console.log('[Session] Restore:', { hasToken: !!t, tokenLen: t?.length || 0 });
     if (t) {
       window._session.token = t;
-      window._session.nip = sessionStorage.getItem('_sess_nip') || '';
-      window._session.role = sessionStorage.getItem('_sess_role') || 'USER';
-      window._session.instansi_id = sessionStorage.getItem('_sess_inst') || '';
+      window._session.nip = localStorage.getItem('_sess_nip') || '';
+      window._session.role = localStorage.getItem('_sess_role') || 'USER';
+      window._session.instansi_id = localStorage.getItem('_sess_inst') || '';
       window._session.isLoggedIn = true;
     }
   } catch (_) {}
@@ -136,10 +136,10 @@ function setSession(token, data) {
   window._session.instansi_id = data.instansi_id || '';
   window._session.isLoggedIn = true;
   try {
-    sessionStorage.setItem('_sess_token', token);
-    sessionStorage.setItem('_sess_nip', data.nip || '');
-    sessionStorage.setItem('_sess_role', (data.role || 'USER').toUpperCase());
-    sessionStorage.setItem('_sess_inst', data.instansi_id || '');
+    localStorage.setItem('_sess_token', token);
+    localStorage.setItem('_sess_nip', data.nip || '');
+    localStorage.setItem('_sess_role', (data.role || 'USER').toUpperCase());
+    localStorage.setItem('_sess_inst', data.instansi_id || '');
   } catch (_) {}
 }
 
@@ -150,10 +150,10 @@ function clearSession() {
   window._session.instansi_id = '';
   window._session.isLoggedIn = false;
   try {
-    sessionStorage.removeItem('_sess_token');
-    sessionStorage.removeItem('_sess_nip');
-    sessionStorage.removeItem('_sess_role');
-    sessionStorage.removeItem('_sess_inst');
+    localStorage.removeItem('_sess_token');
+    localStorage.removeItem('_sess_nip');
+    localStorage.removeItem('_sess_role');
+    localStorage.removeItem('_sess_inst');
   } catch (_) {}
 }
 

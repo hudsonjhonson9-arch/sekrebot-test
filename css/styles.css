@@ -4214,6 +4214,11 @@
       width: 100%;
       background: #112240
     }
+    @media (min-width: 768px) {
+      #adminMap {
+        height: 400px;
+      }
+    }
 
     .map-hint {
       position: absolute;

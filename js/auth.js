@@ -374,6 +374,18 @@
         if (splash) splash.remove(); // No need splash if no auth
         return false;
       }
+      // MY_ID ada tapi token tidak ada → session expired / tab baru → force re-login
+      if (!window._session.token) {
+        console.warn('[Auth] MY_ID exists but no session token → forcing re-login');
+        localStorage.removeItem('MY_ID');
+        localStorage.removeItem('MY_NIP');
+        localStorage.removeItem('MY_ROLE');
+        window.MY_ID = null;
+        $('authOverlay').style.display = 'flex';
+        const splash = $('appSplash');
+        if (splash) splash.remove();
+        return false;
+      }
       return true;
     }
 

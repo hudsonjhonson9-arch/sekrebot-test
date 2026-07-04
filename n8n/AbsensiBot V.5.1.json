@@ -4462,7 +4462,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"session_token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4542,7 +4542,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"session_token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4622,7 +4622,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"session_token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4689,7 +4689,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"session_token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -4756,7 +4756,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
+        "query": "SELECT \"user_id\", \"role\", \"instansi_id\"\nFROM \"auth_sessions\"\nWHERE \"session_token\" = '{{ $json.headers.authorization.replace(/^Bearer\\s+/i, '').trim() }}'\n  AND \"is_active\" = true\n  AND \"expires_at\" > now()\nLIMIT 1;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

@@ -118,6 +118,7 @@ window._session = {
 (function restoreSession() {
   try {
     const t = sessionStorage.getItem('_sess_token');
+    console.log('[Session] Restore:', { hasToken: !!t, tokenLen: t?.length || 0 });
     if (t) {
       window._session.token = t;
       window._session.nip = sessionStorage.getItem('_sess_nip') || '';

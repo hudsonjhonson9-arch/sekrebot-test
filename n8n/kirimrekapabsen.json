@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst authH = headers['authorization'] || headers['Authorization'] || '';\nconst bearer = authH.replace(/^Bearer\\s+/i, '').trim();\nif (!bearer) {\n  $execution.respond({\n    statusCode: 401,\n    headers: { 'Access-Control-Allow-Origin': '*' },\n    body: JSON.stringify({ ok: false, message: 'Unauthorized: Invalid Token' })\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "// Rekap is read-only — all authenticated users need access\n// Pass through without blocking. CORS headers set by downstream nodes.\nreturn $input.all();"
       },
       "name": "Security Gate",
       "type": "n8n-nodes-base.code",

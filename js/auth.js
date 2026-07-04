@@ -82,8 +82,9 @@
           const finalizeLogin = async () => {
             try {
               const sessionBody = { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' };
-              const { ok, data: sData } = await apiPost(P.sessionLogin, sessionBody);
-              if (ok && sData?.session_token) {
+               const { ok, data: sData } = await apiPost(P.sessionLogin, sessionBody);
+               console.log('[Login] Session response:', { ok, hasToken: !!sData?.session_token, keys: Object.keys(sData || {}) });
+               if (ok && sData?.session_token) {
                 setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
               }
             } catch (_) {}
@@ -301,6 +302,7 @@
                 try {
                   const sBody = { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' };
                   const { ok, data: sData } = await apiPost(P.sessionLogin, sBody);
+                  console.log('[Register] Session response:', { ok, hasToken: !!sData?.session_token, keys: Object.keys(sData || {}) });
                   if (ok && sData?.session_token) {
                     setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
                   }

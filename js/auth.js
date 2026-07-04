@@ -79,17 +79,24 @@
           const userNip = String(user.nip || '').trim();
           const targetId = String(user.telegram_id || user.id);
           
-          const finalizeLogin = () => {
-             window.MY_ID = targetId;
-             localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
-             localStorage.setItem('MY_NIP', userNip);
-             localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
-             localStorage.setItem('MY_NAME', String(user.nama || 'User'));
-             localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
-             const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
-             if (finalInst) localStorage.setItem('MY_INSTANSI', finalInst);
-             else localStorage.removeItem('MY_INSTANSI');
-             location.reload();
+          const finalizeLogin = async () => {
+            try {
+              const sessionBody = { nip: userNip, user_id: targetId, role: user.role || 'USER', instansi_id: user.instansi_id || user.Instansi_Id || '' };
+              const { ok, data: sData } = await apiPost(P.sessionLogin, sessionBody);
+              if (ok && sData?.session_token) {
+                setSession(sData.session_token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
+              }
+            } catch (_) {}
+            window.MY_ID = targetId;
+            localStorage.setItem(STORAGE_KEYS.USER_ID, window.MY_ID);
+            localStorage.setItem('MY_NIP', userNip);
+            localStorage.setItem('MY_ROLE', String(user.role || 'USER').toUpperCase());
+            localStorage.setItem('MY_NAME', String(user.nama || 'User'));
+            localStorage.setItem(STORAGE_KEYS.USER_OBJ, JSON.stringify(user));
+            const finalInst = (user.instansi_id || user.Instansi_Id || '').trim();
+            if (finalInst) localStorage.setItem('MY_INSTANSI', finalInst);
+            else localStorage.removeItem('MY_INSTANSI');
+            location.reload();
           };
 
           if (isFaceEnabled && typeof openCamOverlay === 'function') {
@@ -214,7 +221,7 @@
 
                     // Threshold 0.50 untuk kemiripan wajah
                     if (similarity >= 0.50) {
-                       finalizeLogin();
+                       await finalizeLogin();
                     } else {
                        alert(`Verifikasi Gagal!\n${failReason}`);
                        window.MY_ID = null; // Revert
@@ -227,11 +234,11 @@
              }
              // Biarkan tombol disable selagi kamera aktif
              return; 
-          } else {
-             // Jika Face Recognition didisable dari admin, login normal
-             finalizeLogin();
-             return;
-          }
+           } else {
+              // Jika Face Recognition didisable dari admin, login normal
+              await finalizeLogin();
+              return;
+           }
         } else {
           const payload = {
             id: $('regTelegram')?.value.trim() || window.MY_ID || String(Math.floor(Math.random() * 1000000)),
@@ -249,6 +256,13 @@
           if (!payload.nama || !payload.nip) throw new Error('Nama dan NIP wajib diisi');
           if (payload.nip.length < 3) throw new Error('ID / NIP minimal terdiri dari 3 karakter');
           if (payload.no_hp && payload.no_hp.length < 10) throw new Error('Nomor WhatsApp minimal 10 digit');
+
+          // Cek apakah NIP sudah terdaftar
+          const cek = await apiGet(`${P.userList}?nip=${payload.nip}`);
+          if (cek.ok) {
+            const ada = cek.rows.find(u => String(u.nip || '').trim() === payload.nip);
+            if (ada) throw new Error('NIP ' + payload.nip + ' sudah terdaftar. Silakan login.');
+          }
 
           // Sembunyikan form pendaftaran sementara untuk scan wajah
           const overlayEl = document.getElementById('authOverlay');
@@ -283,7 +297,14 @@
                 const faceOk = await syncFaceToServer(payload.id, camResult.dataUrl, camResult.descriptor, payload.nama, new Date().toISOString());
                 if (!faceOk) throw new Error('Gagal menyimpan data wajah ke server. Hubungi Admin.');
 
-                // 3. Finalisasi login otomatis setelah sukses register
+                // 3. Buat session + finalisasi login
+                try {
+                  const sBody = { nip: payload.nip, user_id: payload.id, role: 'USER', instansi_id: payload.instansi_id || '' };
+                  const { ok, data: sData } = await apiPost(P.sessionLogin, sBody);
+                  if (ok && sData?.session_token) {
+                    setSession(sData.session_token, { nip: payload.nip, role: 'USER', instansi_id: payload.instansi_id || '' });
+                  }
+                } catch (_) {}
                 localStorage.setItem(STORAGE_KEYS.USER_ID, String(window.MY_ID));
                 localStorage.setItem('MY_NIP', String(payload.nip));
                 localStorage.setItem('MY_ROLE', 'USER');
@@ -323,6 +344,12 @@
     async function handleLogout() {
       if (!confirm('Apakah Anda yakin ingin keluar dari akun ini?')) return;
       console.log('[Auth] Logging out user...');
+      if (window._session?.token) {
+        try {
+          await apiPost(P.sessionLogin, { action: 'logout', session_token: window._session.token });
+        } catch (_) {}
+      }
+      clearSession();
       localStorage.clear();
       
       // Force return to login screen

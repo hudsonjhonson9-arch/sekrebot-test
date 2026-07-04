@@ -3,7 +3,7 @@
     {
       "parameters": {
         "path": "simapo-katalog",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "path": "simapo-admin-master-list",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -172,7 +172,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-master-save",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -256,7 +256,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-master-delete",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"

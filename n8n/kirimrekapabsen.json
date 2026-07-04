@@ -8,7 +8,7 @@
         "options": {
           "allowedOrigins": "*"
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "name": "Kirim Rekap",
       "type": "n8n-nodes-base.webhook",
@@ -28,7 +28,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, Authorization'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "name": "CORS Kirim",
       "type": "n8n-nodes-base.code",
@@ -41,7 +41,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nconst EXPECTED_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\n\nif (token !== EXPECTED_TOKEN) {\n  $execution.respond({\n    statusCode: 401,\n    headers: { 'Access-Control-Allow-Origin': '*' },\n    body: JSON.stringify({ ok: false, message: 'Unauthorized: Invalid Token' })\n  });\n  return [];\n}\n\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst authH = headers['authorization'] || headers['Authorization'] || '';\nconst bearer = authH.replace(/^Bearer\\s+/i, '').trim();\nconst legacy = headers['x-app-token'] || headers['X-App-Token'];\nconst EXPECTED_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (!(bearer || legacy === EXPECTED_TOKEN)) {\n  $execution.respond({\n    statusCode: 401,\n    headers: { 'Access-Control-Allow-Origin': '*' },\n    body: JSON.stringify({ ok: false, message: 'Unauthorized: Invalid Token' })\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "name": "Security Gate",
       "type": "n8n-nodes-base.code",

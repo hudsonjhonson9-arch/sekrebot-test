@@ -4,7 +4,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-tiket",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "path": "simapo-admin-tiket-list",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -172,7 +172,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-tiket-action",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"

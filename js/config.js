@@ -1,6 +1,7 @@
-/* ════ N8N WEBHOOK AUTHENTICATION ════ */
-const SIMAPO_TOKEN = "SIMAPO_SECURE_TOKEN_2026";
-const MEJA_SECRET_TOKEN = "BAPPERIDA_MEJA_SECURE_2026";
+/* ════ SESSION AUTHENTICATION ════ */
+// Session token disimpan di memory (window._session), bukan localStorage.
+// Di-set setelah biometric login berhasil, expired dalam 24 jam.
+// Server validasi tiap request via auth_sessions table.
 
 /* ════ OFFLINE STORAGE (INDEXEDDB) ════ */
 const DB_NAME = 'AbsensiOfflineDB';
@@ -70,29 +71,58 @@ const idb = {
 idb.init();
 
 /* ════ KONFIGURASI N8N ════ */
-// Akan dihapus secara bertahap saat migrasi ke Supabase selesai
-const SERVER_1 = 'https://mindcloud.my.id';           // server utama (permanen)
-const SERVER_2 = 'https://n8n-sp8dtwslkxal.jkt3.sumopod.my.id'; // fallback/dev
+const SERVER_1 = 'https://mindcloud.my.id';
+const SERVER_2 = 'https://n8n-sp8dtwslkxal.jkt3.sumopod.my.id';
 const isTest = false;
-// ADMIN_NIPS dimuat dinamis dari database via n8n
-// Tidak perlu edit manual — kelola di tab Admin > Manajemen Admin
-let ADMIN_NIPS = [];         // diisi oleh loadAdminMgmt()
-let MANDATORY_FACE_NIPS = []; // Daftar NIP yang WAJIB face recognition
-window._adminRoleMap = {};   // Mapping NIP -> role (superadmin/admin/kepala/dkk)
-let REKAP_CHAT_ID = null;    // peninggalan bot lama, bisa diabaikan
+let ADMIN_NIPS = [];
+let MANDATORY_FACE_NIPS = [];
+window._adminRoleMap = {};
+let REKAP_CHAT_ID = null;
 
-/* ════ KONFIGURASI JARINGAN WIFI KANTOR ════
-   WAJIB DIISI: Daftar IP publik jaringan WiFi kantor.
-   Cara cek IP publik kantor: buka https://api.ipify.org dari jaringan WiFi kantor.
-   Bisa isi lebih dari satu IP jika ada beberapa koneksi internet kantor.
-   Jika WIFI_CHECK_ENABLED = false, cek jaringan dinonaktifkan (semua jaringan boleh).
-*/
+/* ════ KONFIGURASI JARINGAN WIFI KANTOR ════ */
 const WIFI_CHECK_ENABLED = true;
-// IP dicek server-side via ip_range di sheet lokasiabsen (support CIDR, e.g. 36.84.0.0/16)
-// Frontend hanya fetch IP publik untuk dikirim ke n8n — validasi dilakukan di n8n
 const WIFI_MODE = 'block';
 
+/* ════ SESSION MANAGEMENT (Memory-only) ════ */
+// Tidak disimpan di localStorage — hilang saat tab ditutup.
+// Server validasi tiap request via auth_sessions table.
+window._session = {
+  token: null,
+  nip: null,
+  role: 'USER',
+  instansi_id: '',
+  isLoggedIn: false,
+};
+
+function setSession(token, data) {
+  window._session.token = token;
+  window._session.nip = data.nip || '';
+  window._session.role = (data.role || 'USER').toUpperCase();
+  window._session.instansi_id = data.instansi_id || '';
+  window._session.isLoggedIn = true;
+}
+
+function clearSession() {
+  window._session.token = null;
+  window._session.nip = null;
+  window._session.role = 'USER';
+  window._session.instansi_id = '';
+  window._session.isLoggedIn = false;
+}
+
+function _getSessionRole() {
+  return window._session.isLoggedIn ? window._session.role : (localStorage.getItem('MY_ROLE') || 'USER');
+}
+
+function _isSuperAdmin() {
+  if (window._session.isLoggedIn) return window._session.role.includes('SUPER');
+  // Fallback for backward compat during migration
+  return (localStorage.getItem('MY_ROLE') || '').toLowerCase().includes('super');
+}
+
+/* ════ ENDPOINT PATHS ════ */
 const P = {
+  sessionLogin: isTest ? '/webhook-test/session-login' : '/webhook/session-login',
   instansiList: isTest ? '/webhook-test/instansi-list' : '/webhook/instansi-list',
   instansiUpdate: isTest ? '/webhook-test/instansi-update' : '/webhook/instansi-update',
   bidangList: isTest ? '/webhook-test/bidang-list' : '/webhook/bidang-list',
@@ -155,12 +185,9 @@ const P = {
   simapoAdminMasterList: isTest ? '/webhook-test/simapo-admin-master-list' : '/webhook/simapo-admin-master-list',
   simapoAdminMasterSave: isTest ? '/webhook-test/simapo-admin-master-save' : '/webhook/simapo-admin-master-save',
   simapoAdminMasterDel: isTest ? '/webhook-test/simapo-admin-master-delete' : '/webhook/simapo-admin-master-delete',
-  // Mutasi Stok
   simapoMutasiSave: isTest ? '/webhook-test/simapo-mutasi-save' : '/webhook/simapo-mutasi-save',
   simapoMutasiList: isTest ? '/webhook-test/simapo-mutasi-list' : '/webhook/simapo-mutasi-list',
-  // Stok Opname
   simapoOpnameSave: isTest ? '/webhook-test/simapo-opname-save' : '/webhook/simapo-opname-save',
-  // Kategori
   simapoKategoriList: isTest ? '/webhook-test/simapo-kategori-list' : '/webhook/simapo-kategori-list',
   simapoKategoriSave: isTest ? '/webhook-test/simapo-kategori-save' : '/webhook/simapo-kategori-save',
   simapoKategoriDel: isTest ? '/webhook-test/simapo-kategori-delete' : '/webhook/simapo-kategori-delete',
@@ -171,73 +198,49 @@ const P = {
 };
 
 function getScopedInstansiId() {
-  // Check if current user is Superadmin
   const p = window.userProfile || {};
   const myNip = p.nip || localStorage.getItem('MY_NIP');
-  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
-  const isSA = storedRole.includes('super') ||
-               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
-               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
-               (p.role || '').toLowerCase().includes('super') ||
-               (window.IS_ADMIN && storedRole.includes('super'));
+  const isSA = _isSuperAdmin();
 
-  // Priority 0: Active tab specific dropdown overrides (explicit user intent)
   const currentTab = localStorage.getItem('absen_last_tab') || 'absen';
   if (isSA) {
     if (currentTab === 'rekap') {
       const rekapSelect = document.getElementById('rekapInstansiSelect');
-      if (rekapSelect && rekapSelect.value) {
-        return rekapSelect.value;
-      }
+      if (rekapSelect && rekapSelect.value) return rekapSelect.value;
     } else if (currentTab === 'admin') {
       const activeAdminSect = localStorage.getItem('absen_last_admin_section') || 'ops';
       if (activeAdminSect === 'user') {
         const pegawaiSelect = document.getElementById('pegawaiInstansiSelect');
-        if (pegawaiSelect && pegawaiSelect.value) {
-          return pegawaiSelect.value;
-        }
+        if (pegawaiSelect && pegawaiSelect.value) return pegawaiSelect.value;
       } else if (activeAdminSect === 'ops') {
         const adminKetSelect = document.getElementById('adminKetInstansiSelect');
-        if (adminKetSelect && adminKetSelect.value) {
-          return adminKetSelect.value;
-        }
+        if (adminKetSelect && adminKetSelect.value) return adminKetSelect.value;
       }
       const adminSelect = document.getElementById('inEditInstansiSelect') || document.getElementById('adminInstansiSelect');
-      if (adminSelect && adminSelect.value) {
-        return adminSelect.value;
-      }
+      if (adminSelect && adminSelect.value) return adminSelect.value;
     } else if (currentTab === 'tugas') {
       const tugasSelect = document.getElementById('tugasInstansiSelect');
-      if (tugasSelect && tugasSelect.value) {
-        return tugasSelect.value;
-      }
+      if (tugasSelect && tugasSelect.value) return tugasSelect.value;
     } else if (currentTab === 'simapo') {
       const simapoSelect = document.getElementById('simapoInstansiSelect');
-      if (simapoSelect && simapoSelect.value) {
-        return simapoSelect.value;
-      }
+      if (simapoSelect && simapoSelect.value) return simapoSelect.value;
     }
   }
 
-  // Priority 1: Persistent storage (selected agency) for Superadmins
   if (isSA) {
     const savedInst = localStorage.getItem('MY_INSTANSI');
     if (savedInst) return savedInst;
   }
 
-  // Priority 2: From URL parameters (Registration context / Override)
   const urlParams = new URLSearchParams(window.location.search);
   let inst = urlParams.get('instansi') || urlParams.get('instansi_id');
   if (inst) return inst;
 
-  // Priority 3: From live state (Most up to date)
   if (window.userProfile?.instansi_id) return window.userProfile.instansi_id;
 
-  // Priority 4: From persistent storage (Safe for refresh)
   const savedInst = localStorage.getItem('MY_INSTANSI');
   if (savedInst) return savedInst;
 
-  // Priority 5: From logged in user data (User List cache)
   try {
     const u = JSON.parse(localStorage.getItem('tg_user_obj_v5') || '{}');
     const uInst = u.instansi_id || u.Instansi_Id;
@@ -247,15 +250,7 @@ function getScopedInstansiId() {
   return '';
 }
 
-/**
- * Fetch ke n8n API dengan fallback ke server cadangan.
- * Auto-append instansi_id ke semua request.
- * @param {string} path - Path endpoint (e.g. P.absen)
- * @param {Object} opts - Fetch options
- */
-const API_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';
-
-// ── HMAC Signature Generator (Anti-Spoofing) ──
+// ── API Fetch dengan Session Token ──
 async function generateSignature(payloadString) {
   const encoder = new TextEncoder();
   const data = encoder.encode(payloadString);
@@ -264,36 +259,25 @@ async function generateSignature(payloadString) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const HDR = { 
-  'Content-Type': 'application/json', 
-  'ngrok-skip-browser-warning': 'true', 
+const HDR = {
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true',
   'Accept': 'application/json',
-  'X-App-Token': API_TOKEN 
 };
 async function apiFetch(path, opts = {}) {
-  // Auto-append cache buster to avoid stale results
   path += (path.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
-  // Auto-append instansi_id & nip scoping
   const p = window.userProfile || {};
   const myNip = p.nip || localStorage.getItem('MY_NIP');
-  const storedRole = String(localStorage.getItem('MY_ROLE') || '').toLowerCase();
-  const isSA = storedRole.includes('super') ||
-               (typeof _isSuperAdmin === 'function' && _isSuperAdmin()) ||
-               (myNip && window._adminRoleMap && window._adminRoleMap[myNip] && String(window._adminRoleMap[myNip]).toLowerCase().includes('super')) ||
-               (p.role || '').toLowerCase().includes('super');
+  const isSA = _isSuperAdmin();
   const inst = getScopedInstansiId();
-  
-  // Scoping Logic:
-  // 1. If instansi_id is NOT in path, append it
-  // 2. EXCEPT if user is SUPERADMIN (they see everything unless explicitly filtered)
+
   if (inst && !path.includes('instansi_id=') && !path.includes('log-absen')) {
     path += '&instansi_id=' + inst;
   }
-  
+
   if (myNip && !path.includes('nip=')) {
-    // Jangan auto-append NIP untuk superadmin dan admin agar tidak memblokir query monitoring/list
-    const isAdminOrSA = isSA || storedRole.includes('admin') || (p.role || '').toLowerCase().includes('admin') || !!window.IS_ADMIN;
+    const isAdminOrSA = isSA || (localStorage.getItem('MY_ROLE') || '').toLowerCase().includes('admin') || (p.role || '').toLowerCase().includes('admin') || !!window.IS_ADMIN;
     if (!isAdminOrSA) {
       path += (path.includes('?') ? '&' : '?') + 'nip=' + encodeURIComponent(myNip);
     }
@@ -303,42 +287,42 @@ async function apiFetch(path, opts = {}) {
     try {
       console.log(`[Fetch] -> ${base}${path}`);
       const fetchOpts = { ...opts };
-      
-      // Inject Authorization Bearer Token untuk Webhook N8n
+
       let finalHeaders = { ...HDR };
-      if (path.includes('simapo')) {
-        // Hapus ngrok header tapi TETAP kirim X-App-Token (dibutuhkan oleh N8n webhook)
-        delete finalHeaders['ngrok-skip-browser-warning'];
-        finalHeaders['Authorization'] = 'Bearer ' + SIMAPO_TOKEN;
-        finalHeaders['X-App-Token'] = API_TOKEN; // N8n SIMAPO butuh ini
+      if (window._session?.token) {
+        finalHeaders['Authorization'] = 'Bearer ' + window._session.token;
       }
-      
+
       fetchOpts.headers = { ...finalHeaders, ...(opts.headers || {}) };
-      
+
       if (opts.method === 'GET' || !opts.body) {
         delete fetchOpts.headers['Content-Type'];
       }
 
-      // Add 15s timeout for each server (increased for large inventory data)
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 15000);
-      
+
       try {
         const r = await fetch(base + path, { ...fetchOpts, signal: ctrl.signal });
         clearTimeout(tid);
-        
+
+        if (r.status === 401) {
+          clearSession();
+          localStorage.clear();
+          location.href = location.pathname;
+          throw new Error('Session expired. Silakan login ulang.');
+        }
+
         if (r.ok || (r.status >= 400 && r.status < 500)) {
           console.log(`[Fetch] Success: ${base}${path}`);
-          
-          // N8n Webhook kadang mereturn 0 bytes jika execution stop di awal (misal 0 baris PG).
-          // Intercept r.json() agar tidak terjadi SyntaxError.
+
           const originalJson = r.json.bind(r);
           r.json = async () => {
             const text = await r.text();
             if (!text || text.trim() === '') return { data: [], message: 'Empty N8n Response' };
             try { return JSON.parse(text); } catch(e) { return { data: [], message: text }; }
           };
-          
+
           return r;
         }
         throw new Error(`HTTP ${r.status}`);
@@ -350,29 +334,16 @@ async function apiFetch(path, opts = {}) {
       console.warn(`[Fetch Fallback] ${base}${path}:`, e.message);
     }
   }
-  throw new Error(`Semua server (${[SERVER_1, SERVER_2].join(', ')}) offline/error.`);
+  throw new Error(`Semua server offline/error.`);
 }
 
-
-/* ════ API RESPONSE PARSER ════
-   Menangani berbagai format response dari n8n yang tidak konsisten:
-   - [ { data: [...] } ]
-   - [ {...} ]
-   - { data: [...] }
-   - [ [...] ]  (nested array)
-*/
+/* ════ API RESPONSE PARSER ════ */
 function parseApiResponse(json) {
   if (!json) return [];
-  // 1. [ { data: [...] } ] — format paling umum dari n8n
   if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0]?.data)) return json[0].data;
-  // 2. { data: [...] }
   if (!Array.isArray(json) && Array.isArray(json?.data)) return json.data;
-  // 3. [ [...] ] — nested array
   if (Array.isArray(json) && json.length === 1 && Array.isArray(json[0])) return json[0];
-  // 4. [ {...}, {...} ] — array of objects langsung
   if (Array.isArray(json)) return json;
-  // 5. { id: ... } — single object record (NEW)
   if (typeof json === 'object' && (json.id || json.ID || json.telegram_id)) return [json];
-  
   return [];
 }

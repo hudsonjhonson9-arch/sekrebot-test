@@ -33,33 +33,24 @@
     function buildLivenessStepsUI() { }
 
     // ── Face Recognition helpers (face-api.js descriptor-based) ──
-    const FACE_STORE_KEY = STORAGE_KEYS.FACE_REF;  // v2: descriptor-based
-    const FACE_STORE_KEY_OLD = 'face_ref_bapperida'; // v1 histogram (for cleanup)
-    let FACE_RECOGNITION_ENABLED = true; // default aktif, diupdate dari server via admin toggle
+    const FACE_STORE_KEY = STORAGE_KEYS.FACE_REF;
+    let FACE_RECOGNITION_ENABLED = true;
+
+    // Cleanup legacy localStorage biometric data on first load
+    try {
+      const legacyKeys = [FACE_STORE_KEY, 'face_ref_bapperida', 'face_ref_bapperida_v2'];
+      legacyKeys.forEach(k => { if (localStorage.getItem(k)) localStorage.removeItem(k); });
+    } catch (_) {}
 
     function getFaceRef() {
-      try {
-        if (window._faceRefCache && window._faceRefCache[String(MY_ID || '')]) {
-          return window._faceRefCache[String(MY_ID || '')];
-        }
-        const raw = localStorage.getItem(FACE_STORE_KEY);
-        if (!raw) return null;
-        const data = JSON.parse(raw);
-        return data[String(MY_ID || '')] || null;
-      } catch (_) { return null; }
+      if (window._faceRefCache && window._faceRefCache[String(MY_ID || '')]) {
+        return window._faceRefCache[String(MY_ID || '')];
+      }
+      return null;
     }
 
     function _writeFaceRefLocal(uid, faceData) {
       if (!uid) return;
-      try {
-        const storageData = { ...faceData };
-        const raw = localStorage.getItem(FACE_STORE_KEY);
-        const data = raw ? JSON.parse(raw) : {};
-        data[uid] = storageData;
-        localStorage.setItem(FACE_STORE_KEY, JSON.stringify(data));
-      } catch (_) { }
-
-      // Tetap simpan lengkap di RAM cache untuk tampilan saat ini
       if (!window._faceRefCache) window._faceRefCache = {};
       window._faceRefCache[uid] = faceData;
     }
@@ -866,6 +857,7 @@
           $('modelLoading').style.display = 'block';
           if ($('mlTitle')) $('mlTitle').textContent = 'Kamera Gagal';
           if ($('mlHint')) $('mlHint').innerHTML = `<span style="color:var(--danger)">Gagal mengakses kamera: ${e2.name || 'Unknown Error'}.<br>Pastikan izin kamera sudah diberikan.</span>`;
+          window._isAbsenSubmitting = false;
           return;
         }
       }
@@ -993,8 +985,9 @@
       _forceResetAiState(true);
 
       // Panggil onCancel HANYA jika ditutup manual oleh pengguna (bukan setelah onDone selesai)
-      if (triggeredByUser && cb && typeof cb === 'object' && typeof cb.onCancel === 'function') {
-        cb.onCancel();
+      if (triggeredByUser && cb) {
+        if (typeof cb === 'object' && typeof cb.onCancel === 'function') cb.onCancel();
+        window._isAbsenSubmitting = false; // Lepas lock agar user bisa coba lagi
       }
     }
 

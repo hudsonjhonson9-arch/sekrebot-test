@@ -3,7 +3,7 @@ try {
 /* ════ HANDLE ABSEN ════ */
 // Anti double-submit: track timestamp terakhir klik absen
 let _lastAbsenClick = 0;
-let _isAbsenSubmitting = false; // Idempotency Lock
+window._isAbsenSubmitting = false; // Idempotency Lock (global for face.js)
 
 /**
  * Entry point utama untuk absen masuk/pulang dari tab Absen.
@@ -12,8 +12,8 @@ let _isAbsenSubmitting = false; // Idempotency Lock
  */
 async function handleAbsen() {
   window.handleAbsen = handleAbsen; // Force Global
-  console.log('[Absen] handleAbsen triggered. Disabled:', $('btnAbsen').disabled, 'Submitting:', _isAbsenSubmitting);
-  if ($('btnAbsen').disabled || _isAbsenSubmitting) return;
+  console.log('[Absen] handleAbsen triggered. Disabled:', $('btnAbsen').disabled, 'Submitting:', window._isAbsenSubmitting);
+  if ($('btnAbsen').disabled || window._isAbsenSubmitting) return;
 
   // Blokir jika klik dalam 3 detik terakhir (cegah double-tap)
   const now = Date.now();
@@ -22,7 +22,7 @@ async function handleAbsen() {
   _lastAbsenClick = now;
 
   // ── SPECIAL EXCEPTION: Force Face Recognition for specific NIP ──
-  _isAbsenSubmitting = true; // Set lock AFTER checks
+  window._isAbsenSubmitting = true; // Set lock AFTER checks
   const myNip = (localStorage.getItem('MY_NIP') || window.userProfile?.nip || '').trim();
   const myId = window.MY_ID;
 
@@ -30,10 +30,10 @@ async function handleAbsen() {
   if (!myNip || !myId || myNip.toLowerCase() === 'undefined' || String(myId).toLowerCase() === 'undefined' || myNip === 'null') {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Tidak Valid',
       'Data profil Anda tidak valid atau belum lengkap. Silakan muat ulang halaman atau hubungi admin.');
-    _isAbsenSubmitting = false; return;
+    window._isAbsenSubmitting = false; return;
   }
 
-  const unlock = () => { _isAbsenSubmitting = false; };
+  const unlock = () => { window._isAbsenSubmitting = false; };
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung', 'HADIR hanya dapat dilakukan dari smartphone. Gunakan Telegram di HP Anda.');
     unlock(); return;
@@ -105,7 +105,7 @@ async function handleAbsen() {
 
   // Kembalikan tombol ke normal (modal kamera yang handle sekarang)
   setBtnL('btnAbsen', false, 'Kirim Lokasi & Absen');
-  // Note: _isAbsenSubmitting tetap true hingga _doAbsenWithGPS selesai
+  // Note: window._isAbsenSubmitting tetap true hingga _doAbsenWithGPS selesai
 }
 
 /* ── Proses GPS + Kirim payload absen (dipanggil setelah kamera) ── */
@@ -230,13 +230,13 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         handleAbsenError(new AbsenError(
           'Akurasi 0m tidak valid. Nonaktifkan Mock Location di pengaturan developer.',
           ERROR_CODES.FAKE_GPS), 'resultCard');
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); _isAbsenSubmitting = false; resolve(); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); window._isAbsenSubmitting = false; resolve(); return;
       }
       if (accuracy === 1) { _score += 20; _flags.push('ACCURACY_EXACTLY_1M'); }
       if (accuracy > GPS_MAX_ACCURACY_M) {
         showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Sinyal GPS Lemah',
           `Akurasi ${Math.round(accuracy)}m terlalu lemah. Pindah ke area terbuka.`);
-        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); _isAbsenSubmitting = false; resolve(); return;
+        setBtnL('btnAbsen', false, '🔄 Coba Lagi'); window._isAbsenSubmitting = false; resolve(); return;
       }
 
       // ── Layer 5: Koordinat presisi mencurigakan ───────────
@@ -403,7 +403,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
             })
           });
         } catch (_) { }
-        _isAbsenSubmitting = false; resolve(); return;
+        window._isAbsenSubmitting = false; resolve(); return;
       }
 
       // Jika suspicious (30–49): lanjutkan tapi tandai di payload
@@ -475,7 +475,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 
       // ── GENERATE HMAC SIGNATURE (ANTI-SPOOFING) ──
       if (typeof generateSignature === 'function') {
-         const sigBase = `${payload.request_id}${payload.nip}${payload.latitude}${payload.longitude}${payload.timestamp}${API_TOKEN}`;
+         const sigBase = `${payload.request_id}${payload.nip}${payload.latitude}${payload.longitude}${payload.timestamp}${window._session?.token || ''}`;
          payload._signature = await generateSignature(sigBase);
       }
 
@@ -510,7 +510,7 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
           const errMsg = absenStatus === 0 ? 'Server tidak merespons. Periksa koneksi dan coba lagi.' : `Terjadi kesalahan pada server (Status ${absenStatus}).`;
           handleAbsenError(new AbsenError(errMsg, ERROR_CODES.UNKNOWN), 'resultCard');
           setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-          _isAbsenSubmitting = false; resolve(); return;
+          window._isAbsenSubmitting = false; resolve(); return;
         }
 
         const d = absenData || {};
@@ -581,14 +581,14 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
         handleAbsenError(new AbsenError('Gagal memproses data absen.', ERROR_CODES.UNKNOWN), 'resultCard');
         setBtnL('btnAbsen', false, '🔄 Coba Lagi');
       } finally {
-        _isAbsenSubmitting = false;
+        window._isAbsenSubmitting = false;
         resolve();
       }
     },
     (err) => {
       handleAbsenError(geoErrorToAbsenError(err), 'resultCard');
       setBtnL('btnAbsen', false, '🔄 Coba Lagi');
-      _isAbsenSubmitting = false;
+      window._isAbsenSubmitting = false;
       resolve();
     },
     { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }
@@ -603,29 +603,29 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
  * @returns {Promise<void>}
  */
 async function handlePulangLuar() {
-  if ($('btnPulangLuar').disabled || _isAbsenSubmitting) return;
+  if ($('btnPulangLuar').disabled || window._isAbsenSubmitting) return;
   
-  _isAbsenSubmitting = true;
+  window._isAbsenSubmitting = true;
   const myNip = (window.userProfile?.nip || localStorage.getItem('MY_NIP') || '').trim();
   const myId = window.MY_ID;
 
   if (!myNip || !myId || myNip.toLowerCase() === 'undefined' || String(myId).toLowerCase() === 'undefined') {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '🆔', 'Identitas Tidak Valid',
       'Identitas Anda tidak valid (undefined). Silakan logout dan login kembali.');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
   const ket = ($('ketPulangLuar').value || '').trim();
   if (!ket) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Keterangan Wajib Diisi',
       'Tuliskan lokasi/kegiatan lapangan Anda sebelum absen pulang.');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
   if (isDesktop()) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '🖥️', 'Perangkat Tidak Didukung',
       'HADIR hanya dapat dilakukan dari smartphone.');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
   const initData = window.tg?.initData || '';
@@ -634,12 +634,12 @@ async function handlePulangLuar() {
   if (!initData && !isTgX) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'warning', '⚠️', 'Buka via Telegram',
       'Aplikasi harus dibuka melalui Telegram.');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
   if (!navigator.geolocation) {
     showResult('resultCard', 'rIcon', 'rTitle', 'rMsg', 'fail', '❌', 'GPS Tidak Tersedia', 'Buka di Telegram versi terbaru.');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
 
@@ -657,7 +657,7 @@ async function handlePulangLuar() {
     $('btnPulangLuar').disabled = true;
     const tSpan = $('btnPulangLuarText');
     if (tSpan) tSpan.textContent = `🚫 Status: ${nmKet}`;
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
 
@@ -670,7 +670,7 @@ async function handlePulangLuar() {
     handleAbsenError(new AbsenError(
       'Anda harus absen masuk terlebih dahulu sebelum absen pulang dari lapangan.',
       ERROR_CODES.BELUM_MASUK), 'resultCard');
-    _isAbsenSubmitting = false;
+    window._isAbsenSubmitting = false;
     return;
   }
   $('btnPulangLuar').disabled = true;
@@ -685,7 +685,7 @@ async function handlePulangLuar() {
           `Akurasi ${Math.round(accuracy)}m terlalu lemah. Pindah ke area terbuka.`);
         $('btnPulangLuar').disabled = false;
         if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
-        _isAbsenSubmitting = false;
+        window._isAbsenSubmitting = false;
         resolve();
         return;
       }
@@ -715,8 +715,8 @@ async function handlePulangLuar() {
 
       // ── GENERATE HMAC SIGNATURE (ANTI-SPOOFING) ──
       if (typeof generateSignature === 'function') {
-         const nipValue = window.userProfile?.nip || '';
-         const sigBase = `${payload.request_id}${nipValue}${payload.latitude}${payload.longitude}${payload.timestamp}${API_TOKEN}`;
+          const nipValue = window.userProfile?.nip || '';
+          const sigBase = `${payload.request_id}${nipValue}${payload.latitude}${payload.longitude}${payload.timestamp}${window._session?.token || ''}`;
          payload._signature = await generateSignature(sigBase);
       }
 
@@ -780,7 +780,7 @@ async function handlePulangLuar() {
         $('btnPulangLuar').disabled = false;
         if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
       } finally {
-        _isAbsenSubmitting = false;
+        window._isAbsenSubmitting = false;
         resolve();
       }
     },
@@ -789,7 +789,7 @@ async function handlePulangLuar() {
       handleAbsenError(geoErrorToAbsenError(err), 'resultCard');
       $('btnPulangLuar').disabled = false;
       if (tSpan) tSpan.textContent = '🏃 Pulang dari Lapangan';
-      _isAbsenSubmitting = false;
+      window._isAbsenSubmitting = false;
       resolve();
     },
     { enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS, maximumAge: 0 }

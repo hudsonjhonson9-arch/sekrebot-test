@@ -15,7 +15,7 @@
             ]
           }
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "name": "Webhook: penugasanSave",
       "type": "n8n-nodes-base.webhook",
@@ -47,7 +47,7 @@
             ]
           }
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "name": "Webhook: penugasanList",
       "type": "n8n-nodes-base.webhook",
@@ -79,7 +79,7 @@
             ]
           }
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "name": "Webhook: lemburGet",
       "type": "n8n-nodes-base.webhook",

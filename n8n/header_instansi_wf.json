@@ -7,7 +7,7 @@
         "options": {
           "allowedOrigins": "*"
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -27,7 +27,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, Authorization, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -95,7 +95,7 @@
         "options": {
           "allowedOrigins": "*"
         },
-        "authentication": "headerAuth"
+        "authentication": "none"
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -115,7 +115,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
+        "jsCode": "const method = $input.first().json.headers?.['x-forwarded-method'] || $input.first().json.method || '';\nif (method === 'OPTIONS') {\n  $execution.respond({\n    statusCode: 200,\n    headers: {\n      'Access-Control-Allow-Origin': '*',\n      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',\n      'Access-Control-Allow-Headers': 'Content-Type, ngrok-skip-browser-warning, Accept, Authorization, X-App-Token'\n    },\n    body: ''\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

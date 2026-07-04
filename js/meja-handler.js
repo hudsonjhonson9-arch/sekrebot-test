@@ -120,7 +120,7 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
       face_match: score,
       timestamp: Math.floor(Date.now() / 1000),
       source: 'meja_absen',
-      meja_token: typeof MEJA_SECRET_TOKEN !== 'undefined' ? MEJA_SECRET_TOKEN : ''
+      meja_token: window._session?.token || ''
     };
 
     // Paksa NIP masuk ke URL query agar n8n lebih mudah memproses

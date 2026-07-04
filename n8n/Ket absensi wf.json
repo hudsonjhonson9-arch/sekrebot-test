@@ -17,7 +17,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -288,7 +288,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -401,7 +401,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -486,7 +486,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept,Authorization'},body:''});return[];}\nreturn $input.all();"
       },
       "id": "e5399266-ebb7-4efe-bb6e-ee31d6386a71",
       "name": "CORS Ket Approve",
@@ -533,7 +533,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -654,7 +654,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept,Authorization'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -721,7 +721,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -821,7 +821,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -955,7 +955,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1019,7 +1019,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept,Authorization'},body:''});return[];}\nreturn $input.all();"
       },
       "id": "c6d2b007-ff94-4735-9b27-77ed71a9bed2",
       "name": "CORS Ket Delete",
@@ -1100,7 +1100,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1153,7 +1153,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1253,7 +1253,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1283,7 +1283,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const method=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(method==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept,Authorization'},body:''});return[];}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1433,7 +1433,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1642,7 +1642,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1850,7 +1850,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -1990,7 +1990,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -2330,7 +2330,7 @@
               },
               {
                 "name": "Access-Control-Allow-Headers",
-                "value": "Content-Type, ngrok-skip-browser-warning, Accept"
+                "value": "Content-Type, ngrok-skip-browser-warning, Accept, Authorization"
               }
             ]
           }
@@ -2495,7 +2495,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const headers = $input.first().json.headers || {};\nconst token = headers['x-app-token'] || headers['X-App-Token'];\nconst EXPECTED_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\n\nif (token !== EXPECTED_TOKEN) {\n  $execution.respond({\n    statusCode: 401,\n    headers: { 'Access-Control-Allow-Origin': '*' },\n    body: JSON.stringify({ ok: false, message: 'Unauthorized: Invalid Token' })\n  });\n  return [];\n}\n\nreturn $input.all();"
+        "jsCode": "const headers = $input.first().json.headers || {};\nconst authH = headers['authorization'] || headers['Authorization'] || '';\nconst bearer = authH.replace(/^Bearer\\s+/i, '').trim();\nconst legacy = headers['x-app-token'] || headers['X-App-Token'];\nconst EXPECTED_TOKEN = 'BAPPERIDA_SECURE_TOKEN_2025';\nif (!(bearer || legacy === EXPECTED_TOKEN)) {\n  $execution.respond({\n    statusCode: 401,\n    headers: { 'Access-Control-Allow-Origin': '*' },\n    body: JSON.stringify({ ok: false, message: 'Unauthorized: Invalid Token' })\n  });\n  return [];\n}\nreturn $input.all();"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2508,7 +2508,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const m=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(m==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept'},body:''});return[];}\nreturn $input.all();"
+        "jsCode": "const m=$input.first().json.headers?.['x-forwarded-method']||$input.first().json.method||'';\nif(m==='OPTIONS'){$execution.respond({statusCode:200,headers:{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,ngrok-skip-browser-warning,Accept,Authorization'},body:''});return[];}\nreturn $input.all();"
       },
       "id": "d07d028d-261f-4764-beb0-49171203a1af",
       "name": "CORS Keterangan",

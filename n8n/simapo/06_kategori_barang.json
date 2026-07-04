@@ -3,7 +3,7 @@
     {
       "parameters": {
         "path": "simapo-kategori-list",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -88,7 +88,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-kategori-save",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -159,7 +159,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-kategori-delete",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"

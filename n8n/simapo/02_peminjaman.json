@@ -4,7 +4,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-pinjam",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -87,7 +87,7 @@
     {
       "parameters": {
         "path": "simapo-pinjam-list",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -171,7 +171,7 @@
     {
       "parameters": {
         "path": "simapo-admin-pinjam-list",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"
@@ -256,7 +256,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "simapo-admin-pinjam-action",
-        "authentication": "headerAuth",
+        "authentication": "none",
         "responseMode": "responseNode",
         "options": {
           "allowedOrigins": "*"

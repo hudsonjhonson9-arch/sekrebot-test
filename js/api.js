@@ -66,10 +66,12 @@
      */
     async function apiUpload(endpoint, formData) {
       try {
+        const hdrs = {};
+        if (window._session?.token) hdrs['Authorization'] = 'Bearer ' + window._session.token;
         const res = await fetch(SERVER_1 + endpoint, {
           method: 'POST',
           body: formData,
-          headers: { 'X-App-Token': API_TOKEN }
+          headers: hdrs
           // Jangan set Content-Type — biarkan browser set boundary otomatis
         });
         let data = null;

@@ -355,15 +355,10 @@ async function apiFetch(path, opts = {}) {
         clearTimeout(tid);
 
         if (r.status === 401) {
-          clearSession();
-          // Hapus auth-related keys saja, simpan face data + preferences
-          localStorage.removeItem(STORAGE_KEYS.USER_ID);
-          localStorage.removeItem(STORAGE_KEYS.USER_OBJ);
-          localStorage.removeItem('MY_NIP');
-          localStorage.removeItem('MY_ROLE');
-          localStorage.removeItem('MY_INSTANSI');
-          location.href = location.pathname;
-          throw new Error('Session expired. Silakan login ulang.');
+          console.warn(`[Fetch] 401 from ${base}${path} — session may be invalid`);
+          // ponytail: don't wipe session on every 401 — only on explicit logout or identity calls.
+          // n8n Security Gates may return 401 for data endpoints while session is still valid locally.
+          return { ok: false, status: 401, data: null, rows: [] };
         }
 
         if (r.ok || (r.status >= 400 && r.status < 500)) {

@@ -4,7 +4,7 @@
 const CACHE_NAME = 'absensi-digital-v7';
 const OFFLINE_ASSETS = [
   './',
-  './index.html',
+  // index.html EXCLUDED — always fetch fresh so cache busters update
   './manifest.json',
   './css/styles.css',
   

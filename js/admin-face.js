@@ -725,6 +725,5 @@
       }
     }
 
-    // Load on init
-    loadFaceSettings();
+    // ponytail: do NOT call loadFaceSettings() at parse time — moved to initApp()
 

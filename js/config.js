@@ -200,6 +200,7 @@ const P = {
   faceGet: isTest ? '/webhook-test/face-get' : '/webhook/face-get',
   faceToggle: isTest ? '/webhook-test/face-toggle' : '/webhook/face-toggle',
   faceGetAll: isTest ? '/webhook-test/face-get-all' : '/webhook/face-get-all',
+  faceSettings: isTest ? '/webhook-test/face-settings' : '/webhook/face-settings',
   mejaAbsen: isTest ? '/webhook-test/meja-absen' : '/webhook/meja-absen',
   jamPeriodeList: isTest ? '/webhook-test/jam-periode-list' : '/webhook/jam-periode-list',
   jamPeriodeAdd: isTest ? '/webhook-test/jam-periode-add' : '/webhook/jam-periode-add',

@@ -41,16 +41,20 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   _lastMejaTime = sekarang;
 
   const overlay = $('mejaOverlayResult');
+  const _moIcon = $('moIcon');
+  const _moNama = $('moNama');
+  const _moStatus = $('moStatus');
+  const _moDetail = $('moDetail');
   overlay.style.display = 'flex';
 
   // JIKA WAJAH TIDAK DIKENAL
   if (telegramId === 'unknown') {
-    $('moIcon').textContent = '❓';
-    $('moNama').textContent = 'TIDAK DIKENAL';
-    $('moStatus').textContent = 'WAJAH BELUM TERDAFTAR';
-    $('moStatus').style.color = 'var(--danger)';
-    $('moStatus').style.background = 'rgba(239,68,68,0.2)';
-    $('moDetail').textContent = 'Mulai ulang scan dalam 3 detik...';
+    _moIcon.textContent = '❓';
+    _moNama.textContent = 'TIDAK DIKENAL';
+    _moStatus.textContent = 'WAJAH BELUM TERDAFTAR';
+    _moStatus.style.color = 'var(--danger)';
+    _moStatus.style.background = 'rgba(239,68,68,0.2)';
+    _moDetail.textContent = 'Mulai ulang scan dalam 3 detik...';
 
     _mejaCnt.gagal++;
     _updateMejaCnt();
@@ -73,14 +77,14 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
   const user = window._mejaUserMap[telegramId] || { nama: 'Pegawai', nip: telegramId };
   const score = Math.max(0, Math.round((distance || 0) * 100));
 
-  if ($('moIcon')) $('moIcon').textContent = '⏳';
-  if ($('moNama')) $('moNama').textContent = user.nama;
-  if ($('moStatus')) {
-    $('moStatus').textContent = 'MEMERIKSA STATUS...';
-    $('moStatus').style.color = 'var(--gold)';
-    $('moStatus').style.background = 'rgba(201,168,76,0.2)';
+  if (_moIcon) _moIcon.textContent = '⏳';
+  if (_moNama) _moNama.textContent = user.nama;
+  if (_moStatus) {
+    _moStatus.textContent = 'MEMERIKSA STATUS...';
+    _moStatus.style.color = 'var(--gold)';
+    _moStatus.style.background = 'rgba(201,168,76,0.2)';
   }
-  if ($('moDetail')) $('moDetail').textContent = `Mencocokkan AI: ${score}%`;
+  if (_moDetail) _moDetail.textContent = `Mencocokkan AI: ${score}%`;
 
   // ── START SUBMISSION PROCESS ──
   window._isSubmitting = true; 
@@ -135,11 +139,11 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
       const ismasuk = jenis.toUpperCase().includes('MASUK');
       if (ismasuk) _mejaCnt.masuk++; else _mejaCnt.pulang++;
 
-      $('moIcon').textContent = '✅';
-      $('moStatus').textContent = jenis.toUpperCase();
-      $('moStatus').style.color = '#4ade80';
-      $('moStatus').style.background = 'rgba(74,222,128,0.2)';
-      $('moDetail').textContent = d.validasi?.keterangan || 'Data tercatat di server.';
+      _moIcon.textContent = '✅';
+      _moStatus.textContent = jenis.toUpperCase();
+      _moStatus.style.color = '#4ade80';
+      _moStatus.style.background = 'rgba(74,222,128,0.2)';
+      _moDetail.textContent = d.validasi?.keterangan || 'Data tercatat di server.';
       _setMejaStatus('active', '✅', `${user.nama} — ${jenis}`, 'Siap scan berikutnya...');
     } else {
       let errMsg = (d && (d.message || d.error)) || 'Ditolak Server';
@@ -147,22 +151,22 @@ async function _onMejaAbsenMatchFound(telegramId, descriptor, dataUrl, distance)
 
       const isSudah = errMsg.toLowerCase().includes('sudah');
 
-      $('moIcon').textContent = isSudah ? 'ℹ️' : '❌';
-      $('moStatus').textContent = isSudah ? 'SUDAH ABSEN' : 'GAGAL';
-      $('moStatus').style.color = isSudah ? '#60a5fa' : '#f87171';
-      $('moStatus').style.background = isSudah ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)';
-      $('moDetail').textContent = errMsg;
+      _moIcon.textContent = isSudah ? 'ℹ️' : '❌';
+      _moStatus.textContent = isSudah ? 'SUDAH ABSEN' : 'GAGAL';
+      _moStatus.style.color = isSudah ? '#60a5fa' : '#f87171';
+      _moStatus.style.background = isSudah ? 'rgba(96,165,250,0.2)' : 'rgba(248,113,113,0.2)';
+      _moDetail.textContent = errMsg;
 
       if (!isSudah) _mejaCnt.gagal++;
       _setMejaStatus('active', isSudah ? 'ℹ️' : '⚠️', user.nama, errMsg);
     }
   } catch (e) {
     console.error('[Meja] Submission Fatal Error:', e);
-    $('moIcon').textContent = '🔌';
-    $('moStatus').textContent = 'GAGAL PROSES';
-    $('moStatus').style.color = '#f87171';
-    $('moStatus').style.background = 'rgba(248,113,113,0.2)';
-    $('moDetail').textContent = e.message || 'Terjadi kesalahan sistem';
+    _moIcon.textContent = '🔌';
+    _moStatus.textContent = 'GAGAL PROSES';
+    _moStatus.style.color = '#f87171';
+    _moStatus.style.background = 'rgba(248,113,113,0.2)';
+    _moDetail.textContent = e.message || 'Terjadi kesalahan sistem';
     _mejaCnt.gagal++;
     _setMejaStatus('active', '🔌', 'System Error', e.message);
   } finally {

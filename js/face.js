@@ -13,6 +13,11 @@
 
 
     let _camStream = null;
+
+    // ponytail: cache hot DOM refs (queried 10+ times in detection loop)
+    let _cachedLsText = null, _cachedLsIcon = null;
+    function _getLsText() { return _cachedLsText || (_cachedLsText = $('lsText')); }
+    function _getLsIcon() { return _cachedLsIcon || (_cachedLsIcon = $('lsIcon')); }
     let _blazeModel = null;
     let _modelLoading = false;
     let _detectLoop = null;
@@ -35,6 +40,34 @@
     // ── Face Recognition helpers (face-api.js descriptor-based) ──
     const FACE_STORE_KEY = STORAGE_KEYS.FACE_REF;
     let FACE_RECOGNITION_ENABLED = true;
+
+    // Load admin face settings from server (with localStorage fallback)
+    (async () => {
+      try {
+        const res = await apiGet(P.faceSettings);
+        if (res.ok && res.settings) {
+          const s = res.settings;
+          window.FS_LIVENESS_MOBILE = s.liveness_enabled !== false;
+          window.FS_FACE_THRESHOLD = parseFloat(s.face_threshold) || 0.55;
+          window.FS_MEJA_THRESHOLD = parseFloat(s.meja_threshold) || 0.55;
+          window.FS_LIVENESS_SCORE = parseFloat(s.liveness_score) || 0.40;
+          window.MANDATORY_FACE_NIPS = s.mandatory_nips || [];
+          return; // Success, skip localStorage
+        }
+      } catch {}
+      // Fallback: localStorage
+      try {
+        const raw = localStorage.getItem('face_admin_settings');
+        if (raw) {
+          const fs = JSON.parse(raw);
+          if (fs.liveness_enabled !== undefined) window.FS_LIVENESS_MOBILE = fs.liveness_enabled;
+          if (fs.face_threshold !== undefined) window.FS_FACE_THRESHOLD = fs.face_threshold;
+          if (fs.meja_threshold !== undefined) window.FS_MEJA_THRESHOLD = fs.meja_threshold;
+          if (fs.liveness_score !== undefined) window.FS_LIVENESS_SCORE = fs.liveness_score;
+          if (fs.mandatory_nips) window.MANDATORY_FACE_NIPS = fs.mandatory_nips;
+        }
+      } catch (_) {}
+    })();
 
     // Cleanup legacy localStorage biometric data on first load
     try {
@@ -287,9 +320,10 @@
         }
       }
 
-      // Thresholding (0.55 for similarity is standard for Human)
-      // PENTING: Untuk Meja Absen (1:N), gunakan threshold 0.50 agar lebih toleran terhadap noise/jarak di HP
-      const threshold = window._isMejaMode ? 0.50 : (typeof FACE_THRESHOLD !== 'undefined' ? FACE_THRESHOLD : 0.55);
+      // Thresholding — admin-configurable via Face Settings panel
+      const threshold = window._isMejaMode
+        ? (typeof FS_MEJA_THRESHOLD !== 'undefined' ? FS_MEJA_THRESHOLD : 0.55)
+        : (typeof FS_FACE_THRESHOLD !== 'undefined' ? FS_FACE_THRESHOLD : (typeof FACE_THRESHOLD !== 'undefined' ? FACE_THRESHOLD : 0.55));
       
       if (bestMatch.score < threshold) {
         return { id: 'unknown', score: bestMatch.score };
@@ -326,7 +360,7 @@
         if (refDim >= 512 && capDim >= 512) {
           const sim = HumanInstance.match.similarity(refDesc, capturedDescArr);
           const score = Math.round(sim * 100);
-          const threshold = FACE_THRESHOLD;
+          const threshold = typeof FS_FACE_THRESHOLD !== 'undefined' ? FS_FACE_THRESHOLD : FACE_THRESHOLD;
           let label, cls;
           if (sim >= threshold) { label = `✅ Cocok ${score}%`; cls = 'face-match-ok'; }
           else if (sim >= threshold - 0.1) { label = `⚠️ Mirip ${score}%`; cls = 'face-match-warn'; }
@@ -683,7 +717,7 @@
             iris: { enabled: false },
             description: { enabled: true, modelPath: 'faceres.json' },
             emotion: { enabled: false },
-            liveness: { enabled: !isMobile } // Dinonaktifkan di mobile untuk performa low-end
+            liveness: { enabled: window.FS_LIVENESS_MOBILE !== false } // Admin-controlled: default ON, toggle in Face Settings
           },
           body: { enabled: false },
           hand: { enabled: false },
@@ -1163,8 +1197,8 @@
               const realScore = f.real || 0;
               const genericScore = f.liveness || 0;
               _lastHumanScore = Math.max(liveScore, realScore, genericScore).toFixed(2);
-              const isMobile = _isMobileDevice();
-              const isLive = isMobile ? true : (liveScore > 0.4 || realScore > 0.4 || genericScore > 0.4);
+              const isLiveThreshold = typeof FS_LIVENESS_SCORE !== 'undefined' ? FS_LIVENESS_SCORE : 0.4;
+              const isLive = liveScore > isLiveThreshold || realScore > isLiveThreshold || genericScore > isLiveThreshold;
               detection = {
                 landmarks: { positions: f.landmarks || [] },
                 descriptor: f.embedding || null,
@@ -1183,9 +1217,9 @@
             setCamStatus('bad', '😶', 'Wajah Belum Terlihat', 'Hadapkan wajah ke kamera');
             _livenessState.faceOk = false;
             if (window._isMejaMode) {
-              $('lsIcon').textContent = '😐';
-              $('lsText').textContent = 'Menunggu Wajah...';
-              $('lsText').style.color = 'var(--muted)';
+              _getLsIcon().textContent = '😐';
+              _getLsText().textContent = 'Menunggu Wajah...';
+              _getLsText().style.color = 'var(--muted)';
               _matchSessionToken++; // Batalkan semua match result yang sedang berjalan
               _lastMatchedId = null;
               _matchStabilityCount = 0;
@@ -1200,16 +1234,16 @@
             if (_isLive) {
                 setCamStatus('ok', '🛡️', 'Liveness Approved', window._isMejaMode ? 'Mencocokkan Identitas...' : 'Posisikan wajah & Tekan tombol');
               if (window._isMejaMode) {
-                $('lsIcon').textContent = '🛡️';
-                $('lsText').textContent = 'Wajah Terverifikasi Asli';
-                $('lsText').style.color = 'var(--success)';
+                _getLsIcon().textContent = '🛡️';
+                _getLsText().textContent = 'Wajah Terverifikasi Asli';
+                _getLsText().style.color = 'var(--success)';
               }
             } else {
               setCamStatus('ok', '⏳', 'Verifikasi Keaslian...', 'Mohon tetap diam sejenak');
               if (window._isMejaMode) {
-                $('lsIcon').textContent = '🔍';
-                $('lsText').textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
-                $('lsText').style.color = 'var(--gold)';
+                _getLsIcon().textContent = '🔍';
+                _getLsText().textContent = `Mengecek Keaslian Wajah... (Score: ${window._lastHumanScore || '0.00'})`;
+                _getLsText().style.color = 'var(--gold)';
               }
             }
 
@@ -1240,10 +1274,10 @@
                     const score = Math.round(match.score * 100);
 
                     // Update UI with identified person
-                    if ($('lsText')) {
-                      $('lsIcon').textContent = '✅';
-                      $('lsText').textContent = `ID Ditemukan: ${nama} (${score}%)`;
-                      $('lsText').style.color = '#4ade80';
+                    if (_getLsText()) {
+                      _getLsIcon().textContent = '✅';
+                      _getLsText().textContent = `ID Ditemukan: ${nama} (${score}%)`;
+                      _getLsText().style.color = '#4ade80';
                     }
 
                     // Stability count check (3 frames are enough for Meja Mode)
@@ -1269,9 +1303,9 @@
                     // Reset UI jika tidak ada match
                     if (_isLive) {
                       const isDataLoading = !_allFaceDescriptors || _allFaceDescriptors.length === 0;
-                      $('lsIcon').textContent = isDataLoading ? '⏳' : '🔍';
-                      $('lsText').textContent = isDataLoading ? 'Memuat Database Wajah...' : 'Mencari Identitas di Database...';
-                      $('lsText').style.color = 'var(--gold)';
+                      _getLsIcon().textContent = isDataLoading ? '⏳' : '🔍';
+                      _getLsText().textContent = isDataLoading ? 'Memuat Database Wajah...' : 'Mencari Identitas di Database...';
+                      _getLsText().style.color = 'var(--gold)';
                     }
                   }
                 });

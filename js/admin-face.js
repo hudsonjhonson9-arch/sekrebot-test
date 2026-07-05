@@ -231,16 +231,19 @@
       try {
         const res = await apiGet(P.faceToggle);
         if (!res.ok) throw 0;
-        // Handle both {enabled:true} and [{enabled:true}] formats
         const rawFT = res.rows.length ? res.rows[0] : (res?.data ?? {});
         const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
         FACE_RECOGNITION_ENABLED = d?.enabled !== false;
       } catch {
-        // fallback localStorage
+        // n8n down? Check n8n logs for $execution.respond() errors.
+        // Fallback: read from localStorage, then default to false (safe default = no face required)
         try {
           const v = localStorage.getItem('face_recognition_bapperida');
           if (v !== null) FACE_RECOGNITION_ENABLED = v !== '0';
-        } catch (_) { }
+          else FACE_RECOGNITION_ENABLED = false; // Safe default when server unreachable
+        } catch (_) {
+          FACE_RECOGNITION_ENABLED = false;
+        }
       }
       _faceTogglePending = FACE_RECOGNITION_ENABLED;
       _applyFaceToggleUI(FACE_RECOGNITION_ENABLED);
@@ -612,4 +615,111 @@
 
     cekJaringan();  // cek jaringan WiFi kantor saat halaman dimuat
     loadWeather();  // muat cuaca Waikabubak
+
+    /* ══ FACE SETTINGS (n8n webhook → pengaturan table) ══ */
+    let _fsData = {};
+
+    function _loadFsDefaults() {
+      return {
+        liveness_enabled: true,
+        face_threshold: 0.55,
+        meja_threshold: 0.55,
+        liveness_score: 0.40,
+        mandatory_nips: []
+      };
+    }
+
+    async function loadFaceSettings() {
+      try {
+        const res = await apiGet(P.faceSettings);
+        if (!res.ok) throw 0;
+        const d = res.settings || res.data || {};
+        _fsData = {
+          liveness_enabled: d.liveness_enabled !== false,
+          face_threshold: parseFloat(d.face_threshold) || 0.55,
+          meja_threshold: parseFloat(d.meja_threshold) || 0.55,
+          liveness_score: parseFloat(d.liveness_score) || 0.40,
+          mandatory_nips: d.mandatory_nips || []
+        };
+      } catch {
+        // Fallback: localStorage
+        try {
+          const raw = localStorage.getItem('face_admin_settings');
+          _fsData = raw ? { ..._loadFsDefaults(), ...JSON.parse(raw) } : _loadFsDefaults();
+        } catch { _fsData = _loadFsDefaults(); }
+      }
+      _applyFsUI();
+      _applyFsGlobals();
+    }
+
+    function _applyFsUI() {
+      const sw = $('fsLivenessSwitch');
+      const knob = $('fsLivenessKnob');
+      if (sw && knob) {
+        sw.style.background = _fsData.liveness_enabled ? 'var(--accent)' : '#6b7280';
+        knob.style.left = _fsData.liveness_enabled ? '27px' : '3px';
+      }
+      const setVal = (id, v) => { const el = $(id); if (el) el.value = v; };
+      const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+      setVal('fsThreshold', _fsData.face_threshold);
+      setTxt('fsThresholdVal', _fsData.face_threshold);
+      setVal('fsMejaThreshold', _fsData.meja_threshold);
+      setTxt('fsMejaThresholdVal', _fsData.meja_threshold);
+      setVal('fsLivenessScore', _fsData.liveness_score);
+      setTxt('fsLivenessScoreVal', _fsData.liveness_score);
+      const nipEl = $('fsMandatoryNips');
+      if (nipEl) nipEl.value = (_fsData.mandatory_nips || []).join(',');
+    }
+
+    function _applyFsGlobals() {
+      window.FS_LIVENESS_MOBILE = _fsData.liveness_enabled;
+      window.FS_FACE_THRESHOLD = _fsData.face_threshold;
+      window.FS_MEJA_THRESHOLD = _fsData.meja_threshold;
+      window.FS_LIVENESS_SCORE = _fsData.liveness_score;
+      window.MANDATORY_FACE_NIPS = (_fsData.mandatory_nips || []).filter(n => n.trim());
+    }
+
+    function toggleFsLiveness() {
+      _fsData.liveness_enabled = !(_fsData.liveness_enabled ?? true);
+      _applyFsUI();
+    }
+
+    async function saveFaceSettings() {
+      _fsData.liveness_enabled = _fsData.liveness_enabled ?? true;
+      _fsData.face_threshold = parseFloat($('fsThreshold')?.value) || 0.55;
+      _fsData.meja_threshold = parseFloat($('fsMejaThreshold')?.value) || 0.55;
+      _fsData.liveness_score = parseFloat($('fsLivenessScore')?.value) || 0.40;
+      const nipStr = ($('fsMandatoryNips')?.value || '').trim();
+      _fsData.mandatory_nips = nipStr ? nipStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+      // Save to server
+      let serverOk = false;
+      try {
+        const res = await apiPost(P.faceSettings, {
+          settings: {
+            liveness_enabled: _fsData.liveness_enabled,
+            face_threshold: _fsData.face_threshold,
+            meja_threshold: _fsData.meja_threshold,
+            liveness_score: _fsData.liveness_score,
+            mandatory_nips: _fsData.mandatory_nips
+          }
+        });
+        serverOk = res.ok;
+      } catch {}
+
+      // Also save to localStorage as fallback
+      localStorage.setItem('face_admin_settings', JSON.stringify(_fsData));
+      _applyFsGlobals();
+
+      if (serverOk) {
+        showResult('fsResult', 'fsRIcon', 'fsRTitle', 'fsRMsg', 'success', '✅', 'Tersimpan ke Server',
+          `Liveness: ${_fsData.liveness_enabled ? 'ON' : 'OFF'} · Absen: ${_fsData.face_threshold} · Meja: ${_fsData.meja_threshold} · Liveness Min: ${_fsData.liveness_score} · NIP Wajib: ${_fsData.mandatory_nips.length}`);
+      } else {
+        showResult('fsResult', 'fsRIcon', 'fsRTitle', 'fsRMsg', 'warning', '⚠️', 'Tersimpan Lokal',
+          'Gagal sync ke server. Pastikan webhook face-settings aktif di n8n.');
+      }
+    }
+
+    // Load on init
+    loadFaceSettings();
 

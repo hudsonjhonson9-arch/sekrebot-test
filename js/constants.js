@@ -96,7 +96,7 @@
     const FACE_API_DIM = 128;
     /** Dimensi descriptor @vladmandic/human (baru, 512-d) */
     const HUMAN_DIM = 512;
-    /** Berapa frame stabil sebelum Meja Absen trigger match */
+    /** Berapa frame stabil sebelum Meja Absen trigger match — admin-configurable */
     const MEJA_STABILITY_FRAMES = 4;
     /** Cooldown Meja Absen antar-match (ms) — 20 detik */
     const MEJA_COOLDOWN_MS = 20_000;

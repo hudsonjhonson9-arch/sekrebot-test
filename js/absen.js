@@ -515,10 +515,20 @@ async function _doAbsenWithGPS(initData, isTgX, camResult) {
 
         const d = absenData || {};
         const ket = d?.message || d?.validasi?.keterangan || 'Data absen diterima';
-        const lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
+        let lokNm = d?.validasi?.nama_lokasi || d?.lokasi || null;
         const isValid = (d?.validasi?.is_valid === true) || (d?.ok === true);
         const kode_tolak = d?.validasi?.kode_tolak || '';
-        
+
+        // Jika backend bilang WFH tapi GPS user dalam radius lokasi kantor, tampilkan nama lokasi kantor
+        if (lokNm && lokNm.toUpperCase() === 'WFH' && window._lokasiCoords?.length) {
+          for (const l of window._lokasiCoords) {
+            const R = 6371000, dLat = (l.lat - latitude) * Math.PI / 180, dLon = (l.lon - longitude) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(latitude * Math.PI / 180) * Math.cos(l.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+            const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            if (dist <= (l.radius || 150)) { lokNm = l.nama; break; }
+          }
+        }
+
         if (lokNm) { 
           const gLok = $('gpsLokasi');
           if (gLok) gLok.textContent = lokNm; 

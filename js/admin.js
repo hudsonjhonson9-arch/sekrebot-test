@@ -1920,11 +1920,14 @@
         const d = await res.json();
         FACE_RECOGNITION_ENABLED = d.enabled !== false;
       } catch {
-        // fallback localStorage
+        // Fallback: read from localStorage, then default to false (safe default)
         try {
           const v = localStorage.getItem('face_recognition_bapperida');
           if (v !== null) FACE_RECOGNITION_ENABLED = v !== '0';
-        } catch (_) { }
+          else FACE_RECOGNITION_ENABLED = false;
+        } catch (_) {
+          FACE_RECOGNITION_ENABLED = false;
+        }
       }
       _faceTogglePending = FACE_RECOGNITION_ENABLED;
       _applyFaceToggleUI(FACE_RECOGNITION_ENABLED);

@@ -648,12 +648,11 @@
           }
         }
       } catch {}
-        // Fallback: localStorage
-        try {
-          const raw = localStorage.getItem('face_admin_settings');
-          _fsData = raw ? { ..._loadFsDefaults(), ...JSON.parse(raw) } : _loadFsDefaults();
-        } catch { _fsData = _loadFsDefaults(); }
-      }
+      // Fallback: localStorage
+      try {
+        const raw = localStorage.getItem('face_admin_settings');
+        _fsData = raw ? { ..._loadFsDefaults(), ...JSON.parse(raw) } : _loadFsDefaults();
+      } catch { _fsData = _loadFsDefaults(); }
       _applyFsUI();
       _applyFsGlobals();
     }

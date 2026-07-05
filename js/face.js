@@ -41,18 +41,20 @@
     const FACE_STORE_KEY = STORAGE_KEYS.FACE_REF;
     let FACE_RECOGNITION_ENABLED = true;
 
-    // Load admin face settings from server (with localStorage fallback)
-    (async () => {
+    // ponytail: load admin face settings — called from initApp(), NOT at parse time
+    async function loadFaceSettingsGlobal() {
       try {
         const res = await apiGet(P.faceSettings);
-        if (res.ok && res.settings) {
-          const s = res.settings;
-          window.FS_LIVENESS_MOBILE = s.liveness_enabled !== false;
-          window.FS_FACE_THRESHOLD = parseFloat(s.face_threshold) || 0.55;
-          window.FS_MEJA_THRESHOLD = parseFloat(s.meja_threshold) || 0.55;
-          window.FS_LIVENESS_SCORE = parseFloat(s.liveness_score) || 0.40;
-          window.MANDATORY_FACE_NIPS = s.mandatory_nips || [];
-          return; // Success, skip localStorage
+        if (res.ok) {
+          const d = res.data?.settings || res.data || {};
+          if (d.liveness_enabled !== undefined) {
+            window.FS_LIVENESS_MOBILE = d.liveness_enabled !== false;
+            window.FS_FACE_THRESHOLD = parseFloat(d.face_threshold) || 0.55;
+            window.FS_MEJA_THRESHOLD = parseFloat(d.meja_threshold) || 0.55;
+            window.FS_LIVENESS_SCORE = parseFloat(d.liveness_score) || 0.40;
+            window.MANDATORY_FACE_NIPS = d.mandatory_nips || [];
+            return;
+          }
         }
       } catch {}
       // Fallback: localStorage
@@ -67,7 +69,7 @@
           if (fs.mandatory_nips) window.MANDATORY_FACE_NIPS = fs.mandatory_nips;
         }
       } catch (_) {}
-    })();
+    }
 
     // Cleanup legacy localStorage biometric data on first load
     try {

@@ -632,16 +632,22 @@
     async function loadFaceSettings() {
       try {
         const res = await apiGet(P.faceSettings);
-        if (!res.ok) throw 0;
-        const d = res.settings || res.data || {};
-        _fsData = {
-          liveness_enabled: d.liveness_enabled !== false,
-          face_threshold: parseFloat(d.face_threshold) || 0.55,
-          meja_threshold: parseFloat(d.meja_threshold) || 0.55,
-          liveness_score: parseFloat(d.liveness_score) || 0.40,
-          mandatory_nips: d.mandatory_nips || []
-        };
-      } catch {
+        if (res.ok) {
+          const d = res.data?.settings || res.data || {};
+          if (d.liveness_enabled !== undefined) {
+            _fsData = {
+              liveness_enabled: d.liveness_enabled !== false,
+              face_threshold: parseFloat(d.face_threshold) || 0.55,
+              meja_threshold: parseFloat(d.meja_threshold) || 0.55,
+              liveness_score: parseFloat(d.liveness_score) || 0.40,
+              mandatory_nips: d.mandatory_nips || []
+            };
+            _applyFsUI();
+            _applyFsGlobals();
+            return;
+          }
+        }
+      } catch {}
         // Fallback: localStorage
         try {
           const raw = localStorage.getItem('face_admin_settings');

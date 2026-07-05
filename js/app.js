@@ -10,6 +10,7 @@
 
         // Critical: Load role & face settings first
         await Promise.allSettled([
+          loadFaceSettingsGlobal(),
           loadFaceToggle(),
           loadJamAbsen()
         ]);

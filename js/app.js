@@ -10,9 +10,9 @@
 
         // Critical: Load role & face settings first
         await Promise.allSettled([
-          loadFaceSettingsGlobal(),
-          loadFaceToggle(),
-          loadJamAbsen()
+          typeof loadFaceSettingsGlobal === 'function' ? loadFaceSettingsGlobal() : Promise.resolve(),
+          typeof loadFaceToggle === 'function' ? loadFaceToggle() : Promise.resolve(),
+          typeof loadJamAbsen === 'function' ? loadJamAbsen() : Promise.resolve()
         ]);
 
         // Secondary: Load Profile and History to show on dashboard

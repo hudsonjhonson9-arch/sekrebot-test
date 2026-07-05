@@ -54,7 +54,7 @@
       if (j.includes('LUAR') && j.includes('MASUK')) return { cls: 'tb-luar', icon: '⚠️', lbl: 'LUAR JAM MASUK' };
       if (j.includes('LUAR') && j.includes('PULANG')) return { cls: 'tb-luar', icon: '🏃', lbl: 'PULANG CEPAT' };
       if (j.includes('LUAR')) return { cls: 'tb-luar', icon: '⚠️', lbl: 'DI LUAR JAM' };
-      if (j === 'IZIN') return { cls: 'tb-izin', icon: '🙏', lbl: 'IZIN' };
+      if (j === 'IZIN') return { cls: 'tb-izin', icon: '🙏', lbl: 'KETERANGAN' };
       if (j === 'SAKIT') return { cls: 'tb-sakit', icon: '🤒', lbl: 'SAKIT' };
       if (j === 'TUGAS') return { cls: 'tb-tugas', icon: '💼', lbl: 'TUGAS' };
       return { cls: 'tb-luar', icon: '📋', lbl: jenis || '—' };

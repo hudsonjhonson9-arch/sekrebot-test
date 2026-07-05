@@ -92,7 +92,7 @@
       if (x.includes('LUAR') && x.includes('MASUK')) return { cls: 'l-luar', icon: '⚠️', lbl: 'LUAR JAM MASUK' };
       if (x.includes('LUAR') && x.includes('PULANG')) return { cls: 'l-luar', icon: '🏃', lbl: 'PULANG CEPAT' };
       if (x.includes('LUAR')) return { cls: 'l-luar', icon: '⚠️', lbl: 'DI LUAR JAM' };
-      if (x === 'IZIN') return { cls: 'l-izin', icon: '🙏', lbl: 'IZIN' };
+      if (x === 'IZIN') return { cls: 'l-izin', icon: '🙏', lbl: 'KETERANGAN' };
       if (x === 'SAKIT') return { cls: 'l-sakit', icon: '🤒', lbl: 'SAKIT' };
       if (x === 'TUGAS') return { cls: 'l-tugas', icon: '💼', lbl: 'TUGAS' };
       if (x === 'IZIN PENDING') return { cls: 'l-pending', icon: '⏳', lbl: 'IZIN (Menunggu)' };

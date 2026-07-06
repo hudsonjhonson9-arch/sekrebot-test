@@ -763,10 +763,26 @@
 
         // Langkah 5: Load Model Weights (timeout 20 detik)
         _updateModelProgress(0, 50);
-        await Promise.race([
-          HumanInstance.load(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timeout (20s)')), 20000))
-        ]);
+        try {
+          await Promise.race([
+            HumanInstance.load(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Model load timeout (20s)')), 20000))
+          ]);
+        } catch (loadErr) {
+          console.warn('[AI] Model load failed, clearing IndexedDB cache and retrying...', loadErr.message);
+          // Clear TFJS/Human IndexedDB cache so models are fully re-downloaded
+          try { indexedDB.deleteDatabase('tensorflowjs'); } catch (_) {}
+          try { indexedDB.deleteDatabase('human-models'); } catch (_) {}
+          // New instance with cache disabled to force fresh download
+          config.cacheModels = false;
+          HumanInstance = new HumanConstructor(config);
+          window.HumanInstance = HumanInstance;
+          await Promise.race([
+            HumanInstance.load(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Model load retry timeout (20s)')), 20000))
+          ]);
+          console.log('[AI] Model load succeeded after IndexedDB cache clear');
+        }
         _updateModelProgress(1, 70);
 
         // Langkah 6: Warmup dengan canvas dummy kecil (compile shader sekali)

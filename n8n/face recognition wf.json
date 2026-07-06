@@ -31,7 +31,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"pengaturan\" SET \"value\" = '{{ ($json.value).toString().replace(/'/g, \"''\") }}' WHERE \"key\" = '{{ ($json.key).toString().replace(/'/g, \"''\") }}' RETURNING *",
+        "query": "UPDATE \"pengaturan\" SET \"value\" = '{{ ($json.value).toString().replace(/'/g, \"''\") }}' WHERE \"key\" = '{{ ($json.key).toString().replace(/'/g, \"''\") }}' AND \"instansi_id\" = '{{ ($json.instansi_id || '').replace(/'/g, \"''\") }}' RETURNING *",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -51,7 +51,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body=$input.first().json.body||$input.first().json;\nconst ADMIN_IDS=[1383864355];\nconst adminId=parseInt(body.admin_id||0);\nif(!ADMIN_IDS.includes(adminId)){$execution.respond({statusCode:403,headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:false,message:'Akses ditolak.'})});return[];}\nconst val=String(body.enabled);\nconst value=(val==='true'||val==='1')?'1':'0';\nreturn [{json:{key:'face_recognition',value}}];"
+        "jsCode": "const body=$input.first().json.body||$input.first().json;\nconst ADMIN_IDS=[1383864355];\nconst adminId=parseInt(body.admin_id||0);\nif(!ADMIN_IDS.includes(adminId)){$execution.respond({statusCode:403,headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({ok:false,message:'Akses ditolak.'})});return[];}\nconst val=String(body.enabled);\nconst value=(val==='true'||val==='1')?'1':'0';\nreturn [{json:{key:'face_recognition', value, instansi_id: body.instansi_id || ''}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -124,7 +124,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows=$input.all().map(i=>i.json);\nconst row=rows[0]||{};\nconst enabled = row.value !== undefined ? (String(row.value).trim()!=='0') : true;\nreturn [{json:{enabled,value:enabled?'1':'0'}}];"
+        "jsCode": "const rows=$input.all().map(i=>i.json);\nconst row=rows[0]||{};\nconst enabled = row.value !== undefined ? (String(row.value).trim()!=='0') : false;\nreturn [{json:{enabled,value:enabled?'1':'0'}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -138,7 +138,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM \"pengaturan\" WHERE \"key\" = 'face_recognition'",
+        "query": "SELECT * FROM \"pengaturan\" WHERE \"key\" = 'face_recognition' AND \"instansi_id\" = '{{ ($input.first().json.query.instansi_id || '').replace(/'/g, \"''\") }}'",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

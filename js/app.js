@@ -2,13 +2,6 @@
     async function initApp() {
       try {
         fetchInstansiList(); // Pre-load instansi for registration
-        // Safety pre-check: restore face toggle from localStorage before identity check
-        // (in case admin-face.js didn't load — syntax error, SW cache, etc.)
-        try {
-          const ft = localStorage.getItem('face_recognition_bapperida');
-          if (ft !== null) FACE_RECOGNITION_ENABLED = ft !== '0';
-          else FACE_RECOGNITION_ENABLED = false;
-        } catch (_) {}
         console.log('[Init] Checking identity...');
         if (!await _checkIdentityOnLoad()) return; // Stop if not logged in
 

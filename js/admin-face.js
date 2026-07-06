@@ -219,6 +219,9 @@
         if (label) label.textContent = '⚪ Face Recognition Nonaktif';
         if (desc) desc.textContent = 'Absen tanpa verifikasi wajah (hanya GPS)';
       }
+      // Show toggle card only for superadmin
+      const card = $('faceToggleCard');
+      if (card) card.style.display = _isSuperAdmin() ? 'block' : 'none';
       // Sinkronisasi UI profil dengan status toggle
       if (typeof updateProfilFaceUI === 'function') updateProfilFaceUI();
     }
@@ -266,7 +269,6 @@
         const instId = getScopedInstansiId();
         await apiPost(P.faceToggle, { enabled, instansi_id: instId, admin_id: MY_ID, admin_nips: ADMIN_NIPS });
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
         _applyFaceToggleUI(enabled);
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'success', '✅',
           enabled ? 'Face Recognition Diaktifkan' : 'Face Recognition Dinonaktifkan',
@@ -277,7 +279,6 @@
       } catch {
         // Simpan lokal saja
         FACE_RECOGNITION_ENABLED = enabled;
-        try { localStorage.setItem('face_recognition_bapperida', enabled ? '1' : '0'); } catch (_) { }
         showResult('faceToggleResult', 'faceToggleRIcon', 'faceToggleRTitle', 'faceToggleRMsg', 'warning', '⚠️', 'Tersimpan Lokal',
           'Berhasil disimpan di perangkat ini, tapi gagal ke server. Pastikan webhook face-toggle aktif di n8n.');
       } finally {

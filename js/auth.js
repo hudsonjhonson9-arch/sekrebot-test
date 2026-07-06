@@ -75,15 +75,25 @@
           let isFaceEnabled = false;
           try {
             const userInstansi = (user.instansi_id || user.Instansi_Id || '').trim();
+            console.log('[FaceToggle] userInstansi:', userInstansi);
             if (userInstansi) {
               const faceRes = await apiGet(P.faceToggle, { instansi_id: userInstansi });
+              console.log('[FaceToggle] faceRes:', faceRes);
               if (faceRes.ok) {
                 const rawFT = faceRes.rows?.length ? faceRes.rows[0] : (faceRes?.data ?? {});
                 const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
+                console.log('[FaceToggle] parsed:', d);
                 isFaceEnabled = d?.enabled === true || d?.enabled === '1' || d?.enabled === 1;
+                console.log('[FaceToggle] isFaceEnabled:', isFaceEnabled);
+              } else {
+                console.warn('[FaceToggle] API not ok:', faceRes.status);
               }
+            } else {
+              console.warn('[FaceToggle] instansi_id empty on user');
             }
-          } catch (_) {}
+          } catch (e) {
+            console.warn('[FaceToggle] error:', e);
+          }
           // Ponytail: API error/timeout → safe default = OFF, no face required
 
           const hasFace = !!(user.face_histogram && user.face_histogram !== '[]' && user.face_histogram !== '[]' && user.face_histogram !== '')

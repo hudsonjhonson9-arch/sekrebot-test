@@ -39,7 +39,7 @@
 
     // ── Face Recognition helpers (face-api.js descriptor-based) ──
     const FACE_STORE_KEY = STORAGE_KEYS.FACE_REF;
-    let FACE_RECOGNITION_ENABLED = true;
+    let FACE_RECOGNITION_ENABLED = null;
 
     // ponytail: load admin face settings — called from initApp(), NOT at parse time
     async function loadFaceSettingsGlobal() {

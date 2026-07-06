@@ -227,23 +227,17 @@
      * Muat status aktif/nonaktif fitur face recognition dari server.
      * @returns {Promise<void>}
      */
-        async function loadFaceToggle() {
+        async function loadFaceToggle(instansi_id) {
+      const inst = instansi_id || getScopedInstansiId();
+      if (!inst) { FACE_RECOGNITION_ENABLED = false; return; }
       try {
-        const res = await apiGet(P.faceToggle);
+        const res = await apiGet(P.faceToggle + '&instansi_id=' + inst);
         if (!res.ok) throw 0;
-        const rawFT = res.rows.length ? res.rows[0] : (res?.data ?? {});
+        const rawFT = res.rows?.length ? res.rows[0] : (res?.data ?? {});
         const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
         FACE_RECOGNITION_ENABLED = d?.enabled !== false;
       } catch {
-        // n8n down? Check n8n logs for $execution.respond() errors.
-        // Fallback: read from localStorage, then default to false (safe default = no face required)
-        try {
-          const v = localStorage.getItem('face_recognition_bapperida');
-          if (v !== null) FACE_RECOGNITION_ENABLED = v !== '0';
-          else FACE_RECOGNITION_ENABLED = false; // Safe default when server unreachable
-        } catch (_) {
-          FACE_RECOGNITION_ENABLED = false;
-        }
+        FACE_RECOGNITION_ENABLED = false;
       }
       _faceTogglePending = FACE_RECOGNITION_ENABLED;
       _applyFaceToggleUI(FACE_RECOGNITION_ENABLED);
@@ -725,17 +719,7 @@
       }
     }
 
-    // Parse-time: restore face toggle from localStorage so login knows correct state
-    // before any async initApp() code runs. This was the old behavior.
-    (function _restoreFaceToggleSync() {
-      try {
-        const ft = localStorage.getItem('face_recognition_bapperida');
-        if (ft !== null) FACE_RECOGNITION_ENABLED = ft !== '0';
-        else FACE_RECOGNITION_ENABLED = false; // ponytail: safe default = no face required
-      } catch (_) {}
-    })();
-    // Async: fire face toggle update from server (will overwrite the local value)
-    loadFaceToggle();
+
 
     // ponytail: do NOT call loadFaceSettings() at parse time — moved to initApp()
 

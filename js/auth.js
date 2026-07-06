@@ -71,7 +71,21 @@
           }
 
           // ── FACE VERIFICATION LOGIN (PASSWORDLESS) ──
-          const isFaceEnabled = typeof FACE_RECOGNITION_ENABLED !== 'undefined' ? FACE_RECOGNITION_ENABLED : true;
+          // Check per-instansi face toggle from pengaturan table
+          let isFaceEnabled = false;
+          try {
+            const userInstansi = (user.instansi_id || user.Instansi_Id || '').trim();
+            if (userInstansi) {
+              const faceRes = await apiGet(P.faceToggle + '&instansi_id=' + userInstansi);
+              if (faceRes.ok) {
+                const rawFT = faceRes.rows?.length ? faceRes.rows[0] : (faceRes?.data ?? {});
+                const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
+                isFaceEnabled = d?.enabled === true || d?.enabled === '1' || d?.enabled === 1;
+              }
+            }
+          } catch (_) {}
+          // Ponytail: API error/timeout → safe default = OFF, no face required
+
           const hasFace = !!(user.face_histogram && user.face_histogram !== '[]' && user.face_histogram !== '[]' && user.face_histogram !== '')
             || !!(user.face_photo && user.face_photo !== '' && user.face_photo !== 'null')
             || !!(user.foto_base64 && user.foto_base64 !== '')
@@ -80,7 +94,6 @@
           const targetId = String(user.telegram_id || user.id);
           
           const finalizeLogin = async () => {
-            // Simple token — tidak perlu server-side session
             const token = 'usr_' + targetId + '_' + Date.now();
             setSession(token, { nip: userNip, role: user.role || 'USER', instansi_id: user.instansi_id || '' });
             window.MY_ID = targetId;

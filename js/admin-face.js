@@ -725,5 +725,17 @@
       }
     }
 
+    // Parse-time: restore face toggle from localStorage so login knows correct state
+    // before any async initApp() code runs. This was the old behavior.
+    (function _restoreFaceToggleSync() {
+      try {
+        const ft = localStorage.getItem('face_recognition_bapperida');
+        if (ft !== null) FACE_RECOGNITION_ENABLED = ft !== '0';
+        else FACE_RECOGNITION_ENABLED = false; // ponytail: safe default = no face required
+      } catch (_) {}
+    })();
+    // Async: fire face toggle update from server (will overwrite the local value)
+    loadFaceToggle();
+
     // ponytail: do NOT call loadFaceSettings() at parse time — moved to initApp()
 

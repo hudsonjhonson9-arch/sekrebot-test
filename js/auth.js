@@ -76,7 +76,7 @@
           try {
             const userInstansi = (user.instansi_id || user.Instansi_Id || '').trim();
             if (userInstansi) {
-              const faceRes = await apiGet(P.faceToggle + '&instansi_id=' + userInstansi);
+              const faceRes = await apiGet(P.faceToggle, { instansi_id: userInstansi });
               if (faceRes.ok) {
                 const rawFT = faceRes.rows?.length ? faceRes.rows[0] : (faceRes?.data ?? {});
                 const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;

@@ -234,7 +234,7 @@
       const inst = instansi_id || getScopedInstansiId();
       if (!inst) { FACE_RECOGNITION_ENABLED = false; return; }
       try {
-        const res = await apiGet(P.faceToggle + '&instansi_id=' + inst);
+        const res = await apiGet(P.faceToggle, { instansi_id: inst });
         if (!res.ok) throw 0;
         const rawFT = res.rows?.length ? res.rows[0] : (res?.data ?? {});
         const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;

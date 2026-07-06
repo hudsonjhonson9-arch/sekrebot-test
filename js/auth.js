@@ -83,7 +83,7 @@
                 const rawFT = faceRes.rows?.length ? faceRes.rows[0] : (faceRes?.data ?? {});
                 const d = Array.isArray(rawFT) ? rawFT[0] : rawFT;
                 console.log('[FaceToggle] parsed:', d);
-                isFaceEnabled = d?.enabled === true || d?.enabled === '1' || d?.enabled === 1;
+                isFaceEnabled = d?.enabled === true || d?.enabled === '1' || d?.enabled === 1 || d?.value === '1';
                 console.log('[FaceToggle] isFaceEnabled:', isFaceEnabled);
               } else {
                 console.warn('[FaceToggle] API not ok:', faceRes.status);

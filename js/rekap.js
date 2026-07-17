@@ -50,6 +50,7 @@ function setPreset(preset, el) {
   switch (preset) {
     case 'today': dari = sampai = fmtD(n); break;
     case 'week': { const d = new Date(n); d.setDate(n.getDate() - n.getDay() || 7); dari = fmtD(d); sampai = fmtD(n); break; }
+    case 'prevweek': { const d = new Date(n); d.setDate(d.getDate() - ((d.getDay() || 7) - 1) - 7); dari = fmtD(d); d.setDate(d.getDate() + 6); sampai = fmtD(d); break; }
     case 'month': dari = `${n.getFullYear()}-${p2(n.getMonth() + 1)}-01`; sampai = fmtD(n); break;
     case 'last30': { const d = new Date(n); d.setDate(n.getDate() - 29); dari = fmtD(d); sampai = fmtD(n); break; }
     default: return;

@@ -216,6 +216,16 @@
             `Izin Sakit lebih dari 1 hari (${_d} hari) wajib menyertakan bukti (surat dokter / keterangan sakit).`); return;
         }
       }
+      if (!window.IS_ADMIN) {
+        const now = nowWITA();
+        const totMenit = now.getHours() * 60 + now.getMinutes();
+        const _jH = typeof getJamForTanggal === 'function' ? getJamForTanggal(fmtD(now)) : null;
+        const jMasukMenit = _jH ? toMenitStr(_jH.masuk) : JAM_MASUK_MENIT;
+        if (jMasukMenit !== null && totMenit > jMasukMenit) {
+          showResult('ketResult', 'ketRIcon', 'ketRTitle', 'ketRMsg', 'warning', '⏰', 'Lewat Batas Waktu',
+            `Pengajuan keterangan hanya bisa dikirim sebelum jam masuk (${toHHMM(jMasukMenit)} WITA). Silakan hubungi admin untuk pengajuan manual.`); return;
+        }
+      }
       setBtnL('btnKet', true, 'Mengirim...');
       _isKetSubmitting = true;
       const payload = {

@@ -141,6 +141,14 @@ function setSession(token, data) {
     localStorage.setItem('_sess_role', (data.role || 'USER').toUpperCase());
     localStorage.setItem('_sess_inst', data.instansi_id || '');
   } catch (_) {}
+  // QR pending: proses setelah login
+  setTimeout(() => {
+    const qr = localStorage.getItem('simapo_qr_pending');
+    if (qr && typeof processQR === 'function') {
+      localStorage.removeItem('simapo_qr_pending');
+      processQR(qr);
+    }
+  }, 500);
 }
 
 function clearSession() {
@@ -239,6 +247,10 @@ const P = {
   simapoKategoriList: isTest ? '/webhook-test/simapo-kategori-list' : '/webhook/simapo-kategori-list',
   simapoKategoriSave: isTest ? '/webhook-test/simapo-kategori-save' : '/webhook/simapo-kategori-save',
   simapoKategoriDel: isTest ? '/webhook-test/simapo-kategori-delete' : '/webhook/simapo-kategori-delete',
+  simapoUnitByQR: isTest ? '/webhook-test/simapo-unit-by-qr' : '/webhook/simapo-unit-by-qr',
+  simapoQRUpdate: isTest ? '/webhook-test/simapo-qr-update' : '/webhook/simapo-qr-update',
+  simapoUnitList: isTest ? '/webhook-test/simapo-unit-list' : '/webhook/simapo-unit-list',
+  simapoQRPinjam: isTest ? '/webhook-test/simapo-qr-pinjam' : '/webhook/simapo-qr-pinjam',
   lemburSave: isTest ? '/webhook-test/lembur-save' : '/webhook/lembur-save',
   lemburArchiveList: isTest ? '/webhook-test/lembur-archive-list' : '/webhook/lembur-archive-list',
   lemburArchiveDelete: isTest ? '/webhook-test/lembur-archive-delete' : '/webhook/lembur-archive-delete',

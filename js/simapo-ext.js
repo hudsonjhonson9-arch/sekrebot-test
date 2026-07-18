@@ -223,7 +223,7 @@ window.renderAdminSimapoMaster = function(data) {
   const fmt = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
   el.innerHTML = data.map(item => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:8px;">
+    <div data-barang-id="${item.id}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:8px;">
       <div style="width:40px;height:40px;border-radius:8px;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📦</div>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:800;font-size:13px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.nama}</div>
@@ -233,6 +233,7 @@ window.renderAdminSimapoMaster = function(data) {
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
         <button onclick="window.showSimapoMasterForm('${item.id}')" style="padding:6px 10px;background:rgba(255,255,255,0.08);color:var(--white);border:none;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;">✏️</button>
         <button onclick="window.deleteSimapoMaster('${item.id}')" style="padding:6px 10px;background:rgba(255,60,60,0.15);color:var(--danger);border:1px solid rgba(255,60,60,0.2);border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;">🗑</button>
+        <button onclick="toggleUnitList('${item.id}', this)" style="padding:6px 10px;background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2);border-radius:6px;font-size:10px;cursor:pointer;font-weight:700;">▶ QR</button>
       </div>
     </div>`).join('');
 };
@@ -479,4 +480,176 @@ window.renderUserSimapoKatFilter = function(data) {
   if (!el) return;
   el.innerHTML = '<button onclick="filterSimapoKatalog(\'\')" class="simapo-kat-badge active">Semua</button>' + 
     data.map(k => `<button onclick="filterSimapoKatalog('${k.nama}')" class="simapo-kat-badge">${k.nama}</button>`).join('');
+};
+
+/* ─── ADMIN: QR GENERATOR ──────────────────────────────────── */
+window._unitCache = {};
+
+window.toggleUnitList = async function(barangId, btnEl) {
+  const row = document.getElementById('unit-list-' + barangId);
+  if (row) {
+    row.remove();
+    if (btnEl) btnEl.textContent = '▶ Lihat Unit';
+    return;
+  }
+
+  if (btnEl) btnEl.textContent = '▼ Tutup';
+
+  const masterContainer = document.getElementById('adminSimapoMasterList');
+  const targetItem = document.querySelector(`[data-barang-id="${barangId}"]`);
+  if (!targetItem) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'unit-list-' + barangId;
+  wrapper.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:12px;">Memuat unit...</div>';
+  targetItem.after(wrapper);
+
+  try {
+    const res = await apiGet(P.simapoUnitList, { barangid: barangId });
+    const units = res.ok ? (res.rows || []) : [];
+    window._unitCache[barangId] = units;
+
+    if (!units.length) {
+      wrapper.innerHTML = '<div style="padding:12px;text-align:center;color:var(--muted);font-size:11px;">Tidak ada unit aset.</div>';
+      return;
+    }
+
+    wrapper.innerHTML = `
+      <div style="margin:0 0 10px 0;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+        ${units.map(u => {
+          const hasQR = !!(u.qrcode && u.qrcode.startsWith('http'));
+          const isPinjam = u.statuspinjam === true || u.statuspinjam === 'true';
+          return `
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,255,255,0.02);border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;background:${isPinjam ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'};">
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:12px;color:var(--white);">${u.nomorinventaris || '—'}</div>
+              <div style="font-size:10px;color:var(--muted);">Seri: ${u.nomorseri || '—'} · ${isPinjam ? '🔴 Dipinjam' : '✅ Tersedia'}</div>
+            </div>
+            <div style="flex-shrink:0;display:flex;gap:4px;align-items:center;">
+              ${hasQR
+                ? `<span style="font-size:10px;color:#22c55e;font-weight:700;">✅ QR</span>
+                   <button onclick="viewQRCode('${u.id}')" style="padding:4px 8px;background:rgba(255,255,255,0.06);border:none;border-radius:4px;color:var(--muted);font-size:10px;cursor:pointer;" title="Lihat QR">📱</button>
+                   <button onclick="generateQRCode('${u.id}','${u.nomorinventaris || u.id}')" style="padding:4px 8px;background:rgba(255,255,255,0.06);border:none;border-radius:4px;color:var(--muted);font-size:10px;cursor:pointer;" title="Regenerate">🔄</button>`
+                : `<span style="font-size:10px;color:var(--muted);">❌</span>
+                   <button onclick="generateQRCode('${u.id}','${u.nomorinventaris || u.id}')" style="padding:4px 8px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:4px;color:var(--gold);font-size:10px;cursor:pointer;font-weight:700;">Generate QR</button>`
+              }
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="padding:8px 14px;background:rgba(255,255,255,0.01);text-align:center;border-top:1px solid rgba(255,255,255,0.04);">
+          <button onclick="generateAllQR('${barangId}')" style="padding:6px 14px;background:rgba(201,168,76,0.1);border:1px dashed rgba(201,168,76,0.3);border-radius:6px;color:var(--gold);font-size:11px;cursor:pointer;font-weight:700;">⚡ Generate All QR</button>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    wrapper.innerHTML = '<div style="padding:12px;text-align:center;color:#ef4444;font-size:11px;">Gagal memuat unit.</div>';
+  }
+};
+
+window.generateQRCode = async function(unitasetId, label) {
+  const origin = window.location.origin;
+  const path = window.location.pathname;
+  const payload = origin + path + '?qr=SIMAPO-' + unitasetId;
+
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(payload);
+    qr.make();
+    const canvas = qr.createImgTag(6, 8);
+
+    // Simpan ke API
+    await apiFetch(P.simapoQRUpdate, {
+      method: 'POST',
+      body: JSON.stringify({ unitasetid: unitasetId, qrcode: payload })
+    });
+
+    // Tampilkan modal QR
+    Swal.fire({
+      title: `QR: ${label}`,
+      html: `
+        <div style="text-align:center;">
+          <div style="background:#fff;display:inline-block;padding:12px;border-radius:8px;margin:10px 0;">
+            ${canvas}
+          </div>
+          <div style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:8px;">${payload}</div>
+          <button onclick="downloadQRImage('${payload}','${label}')" style="padding:8px 20px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;">
+            📥 Download PNG
+          </button>
+        </div>
+      `,
+      background: '#1a1d21',
+      color: '#fff',
+      confirmButtonText: 'Tutup',
+      didClose: () => { window.loadAdminSimapoMaster(true); }
+    });
+  } catch (e) {
+    showToast('Gagal generate QR', 'error');
+  }
+};
+
+window.downloadQRImage = function(payload, label) {
+  const qr = qrcode(0, 'M');
+  qr.addData(payload);
+  qr.make();
+  const dataUrl = qr.createDataURL(6, 8);
+  const link = document.createElement('a');
+  link.download = `QR-${label.replace(/[^a-zA-Z0-9-]/g,'_')}.png`;
+  link.href = dataUrl;
+  link.click();
+};
+
+window.generateAllQR = async function(barangId) {
+  const units = window._unitCache[barangId] || [];
+  const withoutQR = units.filter(u => !u.qrcode || !u.qrcode.startsWith('http'));
+  if (!withoutQR.length) {
+    showToast('Semua unit sudah punya QR', 'info');
+    return;
+  }
+
+  showToast(`Generate QR untuk ${withoutQR.length} unit...`, 'info');
+  for (const u of withoutQR) {
+    const origin = window.location.origin;
+    const path = window.location.pathname;
+    const payload = origin + path + '?qr=SIMAPO-' + u.id;
+    try {
+      await apiFetch(P.simapoQRUpdate, {
+        method: 'POST',
+        body: JSON.stringify({ unitasetid: u.id, qrcode: payload })
+      });
+    } catch (e) { /* skip */ }
+  }
+  showToast(`QR berhasil digenerate untuk ${withoutQR.length} unit`, 'success');
+  // Refresh unit list
+  const btn = document.querySelector(`[onclick*="toggleUnitList('${barangId}'"]`);
+  if (btn) { btn.textContent = '▶ Lihat Unit'; }
+  window.toggleUnitList(barangId, null);
+};
+
+window.viewQRCode = async function(unitasetId) {
+  // Cari dari cache
+  for (const key in window._unitCache) {
+    const unit = window._unitCache[key].find(u => u.id === unitasetId);
+    if (unit && unit.qrcode) {
+      const qr = qrcode(0, 'M');
+      qr.addData(unit.qrcode);
+      qr.make();
+      const canvas = qr.createImgTag(6, 8);
+      Swal.fire({
+        title: `QR: ${unit.nomorinventaris || unit.id}`,
+        html: `
+          <div style="text-align:center;">
+            <div style="background:#fff;display:inline-block;padding:12px;border-radius:8px;margin:10px 0;">${canvas}</div>
+            <div style="font-size:11px;color:var(--muted);word-break:break-all;">${unit.qrcode}</div>
+          </div>
+        `,
+        background: '#1a1d21',
+        color: '#fff',
+        confirmButtonText: 'Tutup'
+      });
+      return;
+    }
+  }
+  showToast('Unit tidak ditemukan di cache', 'error');
 };

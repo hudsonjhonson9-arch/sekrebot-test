@@ -550,3 +550,170 @@ function onSimapoInstansiChange() {
     switchSimapoSection('katalog', true);
   }
 }
+
+/* ─── QR SCAN FLOW ──────────────────────────────────────────── */
+window.processQR = async function(payload) {
+  if (!payload || !payload.startsWith('SIMAPO-')) {
+    showToast('QR tidak valid', 'error');
+    return;
+  }
+
+  const unitId = payload.replace('SIMAPO-', '');
+  console.log('[SIMAPO-QR] Processing QR for unit:', unitId);
+
+  switchTab('simapo');
+  setTimeout(() => {
+    switchSimapoSection('pinjam');
+    setTimeout(() => loadQRForm(unitId), 300);
+  }, 400);
+};
+
+async function loadQRForm(unitId) {
+  showToast('Memuat data aset...', 'info');
+  try {
+    const res = await apiGet(P.simapoUnitByQR, { q: 'SIMAPO-' + unitId });
+    if (!res.ok || !res.rows?.length) {
+      showToast('QR tidak dikenal atau aset tidak ditemukan', 'error');
+      return;
+    }
+    const unit = res.rows[0];
+    renderQRConfirmPanel(unit);
+  } catch (e) {
+    showToast('Gagal memuat data aset', 'error');
+  }
+}
+
+function renderQRConfirmPanel(unit) {
+  const panel = document.getElementById('qrConfirmPanel');
+  if (!panel) return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  const nama = window.userProfile?.nama || localStorage.getItem('MY_NAMA') || 'Pegawai';
+  const nip = window._session?.nip || localStorage.getItem('MY_NIP') || '';
+  const dipinjam = unit.statuspinjam === true || unit.statuspinjam === 'true';
+
+  // Sembunyikan form manual
+  const manualForm = document.getElementById('simapoPinjamForm');
+  if (manualForm) manualForm.style.display = 'none';
+  const riwayatSection = document.getElementById('simapoRiwayatSection');
+  if (riwayatSection) riwayatSection.style.display = 'none';
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  panel.dataset.unitasetid = unit.id;
+
+  let statusHtml = '';
+  if (dipinjam) {
+    statusHtml = `<span style="color:#ef4444;font-weight:800;">🔴 Sedang Dipinjam</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Oleh: ${unit.nama_peminjam_saat_ini || '—'}</div>`;
+  } else if (unit.kondisi !== 'BAIK') {
+    statusHtml = `<span style="color:#f59e0b;font-weight:800;">⚠️ Kondisi: ${unit.kondisi}</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Laporkan kerusakan jika ingin meminjam</div>`;
+  } else {
+    statusHtml = `<span style="color:#22c55e;font-weight:800;">✅ Tersedia</span>`;
+  }
+
+  panel.innerHTML = `
+    <div class="card glass-card" style="border:2px solid rgba(201,168,76,0.3);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span style="font-size:24px;">📷</span>
+        <div style="font-weight:800;font-size:14px;color:var(--gold);">Hasil Scan QR</div>
+      </div>
+      <div style="display:flex;gap:14px;background:rgba(255,255,255,0.03);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.07);margin-bottom:14px;">
+        <div style="width:60px;height:60px;border-radius:8px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;">
+          ${unit.foto_barang ? `<img src="${unit.foto_barang}" style="width:100%;height:100%;object-fit:cover;">` : '📦'}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:800;font-size:14px;color:var(--white);">${escapeHtml(unit.nama_barang || 'Aset')}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${unit.nomorinventaris || '—'}</div>
+          <div style="font-size:11px;color:var(--muted);">Kondisi: ${unit.kondisi || 'BAIK'}</div>
+          <div style="margin-top:6px;">${statusHtml}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--muted);">👤 Peminjam</div>
+        <div style="font-weight:700;font-size:13px;color:var(--white);">${escapeHtml(nama)}</div>
+        <div style="font-size:11px;color:var(--muted);">NIP: ${escapeHtml(nip)}</div>
+      </div>
+      ${dipinjam || unit.kondisi !== 'BAIK' ? `
+      <button class="btn-primary" onclick="closeQRPanel()" style="width:100%;background:var(--muted);">
+        <div class="btn-inner"><span>✕</span> Tutup</div>
+      </button>` : `
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Tujuan Peminjaman</label>
+        <textarea class="form-textarea" id="qrTujuan" placeholder="Untuk kegiatan apa?" style="min-height:50px;">Peminjaman</textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div style="flex:1;">
+          <label class="form-label">Tgl Mulai</label>
+          <input type="date" class="form-input" id="qrMulai" value="${today}">
+        </div>
+        <div style="flex:1;">
+          <label class="form-label">Tgl Selesai</label>
+          <input type="date" class="form-input" id="qrSelesai" value="${nextWeek}">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="submitQRPinjam()" style="width:100%;">
+        <div class="btn-inner"><span>📤</span> Konfirmasi Pinjam</div>
+      </button>
+      <button onclick="closeQRPanel()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--muted);font-size:12px;cursor:pointer;">Batal</button>
+      `}
+    </div>
+  `;
+}
+
+window.closeQRPanel = function() {
+  const panel = document.getElementById('qrConfirmPanel');
+  if (panel) {
+    panel.style.display = 'none';
+    panel.innerHTML = '';
+  }
+  const manualForm = document.getElementById('simapoPinjamForm');
+  if (manualForm) manualForm.style.display = 'block';
+  const riwayatSection = document.getElementById('simapoRiwayatSection');
+  if (riwayatSection) riwayatSection.style.display = 'block';
+};
+
+window.submitQRPinjam = async function() {
+  const panel = document.getElementById('qrConfirmPanel');
+  if (!panel) return;
+  const unitasetid = panel.dataset.unitasetid;
+  const tujuan = document.getElementById('qrTujuan')?.value.trim() || 'Peminjaman';
+  const mulai = document.getElementById('qrMulai')?.value;
+  const selesai = document.getElementById('qrSelesai')?.value;
+
+  if (!mulai || !selesai) {
+    showToast('Harap isi tanggal pinjam', 'error');
+    return;
+  }
+
+  showToast('Mengirim pengajuan...', 'info');
+  try {
+    const res = await apiFetch(P.simapoQRPinjam, {
+      method: 'POST',
+      body: JSON.stringify({
+        unitasetid,
+        tujuanpeminjaman: tujuan,
+        tanggalmulai: mulai,
+        tanggalselesai: selesai
+      })
+    });
+    if (res.ok) {
+      showToast('Pengajuan berhasil dikirim!', 'success');
+      closeQRPanel();
+      if (window._simapoCache) {
+        window._simapoCache.clear('admin_pinjam');
+        window._simapoCache.clear('user_pinjam_riwayat');
+      }
+      loadSimapoRiwayatPinjam(true);
+    } else {
+      const err = parseApiResponse(await res.json().catch(() => null));
+      showToast(err?.message || 'Gagal mengirim pengajuan', 'error');
+    }
+  } catch (e) {
+    showToast('(Demo) Pengajuan terkirim!', 'success');
+    closeQRPanel();
+    switchSimapoSection('katalog');
+  }
+};

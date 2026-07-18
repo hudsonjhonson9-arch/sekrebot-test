@@ -61,6 +61,10 @@
           logoutSec.style.display = !isTg ? 'block' : 'none';
         }
 
+        // QR redirect: simpan param, proses setelah login
+        const qrParam = new URLSearchParams(window.location.search).get('qr');
+        if (qrParam) localStorage.setItem('simapo_qr_pending', qrParam);
+
       } catch (err) {
         console.error('[Init] Error during startup:', err);
       } finally {
@@ -72,6 +76,13 @@
             setTimeout(() => splash.remove(), 500);
           }
           console.log('[Init] Application ready.');
+
+          // Proses QR pending jika sudah login
+          const pendingQR = localStorage.getItem('simapo_qr_pending');
+          if (pendingQR && window._session?.isLoggedIn) {
+            localStorage.removeItem('simapo_qr_pending');
+            if (typeof processQR === 'function') processQR(pendingQR);
+          }
 
           // Notify Capgo OTA system that the app is successfully loaded and ready
           if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorUpdater) {

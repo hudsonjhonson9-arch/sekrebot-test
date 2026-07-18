@@ -244,7 +244,6 @@ function renderSimapoKatalog(data) {
       <div class="card glass-card" style="padding:10px; cursor:pointer; position:relative; overflow:hidden; border: 1px solid rgba(255,255,255,0.08); transition: transform 0.2s;" 
            onclick="showSimapoDetail('${item.id}')"
            onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
-        <div onclick="event.stopPropagation();showQRKatalog('${item.id}','${item.nama}')" style="position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);font-weight:800;cursor:pointer;z-index:2;" title="Lihat QR">◈</div>
         <div style="height:100px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; overflow:hidden;">
           ${item.foto ? `<img src="${item.foto}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-box" style="font-size:24px; opacity:0.2;"></i>`}
         </div>
@@ -293,6 +292,7 @@ function showSimapoDetail(id) {
              <div style="font-weight:800;">Rp ${parseInt(item.hargasatuan || 0).toLocaleString()}</div>
           </div>
         </div>
+        <button onclick="event.stopPropagation();showQRKatalog('${item.id}','${item.nama}')" style="margin-top:12px;width:100%;padding:10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:10px;color:#22c55e;font-weight:700;font-size:12px;cursor:pointer;">📱 Unduh QR Code</button>
       </div>
     `,
     showCancelButton: true,

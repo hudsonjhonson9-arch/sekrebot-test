@@ -265,8 +265,17 @@ function showSimapoDetail(id) {
   if (!item) return;
 
   const isOut = item.stok_saat_ini <= 0;
-  
-  // Tampilkan Modal Detail (Kita gunakan Swal atau Modal Custom)
+  const origin = window.location.origin + window.location.pathname;
+  const qrPayload = origin + '?qr=SIMAPO-' + item.id;
+
+  let qrImg = '';
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(qrPayload);
+    qr.make();
+    qrImg = qr.createImgTag(5, 6);
+  } catch (_) {}
+
   Swal.fire({
     title: `<span style="font-size:18px; color:var(--white)">Detail Aset</span>`,
     background: '#1a1d21',
@@ -294,6 +303,15 @@ function showSimapoDetail(id) {
              <div style="font-weight:800;">Rp ${parseInt(item.hargasatuan || 0).toLocaleString()}</div>
           </div>
         </div>
+
+        ${qrImg ? `
+        <div style="margin-top:14px; background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
+          <div style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:8px;">QR Code Aset</div>
+          <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px;">${qrImg}</div>
+          <div style="margin-top:8px;">
+            <button onclick="downloadQRFromCatalog('${item.id}','${item.nama}')" style="padding:6px 14px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer;">📥 Download QR</button>
+          </div>
+        </div>` : ''}
       </div>
     `,
     showCancelButton: true,
@@ -316,6 +334,19 @@ function showSimapoDetail(id) {
     }
   });
 }
+
+window.downloadQRFromCatalog = function(id, nama) {
+  const origin = window.location.origin + window.location.pathname;
+  const payload = origin + '?qr=SIMAPO-' + id;
+  const qr = qrcode(0, 'M');
+  qr.addData(payload);
+  qr.make();
+  const dataUrl = qr.createDataURL(6, 8);
+  const link = document.createElement('a');
+  link.download = 'QR-' + (nama || id).replace(/[^a-zA-Z0-9-]/g, '_') + '.png';
+  link.href = dataUrl;
+  link.click();
+};
 
 async function openSimapoPinjamForm(id, nama) {
   // Switch ke tab pinjam (ini otomatis memanggil populateSimapoPinjamSelect)

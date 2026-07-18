@@ -244,6 +244,7 @@ function renderSimapoKatalog(data) {
       <div class="card glass-card" style="padding:10px; cursor:pointer; position:relative; overflow:hidden; border: 1px solid rgba(255,255,255,0.08); transition: transform 0.2s;" 
            onclick="showSimapoDetail('${item.id}')"
            onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+        <div onclick="event.stopPropagation();showQRKatalog('${item.id}','${item.nama}')" style="position:absolute;top:6px;right:6px;width:28px;height:28px;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);font-weight:800;cursor:pointer;z-index:2;" title="Lihat QR">◈</div>
         <div style="height:100px; background:rgba(255,255,255,0.05); border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:8px; overflow:hidden;">
           ${item.foto ? `<img src="${item.foto}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="fas fa-box" style="font-size:24px; opacity:0.2;"></i>`}
         </div>
@@ -265,22 +266,6 @@ function showSimapoDetail(id) {
   if (!item) return;
 
   const isOut = item.stok_saat_ini <= 0;
-  const origin = window.location.origin + window.location.pathname;
-  const qrPayload = origin + '?qr=SIMAPO-' + item.id;
-
-  let qrImg = '';
-  try {
-    const QR = window.QRCode || qrcode;
-    if (typeof QR === 'function') {
-      const qr = QR(0, 'M');
-      qr.addData(qrPayload);
-      qr.make();
-      qrImg = '<img src="' + qr.createDataURL(5, 6) + '" style="width:140px;height:140px;display:block;margin:0 auto;">';
-    }
-  } catch (_) {
-    console.warn('[QR] detail:', _.message);
-  }
-
   Swal.fire({
     title: `<span style="font-size:18px; color:var(--white)">Detail Aset</span>`,
     background: '#1a1d21',
@@ -308,15 +293,6 @@ function showSimapoDetail(id) {
              <div style="font-weight:800;">Rp ${parseInt(item.hargasatuan || 0).toLocaleString()}</div>
           </div>
         </div>
-
-        ${qrImg ? `
-        <div style="margin-top:14px; background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
-          <div style="font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:8px;">QR Code Aset</div>
-          <div style="background:#fff; display:inline-block; padding:8px; border-radius:6px;">${qrImg}</div>
-          <div style="margin-top:8px;">
-            <button onclick="downloadQRFromCatalog('${item.id}','${item.nama}')" style="padding:6px 14px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:11px;cursor:pointer;">📥 Download QR</button>
-          </div>
-        </div>` : ''}
       </div>
     `,
     showCancelButton: true,
@@ -339,6 +315,32 @@ function showSimapoDetail(id) {
     }
   });
 }
+
+window.showQRKatalog = function(id, nama) {
+  const QR = window.QRCode || qrcode;
+  if (typeof QR !== 'function') return showToast('QR library error', 'error');
+  const origin = window.location.origin + window.location.pathname;
+  const payload = origin + '?qr=SIMAPO-' + id;
+  const qr = QR(0, 'M');
+  qr.addData(payload);
+  qr.make();
+  const dataUrl = qr.createDataURL(6, 8);
+  Swal.fire({
+    title: nama,
+    background: '#1a1d21',
+    color: '#fff',
+    html: `
+      <div style="text-align:center;">
+        <div style="background:#fff;display:inline-block;padding:10px;border-radius:8px;margin:10px 0;">
+          <img src="${dataUrl}" style="width:160px;height:160px;display:block;">
+        </div>
+        <div style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:8px;">${payload}</div>
+        <button onclick="downloadQRFromCatalog('${id}','${nama}')" style="padding:8px 20px;background:#22c55e;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:12px;cursor:pointer;">📥 Download PNG</button>
+      </div>
+    `,
+    confirmButtonText: 'Tutup'
+  });
+};
 
 window.downloadQRFromCatalog = function(id, nama) {
   const QR = window.QRCode || qrcode;

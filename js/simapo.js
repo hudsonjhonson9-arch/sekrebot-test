@@ -270,11 +270,16 @@ function showSimapoDetail(id) {
 
   let qrImg = '';
   try {
-    const qr = qrcode(0, 'M');
-    qr.addData(qrPayload);
-    qr.make();
-    qrImg = qr.createImgTag(5, 6);
-  } catch (_) {}
+    const QR = window.QRCode || qrcode;
+    if (typeof QR === 'function') {
+      const qr = QR(0, 'M');
+      qr.addData(qrPayload);
+      qr.make();
+      qrImg = '<img src="' + qr.createDataURL(5, 6) + '" style="width:140px;height:140px;display:block;margin:0 auto;">';
+    }
+  } catch (_) {
+    console.warn('[QR] detail:', _.message);
+  }
 
   Swal.fire({
     title: `<span style="font-size:18px; color:var(--white)">Detail Aset</span>`,
@@ -336,9 +341,11 @@ function showSimapoDetail(id) {
 }
 
 window.downloadQRFromCatalog = function(id, nama) {
+  const QR = window.QRCode || qrcode;
+  if (typeof QR !== 'function') return showToast('QR library tidak tersedia', 'error');
   const origin = window.location.origin + window.location.pathname;
   const payload = origin + '?qr=SIMAPO-' + id;
-  const qr = qrcode(0, 'M');
+  const qr = QR(0, 'M');
   qr.addData(payload);
   qr.make();
   const dataUrl = qr.createDataURL(6, 8);

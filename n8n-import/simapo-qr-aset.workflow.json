@@ -29,7 +29,7 @@
       "alwaysOutputData": true,
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, b.nama AS nama_barang, b.kodebarang, ua.nomorinventaris, ua.kondisi, ua.statuspinjam, ua.nama_peminjam_saat_ini, COALESCE(ua.foto, b.foto) AS foto_barang\n  FROM \"SIMAPO\".unit_aset ua\n  JOIN \"SIMAPO\".barang b ON b.id = ua.barangid\n  WHERE ua.qr = '{{ ($json.query.q).toString().replace(/'/g, \"''\") }}' AND ua.isactive = true\n  ORDER BY ua.nomorinventaris ASC\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, b.nama AS nama_barang, b.kodebarang, ua.nomorinventaris, ua.kondisi, ua.statuspinjam, b.foto AS foto_barang,\n    (\n      SELECT COALESCE(u.\"username\", p.userid)\n      FROM \"SIMAPO\".peminjaman p\n      LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid\n      WHERE p.unitasetid = ua.id AND p.status = 'DIPINJAM'\n      ORDER BY p.createdat DESC LIMIT 1\n    ) AS nama_peminjam_saat_ini\n  FROM \"SIMAPO\".unit_aset ua\n  JOIN \"SIMAPO\".barang b ON b.id = ua.barangid\n  WHERE ua.qrcode = '{{ ($json.query.q).toString().replace(/'/g, \"''\") }}'\n  ORDER BY ua.nomorinventaris ASC\n) t;",
         "options": {}
       }
     },
@@ -81,7 +81,7 @@
       "alwaysOutputData": true,
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, ua.kodebarang, b.nama AS nama_barang, ua.nomorinventaris, ua.kondisi, ua.statuspinjam, ua.nama_peminjam_saat_ini\n  FROM \"SIMAPO\".unit_aset ua\n  JOIN \"SIMAPO\".barang b ON b.id = ua.barangid\n  WHERE ua.barangid = '{{ ($json.query.barangid).toString().replace(/'/g, \"''\") }}' AND ua.isactive = true\n  ORDER BY ua.nomorinventaris ASC\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, ua.nomorinventaris, ua.kondisi, ua.statuspinjam,\n    (\n      SELECT COALESCE(u.\"username\", p.userid)\n      FROM \"SIMAPO\".peminjaman p\n      LEFT JOIN public.user_list u ON u.\"NIP\" = p.userid\n      WHERE p.unitasetid = ua.id AND p.status = 'DIPINJAM'\n      ORDER BY p.createdat DESC LIMIT 1\n    ) AS nama_peminjam_saat_ini\n  FROM \"SIMAPO\".unit_aset ua\n  WHERE ua.barangid = '{{ ($json.query.barangid).toString().replace(/'/g, \"''\") }}'\n  ORDER BY ua.nomorinventaris ASC\n) t;",
         "options": {}
       }
     },
@@ -133,7 +133,7 @@
       "position": [240, 608],
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE \"SIMAPO\".unit_aset SET qr = '{{ ($json.body.qr).toString().replace(/'/g, \"''\") }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, \"''\") }}' RETURNING id, qr;",
+        "query": "UPDATE \"SIMAPO\".unit_aset SET qrcode = '{{ ($json.body.qrcode).toString().replace(/'/g, \"''\") }}', updatedat = CURRENT_TIMESTAMP WHERE id = '{{ ($json.body.id).toString().replace(/'/g, \"''\") }}' RETURNING id, qrcode;",
         "options": {}
       }
     },
@@ -174,7 +174,7 @@
       "typeVersion": 2,
       "position": [240, 912],
       "parameters": {
-        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.unitasetid) throw new Error('ID aset tidak ditemukan');\nif (!b.tujuanpeminjaman) throw new Error('Tujuan peminjaman kosong');\nreturn [{ json: {\n  userid: nip,\n  unitasetid: b.unitasetid,\n  tujuanpeminjaman: b.tujuanpeminjaman,\n  tanggalmulai: b.tanggalmulai,\n  tanggalselesai: b.tanggalselesai,\n  nomorpeminjaman: 'PMJ-' + Date.now(),\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.unitasetid) throw new Error('ID aset tidak ditemukan');\nif (!b.tujuanpeminjaman) throw new Error('Tujuan peminjaman kosong');\nreturn [{ json: {\n  id: 'PMJ-' + Date.now(),\n  userid: nip,\n  unitasetid: b.unitasetid,\n  tujuanpeminjaman: b.tujuanpeminjaman,\n  tanggalmulai: b.tanggalmulai,\n  tanggalselesai: b.tanggalselesai,\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
       }
     },
     {
@@ -185,7 +185,7 @@
       "position": [480, 912],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, status;",
+        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id)\nVALUES ('{{ ($json.id).toString().replace(/'/g, \"''\") }}', '{{ ($json.id).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}'::timestamp, '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}'::timestamp, 'MENUNGGU', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}')\nRETURNING id, status;",
         "options": {}
       }
     },

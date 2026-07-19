@@ -365,19 +365,16 @@ function _qrOverlayScanFrame(video, canvas, ctx) {
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const found = jsQR(img.data, img.width, img.height);
-  if (found && found.data && found.data.includes('qr=')) {
+  if (found && found.data) {
     _qrOverlayActive = false;
-    const m = found.data.match(/[?&]qr=([^&]+)/);
-    if (m) {
-      _qrOverlayClose();
-      const qrParam = m[1];
-      localStorage.setItem('simapo_qr_pending', qrParam);
-      if (window._session?.isLoggedIn) {
-        localStorage.removeItem('simapo_qr_pending');
-        processQR(qrParam);
-      } else {
-        showToast('QR tersimpan. Silakan login.', 'info');
-      }
+    _qrOverlayClose();
+    const raw = found.data.includes('qr=') ? (found.data.match(/[?&]qr=([^&]+)/)?.[1] || found.data) : found.data;
+    localStorage.setItem('simapo_qr_pending', raw);
+    if (window._session?.isLoggedIn) {
+      localStorage.removeItem('simapo_qr_pending');
+      processQR(raw);
+    } else {
+      showToast('QR tersimpan. Silakan login.', 'info');
     }
   }
 }
@@ -424,18 +421,15 @@ function _qrBuildFallbackUI(overlay) {
       }
       URL.revokeObjectURL(img.src);
       if (found && found.data) {
-        const m = found.data.match(/[?&]qr=([^&]+)/);
-        if (m) {
-          const qrParam = m[1];
-          localStorage.setItem('simapo_qr_pending', qrParam);
-          if (window._session?.isLoggedIn) {
-            localStorage.removeItem('simapo_qr_pending');
-            processQR(qrParam);
-          } else {
-            showToast('QR tersimpan. Silakan login.', 'info');
-          }
-          return;
+        const raw = found.data.includes('qr=') ? (found.data.match(/[?&]qr=([^&]+)/)?.[1] || found.data) : found.data;
+        localStorage.setItem('simapo_qr_pending', raw);
+        if (window._session?.isLoggedIn) {
+          localStorage.removeItem('simapo_qr_pending');
+          processQR(raw);
+        } else {
+          showToast('QR tersimpan. Silakan login.', 'info');
         }
+        return;
       }
       showToast('Tidak ditemukan QR code di gambar', 'error');
     };
@@ -749,25 +743,20 @@ function onSimapoInstansiChange() {
 
 /* ─── QR SCAN FLOW ──────────────────────────────────────────── */
 window.processQR = async function(payload) {
-  if (!payload || !payload.startsWith('SIMAPO-')) {
-    showToast('QR tidak valid', 'error');
-    return;
-  }
-
-  const unitId = payload.replace('SIMAPO-', '');
-  console.log('[SIMAPO-QR] Processing QR for unit:', unitId);
+  if (!payload) return;
+  console.log('[SIMAPO-QR] Processing QR:', payload);
 
   switchTab('simapo');
   setTimeout(() => {
     switchSimapoSection('pinjam');
-    setTimeout(() => loadQRForm(unitId), 300);
+    setTimeout(() => loadQRForm(payload), 300);
   }, 400);
 };
 
-async function loadQRForm(unitId) {
+async function loadQRForm(raw) {
   showToast('Memuat data aset...', 'info');
   try {
-    const res = await apiGet(P.simapoUnitByQR, { q: 'SIMAPO-' + unitId });
+    const res = await apiGet(P.simapoUnitByQR, { q: raw });
     if (!res.ok || !res.rows?.length) {
       showToast('QR tidak dikenal atau aset tidak ditemukan', 'error');
       return;

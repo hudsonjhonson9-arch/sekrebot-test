@@ -1521,21 +1521,36 @@
           </div>
         </div>
 
+        <!-- Group Selector -->
+        <div style="display:flex;gap:6px;margin-bottom:10px;">
+          <button class="sa-group-btn active" id="sa-group-aset" onclick="switchSAGroup('aset')">📦 Kelola Aset</button>
+          <button class="sa-group-btn" id="sa-group-trans" onclick="switchSAGroup('trans')">📋 Transaksi</button>
+        </div>
+
         <!-- Sub-Tab Internal SIMAPO Admin -->
         <div style="overflow-x:auto;scrollbar-width:none;margin-bottom:14px;">
-          <div style="display:flex;gap:6px;min-width:max-content;padding:5px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
-            <button class="sa-tab active" id="sa-tab-pinjam"  onclick="switchSATab('pinjam')" >📋 Pinjaman</button>
-            <button class="sa-tab"        id="sa-tab-tiket"  onclick="switchSATab('tiket')"  >🚨 Tiket</button>
-            <button class="sa-tab"        id="sa-tab-master" onclick="switchSATab('master')" >🗃️ Aset</button>
-            <button class="sa-tab"        id="sa-tab-mutasi" onclick="switchSATab('mutasi')" >🔄 Mutasi</button>
-            <button class="sa-tab"        id="sa-tab-opname" onclick="switchSATab('opname')" >📊 Opname</button>
-            <button class="sa-tab"        id="sa-tab-kat"    onclick="switchSATab('kat')"    >🏷️ Kategori</button>
+          <div id="sa-tab-bar" style="display:flex;gap:6px;min-width:max-content;padding:5px;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.05);">
+            <!-- Kelola Aset -->
+            <button class="sa-tab" id="sa-tab-master" onclick="switchSATab('master')" data-group="aset">🗃️ Aset</button>
+            <button class="sa-tab" id="sa-tab-kat"    onclick="switchSATab('kat')"    data-group="aset">🏷️ Kategori</button>
+            <button class="sa-tab" id="sa-tab-mutasi" onclick="switchSATab('mutasi')" data-group="aset">🔄 Mutasi</button>
+            <button class="sa-tab" id="sa-tab-opname" onclick="switchSATab('opname')" data-group="aset">📊 Opname</button>
+            <!-- Transaksi -->
+            <button class="sa-tab active" id="sa-tab-pinjam"  onclick="switchSATab('pinjam')" data-group="trans">📋 Pinjaman</button>
+            <button class="sa-tab"        id="sa-tab-tiket"  onclick="switchSATab('tiket')"  data-group="trans">🚨 Tiket</button>
+            <button class="sa-tab"        id="sa-tab-penerimaan" onclick="switchSATab('penerimaan')" data-group="trans">📥 Penerimaan</button>
+            <button class="sa-tab"        id="sa-tab-pemeliharaan" onclick="switchSATab('pemeliharaan')" data-group="trans">🔧 Pemeliharaan</button>
+            <button class="sa-tab"        id="sa-tab-bku"    onclick="switchSATab('bku')"    data-group="trans">💰 BKU</button>
           </div>
         </div>
         <style>
           .sa-tab{background:transparent;color:var(--muted);border:none;padding:9px 14px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;transition:all .25s;white-space:nowrap;font-family:inherit;}
           .sa-tab:hover{color:var(--white);background:rgba(255,255,255,0.06);}
           .sa-tab.active{background:var(--card-bg,#1a2332);color:var(--gold);box-shadow:0 3px 10px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.1);}
+          .sa-tab.hidden{display:none;}
+          .sa-group-btn{flex:1;padding:8px;background:rgba(255,255,255,0.04);color:var(--muted);border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;}
+          .sa-group-btn.active{background:rgba(201,168,76,0.15);color:var(--gold);border-color:rgba(201,168,76,0.4);}
+          .sa-group-btn:hover{color:var(--white);background:rgba(255,255,255,0.08);}
         </style>
 
         <!-- [TAB] PINJAMAN -->
@@ -1655,6 +1670,39 @@
               </button>
             </div>
             <div id="adminSimapoKatList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] PENERIMAAN BARANG -->
+        <div id="sa-sect-penerimaan" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>📥 Penerimaan Barang</span>
+              <button class="btn-sm-admin" onclick="loadAdminPenerimaan()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div id="adminPenerimaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] PEMELIHARAAN -->
+        <div id="sa-sect-pemeliharaan" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🔧 Pemeliharaan Aset</span>
+              <button class="btn-sm-admin" onclick="loadAdminPemeliharaan()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div id="adminPemeliharaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+          </div>
+        </div>
+
+        <!-- [TAB] BKU -->
+        <div id="sa-sect-bku" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>💰 Buku Kas Umum</span>
+              <button class="btn-sm-admin" onclick="loadAdminBKU()" style="background:var(--primary)">🔄</button>
+            </div>
+            <div id="adminBKUList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
           </div>
         </div>
 

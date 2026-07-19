@@ -36,7 +36,15 @@ window.switchSATab = function(name, force = false) {
   
   const btn = document.getElementById('sa-tab-' + name);
   const sect = document.getElementById('sa-sect-' + name);
-  if (btn) btn.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+    document.querySelectorAll('.sa-tab.hidden').forEach(b => b.classList.remove('hidden'));
+    const group = btn.dataset.group;
+    document.querySelectorAll('.sa-tab').forEach(b => b.classList.toggle('hidden', b.dataset.group !== group));
+    document.querySelectorAll('.sa-group-btn').forEach(b => b.classList.remove('active'));
+    const gbtn = document.getElementById('sa-group-' + group);
+    if (gbtn) gbtn.classList.add('active');
+  }
   if (sect) {
       sect.style.display = 'block';
       setTimeout(() => { sect.style.opacity = '1'; sect.style.transition = 'opacity 0.3s'; }, 10);
@@ -48,6 +56,9 @@ window.switchSATab = function(name, force = false) {
   else if (name === 'mutasi') { window.loadMutasiRiwayat(force); window.populateMutasiBarangSelect(); }
   else if (name === 'opname') window.loadOpnameForm(force);
   else if (name === 'kat') window.loadSimapoKategori(true, force);
+  else if (name === 'penerimaan') window.loadAdminPenerimaan(force);
+  else if (name === 'pemeliharaan') window.loadAdminPemeliharaan(force);
+  else if (name === 'bku') window.loadAdminBKU(force);
 };
 
 /* ─── HELPER: SHOW SHIMMER ── */
@@ -625,6 +636,119 @@ window.generateAllQR = async function(barangId) {
   const btn = document.querySelector(`[onclick*="toggleUnitList('${barangId}'"]`);
   if (btn) { btn.textContent = '▶ Lihat Unit'; }
   window.toggleUnitList(barangId, null);
+};
+
+/* ─── GROUP SWITCHER ──────────────────────────────────────── */
+window.switchSAGroup = function(group) {
+  console.log('[SIMAPO] Switching group to:', group);
+  document.querySelectorAll('.sa-group-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('sa-group-' + group);
+  if (btn) btn.classList.add('active');
+
+  document.querySelectorAll('.sa-tab').forEach(b => {
+    b.classList.toggle('hidden', b.dataset.group !== group);
+  });
+
+  const firstVisible = document.querySelector('.sa-tab:not(.hidden)');
+  if (firstVisible) {
+    const name = firstVisible.id.replace('sa-tab-', '');
+    switchSATab(name);
+  }
+};
+
+/* ─── ADMIN: PENERIMAAN BARANG ────────────────────────────── */
+window.loadAdminPenerimaan = async function(force = false) {
+  const el = document.getElementById('adminPenerimaanList');
+  if (!el) return;
+  if (force) window.showAdminSimapoShimmer('adminPenerimaanList');
+
+  const data = await window._simapoCache.getOrFetch('admin_penerimaan', async () => {
+    try {
+      const res = await apiFetch(P.simapoPenerimaanList);
+      return parseApiResponse(await res.json());
+    } catch { return null; }
+  }, force);
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">📥 Belum ada penerimaan barang.</div>`;
+    return;
+  }
+  el.innerHTML = data.map(item => `
+    <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || item.namabarang} <span style="font-size:11px;color:var(--gold);">x${item.jumlah_diterima || item.jumlah||0}</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">📄 ${item.nomor_spj || '—'} ${item.status_spj ? '· ' + item.status_spj : ''}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);">${item.tanggal_diterima || item.tanggal||'—'}</div>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">${item.keterangan || ''}</div>
+    </div>
+  `).join('');
+};
+
+/* ─── ADMIN: PEMELIHARAAN ─────────────────────────────────── */
+window.loadAdminPemeliharaan = async function(force = false) {
+  const el = document.getElementById('adminPemeliharaanList');
+  if (!el) return;
+  if (force) window.showAdminSimapoShimmer('adminPemeliharaanList');
+
+  const data = await window._simapoCache.getOrFetch('admin_pemeliharaan', async () => {
+    try {
+      const res = await apiFetch(P.simapoPemeliharaanList);
+      return parseApiResponse(await res.json());
+    } catch { return null; }
+  }, force);
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">🔧 Belum ada data pemeliharaan.</div>`;
+    return;
+  }
+  el.innerHTML = data.map(item => `
+    <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || item.namabarang}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">🛠️ ${item.jenis_pemeliharaan || item.jenis||'—'}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);">${item.tanggal_pemeliharaan || item.tanggal||'—'}</div>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">📝 ${item.keterangan || ''}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">💰 ${item.biaya ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.biaya) : '—'}</div>
+    </div>
+  `).join('');
+};
+
+/* ─── ADMIN: BKU ──────────────────────────────────────────── */
+window.loadAdminBKU = async function(force = false) {
+  const el = document.getElementById('adminBKUList');
+  if (!el) return;
+  if (force) window.showAdminSimapoShimmer('adminBKUList');
+
+  const data = await window._simapoCache.getOrFetch('admin_bku', async () => {
+    try {
+      const res = await apiFetch(P.simapoBKUList);
+      return parseApiResponse(await res.json());
+    } catch { return null; }
+  }, force);
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">💰 Belum ada data BKU.</div>`;
+    return;
+  }
+  el.innerHTML = data.map(item => `
+    <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-size:11px;color:var(--muted);">📅 ${item.tanggal || '—'} &nbsp;·&nbsp; ${item.uraian || ''}</div>
+          <div style="font-weight:800;font-size:14px;color:var(--white);margin-top:2px;">
+            ${item.penerimaan ? `<span style="color:var(--success)">+${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.penerimaan)}</span>` : ''}
+            ${item.pengeluaran ? `<span style="color:var(--danger)">-${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.pengeluaran)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
 };
 
 window.viewQRCode = async function(unitasetId) {

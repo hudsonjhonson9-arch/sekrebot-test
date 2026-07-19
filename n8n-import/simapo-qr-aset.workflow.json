@@ -1,0 +1,222 @@
+{
+  "name": "SIMAPO - QR Aset",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "nodes": [
+    {
+      "id": "wh-unit-by-qr",
+      "name": "WH Unit By QR",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "simapo-unit-by-qr",
+      "parameters": {
+        "path": "simapo-unit-by-qr",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "pg-unit-by-qr",
+      "name": "PG Unit By QR",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [240, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, b.nama AS nama_barang, b.kodebarang, ua.nomorinventaris, ua.kondisi, ua.statuspinjam, ua.nama_peminjam_saat_ini, COALESCE(ua.foto, b.foto) AS foto_barang\n  FROM \"SIMAPO\".unit_aset ua\n  JOIN \"SIMAPO\".barang b ON b.id = ua.barangid\n  WHERE ua.qr = '{{ ($json.query.q).toString().replace(/'/g, \"''\") }}' AND ua.isactive = true\n  ORDER BY ua.nomorinventaris ASC\n) t;",
+        "options": {}
+      }
+    },
+    {
+      "id": "agg-unit-by-qr",
+      "name": "Agg Unit By QR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0],
+      "parameters": {
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
+      }
+    },
+    {
+      "id": "res-unit-by-qr",
+      "name": "Res Unit By QR",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 0],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      }
+    },
+    {
+      "id": "wh-unit-list",
+      "name": "WH Unit List",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 304],
+      "webhookId": "simapo-unit-list",
+      "parameters": {
+        "path": "simapo-unit-list",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "pg-unit-list",
+      "name": "PG Unit List",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [240, 304],
+      "alwaysOutputData": true,
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\n  SELECT ua.id, ua.kodebarang, b.nama AS nama_barang, ua.nomorinventaris, ua.kondisi, ua.statuspinjam, ua.nama_peminjam_saat_ini\n  FROM \"SIMAPO\".unit_aset ua\n  JOIN \"SIMAPO\".barang b ON b.id = ua.barangid\n  WHERE ua.barangid = '{{ ($json.query.barangid).toString().replace(/'/g, \"''\") }}' AND ua.isactive = true\n  ORDER BY ua.nomorinventaris ASC\n) t;",
+        "options": {}
+      }
+    },
+    {
+      "id": "agg-unit-list",
+      "name": "Agg Unit List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 304],
+      "parameters": {
+        "jsCode": "return [{ json: { data: $input.all()[0].json.items || [] } }];"
+      }
+    },
+    {
+      "id": "res-unit-list",
+      "name": "Res Unit List",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 304],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      }
+    },
+    {
+      "id": "wh-qr-update",
+      "name": "WH QR Update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 608],
+      "webhookId": "simapo-qr-update",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-qr-update",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "pg-qr-update",
+      "name": "PG QR Update",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [240, 608],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE \"SIMAPO\".unit_aset SET qr = '{{ ($json.body.qr).toString().replace(/'/g, \"''\") }}', updatedat = NOW() WHERE id = '{{ ($json.body.id).toString().replace(/'/g, \"''\") }}' RETURNING id, qr;",
+        "options": {}
+      }
+    },
+    {
+      "id": "res-qr-update",
+      "name": "Res QR Update",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 608],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      }
+    },
+    {
+      "id": "wh-qr-pinjam",
+      "name": "WH QR Pinjam",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 912],
+      "webhookId": "simapo-qr-pinjam",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "simapo-qr-pinjam",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      }
+    },
+    {
+      "id": "validate-qr-pinjam",
+      "name": "Validate QR Pinjam",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 912],
+      "parameters": {
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.unitasetid) throw new Error('ID aset tidak ditemukan');\nif (!b.tujuanpeminjaman) throw new Error('Tujuan peminjaman kosong');\nreturn [{ json: {\n  userid: nip,\n  unitasetid: b.unitasetid,\n  tujuanpeminjaman: b.tujuanpeminjaman,\n  tanggalmulai: b.tanggalmulai,\n  tanggalselesai: b.tanggalselesai,\n  nomorpeminjaman: 'PMJ-' + Date.now(),\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
+      }
+    },
+    {
+      "id": "pg-qr-pinjam",
+      "name": "PG QR Pinjam",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [480, 912],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, status;",
+        "options": {}
+      }
+    },
+    {
+      "id": "res-qr-pinjam",
+      "name": "Res QR Pinjam",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [720, 912],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WH Unit By QR": { "main": [[{ "node": "PG Unit By QR", "type": "main", "index": 0 }]] },
+    "PG Unit By QR": { "main": [[{ "node": "Agg Unit By QR", "type": "main", "index": 0 }]] },
+    "Agg Unit By QR": { "main": [[{ "node": "Res Unit By QR", "type": "main", "index": 0 }]] },
+    "WH Unit List": { "main": [[{ "node": "PG Unit List", "type": "main", "index": 0 }]] },
+    "PG Unit List": { "main": [[{ "node": "Agg Unit List", "type": "main", "index": 0 }]] },
+    "Agg Unit List": { "main": [[{ "node": "Res Unit List", "type": "main", "index": 0 }]] },
+    "WH QR Update": { "main": [[{ "node": "PG QR Update", "type": "main", "index": 0 }]] },
+    "PG QR Update": { "main": [[{ "node": "Res QR Update", "type": "main", "index": 0 }]] },
+    "WH QR Pinjam": { "main": [[{ "node": "Validate QR Pinjam", "type": "main", "index": 0 }]] },
+    "Validate QR Pinjam": { "main": [[{ "node": "PG QR Pinjam", "type": "main", "index": 0 }]] },
+    "PG QR Pinjam": { "main": [[{ "node": "Res QR Pinjam", "type": "main", "index": 0 }]] }
+  }
+}

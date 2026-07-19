@@ -342,6 +342,46 @@ window.showQRKatalog = function(id, nama) {
   });
 };
 
+window.scanQRAset = function() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment';
+  input.onchange = async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise(r => { img.onload = r; });
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    URL.revokeObjectURL(img.src);
+    if (!code || !code.data) {
+      showToast('Tidak ditemukan QR code di gambar', 'error');
+      return;
+    }
+    const url = code.data;
+    const qrParam = new URL(url).searchParams.get('qr');
+    if (qrParam) {
+      localStorage.setItem('simapo_qr_pending', qrParam);
+      if (window._session?.isLoggedIn) {
+        localStorage.removeItem('simapo_qr_pending');
+        processQR(qrParam);
+      } else {
+        showToast('QR tersimpan. Silakan login untuk memproses.', 'info');
+      }
+    } else {
+      showToast('QR bukan untuk aset ini', 'error');
+    }
+  };
+  input.click();
+};
+
 window.downloadQRFromCatalog = function(id, nama) {
   const QR = window.QRCode || qrcode;
   if (typeof QR !== 'function') return showToast('QR library tidak tersedia', 'error');

@@ -34,6 +34,7 @@
   <script src="js/lib/leaflet.min.js" defer></script>
   <script src="js/lib/sweetalert2.all.min.js"></script>
   <script src="js/lib/qrcode.min.js"></script>
+  <script src="js/lib/jsQR.min.js"></script>
   
   <!-- Flatpickr (Dark Theme to match app) -->
   <link rel="stylesheet" href="css/lib/flatpickr-dark.css">
@@ -355,7 +356,7 @@
       </button>
       <button class="nav-item desktop-only" id="nav-simapo-desk" onclick="switchTab('simapo', true)" data-tab="simapo">
         <i class="fas fa-boxes"></i>
-        <span>SIMAPO</span>
+        <span>Aset</span>
       </button>
       <button class="nav-item desktop-only admin-only" id="nav-admin-desk" onclick="switchTab('admin', true)" data-tab="admin">
         <i class="fas fa-user-shield"></i>
@@ -389,7 +390,7 @@
         </button>
         <button class="more-item" id="more-simapo" onclick="switchTab('simapo', true)">
           <i class="fas fa-boxes"></i>
-          <span>Aset SIMAPO</span>
+          <span>Aset</span>
         </button>
         <div id="adminMoreSeparator" style="height:1px; background:var(--border); margin:5px 0; display:none"></div>
         <button class="more-item admin-only" id="more-admin" onclick="switchTab('admin', true)">
@@ -1320,7 +1321,7 @@
     <!-- ══ TAB SIMAPO ══ -->
     <div class="panel" id="panel-simapo">
       <div class="rekap-header" style="margin-bottom: 12px;">
-        <div class="rekap-title">📦 Sistem Inventaris (SIMAPO)</div>
+        <div class="rekap-title">📦 Manajemen Aset</div>
       </div>
       
       <!-- Filter Instansi SIMAPO (Only visible to Superadmin) -->
@@ -1334,6 +1335,7 @@
       
       <!-- Sub-Navigation SIMAPO (Segmented Control) -->
       <div style="margin-bottom: 18px; display:flex; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); gap: 4px; overflow-x: auto; scrollbar-width: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+        <button onclick="scanQRAset()" style="flex-shrink:0;padding:7px 12px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.25);border-radius:8px;color:#22c55e;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">📷</button>
         <button class="simapo-tab-btn active" id="btn-simapo-katalog" onclick="switchSimapoSection('katalog')">
           <i class="fas fa-th-large"></i> Katalog
         </button>

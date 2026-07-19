@@ -589,12 +589,14 @@ async function loadSimapoRiwayatPinjam(force = false) {
 
   container.innerHTML = '<div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:80px; border-radius:12px"></div></div>';
 
+  const nip = window._session?.nip || localStorage.getItem('MY_NIP') || '';
+  const listUrl = nip ? P.simapoPinjamList + '?nip=' + encodeURIComponent(nip) : P.simapoPinjamList;
   const data = await (window._simapoCache ? window._simapoCache.getOrFetch('user_pinjam_riwayat', async () => {
     try {
-      const res = await apiFetch(P.simapoPinjamList);
+      const res = await apiFetch(listUrl);
       return parseApiResponse(await res.json());
     } catch { return null; }
-  }, force) : apiFetch(P.simapoPinjamList).then(r => r.json()).then(parseApiResponse).catch(() => null));
+  }, force) : apiFetch(listUrl).then(r => r.json()).then(parseApiResponse).catch(() => null));
 
   if (data) {
     renderSimapoRiwayatPinjam(data);

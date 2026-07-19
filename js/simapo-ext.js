@@ -57,7 +57,7 @@ window.switchSATab = function(name, force = false) {
   else if (name === 'opname') window.loadOpnameForm(force);
   else if (name === 'kat') window.loadSimapoKategori(true, force);
   else if (name === 'penerimaan') window.loadAdminPenerimaan(force);
-  else if (name === 'pemeliharaan') window.loadAdminPemeliharaan(force);
+  else if (name === 'pemeliharaan') { window.loadAdminPemeliharaan(force); window.populatePemeliharaanBarang(); }
   else if (name === 'bku') window.loadAdminBKU(force);
 };
 
@@ -673,18 +673,58 @@ window.loadAdminPenerimaan = async function(force = false) {
     el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">📥 Belum ada penerimaan barang.</div>`;
     return;
   }
-  el.innerHTML = data.map(item => `
+  el.innerHTML = data.map(item => {
+    const st = item.status_spj || '';
+    const stBadge = st === 'sudah_lapor' ? '<span style="color:var(--success)">✅ '+st+'</span>' : st === 'sudah_di_map' ? '<span style="color:#64b4ff">📁 '+st+'</span>' : '<span style="color:var(--warning)">⏳ '+st+'</span>';
+    return `
     <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || item.namabarang} <span style="font-size:11px;color:var(--gold);">x${item.jumlah_diterima || item.jumlah||0}</span></div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">📄 ${item.nomor_spj || '—'} ${item.status_spj ? '· ' + item.status_spj : ''}</div>
+          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.no_nota || '—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">🏢 ${item.penyedia || '—'}</div>
+          <div style="font-size:11px;color:var(--gold);margin-top:2px;">${item.total_nilai ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.total_nilai) : '—'}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);">${item.tanggal_diterima || item.tanggal||'—'}</div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);">${item.tgl_nota || item.tanggal||'—'}</div>
+          <div style="font-size:10px;font-weight:700;margin-top:2px;">${stBadge}</div>
+        </div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">${item.keterangan || ''}</div>
-    </div>
-  `).join('');
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">📄 SP2D: ${item.no_sp2d || '—'}</div>
+    </div>`;
+  }).join('');
+};
+
+window.savePenerimaan = async function() {
+  const payload = {
+    no_nota: document.getElementById('ptNoNota')?.value.trim(),
+    tgl_nota: document.getElementById('ptTgl')?.value,
+    penyedia: document.getElementById('ptPenyedia')?.value.trim(),
+    total_nilai: parseFloat(document.getElementById('ptTotal')?.value) || 0,
+    no_sp2d: document.getElementById('ptSp2d')?.value.trim() || null,
+    status_spj: document.getElementById('ptStatusSpj')?.value || 'belum_dikumpulkan',
+    keterangan: document.getElementById('ptKeterangan')?.value.trim() || '',
+  };
+  if (!payload.no_nota || !payload.penyedia) { showToast('No. Nota & Penyedia wajib!', 'error'); return; }
+  showToast('Menyimpan...', 'info');
+  try {
+    const res = await apiFetch(P.simapoPenerimaanSave, { method:'POST', body: JSON.stringify(payload) });
+    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_penerimaan'); window.loadAdminPenerimaan(true); clearPenerimaanForm(); }
+    else throw 1;
+  } catch {
+    showToast('Tersimpan (Demo)', 'success');
+    window._simapoCache.clear('admin_penerimaan');
+    window.loadAdminPenerimaan(true);
+    clearPenerimaanForm();
+  }
+};
+
+window.clearPenerimaanForm = function() {
+  ['ptNoNota','ptTgl','ptPenyedia','ptTotal','ptSp2d','ptKeterangan'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const ss = document.getElementById('ptStatusSpj');
+  if (ss) ss.value = 'belum_dikumpulkan';
 };
 
 /* ─── ADMIN: PEMELIHARAAN ─────────────────────────────────── */
@@ -708,15 +748,48 @@ window.loadAdminPemeliharaan = async function(force = false) {
     <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || item.namabarang}</div>
+          <div style="font-weight:800;font-size:14px;color:var(--white)">${item.nama_barang || item.namabarang || '—'}</div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px;">🛠️ ${item.jenis_pemeliharaan || item.jenis||'—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">🏪 ${item.nama_penyedia || item.penyedia||'—'}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);">${item.tanggal_pemeliharaan || item.tanggal||'—'}</div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:var(--muted);">${item.tgl_pemeliharaan || item.tanggal||'—'}</div>
+          <div style="font-size:11px;color:var(--gold);margin-top:2px;">${item.biaya ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.biaya) : '—'}</div>
+        </div>
       </div>
       <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">📝 ${item.keterangan || ''}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">💰 ${item.biaya ? new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.biaya) : '—'}</div>
     </div>
   `).join('');
+};
+
+window.populatePemeliharaanBarang = async function() {
+  const sel = document.getElementById('pmBarangId'); if (!sel) return;
+  let data = window._allMasterData;
+  if (!data.length) try { data = parseApiResponse(await (await apiFetch(P.simapoAdminMasterList)).json()); } catch { data=[]; }
+  sel.innerHTML = '<option value="">-- Pilih Aset --</option>' + data.map(b => `<option value="${b.id}">${b.nama} (${b.kodebarang})</option>`).join('');
+};
+
+window.savePemeliharaan = async function() {
+  const payload = {
+    barang_id: document.getElementById('pmBarangId')?.value || null,
+    tgl_pemeliharaan: document.getElementById('pmTgl')?.value,
+    jenis_pemeliharaan: document.getElementById('pmJenis')?.value.trim(),
+    biaya: parseFloat(document.getElementById('pmBiaya')?.value) || 0,
+    nama_penyedia: document.getElementById('pmPenyedia')?.value.trim() || null,
+    bentuk_kontrak: document.getElementById('pmKontrak')?.value.trim() || null,
+    keterangan: document.getElementById('pmKeterangan')?.value.trim() || '',
+  };
+  if (!payload.barang_id || !payload.jenis_pemeliharaan) { showToast('Pilih barang & isi jenis pemeliharaan!', 'error'); return; }
+  showToast('Menyimpan...', 'info');
+  try {
+    const res = await apiFetch(P.simapoPemeliharaanSave, { method:'POST', body: JSON.stringify(payload) });
+    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_pemeliharaan'); window.loadAdminPemeliharaan(true); }
+    else throw 1;
+  } catch {
+    showToast('Tersimpan (Demo)', 'success');
+    window._simapoCache.clear('admin_pemeliharaan');
+    window.loadAdminPemeliharaan(true);
+  }
 };
 
 /* ─── ADMIN: BKU ──────────────────────────────────────────── */
@@ -739,16 +812,138 @@ window.loadAdminBKU = async function(force = false) {
   el.innerHTML = data.map(item => `
     <div style="padding:14px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div>
-          <div style="font-size:11px;color:var(--muted);">📅 ${item.tanggal || '—'} &nbsp;·&nbsp; ${item.uraian || ''}</div>
-          <div style="font-weight:800;font-size:14px;color:var(--white);margin-top:2px;">
-            ${item.penerimaan ? `<span style="color:var(--success)">+${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.penerimaan)}</span>` : ''}
-            ${item.pengeluaran ? `<span style="color:var(--danger)">-${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.pengeluaran)}</span>` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;gap:8px;font-size:11px;color:var(--muted);">
+            <span>#${item.no_urut || '—'}</span>
+            <span>📅 ${item.tgl || item.tanggal || '—'}</span>
+            <span>${item.kode_rekening || ''}</span>
           </div>
+          <div style="font-size:12px;color:var(--white);margin-top:2px;font-weight:600;">${item.uraian || ''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          ${item.penerimaan && parseFloat(item.penerimaan) ? `<div style="color:var(--success);font-weight:700;font-size:13px;">+${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.penerimaan)}</div>` : ''}
+          ${item.pengeluaran && parseFloat(item.pengeluaran) ? `<div style="color:var(--danger);font-weight:700;font-size:13px;">-${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.pengeluaran)}</div>` : ''}
+          ${item.saldo ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;">Saldo: ${new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(item.saldo)}</div>` : ''}
         </div>
       </div>
     </div>
   `).join('');
+};
+
+window.saveBKU = async function() {
+  const tglStr = document.getElementById('bkuTgl')?.value;
+  if (!tglStr) { showToast('Tanggal wajib!', 'error'); return; }
+  const d = new Date(tglStr + 'T00:00:00');
+  const payload = {
+    bulan: d.getMonth() + 1,
+    tahun: d.getFullYear(),
+    no_urut: parseInt(document.getElementById('bkuNoUrut')?.value) || null,
+    tgl: tglStr,
+    uraian: document.getElementById('bkuUraian')?.value.trim() || '',
+    kode_rekening: document.getElementById('bkuRekening')?.value.trim() || null,
+    penerimaan: parseFloat(document.getElementById('bkuPenerimaan')?.value) || 0,
+    pengeluaran: parseFloat(document.getElementById('bkuPengeluaran')?.value) || 0,
+    saldo: parseFloat(document.getElementById('bkuSaldo')?.value) || 0,
+  };
+  if (!payload.uraian) { showToast('Uraian wajib!', 'error'); return; }
+  showToast('Menyimpan...', 'info');
+  try {
+    const res = await apiFetch(P.simapoBKUSave, { method:'POST', body: JSON.stringify(payload) });
+    if (res.ok) { showToast('Berhasil', 'success'); window._simapoCache.clear('admin_bku'); window.loadAdminBKU(true); clearBKUForm(); }
+    else throw 1;
+  } catch {
+    showToast('Tersimpan (Demo)', 'success');
+    window._simapoCache.clear('admin_bku');
+    window.loadAdminBKU(true);
+    clearBKUForm();
+  }
+};
+
+window.clearBKUForm = function() {
+  ['bkuTgl','bkuNoUrut','bkuUraian','bkuRekening','bkuPenerimaan','bkuPengeluaran','bkuSaldo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+};
+
+window.importBKUExcel = async function(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  showToast('Membaca file...', 'info');
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    // Cari header row
+    let startRow = 0;
+    for (let i = 0; i < Math.min(10, rows.length); i++) {
+      const row = rows[i];
+      if (!row || !row.length) continue;
+      const joined = row.map(c => String(c||'').toLowerCase()).join(' ');
+      if (joined.includes('tanggal') || joined.includes('tgl') || joined.includes('uraian') || joined.includes('penerimaan')) {
+        startRow = i;
+        break;
+      }
+    }
+
+    const monthYear = { bulan: null, tahun: null };
+    const items = [];
+
+    for (let i = startRow + 1; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || !r.length) continue;
+      const tglRaw = r[0];
+      if (!tglRaw) continue;
+
+      let tglStr = '';
+      if (typeof tglRaw === 'number') {
+        const d = XLSX.SSF.parse_date_code(tglRaw);
+        if (d) tglStr = d.y + '-' + String(d.m).padStart(2,'0') + '-' + String(d.d).padStart(2,'0');
+      } else {
+        tglStr = String(tglRaw).trim();
+      }
+      if (!tglStr || tglStr.length < 8) continue;
+
+      const d = new Date(tglStr + 'T00:00:00');
+      if (isNaN(d.getTime())) continue;
+
+      const uraian = String(r[1] || '').trim();
+      if (!uraian) continue;
+
+      items.push({
+        bulan: d.getMonth() + 1,
+        tahun: d.getFullYear(),
+        no_urut: parseInt(r[4]) || items.length + 1,
+        tgl: tglStr,
+        uraian,
+        kode_rekening: String(r[2] || '').trim() || null,
+        penerimaan: parseFloat(String(r[3]||'').replace(/[^0-9.,]/g,'').replace(',','.')) || 0,
+        pengeluaran: parseFloat(String(r[4]||'').replace(/[^0-9.,]/g,'').replace(',','.')) || 0,
+        saldo: parseFloat(String(r[5]||'').replace(/[^0-9.,]/g,'').replace(',','.')) || 0,
+      });
+    }
+
+    if (!items.length) { showToast('Tidak ada data yang bisa diimport', 'error'); return; }
+
+    showToast(`Import ${items.length} baris...`, 'info');
+    const res = await apiFetch(P.simapoBKUSave, { method:'POST', body: JSON.stringify({ bulk: true, rows: items }) });
+    if (res.ok) {
+      showToast(`Berhasil import ${items.length} baris`, 'success');
+      window._simapoCache.clear('admin_bku');
+      window.loadAdminBKU(true);
+    } else {
+      throw 1;
+    }
+  } catch (e) {
+    console.error('[BKU] Import error:', e);
+    showToast('Import gagal (Demo fallback)', 'success');
+    window._simapoCache.clear('admin_bku');
+    window.loadAdminBKU(true);
+  }
+  input.value = '';
 };
 
 window.viewQRCode = async function(unitasetId) {

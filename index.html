@@ -1680,7 +1680,30 @@
               <span>📥 Penerimaan Barang</span>
               <button class="btn-sm-admin" onclick="loadAdminPenerimaan()" style="background:var(--primary)">🔄</button>
             </div>
-            <div id="adminPenerimaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+
+            <!-- Form Input -->
+            <div id="penerimaanForm" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+              <div class="form-group"><label class="form-label">No. Nota</label><input class="form-input" id="ptNoNota" placeholder="Nomor nota/kwitansi"></div>
+              <div class="form-group"><label class="form-label">Tanggal</label><input class="form-input" id="ptTgl" type="date"></div>
+              <div class="form-group"><label class="form-label">Penyedia</label><input class="form-input" id="ptPenyedia" placeholder="Nama penyedia/vendor"></div>
+              <div class="form-group"><label class="form-label">Total Nilai (Rp)</label><input class="form-input" id="ptTotal" type="number" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">No. SP2D</label><input class="form-input" id="ptSp2d" placeholder="Nomor SP2D"></div>
+              <div class="form-group"><label class="form-label">Status SPJ</label>
+                <select class="form-input" id="ptStatusSpj">
+                  <option value="belum_dikumpulkan">Belum Dikumpulkan</option>
+                  <option value="sudah_di_map">Sudah di Map</option>
+                  <option value="sudah_lapor">Sudah Lapor</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Keterangan / Detail</label>
+                <textarea class="form-input" id="ptKeterangan" rows="2" placeholder="Catatan tambahan..."></textarea>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="savePenerimaan()" style="width:100%;">
+              <div class="btn-inner"><span>💾</span> Simpan Penerimaan Barang</div>
+            </button>
+            <div style="margin-top:14px;"><div id="adminPenerimaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div></div>
           </div>
         </div>
 
@@ -1691,7 +1714,27 @@
               <span>🔧 Pemeliharaan Aset</span>
               <button class="btn-sm-admin" onclick="loadAdminPemeliharaan()" style="background:var(--primary)">🔄</button>
             </div>
-            <div id="adminPemeliharaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
+
+            <!-- Form Input -->
+            <div id="pemeliharaanForm" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Pilih Barang</label>
+                <select class="form-input" id="pmBarangId"><option value="">-- Pilih Aset --</option></select>
+              </div>
+              <div class="form-group"><label class="form-label">Tanggal</label><input class="form-input" id="pmTgl" type="date"></div>
+              <div class="form-group"><label class="form-label">Jenis Pemeliharaan</label><input class="form-input" id="pmJenis" placeholder="Servis berkala / perbaikan"></div>
+              <div class="form-group"><label class="form-label">Biaya (Rp)</label><input class="form-input" id="pmBiaya" type="number" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">Penyedia Jasa</label><input class="form-input" id="pmPenyedia" placeholder="Nama bengkel/vendor"></div>
+              <div class="form-group"><label class="form-label">Bentuk Kontrak</label><input class="form-input" id="pmKontrak" placeholder="Swakelola / Kontrak"></div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Keterangan</label>
+                <textarea class="form-input" id="pmKeterangan" rows="2" placeholder="Deskripsi pekerjaan..."></textarea>
+              </div>
+            </div>
+            <button class="btn-primary" onclick="savePemeliharaan()" style="width:100%;">
+              <div class="btn-inner"><span>💾</span> Simpan Pemeliharaan</div>
+            </button>
+            <div style="margin-top:14px;"><div id="adminPemeliharaanList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div></div>
           </div>
         </div>
 
@@ -1700,8 +1743,30 @@
           <div class="card glass-card">
             <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
               <span>💰 Buku Kas Umum</span>
-              <button class="btn-sm-admin" onclick="loadAdminBKU()" style="background:var(--primary)">🔄</button>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-sm-admin" onclick="document.getElementById('bkuExcelFile').click()" style="background:rgba(34,197,94,0.2);">📤 Import Excel</button>
+                <button class="btn-sm-admin" onclick="loadAdminBKU()" style="background:var(--primary)">🔄</button>
+              </div>
             </div>
+            <input type="file" id="bkuExcelFile" style="display:none" accept=".xlsx,.xls" onchange="importBKUExcel(this)">
+
+            <!-- Form Tambah Manual -->
+            <div id="bkuForm" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0;">
+              <div class="form-group"><label class="form-label">Tanggal</label><input class="form-input" id="bkuTgl" type="date"></div>
+              <div class="form-group"><label class="form-label">No. Urut</label><input class="form-input" id="bkuNoUrut" type="number" placeholder="1"></div>
+              <div class="form-group"><label class="form-label">Kode Rekening</label><input class="form-input" id="bkuRekening" placeholder="5.1.01.01"></div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label class="form-label">Uraian</label>
+                <textarea class="form-input" id="bkuUraian" rows="2" placeholder="Deskripsi transaksi..."></textarea>
+              </div>
+              <div class="form-group"><label class="form-label">Penerimaan (Rp)</label><input class="form-input" id="bkuPenerimaan" type="number" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">Pengeluaran (Rp)</label><input class="form-input" id="bkuPengeluaran" type="number" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">Saldo (Rp)</label><input class="form-input" id="bkuSaldo" type="number" placeholder="0"></div>
+            </div>
+            <button class="btn-primary" onclick="saveBKU()" style="width:100%;margin-bottom:14px;">
+              <div class="btn-inner"><span>💾</span> Tambah Baris BKU</div>
+            </button>
+
             <div id="adminBKUList"><div class="shimmer-wrapper"><div class="shimmer sh-line" style="height:50px;border-radius:8px"></div></div></div>
           </div>
         </div>

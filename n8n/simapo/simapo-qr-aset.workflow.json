@@ -239,7 +239,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.unitasetid) throw new Error('ID aset tidak ditemukan');\nif (!b.tujuanpeminjaman) throw new Error('Tujuan peminjaman kosong');\nreturn [{ json: {\n  userid: nip,\n  unitasetid: b.unitasetid,\n  tujuanpeminjaman: b.tujuanpeminjaman,\n  tanggalmulai: b.tanggalmulai,\n  tanggalselesai: b.tanggalselesai,\n  nomorpeminjaman: 'PMJ-' + Date.now(),\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
+        "jsCode": "const b = $input.item.json.body || $input.item.json;\nconst q = $input.item.json.query || {};\nconst nip = b.nip || $input.item.json.headers?.['x-nip'] || '';\nif (!nip) throw new Error('NIP tidak ditemukan');\nif (!b.unitasetid) throw new Error('ID aset tidak ditemukan');\nif (!b.tujuanpeminjaman) throw new Error('Tujuan peminjaman kosong');\nreturn [{ json: {\n  userid: nip,\n  nama: b.nama || 'Pegawai',\n  unitasetid: b.unitasetid,\n  tujuanpeminjaman: b.tujuanpeminjaman,\n  tanggalmulai: b.tanggalmulai,\n  tanggalselesai: b.tanggalselesai,\n  nomorpeminjaman: 'PMJ-' + Date.now(),\n  instansi_id: b.instansi_id || q.instansi_id || 'bapperida'\n} }];"
       },
       "id": "338e5fed-b0cc-4929-8d37-71d6e3ea1fd6",
       "name": "Validate QR Pinjam",
@@ -253,7 +253,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, status;",
+        "query": "WITH ensure_user AS (\n  INSERT INTO users (id, nama, createdat, updatedat)\n  VALUES ('{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.nama || \"Pegawai\").toString().replace(/'/g, \"''\") }}', NOW(), NOW())\n  ON CONFLICT (id) DO UPDATE SET nama = EXCLUDED.nama, updatedat = NOW()\n)\nINSERT INTO \"SIMAPO\".peminjaman (id, nomorpeminjaman, userid, unitasetid, tujuanpeminjaman, tanggalmulai, tanggalselesai, status, createdat, updatedat, instansi_id) VALUES (gen_random_uuid(), '{{ ($json.nomorpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.userid).toString().replace(/'/g, \"''\") }}', '{{ ($json.unitasetid).toString().replace(/'/g, \"''\") }}', '{{ ($json.tujuanpeminjaman).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalmulai).toString().replace(/'/g, \"''\") }}', '{{ ($json.tanggalselesai).toString().replace(/'/g, \"''\") }}', 'MENUNGGU', NOW(), NOW(), '{{ ($json.instansi_id || \"bapperida\").toString().replace(/'/g, \"''\") }}') RETURNING id, status;",
         "options": {}
       },
       "id": "fbc2b554-2777-4daa-9d36-9ab2f4810133",

@@ -911,6 +911,7 @@ window.submitQRPinjam = async function() {
   }
 
   const nip = window._session?.nip || localStorage.getItem('MY_NIP') || '';
+  const nama = window._session?.nama || window.userProfile?.nama || localStorage.getItem('MY_NAMA') || 'Pegawai';
   showToast('Mengirim pengajuan...', 'info');
   try {
     const res = await apiFetch(P.simapoQRPinjam, {
@@ -918,6 +919,7 @@ window.submitQRPinjam = async function() {
       body: JSON.stringify({
         unitasetid,
         nip,
+        nama,
         tujuanpeminjaman: tujuan,
         tanggalmulai: mulai,
         tanggalselesai: selesai

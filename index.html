@@ -1535,6 +1535,7 @@
             <button class="sa-tab" id="sa-tab-kat"    onclick="switchSATab('kat')"    data-group="aset">🏷️ Kategori</button>
             <button class="sa-tab" id="sa-tab-mutasi" onclick="switchSATab('mutasi')" data-group="aset">🔄 Mutasi</button>
             <button class="sa-tab" id="sa-tab-opname" onclick="switchSATab('opname')" data-group="aset">📊 Opname</button>
+            <button class="sa-tab" id="sa-tab-sbu"    onclick="switchSATab('sbu')"    data-group="aset">📋 Standar Harga</button>
             <!-- Transaksi -->
             <button class="sa-tab active" id="sa-tab-pinjam"  onclick="switchSATab('pinjam')" data-group="trans">📋 Pinjaman</button>
             <button class="sa-tab"        id="sa-tab-tiket"  onclick="switchSATab('tiket')"  data-group="trans">🚨 Tiket</button>
@@ -1673,6 +1674,27 @@
           </div>
         </div>
 
+        <!-- [TAB] STANDAR HARGA (SBU) -->
+        <div id="sa-sect-sbu" class="sa-sect" style="display:none">
+          <div class="card glass-card">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>📋 Standar Harga (SBU 2027)</span>
+              <div style="display:flex;gap:6px;">
+                <button class="btn-sm-admin" onclick="importSBUExcel()" style="background:rgba(34,197,94,0.2);">📤 Import SBU</button>
+                <button class="btn-sm-admin" onclick="loadSBU()" style="background:var(--primary)">🔄</button>
+              </div>
+            </div>
+            <input type="file" id="sbuExcelFile" style="display:none" accept=".xlsx,.xls" onchange="parseSBUFile(this)">
+            <div style="margin:10px 0;">
+              <input type="text" class="form-input" id="sbuSearch" placeholder="🔍 Cari barang atau harga..." oninput="filterSBU(this.value)">
+            </div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Barang pakai habis akan otomatis terisi harganya saat input Penerimaan Barang.</div>
+            <div id="adminSBUList">
+              <div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">📋 Klik "Import SBU" untuk memuat standar harga.</div>
+            </div>
+          </div>
+        </div>
+
         <!-- [TAB] PENERIMAAN BARANG -->
         <div id="sa-sect-penerimaan" class="sa-sect" style="display:none">
           <div class="card glass-card">
@@ -1681,12 +1703,12 @@
               <button class="btn-sm-admin" onclick="loadAdminPenerimaan()" style="background:var(--primary)">🔄</button>
             </div>
 
-            <!-- Form Input -->
-            <div id="penerimaanForm" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;">
-              <div class="form-group"><label class="form-label">No. Nota</label><input class="form-input" id="ptNoNota" placeholder="Nomor nota/kwitansi"></div>
+            <!-- Header Form -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;">
+              <div class="form-group"><label class="form-label">No. Nota/Kwitansi</label><input class="form-input" id="ptNoNota" placeholder="cth: BKU 12/2025"></div>
               <div class="form-group"><label class="form-label">Tanggal</label><input class="form-input" id="ptTgl" type="date"></div>
-              <div class="form-group"><label class="form-label">Penyedia</label><input class="form-input" id="ptPenyedia" placeholder="Nama penyedia/vendor"></div>
-              <div class="form-group"><label class="form-label">Total Nilai (Rp)</label><input class="form-input" id="ptTotal" type="number" placeholder="0"></div>
+              <div class="form-group"><label class="form-label">Bentuk Kontrak</label><input class="form-input" id="ptKontrak" placeholder="Swakelola / Langganan"></div>
+              <div class="form-group"><label class="form-label">Penyedia</label><input class="form-input" id="ptPenyedia" placeholder="CV. Sumber Karya Abadi"></div>
               <div class="form-group"><label class="form-label">No. SP2D</label><input class="form-input" id="ptSp2d" placeholder="Nomor SP2D"></div>
               <div class="form-group"><label class="form-label">Status SPJ</label>
                 <select class="form-input" id="ptStatusSpj">
@@ -1696,10 +1718,45 @@
                 </select>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
-                <label class="form-label">Keterangan / Detail</label>
-                <textarea class="form-input" id="ptKeterangan" rows="2" placeholder="Catatan tambahan..."></textarea>
+                <label class="form-label">Sub Kegiatan</label>
+                <input class="form-input" id="ptSubKeg" placeholder="cth: 5.01.01.2.09.0009 - Pemeliharaan Gedung Kantor">
               </div>
             </div>
+
+            <!-- Detail Items Table -->
+            <div style="margin:14px 0;">
+              <div style="font-size:12px;font-weight:800;color:var(--gold);margin-bottom:8px;">📋 Daftar Barang</div>
+              <div style="display:grid;grid-template-columns:3fr 1fr 1.5fr 1fr 80px;gap:6px;align-items:end;margin-bottom:8px;">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">Nama Barang</label>
+                  <input class="form-input" id="ptdNama" list="sbuItemList" placeholder="Ketik nama barang..." oninput="onSBUItemInput(this.value)">
+                  <datalist id="sbuItemList"></datalist>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">Jumlah</label>
+                  <input class="form-input" id="ptdJumlah" type="number" min="1" value="1">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">Satuan</label>
+                  <input class="form-input" id="ptdSatuan" placeholder="Unit">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label">Harga Satuan</label>
+                  <input class="form-input" id="ptdHarga" type="number" placeholder="0">
+                </div>
+                <button class="btn-sm-admin" onclick="addPenerimaanItem()" style="background:var(--success);height:38px;align-self:end;">➕</button>
+              </div>
+            </div>
+
+            <div id="penerimaanItemsContainer" style="margin-bottom:10px;">
+              <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Belum ada item. Tambah barang di atas.</div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px;">
+              <span style="font-size:12px;color:var(--muted);">Total Item: <span id="ptTotalItem">0</span></span>
+              <span style="font-size:16px;font-weight:800;color:var(--gold);">Rp <span id="ptTotalNilai">0</span></span>
+            </div>
+
             <button class="btn-primary" onclick="savePenerimaan()" style="width:100%;">
               <div class="btn-inner"><span>💾</span> Simpan Penerimaan Barang</div>
             </button>

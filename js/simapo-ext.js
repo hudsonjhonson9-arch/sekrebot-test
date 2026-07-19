@@ -56,7 +56,8 @@ window.switchSATab = function(name, force = false) {
   else if (name === 'mutasi') { window.loadMutasiRiwayat(force); window.populateMutasiBarangSelect(); }
   else if (name === 'opname') window.loadOpnameForm(force);
   else if (name === 'kat') window.loadSimapoKategori(true, force);
-  else if (name === 'penerimaan') window.loadAdminPenerimaan(force);
+  else if (name === 'sbu') window.loadSBU();
+  else if (name === 'penerimaan') { window.loadAdminPenerimaan(force); window.populateSBUDatalist(); }
   else if (name === 'pemeliharaan') { window.loadAdminPemeliharaan(force); window.populatePemeliharaanBarang(); }
   else if (name === 'bku') window.loadAdminBKU(force);
 };
@@ -656,6 +657,170 @@ window.switchSAGroup = function(group) {
   }
 };
 
+/* ─── SBU DATA (in-memory reference) ──────────────────────── */
+window._sbuData = [];
+
+window.parseSBUFile = async function(input) {
+  if (!input.files || !input.files[0]) return;
+  showToast('Membaca SBU...', 'info');
+  try {
+    const buf = await input.files[0].arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array'});
+    const items = [];
+    for (const sn of wb.SheetNames) {
+      if (sn === 'Lampiran Penjelasan') continue;
+      const ws = wb.Sheets[sn];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+      let headerRow = -1;
+      for (let i=0; i<Math.min(15,rows.length); i++) {
+        const row = rows[i];
+        if (!row || !row.length) continue;
+        const joined = row.map(c=>String(c||'').toLowerCase()).join(' ');
+        if (joined.includes('harga satuan') || joined.includes('uraian barang')) {
+          headerRow = i; break;
+        }
+      }
+      if (headerRow < 0) continue;
+      for (let i=headerRow+1; i<rows.length; i++) {
+        const r = rows[i] || [];
+        const nama = String(r[2]||'').trim(); // URAIAN BARANG or Nama Komponen
+        if (!nama) continue;
+        let hargaRaw = '';
+        for (let c of [5,6]) { // try Harga Satuan col
+          const v = r[c];
+          if (v !== undefined && v !== null) { hargaRaw = String(v); break; }
+        }
+        let harga = 0;
+        try { harga = parseFloat(hargaRaw.replace(/[^0-9.,]/g,'').replace(/,/g,'')) || 0; } catch {}
+        if (harga <= 0) continue;
+        const satuan = String(r[4]||'').trim(); // SATUAN
+        if (!satuan) continue;
+        items.push({ nama, satuan, harga, sheet: sn });
+      }
+    }
+    // Deduplicate by nama+harga
+    const seen = {};
+    const unique = [];
+    for (const i of items) {
+      const key = i.nama + '|' + i.harga;
+      if (!seen[key]) { seen[key]=true; unique.push(i); }
+    }
+    window._sbuData = unique;
+    // Also populate SBU list
+    loadSBU();
+    // Populate datalist for penerimaan
+    populateSBUDatalist();
+    showToast(`SBU siap: ${unique.length} item`, 'success');
+  } catch(e) {
+    console.error('[SBU] Parse error:', e);
+    showToast('Gagal parse SBU', 'error');
+  }
+  input.value = '';
+};
+
+window.populateSBUDatalist = function() {
+  const dl = document.getElementById('sbuItemList');
+  if (!dl) return;
+  dl.innerHTML = window._sbuData.map(i => `<option value="${i.nama} — Rp ${i.harga.toLocaleString('id-ID')}">`).join('');
+};
+
+window.importSBUExcel = function() {
+  document.getElementById('sbuExcelFile')?.click();
+};
+
+window.loadSBU = function() {
+  const el = document.getElementById('adminSBUList');
+  if (!el) return;
+  const data = window._sbuData;
+  if (!data || !data.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">📋 Klik "Import SBU" untuk memuat standar harga.</div>`;
+    return;
+  }
+  el.innerHTML = data.map(i => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);margin-bottom:4px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.nama}</div>
+        <div style="font-size:10px;color:var(--muted);">${i.satuan} · ${i.sheet || ''}</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:var(--gold);flex-shrink:0;">Rp ${i.harga.toLocaleString('id-ID')}</div>
+    </div>
+  `).join('');
+};
+
+window.filterSBU = function(val) {
+  const q = val.toLowerCase();
+  const el = document.getElementById('adminSBUList');
+  if (!el) return;
+  const data = window._sbuData.filter(i => i.nama.toLowerCase().includes(q) || String(i.harga).includes(q));
+  if (!data.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Tidak ditemukan.</div>'; return; }
+  el.innerHTML = data.map(i => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);margin-bottom:4px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.nama}</div>
+        <div style="font-size:10px;color:var(--muted);">${i.satuan}</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:var(--gold);flex-shrink:0;">Rp ${i.harga.toLocaleString('id-ID')}</div>
+    </div>
+  `).join('');
+};
+
+/* ─── PENERIMAAN: ITEMS ──────────────────────────────────── */
+window._penerimaanItems = [];
+
+window.onSBUItemInput = function(val) {
+  const match = window._sbuData.find(i => val.includes(i.nama));
+  if (!match) return;
+  document.getElementById('ptdSatuan').value = match.satuan;
+  document.getElementById('ptdHarga').value = match.harga;
+};
+
+window.addPenerimaanItem = function() {
+  const nama = document.getElementById('ptdNama')?.value.trim();
+  const jumlah = parseInt(document.getElementById('ptdJumlah')?.value) || 1;
+  const satuan = document.getElementById('ptdSatuan')?.value.trim() || 'Unit';
+  const harga = parseFloat(document.getElementById('ptdHarga')?.value) || 0;
+  if (!nama) { showToast('Nama barang wajib!', 'error'); return; }
+  const total = jumlah * harga;
+  window._penerimaanItems.push({ nama, jumlah, satuan, harga, total });
+  renderPenerimaanItems();
+  document.getElementById('ptdNama').value = '';
+  document.getElementById('ptdJumlah').value = '1';
+  document.getElementById('ptdSatuan').value = '';
+  document.getElementById('ptdHarga').value = '';
+  document.getElementById('ptdNama').focus();
+};
+
+window.renderPenerimaanItems = function() {
+  const el = document.getElementById('penerimaanItemsContainer');
+  if (!el) return;
+  const items = window._penerimaanItems;
+  const fmt = n => new Intl.NumberFormat('id-ID',{minimumFractionDigits:0}).format(n);
+  let grandTotal = 0;
+  if (!items.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px;">Belum ada item. Tambah barang di atas.</div>`;
+  } else {
+    el.innerHTML = items.map((item,i) => {
+      grandTotal += item.total;
+      return `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:4px;">
+        <div style="flex:2;min-width:0;font-size:12px;font-weight:700;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.nama}</div>
+        <div style="flex:0 0 40px;text-align:center;font-size:12px;color:var(--muted);">${item.jumlah}</div>
+        <div style="flex:0 0 60px;text-align:center;font-size:11px;color:var(--muted);">${item.satuan}</div>
+        <div style="flex:0 0 100px;text-align:right;font-size:12px;color:var(--gold);">${item.harga ? 'Rp '+fmt(item.harga) : '—'}</div>
+        <div style="flex:0 0 110px;text-align:right;font-size:12px;font-weight:700;color:var(--white);">Rp ${fmt(item.total)}</div>
+        <button onclick="removePenerimaanItem(${i})" style="padding:4px 8px;background:rgba(255,60,60,0.15);color:var(--danger);border:none;border-radius:4px;cursor:pointer;font-size:11px;">✕</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('ptTotalItem').textContent = items.length;
+  document.getElementById('ptTotalNilai').textContent = fmt(grandTotal);
+};
+
+window.removePenerimaanItem = function(idx) {
+  window._penerimaanItems.splice(idx, 1);
+  renderPenerimaanItems();
+};
+
 /* ─── ADMIN: PENERIMAAN BARANG ────────────────────────────── */
 window.loadAdminPenerimaan = async function(force = false) {
   const el = document.getElementById('adminPenerimaanList');
@@ -689,20 +854,30 @@ window.loadAdminPenerimaan = async function(force = false) {
           <div style="font-size:10px;font-weight:700;margin-top:2px;">${stBadge}</div>
         </div>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">📄 SP2D: ${item.no_sp2d || '—'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">📄 SP2D: ${item.no_sp2d || '—'} ${item.kontrak ? '· '+item.kontrak : ''}</div>
     </div>`;
   }).join('');
 };
 
 window.savePenerimaan = async function() {
+  const items = window._penerimaanItems;
+  if (!items.length) { showToast('Tambah minimal 1 barang!', 'error'); return; }
   const payload = {
     no_nota: document.getElementById('ptNoNota')?.value.trim(),
     tgl_nota: document.getElementById('ptTgl')?.value,
     penyedia: document.getElementById('ptPenyedia')?.value.trim(),
-    total_nilai: parseFloat(document.getElementById('ptTotal')?.value) || 0,
     no_sp2d: document.getElementById('ptSp2d')?.value.trim() || null,
+    kontrak: document.getElementById('ptKontrak')?.value.trim() || null,
+    sub_kegiatan: document.getElementById('ptSubKeg')?.value.trim() || null,
     status_spj: document.getElementById('ptStatusSpj')?.value || 'belum_dikumpulkan',
-    keterangan: document.getElementById('ptKeterangan')?.value.trim() || '',
+    total_nilai: items.reduce((s,i) => s + i.total, 0),
+    items: items.map(i => ({
+      nama_barang: i.nama,
+      jumlah: i.jumlah,
+      satuan: i.satuan,
+      harga_satuan: i.harga,
+      total: i.total,
+    })),
   };
   if (!payload.no_nota || !payload.penyedia) { showToast('No. Nota & Penyedia wajib!', 'error'); return; }
   showToast('Menyimpan...', 'info');
@@ -719,12 +894,14 @@ window.savePenerimaan = async function() {
 };
 
 window.clearPenerimaanForm = function() {
-  ['ptNoNota','ptTgl','ptPenyedia','ptTotal','ptSp2d','ptKeterangan'].forEach(id => {
+  ['ptNoNota','ptTgl','ptPenyedia','ptSp2d','ptKontrak','ptSubKeg'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   const ss = document.getElementById('ptStatusSpj');
   if (ss) ss.value = 'belum_dikumpulkan';
+  window._penerimaanItems = [];
+  renderPenerimaanItems();
 };
 
 /* ─── ADMIN: PEMELIHARAAN ─────────────────────────────────── */

@@ -257,6 +257,8 @@ const P = {
   simapoPemeliharaanSave: isTest ? '/webhook-test/simapo-pemeliharaan-post' : '/webhook/simapo-pemeliharaan-post',
   simapoBKUList: isTest ? '/webhook-test/simapo-bku' : '/webhook/simapo-bku',
   simapoBKUSave: isTest ? '/webhook-test/simapo-bku' : '/webhook/simapo-bku',
+  simapoSBUList: isTest ? '/webhook-test/simapo-sbu-list' : '/webhook/simapo-sbu-list',
+  simapoSBUSave: isTest ? '/webhook-test/simapo-sbu-save' : '/webhook/simapo-sbu-save',
   lemburSave: isTest ? '/webhook-test/lembur-save' : '/webhook/lembur-save',
   lemburArchiveList: isTest ? '/webhook-test/lembur-archive-list' : '/webhook/lembur-archive-list',
   lemburArchiveDelete: isTest ? '/webhook-test/lembur-archive-delete' : '/webhook/lembur-archive-delete',

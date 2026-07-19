@@ -908,8 +908,9 @@ window.savePenerimaan = async function() {
     status_spj: document.getElementById('ptStatusSpj')?.value || 'belum_dikumpulkan',
     total_nilai: items.reduce((s,i) => s + i.total, 0),
     items: items.map(i => ({
+      barang_id: (window._allMasterData || []).find(b => b.nama === i.nama)?.id || null,
       nama_barang: i.nama,
-      jumlah: i.jumlah,
+      volume: i.jumlah,
       satuan: i.satuan,
       harga_satuan: i.harga,
       total: i.total,

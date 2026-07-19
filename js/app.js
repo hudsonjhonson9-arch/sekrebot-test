@@ -61,9 +61,12 @@
           logoutSec.style.display = !isTg ? 'block' : 'none';
         }
 
-        // QR redirect: simpan param, proses setelah login
+        // QR redirect: simpan param, bersihkan URL, proses setelah login
         const qrParam = new URLSearchParams(window.location.search).get('qr');
-        if (qrParam) localStorage.setItem('simapo_qr_pending', qrParam);
+        if (qrParam) {
+          localStorage.setItem('simapo_qr_pending', qrParam);
+          history.replaceState(null, '', window.location.pathname);
+        }
 
       } catch (err) {
         console.error('[Init] Error during startup:', err);

@@ -342,47 +342,35 @@ window.showQRKatalog = function(id, nama) {
   });
 };
 
-window.scanQRAset = function() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.capture = 'environment';
-  input.onchange = async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    showToast('Memproses gambar...', 'info');
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    await new Promise(r => { img.onload = r; img.onerror = r; });
-    const maxDim = 1024;
-    let w = img.naturalWidth, h = img.naturalHeight;
-    if (w > maxDim || h > maxDim) {
-      const scale = maxDim / Math.max(w, h);
-      w = Math.round(w * scale); h = Math.round(h * scale);
-    }
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    let found = null;
-    for (let attempt = 0; attempt < 2 && !found; attempt++) {
-      const s = attempt === 0 ? 1 : 0.5;
-      canvas.width = Math.round(w * s);
-      canvas.height = Math.round(h * s);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      found = jsQR(imageData.data, imageData.width, imageData.height);
-    }
-    URL.revokeObjectURL(img.src);
-    if (!found || !found.data) {
-      showToast('Tidak ditemukan QR code di gambar', 'error');
-      return;
-    }
-    const raw = found.data;
-    let qrParam = null;
-    if (raw.includes('qr=')) {
-      const m = raw.match(/[?&]qr=([^&]+)/);
-      if (m) qrParam = m[1];
-    }
-    if (qrParam) {
+/* ─── QR SCAN OVERLAY ──────────────────────────────────────── */
+let _qrOverlayStream = null;
+let _qrOverlayTimer = null;
+let _qrOverlayActive = false;
+
+function _qrOverlayClose() {
+  _qrOverlayActive = false;
+  if (_qrOverlayTimer) { clearInterval(_qrOverlayTimer); _qrOverlayTimer = null; }
+  if (_qrOverlayStream) {
+    _qrOverlayStream.getTracks().forEach(t => t.stop());
+    _qrOverlayStream = null;
+  }
+  const el = document.getElementById('__qrOverlay');
+  if (el) el.remove();
+}
+
+function _qrOverlayScanFrame(video, canvas, ctx) {
+  if (!_qrOverlayActive) return;
+  canvas.width = Math.round(video.videoWidth * 0.75);
+  canvas.height = Math.round(video.videoHeight * 0.75);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const found = jsQR(img.data, img.width, img.height);
+  if (found && found.data && found.data.includes('qr=')) {
+    _qrOverlayActive = false;
+    const m = found.data.match(/[?&]qr=([^&]+)/);
+    if (m) {
+      _qrOverlayClose();
+      const qrParam = m[1];
       localStorage.setItem('simapo_qr_pending', qrParam);
       if (window._session?.isLoggedIn) {
         localStorage.removeItem('simapo_qr_pending');
@@ -390,11 +378,124 @@ window.scanQRAset = function() {
       } else {
         showToast('QR tersimpan. Silakan login.', 'info');
       }
-    } else {
-      showToast('QR bukan untuk aset ini', 'error');
     }
+  }
+}
+
+function _qrBuildFallbackUI(overlay) {
+  const div = overlay.querySelector('._qr-content');
+  div.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:20px;">
+      <div style="width:80px;height:80px;border-radius:20px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:40px;">📷</div>
+      <div style="font-size:14px;color:var(--muted);text-align:center;">Kamera tidak tersedia.<br>Ambil foto QR untuk memindai.</div>
+      <button class="btn-primary" id="_qrFallbackBtn" style="width:100%;max-width:280px;">
+        <div class="btn-inner"><span>📸</span> Ambil Foto</div>
+      </button>
+      <button onclick="_qrOverlayClose()" style="padding:10px 24px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--muted);font-size:12px;cursor:pointer;">Batal</button>
+    </div>
+  `;
+  document.getElementById('_qrFallbackBtn').onclick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      _qrOverlayClose();
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(r => { img.onload = r; img.onerror = r; });
+      const maxDim = 1024;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxDim || h > maxDim) {
+        const scale = maxDim / Math.max(w, h);
+        w = Math.round(w * scale); h = Math.round(h * scale);
+      }
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let found = null;
+      for (let attempt = 0; attempt < 2 && !found; attempt++) {
+        const s = attempt === 0 ? 1 : 0.5;
+        canvas.width = Math.round(w * s);
+        canvas.height = Math.round(h * s);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        found = jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height);
+      }
+      URL.revokeObjectURL(img.src);
+      if (found && found.data) {
+        const m = found.data.match(/[?&]qr=([^&]+)/);
+        if (m) {
+          const qrParam = m[1];
+          localStorage.setItem('simapo_qr_pending', qrParam);
+          if (window._session?.isLoggedIn) {
+            localStorage.removeItem('simapo_qr_pending');
+            processQR(qrParam);
+          } else {
+            showToast('QR tersimpan. Silakan login.', 'info');
+          }
+          return;
+        }
+      }
+      showToast('Tidak ditemukan QR code di gambar', 'error');
+    };
+    input.click();
   };
-  input.click();
+  const el = overlay.querySelector('video');
+  if (el) el.remove();
+}
+
+window.scanQRAset = function() {
+  if (document.getElementById('__qrOverlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = '__qrOverlay';
+  overlay.innerHTML = `
+    <div style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;flex-shrink:0;">
+        <div style="font-weight:700;font-size:14px;color:var(--white);">Scan QR Aset</div>
+        <button id="_qrCloseBtn" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <div class="_qr-content" style="flex:1;display:flex;flex-direction:column;position:relative;">
+        <video id="_qrVideo" autoplay playsinline muted
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="width:min(70vw,280px);height:min(70vw,280px);position:relative;">
+            <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:3px solid rgba(201,168,76,0.9);border-left:3px solid rgba(201,168,76,0.9);border-radius:4px 0 0 0;"></div>
+            <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:3px solid rgba(201,168,76,0.9);border-right:3px solid rgba(201,168,76,0.9);border-radius:0 4px 0 0;"></div>
+            <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:3px solid rgba(201,168,76,0.9);border-left:3px solid rgba(201,168,76,0.9);border-radius:0 0 0 4px;"></div>
+            <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:3px solid rgba(201,168,76,0.9);border-right:3px solid rgba(201,168,76,0.9);border-radius:0 0 4px 0;"></div>
+          </div>
+          <div id="_qrStatus" style="margin-top:20px;font-size:13px;color:var(--muted);text-align:center;">Mengaktifkan kamera...</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#_qrCloseBtn').onclick = _qrOverlayClose;
+
+  const video = overlay.querySelector('#_qrVideo');
+  const status = overlay.querySelector('#_qrStatus');
+
+  (async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      _qrOverlayStream = stream;
+      video.srcObject = stream;
+      await video.play();
+      status.textContent = 'Arahkan QR ke tengah bingkai';
+      _qrOverlayActive = true;
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d', { willReadFrequently: true });
+      _qrOverlayTimer = setInterval(() => _qrOverlayScanFrame(video, c, ctx), 400);
+    } catch {
+      status.textContent = '';
+      _qrBuildFallbackUI(overlay);
+    }
+  })();
 };
 
 window.downloadQRFromCatalog = function(id, nama) {

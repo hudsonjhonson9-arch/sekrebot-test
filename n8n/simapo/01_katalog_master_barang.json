@@ -28,7 +28,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT id, kodebarang, nama, satuan, spesifikasi, foto, stok_saat_ini, minimumstok, hargasatuan, kategoriid, isactive FROM \"SIMAPO\".barang WHERE isactive = true AND instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY nama ASC\n) t;",
+        "query": "SELECT COALESCE(json_agg(t.*), '[]'::json) as items FROM (\nSELECT b.id, b.kodebarang, b.nama, b.satuan, b.spesifikasi, b.foto, CASE WHEN b.jenisbarang = 'ASET_TETAP' THEN (SELECT COUNT(*)::int FROM \"SIMAPO\".unit_aset ua WHERE ua.barangid = b.id) ELSE b.stok_saat_ini END AS stok_saat_ini, b.minimumstok, b.hargasatuan, b.kategoriid, b.isactive FROM \"SIMAPO\".barang b WHERE b.isactive = true AND b.instansi_id = '{{ ($json.query.instansi_id || 'bapperida').toString().replace(/'/g, \"''\") }}' ORDER BY b.nama ASC\n) t;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",

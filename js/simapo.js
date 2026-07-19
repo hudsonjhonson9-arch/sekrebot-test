@@ -761,11 +761,46 @@ async function loadQRForm(raw) {
       showToast('QR tidak dikenal atau aset tidak ditemukan', 'error');
       return;
     }
-    const unit = res.rows[0];
-    renderQRConfirmPanel(unit);
+    if (res.rows.length === 1) {
+      renderQRConfirmPanel(res.rows[0]);
+    } else {
+      showUnitPicker(res.rows);
+    }
   } catch (e) {
     showToast('Gagal memuat data aset', 'error');
   }
+}
+
+function showUnitPicker(units) {
+  const panel = document.getElementById('qrConfirmPanel');
+  if (!panel) return;
+  const manualForm = document.getElementById('simapoPinjamForm');
+  if (manualForm) manualForm.style.display = 'none';
+  const riwayatSection = document.getElementById('simapoRiwayatSection');
+  if (riwayatSection) riwayatSection.style.display = 'none';
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  panel.innerHTML = `
+    <div class="card glass-card" style="border:2px solid rgba(201,168,76,0.3);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span style="font-size:24px;">📋</span>
+        <div style="font-weight:800;font-size:14px;color:var(--gold);">Pilih Unit Aset</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Ditemukan ${units.length} unit untuk barang ini:</div>
+      ${units.map(u => {
+        const tersedia = u.statuspinjam !== true && u.statuspinjam !== 'true';
+        return `<div onclick="${tersedia ? `renderQRConfirmPanel(simpanPinjamUnits.find(x=>x.id==='${u.id}'))` : ''}" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);margin-bottom:6px;${tersedia ? 'cursor:pointer' : 'opacity:0.5'}" ${tersedia ? `onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'"` : ''}>
+          <div style="width:36px;height:36px;border-radius:6px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:16px;">${u.foto_barang ? '<img src="'+u.foto_barang+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">' : '📦'}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:12px;color:var(--white);">${escapeHtml(u.nama_barang)}</div>
+            <div style="font-size:10px;color:var(--muted);">${u.nomorinventaris || '—'} · ${tersedia ? '<span style="color:#22c55e">Tersedia</span>' : '<span style="color:#ef4444">Dipinjam</span>'}</div>
+          </div>
+          ${tersedia ? '<span style="color:var(--gold);font-size:16px;">›</span>' : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+  window.simpanPinjamUnits = units;
 }
 
 function renderQRConfirmPanel(unit) {
@@ -873,12 +908,14 @@ window.submitQRPinjam = async function() {
     return;
   }
 
+  const nip = window._session?.nip || localStorage.getItem('MY_NIP') || '';
   showToast('Mengirim pengajuan...', 'info');
   try {
     const res = await apiFetch(P.simapoQRPinjam, {
       method: 'POST',
       body: JSON.stringify({
         unitasetid,
+        nip,
         tujuanpeminjaman: tujuan,
         tanggalmulai: mulai,
         tanggalselesai: selesai
@@ -897,8 +934,6 @@ window.submitQRPinjam = async function() {
       showToast(err?.message || 'Gagal mengirim pengajuan', 'error');
     }
   } catch (e) {
-    showToast('(Demo) Pengajuan terkirim!', 'success');
-    closeQRPanel();
-    switchSimapoSection('katalog');
+    showToast('Gagal: ' + e.message, 'error');
   }
 };

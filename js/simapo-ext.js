@@ -657,8 +657,20 @@ window.switchSAGroup = function(group) {
   }
 };
 
-/* ─── SBU DATA (in-memory reference) ──────────────────────── */
+/* ─── SBU DATA (persisted) ────────────────────────────────── */
 window._sbuData = [];
+
+window._sbuSaveToStorage = function() {
+  try { localStorage.setItem('simapo_sbu', JSON.stringify(window._sbuData)); } catch {}
+};
+
+window._sbuLoadFromStorage = function() {
+  try {
+    const raw = localStorage.getItem('simapo_sbu');
+    if (raw) { window._sbuData = JSON.parse(raw); return true; }
+  } catch {}
+  return false;
+};
 
 window.parseSBUFile = async function(input) {
   if (!input.files || !input.files[0]) return;
@@ -683,22 +695,21 @@ window.parseSBUFile = async function(input) {
       if (headerRow < 0) continue;
       for (let i=headerRow+1; i<rows.length; i++) {
         const r = rows[i] || [];
-        const nama = String(r[2]||'').trim(); // URAIAN BARANG or Nama Komponen
+        const nama = String(r[2]||'').trim();
         if (!nama) continue;
         let hargaRaw = '';
-        for (let c of [5,6]) { // try Harga Satuan col
+        for (const c of [5,6]) {
           const v = r[c];
           if (v !== undefined && v !== null) { hargaRaw = String(v); break; }
         }
         let harga = 0;
         try { harga = parseFloat(hargaRaw.replace(/[^0-9.,]/g,'').replace(/,/g,'')) || 0; } catch {}
         if (harga <= 0) continue;
-        const satuan = String(r[4]||'').trim(); // SATUAN
+        const satuan = String(r[4]||'').trim();
         if (!satuan) continue;
         items.push({ nama, satuan, harga, sheet: sn });
       }
     }
-    // Deduplicate by nama+harga
     const seen = {};
     const unique = [];
     for (const i of items) {
@@ -706,9 +717,14 @@ window.parseSBUFile = async function(input) {
       if (!seen[key]) { seen[key]=true; unique.push(i); }
     }
     window._sbuData = unique;
-    // Also populate SBU list
+    _sbuSaveToStorage();
+
+    // Try save to API
+    try {
+      await apiFetch(P.simapoSBUSave, { method:'POST', body: JSON.stringify({ rows: unique }) });
+    } catch {}
+
     loadSBU();
-    // Populate datalist for penerimaan
     populateSBUDatalist();
     showToast(`SBU siap: ${unique.length} item`, 'success');
   } catch(e) {
@@ -728,9 +744,29 @@ window.importSBUExcel = function() {
   document.getElementById('sbuExcelFile')?.click();
 };
 
-window.loadSBU = function() {
+window.loadSBU = async function(forceApi = false) {
   const el = document.getElementById('adminSBUList');
   if (!el) return;
+
+  // Try API first
+  if (forceApi || !window._sbuData.length) {
+    try {
+      const res = await apiFetch(P.simapoSBUList);
+      const data = parseApiResponse(await res.json());
+      if (data && data.length) {
+        window._sbuData = data.map(d => ({ nama: d.nama_barang || d.nama, satuan: d.satuan, harga: parseFloat(d.harga_satuan || d.harga), sheet: d.sheet_name || '' }));
+        _sbuSaveToStorage();
+        populateSBUDatalist();
+      }
+    } catch {}
+  }
+
+  // Fallback to localStorage
+  if (!window._sbuData.length) {
+    _sbuLoadFromStorage();
+    if (window._sbuData.length) populateSBUDatalist();
+  }
+
   const data = window._sbuData;
   if (!data || !data.length) {
     el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">📋 Klik "Import SBU" untuk memuat standar harga.</div>`;

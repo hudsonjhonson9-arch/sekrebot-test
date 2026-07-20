@@ -369,6 +369,12 @@ function _qrOverlayScanFrame(video, canvas, ctx) {
     _qrOverlayActive = false;
     _qrOverlayClose();
     const raw = found.data.includes('qr=') ? (found.data.match(/[?&]qr=([^&]+)/)?.[1] || found.data) : found.data;
+    const cb = window._qrOnScan;
+    if (typeof cb === 'function') {
+      window._qrOnScan = null;
+      cb(raw);
+      return;
+    }
     localStorage.setItem('simapo_qr_pending', raw);
     if (window._session?.isLoggedIn) {
       localStorage.removeItem('simapo_qr_pending');
@@ -422,6 +428,12 @@ function _qrBuildFallbackUI(overlay) {
       URL.revokeObjectURL(img.src);
       if (found && found.data) {
         const raw = found.data.includes('qr=') ? (found.data.match(/[?&]qr=([^&]+)/)?.[1] || found.data) : found.data;
+        const cb = window._qrOnScan;
+        if (typeof cb === 'function') {
+          window._qrOnScan = null;
+          cb(raw);
+          return;
+        }
         localStorage.setItem('simapo_qr_pending', raw);
         if (window._session?.isLoggedIn) {
           localStorage.removeItem('simapo_qr_pending');
@@ -826,9 +838,10 @@ function renderQRConfirmPanel(unit) {
   panel.dataset.unitasetid = unit.id;
 
   let statusHtml = '';
+  const pa = unit.peminjaman_aktif;
   if (dipinjam) {
     statusHtml = `<span style="color:#ef4444;font-weight:800;">🔴 Sedang Dipinjam</span>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Oleh: ${unit.nama_peminjam_saat_ini || '—'}</div>`;
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Oleh: ${pa?.nama || pa?.userid || unit.nama_peminjam_saat_ini || '—'}</div>`;
   } else if (unit.kondisi !== 'BAIK') {
     statusHtml = `<span style="color:#f59e0b;font-weight:800;">⚠️ Kondisi: ${unit.kondisi}</span>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;">Laporkan kerusakan jika ingin meminjam</div>`;

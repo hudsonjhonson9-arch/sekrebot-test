@@ -161,6 +161,44 @@ window.renderAdminSimapoPinjam = function(data) {
   }).join('');
 };
 
+/* ─── ADMIN: QR KEMBALI ── */
+window.adminQRKembaliScan = function() {
+  window._qrOnScan = async (raw) => {
+    showToast('Memuat data aset...', 'info');
+    try {
+      const res = await apiGet(P.simapoUnitByQR, { q: raw });
+      if (!res.ok || !res.rows?.length) { showToast('QR tidak dikenal', 'error'); return; }
+      const unit = res.rows[0];
+      const pa = unit.peminjaman_aktif;
+      if (!pa || !pa.id) { showToast('Aset ini sedang tidak dipinjam', 'warning'); return; }
+
+      const ok = await Swal.fire({
+        title: 'Kembalikan Aset?',
+        html: `
+          <div style="text-align:left;font-size:13px;line-height:1.8;">
+            <b>${unit.nama_barang}</b><br>
+            Inventaris: ${unit.nomorinventaris || '—'}<br>
+            <span style="color:#64b4ff;">👤 Dipinjam oleh: ${pa.nama || pa.userid}</span>
+          </div>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '📦 Kembalikan',
+        cancelButtonText: 'Batal',
+        background: '#1a1d21',
+        color: '#fff',
+        confirmButtonColor: '#22c55e',
+      });
+      if (!ok.isConfirmed) return;
+
+      window.adminSimapoPinjamAction(pa.id, 'DIKEMBALIKAN');
+    } catch (e) {
+      showToast('Gagal memproses QR', 'error');
+    }
+  };
+  if (typeof scanQRAset === 'function') scanQRAset();
+  else showToast('QR scanner tidak tersedia', 'error');
+};
+
 /* ─── ADMIN: TIKET KERUSAKAN ── */
 window.loadAdminSimapoTiket = async function(force = false) {
   const el = document.getElementById('adminSimapoTiketList');
